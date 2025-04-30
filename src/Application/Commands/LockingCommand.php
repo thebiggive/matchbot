@@ -37,7 +37,7 @@ abstract class LockingCommand extends Command
             $return = $this->doExecute($input, $output);
             $this->releaseLock();
         } else {
-            $message = $this->getName() . ' did nothing as another instance had the lock.';
+            $message = $this->getName() ?? self::class . ' did nothing as another instance had the lock.';
             $output->writeln($message);
             $this->logger->warning($message);
             return 0; // Log at warning level to help monitoring volume but don't fire error alarms.

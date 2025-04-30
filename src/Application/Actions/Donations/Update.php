@@ -14,6 +14,7 @@ use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels;
+use MatchBot\Application\LazyAssertionException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
@@ -88,6 +89,7 @@ class Update extends Action
             UnexpectedValueException | // the Serializer one, not the global one
             AssertionFailedException |
             MissingConstructorArgumentsException |
+            LazyAssertionException |
             TypeError $exception
         ) {
             $this->logger->info("Donation Update non-serialisable payload was: $body");
@@ -144,9 +146,12 @@ class Update extends Action
                     $this->entityManager->rollback();
 
                     return $this->validationError(
-                        $response,
-                        "Donation ID {$donationUUID} could not be set to status {$donationData->status}",
-                        'Status update is only supported for cancellation'
+                        response: $response,
+                        logMessage: "Donation ID {$donationUUID} could not be set to status {$donationData->status}",
+                        publicMessage: 'Status update is only supported for cancellation',
+                        // Some occasional but normal scenarios can see browsers try to re-push Pending
+                        // donations after collection. This need not be a warning log.
+                        reduceSeverity: $donationData->status === DonationStatus::Pending->value,
                     );
                 }
 

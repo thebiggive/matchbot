@@ -20,7 +20,7 @@ trait ErrorTrait
             // want to log this as a warning.
             $logger->info('Unauthorised – following bot-like patterns');
         } else {
-            $logger->warning('Unauthorised');
+            $logger->notice('Unauthorised');
         }
 
         throw new HttpUnauthorizedException($request, 'Unauthorised');

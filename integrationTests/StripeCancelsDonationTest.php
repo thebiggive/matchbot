@@ -3,6 +3,7 @@
 namespace MatchBot\IntegrationTests;
 
 use GuzzleHttp\Psr7\ServerRequest;
+use MatchBot\Application\Settings;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Tests\Application\Actions\Hooks\StripeTest;
 
@@ -35,11 +36,7 @@ class StripeCancelsDonationTest extends IntegrationTest
     {
         $paymentIntentId = $transactionId;
 
-        /**
-         * @psalm-suppress MixedArrayAccess
-         * @var string $webhookSecret
-         */
-        $webhookSecret = $this->getContainer()->get('settings')['stripe']['accountWebhookSecret'];
+        $webhookSecret = $this->getContainer()->get(Settings::class)->stripe['accountWebhookSecret'];
 
         $requestBody = json_encode(
             [

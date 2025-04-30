@@ -9,13 +9,23 @@ use MatchBot\Application\Environment;
 use MatchBot\Application\Messenger\FundTotalUpdated;
 use Psr\Log\LogLevel;
 
+/**
+ * @psalm-type fundArray array{
+ *      currencyCode: string,
+ *      id: string,
+ *      name: string,
+ *      type: string,
+ *      amountForCampaign: string|null|numeric,
+ *      isShared: boolean,
+ *  }
+ */
 class Fund extends Common
 {
     use HashTrait;
 
     /**
      * @param string $fundId    Salesforce ID for Champion Funding or Pledge
-     * @return array Single Fund, as associative array
+     * @return fundArray Single Fund, as associative array
      * @throws NotFoundException if Fund with given ID not found
      */
     public function getById(string $fundId, bool $withCache): array
@@ -27,12 +37,14 @@ class Fund extends Common
             throw new NotFoundException('Fund not found');
         }
 
-        return json_decode((string) $response->getBody(), true);
+        /** @var fundArray $fund */
+        $fund = json_decode((string)$response->getBody(), true);
+        return $fund;
     }
 
     /**
      * @param string $campaignId
-     * @return array Array of Funds, each as associative array
+     * @return array<fundArray> funds
      * @throws NotFoundException if Campaign with given ID not found
      */
     public function getForCampaign(string $campaignId): array
@@ -45,7 +57,10 @@ class Fund extends Common
             throw new NotFoundException('Campaign not found');
         }
 
-        return json_decode((string) $response->getBody(), true);
+        /** @var array<fundArray> $funds */
+        $funds = json_decode((string)$response->getBody(), true);
+
+        return $funds;
     }
 
     public function pushAmountAvailable(FundTotalUpdated $fundMessage): void

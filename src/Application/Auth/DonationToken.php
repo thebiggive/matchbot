@@ -53,11 +53,9 @@ class DonationToken
             $decodedJwtBody = JWT::decode($jws, $key);
         } catch (\Exception $exception) {
             $type = get_class($exception);
-            // This is only a warning for now. We've seen likely crawlers + bots send invalid
-            // requests. In the event that we find they are sending partial JWTs (rather than
-            // none) and so getting here we might consider further reducing this log to `info()`
-            // level so we can spot more serious issues.
-            $logger->warning("JWT error: decoding for donation ID $donationId: $type - {$exception->getMessage()}");
+            // This is only a notice. We've seen likely crawlers + bots send invalid requests that
+            // get decode exceptions. Likely real donors also occasionally get here with expired tokens.
+            $logger->notice("JWT error: decoding for donation ID $donationId: $type - {$exception->getMessage()}");
 
             return false;
         }
@@ -68,7 +66,10 @@ class DonationToken
             return false;
         }
 
-        if ($donationId !== $decodedJwtBody->sub->donationId) {
+        /** @var object{donationId: string} $sub */
+        $sub = $decodedJwtBody->sub;
+
+        if ($donationId !== $sub->donationId) {
             // We've seen this rarely from things like sharing thank you URLs across browsers / devices.
             // We want stats of this on dashboards to monitor frequency, but not error alarms.
             $logger->warning("JWT error: Not authorised for donation ID $donationId");

@@ -46,7 +46,7 @@ class DonationUpserted implements MessageGroupAwareInterface
     public static function fromDonationEnveloped(Donation $donation): Envelope
     {
         // 3s delay for successful donations to reduce risk of Donation\Update trying to reverse status change.
-        $stamps = $donation->getDonationStatus()->isSuccessful() ?  [new DelayStamp(3_000)] : [];
+        $stamps = $donation->getDonationStatus()->isSuccessful() ? [new DelayStamp(3_000)] : [];
 
         return new Envelope(
             DonationUpserted::fromDonation($donation),

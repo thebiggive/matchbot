@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Assert\Assertion;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityRepository;
 
@@ -52,7 +53,10 @@ class CampaignFundingRepository extends EntityRepository
         $query->setParameter('fund', $fund->getId());
         $query->execute();
 
-        return $query->getOneOrNullResult();
+        /** @var ?CampaignFunding $result */
+        $result = $query->getOneOrNullResult();
+
+        return $result;
     }
 
     public function getFundingForCampaign(Campaign $campaign, Fund $fund): ?CampaignFunding
@@ -66,6 +70,9 @@ class CampaignFundingRepository extends EntityRepository
         $query->setParameter('fund', $fund->getId());
         $query->execute();
 
-        return $query->getOneOrNullResult();
+        /** @var ?CampaignFunding $result */
+        $result = $query->getOneOrNullResult();
+
+        return $result;
     }
 }

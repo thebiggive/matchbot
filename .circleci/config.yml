@@ -24,8 +24,12 @@ jobs:
           MYSQL_SCHEMA: matchbot
           MYSQL_USER: root
           MYSQL_PASSWORD: tbgCircle123
-
+          SLACK_API_TOKEN: xoxb-slackApiTokenPlaceholder
+          MESSENGER_TRANSPORT_DSN: in-memory://
+          LOW_PRIORITY_MESSENGER_TRANSPORT_DSN: in-memory://
+          STRIPE_SECRET_KEY: stripe_secret_not_set
           REDIS_HOST: 127.0.0.1
+          AWS_REGION: eu-west-1
       - image: cimg/mysql:8.0
         auth:
           username: $DOCKER_HUB_USERNAME
@@ -66,6 +70,8 @@ jobs:
       # Deliberately doesn't use `doctrine:validate` because it clears caches (which CI doesn't need)
       # including the local test DB (which CI doesn't have).
       - run: vendor/bin/doctrine orm:validate-schema --verbose
+
+      - run: ./matchbot matchbot:write-schema-files --check
 
       - run: composer run integration-test
 
@@ -137,6 +143,23 @@ workflows:
   build:
     jobs:
       - test:
+          filters:
+            branches:
+              # These are the only long-lived branches, have their own workflow.
+              ignore: [ 'main', 'develop', 'trunk']
+          context:
+            - docker-hub-creds
+      - mutation_coverage:
+          context:
+            - docker-hub-creds
+          requires:
+            - test
+  build-and-notify:
+    jobs:
+      - test:
+          filters:
+            branches:
+              only: [ 'main', 'develop', 'trunk']
           context:
             - docker-hub-creds
             - jira

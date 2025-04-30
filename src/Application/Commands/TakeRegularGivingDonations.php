@@ -129,7 +129,16 @@ class TakeRegularGivingDonations extends LockingCommand
     {
         $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, self::MAXBATCHSIZE);
 
-        $io->block(count($mandates) . " mandates may have donations to create at this time");
+        $mandateUUIDs = array_map(
+            fn(array $mandate_charity) => $mandate_charity[0]->getUuid()->toString(),
+            $mandates
+        );
+
+        $io->block(sprintf(
+            "%s mandates may have donations to create at this time: %s",
+            count($mandates),
+            implode(', ', $mandateUUIDs)
+        ));
 
         foreach ($mandates as [$mandate]) {
             try {
@@ -137,8 +146,6 @@ class TakeRegularGivingDonations extends LockingCommand
                 if ($donation) {
                     $this->reportableEventHappened = true;
                     $io->writeln("created donation {$donation}");
-                } else {
-                    $io->writeln("no donation created for {$mandate} at this time");
                 }
             } catch (AssertionFailedException | WrongCampaignType $e) {
                 $io->error($e->getMessage());
@@ -158,7 +165,7 @@ class TakeRegularGivingDonations extends LockingCommand
             $this->reportableEventHappened = true;
             try {
                 $this->donationService->createPaymentIntent($donation);
-                $io->writeln("setting payment intent on donation #{$donation->getId()}");
+                $io->writeln("setting payment intent on donation {$donation->getUuid()}");
             } catch (RegularGivingDonationToOldToCollect $e) {
                 $this->logger->error($e->getMessage());
                 $io->error($e->getMessage());
@@ -180,14 +187,16 @@ class TakeRegularGivingDonations extends LockingCommand
             \assert($preAuthDate instanceof \DateTimeImmutable);
             $io->writeln("processing donation #{$donation->getId()}");
             $io->writeln(
-                "Donation #{$donation->getId()} is pre-authorized to pay on" .
-                " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>}
+                "Donation {$donation->getUuid()} is pre-authorized to pay on" .
+                " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>
                 "
             );
-            $oldStatus = $donation->getDonationStatus();
             try {
                 try {
                     $this->donationService->confirmPreAuthorized($donation);
+                    $io->writeln(
+                        "Donation {$donation->getUuid()} is expected to become Collected when Stripe calls back"
+                    );
                 } catch (MandateNotActive $exception) {
                     $io->info($exception->getMessage());
                     continue;
@@ -202,11 +211,6 @@ class TakeRegularGivingDonations extends LockingCommand
                 $io->error('Exception, skipping donation: ' . $exception->getMessage());
                 continue;
             }
-            // status change not expected here - status will be changed by stripe callback to tell us its paid.
-            $io->writeln(
-                "Donation {$donation->getUuid()} went from " .
-                "<options=bold>{$oldStatus->name}</> to <options=bold>{$donation->getDonationStatus()->name}</>"
-            );
         }
 
         $this->em->flush();
@@ -234,7 +238,6 @@ class TakeRegularGivingDonations extends LockingCommand
         }
 
         $chatMessage = new ChatMessage('Regular giving collection report');
-        $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
 
         $options = (new SlackOptions())
             ->block((new SlackHeaderBlock(sprintf(
@@ -242,16 +245,7 @@ class TakeRegularGivingDonations extends LockingCommand
                 $this->environment->name,
                 'Regular giving collection report',
             ))))
-            ->block((new SlackSectionBlock())->text(<<<EOF
-                Regular giving collection report
-                
-                {$now}
-                
-                Generated when at least one mandate has something to do.
-                
-                $outputText
-                EOF
-            ));
+            ->block((new SlackSectionBlock())->text($outputText));
         $chatMessage->options($options);
 
         $this->chatter->send($chatMessage);
