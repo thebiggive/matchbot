@@ -111,10 +111,13 @@
         }
     },
     "scripts": {
-        "doctrine:cache:clear": [
+        "doctrine:cache:clear:live": [
             "vendor/bin/doctrine orm:clear-cache:metadata",
             "vendor/bin/doctrine orm:clear-cache:query",
-            "vendor/bin/doctrine orm:clear-cache:result",
+            "vendor/bin/doctrine orm:clear-cache:result"
+        ],
+        "doctrine:cache:clear": [
+            "@doctrine:cache:clear:live",
 
             "@putenv MYSQL_SCHEMA=matchbot_test",
 
@@ -137,8 +140,9 @@
         ],
         "doctrine:ensure-prod": "doctrine orm:ensure-production-settings",
         "doctrine:generate-proxies": "doctrine orm:generate-proxies",
+        "doctrine:migrate:live": "vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration",
         "doctrine:migrate": [
-            "vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration",
+            "@doctrine:migrate:live",
             "@putenv MYSQL_SCHEMA=matchbot_test",
             "vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration"
         ],

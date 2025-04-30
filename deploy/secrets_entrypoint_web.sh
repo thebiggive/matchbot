@@ -19,8 +19,8 @@ composer doctrine:ensure-prod || exit 2
 # call Doctrine with `--allow-no-migration`, it *should* be safe and subsequent instances' attempts to
 # migrate will just be no-ops and leave the main process to start normally.
 echo "Running migrations before start if necessary..."
-composer doctrine:cache:clear
-composer doctrine:migrate
+composer doctrine:cache:clear:live
+composer doctrine:migrate:live
 composer doctrine:generate-proxies
 
 echo "Starting Apache..."
