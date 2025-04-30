@@ -110,15 +110,19 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
     public function testItCreatesUnMatchedRegularGivingMandate(): void
     {
-        // act
-        $response = $this->createRegularGivingMandate(false);
+        // run test 20 times to make sure it fails now or gets fixed.
+        $i = 0;
+        while ($i++ < 20) {
+            // act
+            $response = $this->createRegularGivingMandate(false);
 
-        // assert
-        $this->assertSame(201, $response->getStatusCode());
-        $mandateId = $this->assertMandateDetailsInDB();
+            // assert
+            $this->assertSame(201, $response->getStatusCode());
+            $mandateId = $this->assertMandateDetailsInDB();
 
-        $this->assertDonationDetailsInDB($mandateId);
-        $this->assertFundingWithdrawlCount($mandateId, expectedCount: 0);
+            $this->assertDonationDetailsInDB($mandateId); // no they're not.
+            $this->assertFundingWithdrawlCount($mandateId, expectedCount: 0);
+        }
     }
 
 
