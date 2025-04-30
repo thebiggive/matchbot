@@ -109,6 +109,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     }
 
     /**
+     * Run test many times to make sure it passes every time.
      * @return array<array<never>>
      */
     public function emptyArrays(): array
@@ -140,7 +141,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         return $this->getApp()->handle(
             new ServerRequest(
                 'POST',
-                TestData\Identity::getTestPersonMandateEndpoint(),
+                TestData\Identity::TEST_PERSON_MANDATE_ENDPOINT,
                 headers: [
                     'X-Tbg-Auth' => TestData\Identity::getTestIdentityTokenComplete(),
                 ],
@@ -226,6 +227,11 @@ class CreateRegularGivingMandateTest extends IntegrationTest
             [$mandateId]
         )->fetchAllAssociative();
 
-        $this->assertCount($expectedCount, $fundingWithdrawls);
+        try {
+            $this->assertCount($expectedCount, $fundingWithdrawls);
+        } catch (\Exception $exception) {
+            echo $exception->getMessage(); // can't remember now why I wanted to catch this yesterday?
+            throw $exception;
+        }
     }
 }
