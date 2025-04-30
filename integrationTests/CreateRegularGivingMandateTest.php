@@ -108,12 +108,17 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $this->assertFundingWithdrawlCount($mandateId, expectedCount: 3);
     }
 
+    /**
+     * @return array<array<never>>
+     */
+    public function emptyArrays(): array
+    {
+        return [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]];
+    }
+
+    /** @dataProvider emptyArrays */
     public function testItCreatesUnMatchedRegularGivingMandate(): void
     {
-        // run test 20 times to make sure it fails now or gets fixed.
-        $i = 0;
-        while ($i++ < 20) {
-            // act
             $response = $this->createRegularGivingMandate(false);
 
             // assert
@@ -122,7 +127,6 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
             $this->assertDonationDetailsInDB($mandateId); // no they're not.
             $this->assertFundingWithdrawlCount($mandateId, expectedCount: 0);
-        }
     }
 
 
