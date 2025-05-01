@@ -108,19 +108,6 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $this->assertFundingWithdrawlCount($mandateId, expectedCount: 3);
     }
 
-    /**
-     * Run test many times to make sure it passes every time.
-     * @return array<array<never>>
-     */
-    public function emptyArrays(): array
-    {
-        return [
-            [],
-//            [],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],
-        ];
-    }
-
-    /** @dataProvider emptyArrays */
     public function testItCreatesUnMatchedRegularGivingMandate(): void
     {
             $response = $this->createRegularGivingMandate(false);
@@ -184,12 +171,10 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     public function assertLastMandateDetailsInDB(): int
     {
         $mandateDatabaseRows = $this->db()->executeQuery(
-            "SELECT * from RegularGivingMandate where donationAmount_amountInPence = ? ORDER BY createdAt desc LIMIT 1",
-            [$this->pencePerMonth]
+            "SELECT * from RegularGivingMandate ORDER BY createdAt desc LIMIT 1"
         )
             ->fetchAllAssociative();
         $this->assertNotEmpty($mandateDatabaseRows);
-        $this->assertCount(1, $mandateDatabaseRows);
         $this->assertSame($this->pencePerMonth, $mandateDatabaseRows[0]['donationAmount_amountInPence']);
         $this->assertSame(1, $mandateDatabaseRows[0]['tbgComms']);
         $this->assertSame(1, $mandateDatabaseRows[0]['charityComms']);
