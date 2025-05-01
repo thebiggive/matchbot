@@ -231,11 +231,6 @@ class CreateRegularGivingMandateTest extends IntegrationTest
             [$mandateId]
         )->fetchAllAssociative();
 
-        try {
-            $this->assertCount($expectedCount, $fundingWithdrawls);
-        } catch (\Exception $exception) {
-//            echo $exception->getMessage(); // can't remember now why I wanted to catch this yesterday?
-            throw $exception;
-        }
+        $this->assertCount($expectedCount, $fundingWithdrawls);
     }
 }
