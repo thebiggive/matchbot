@@ -253,7 +253,7 @@
             "APP_ENV=test doctrine orm:clear-cache:result",
             "APP_ENV=test doctrine-migrations migrate --no-interaction --allow-no-migration",
             "APP_ENV=test doctrine orm:generate-proxies",
-            "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random  --log-junit reports/integration-test.xml"
+            "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random --log-junit reports/integration-test.xml"
         ],
         "mutation-test": [
             "Composer\\Config::disableProcessTimeout",

@@ -102,7 +102,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
         // assert
         $this->assertSame(201, $response->getStatusCode());
-        $mandateId = $this->assertMandateDetailsInDB();
+        $mandateId = $this->assertLastMandateDetailsInDB();
 
         $this->assertDonationDetailsInDB($mandateId);
         $this->assertFundingWithdrawlCount($mandateId, expectedCount: 3);
@@ -110,15 +110,14 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
     public function testItCreatesUnMatchedRegularGivingMandate(): void
     {
-        // act
-        $response = $this->createRegularGivingMandate(false);
+            $response = $this->createRegularGivingMandate(false);
 
-        // assert
-        $this->assertSame(201, $response->getStatusCode());
-        $mandateId = $this->assertMandateDetailsInDB();
+            // assert
+            $this->assertSame(201, $response->getStatusCode());
+            $mandateId = $this->assertLastMandateDetailsInDB();
 
-        $this->assertDonationDetailsInDB($mandateId);
-        $this->assertFundingWithdrawlCount($mandateId, expectedCount: 0);
+            $this->assertDonationDetailsInDB($mandateId); // no they're not.
+            $this->assertFundingWithdrawlCount($mandateId, expectedCount: 0);
     }
 
 
@@ -132,7 +131,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         return $this->getApp()->handle(
             new ServerRequest(
                 'POST',
-                TestData\Identity::getTestPersonMandateEndpoint(),
+                TestData\Identity::TEST_PERSON_MANDATE_ENDPOINT,
                 headers: [
                     'X-Tbg-Auth' => TestData\Identity::getTestIdentityTokenComplete(),
                 ],
@@ -169,11 +168,10 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         }
     }
 
-    public function assertMandateDetailsInDB(): int
+    public function assertLastMandateDetailsInDB(): int
     {
         $mandateDatabaseRows = $this->db()->executeQuery(
-            "SELECT * from RegularGivingMandate where donationAmount_amountInPence = ?",
-            [$this->pencePerMonth]
+            "SELECT * from RegularGivingMandate ORDER BY id desc LIMIT 1"
         )
             ->fetchAllAssociative();
         $this->assertNotEmpty($mandateDatabaseRows);

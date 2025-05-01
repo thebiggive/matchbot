@@ -28,6 +28,7 @@ use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
+use MatchBot\Tests\TestData\Identity;
 use Override;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -167,7 +168,7 @@ class CreateTest extends TestCase
 
         $data = '{"not-good-json';
 
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $request = $this->createRequest('POST', Identity::TEST_PERSON_NEW_DONATION_ENDPOINT, $data);
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
@@ -189,7 +190,7 @@ class CreateTest extends TestCase
         $app = $this->getAppInstance();
 
         $data = $this->encode($donation);
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $request = $this->createRequest('POST', Identity::TEST_PERSON_NEW_DONATION_ENDPOINT, $data);
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
@@ -236,7 +237,7 @@ class CreateTest extends TestCase
         $this->diContainer()->set(Stripe::class, $this->stripeProphecy->reveal());
 
         $data = $this->encode($donation);
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $request = $this->createRequest('POST', Identity::TEST_PERSON_NEW_DONATION_ENDPOINT, $data);
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
@@ -265,7 +266,7 @@ class CreateTest extends TestCase
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
 
         $data = $this->encode($donation);
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $request = $this->createRequest('POST', Identity::TEST_PERSON_NEW_DONATION_ENDPOINT, $data);
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
@@ -304,7 +305,7 @@ class CreateTest extends TestCase
         $data = $this->encode($donation);
         $request = $this->createRequest(
             'POST',
-            TestData\Identity::getTestPersonNewDonationEndpoint(),
+            Identity::TEST_PERSON_NEW_DONATION_ENDPOINT,
             $data,
             ['HTTP_ACCEPT' => 'application/json'], // Un-set forwarded IP header.
         );
@@ -397,7 +398,7 @@ class CreateTest extends TestCase
         $this->diContainer()->set(Stripe::class, $this->stripeProphecy->reveal());
 
         $data = $this->encode($donation);
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $request = $this->createRequest('POST', Identity::TEST_PERSON_NEW_DONATION_ENDPOINT, $data);
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
@@ -493,7 +494,7 @@ class CreateTest extends TestCase
         $this->diContainer()->set(Stripe::class, $this->stripeProphecy->reveal());
 
         $data = $this->encode($donation);
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $request = $this->createRequest('POST', Identity::TEST_PERSON_NEW_DONATION_ENDPOINT, $data);
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
@@ -590,7 +591,7 @@ class CreateTest extends TestCase
 
         $request = $this->createRequest(
             'POST',
-            TestData\Identity::getTestPersonNewDonationEndpoint(),
+            Identity::TEST_PERSON_NEW_DONATION_ENDPOINT,
             $this->encode($donation),
         );
         $response = $app->handle($this->addDummyPersonAuth($request));
@@ -679,7 +680,7 @@ class CreateTest extends TestCase
         $this->diContainer()->set(Stripe::class, $this->stripeProphecy->reveal());
 
         $data = json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR);
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $request = $this->createRequest('POST', Identity::TEST_PERSON_NEW_DONATION_ENDPOINT, $data);
 
         $response = $app->handle($this->addDummyPersonAuth($request));
 
@@ -742,7 +743,7 @@ class CreateTest extends TestCase
         );
 
         $data = $this->encode($donation);
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $request = $this->createRequest('POST', Identity::TEST_PERSON_NEW_DONATION_ENDPOINT, $data);
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
@@ -798,7 +799,7 @@ class CreateTest extends TestCase
         $this->diContainer()->set(Stripe::class, $this->stripeProphecy->reveal());
 
         $data = $this->encode($donation);
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $request = $this->createRequest('POST', Identity::TEST_PERSON_NEW_DONATION_ENDPOINT, $data);
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
@@ -852,7 +853,7 @@ class CreateTest extends TestCase
         $this->diContainer()->set(Stripe::class, $this->stripeProphecy->reveal());
 
         $data = $this->encode($donation);
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $request = $this->createRequest('POST', Identity::TEST_PERSON_NEW_DONATION_ENDPOINT, $data);
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
@@ -904,7 +905,7 @@ class CreateTest extends TestCase
 
 
         $data = $this->encode($donation);
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $request = $this->createRequest('POST', Identity::TEST_PERSON_NEW_DONATION_ENDPOINT, $data);
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
