@@ -171,7 +171,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     public function assertLastMandateDetailsInDB(): int
     {
         $mandateDatabaseRows = $this->db()->executeQuery(
-            "SELECT * from RegularGivingMandate ORDER BY createdAt desc LIMIT 1"
+            "SELECT * from RegularGivingMandate ORDER BY id desc LIMIT 1"
         )
             ->fetchAllAssociative();
         $this->assertNotEmpty($mandateDatabaseRows);
