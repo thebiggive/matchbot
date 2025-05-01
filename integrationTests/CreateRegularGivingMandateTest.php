@@ -102,7 +102,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
         // assert
         $this->assertSame(201, $response->getStatusCode());
-        $mandateId = $this->assertMandateDetailsInDB();
+        $mandateId = $this->assertLastMandateDetailsInDB();
 
         $this->assertDonationDetailsInDB($mandateId);
         $this->assertFundingWithdrawlCount($mandateId, expectedCount: 3);
@@ -127,7 +127,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
             // assert
             $this->assertSame(201, $response->getStatusCode());
-            $mandateId = $this->assertMandateDetailsInDB();
+            $mandateId = $this->assertLastMandateDetailsInDB();
 
             $this->assertDonationDetailsInDB($mandateId); // no they're not.
             $this->assertFundingWithdrawlCount($mandateId, expectedCount: 0);
@@ -181,10 +181,10 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         }
     }
 
-    public function assertMandateDetailsInDB(): int
+    public function assertLastMandateDetailsInDB(): int
     {
         $mandateDatabaseRows = $this->db()->executeQuery(
-            "SELECT * from RegularGivingMandate where donationAmount_amountInPence = ?",
+            "SELECT * from RegularGivingMandate where donationAmount_amountInPence = ? ORDER BY createdAt desc LIMIT 1",
             [$this->pencePerMonth]
         )
             ->fetchAllAssociative();
