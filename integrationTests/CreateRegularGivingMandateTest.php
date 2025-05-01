@@ -189,6 +189,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         )
             ->fetchAllAssociative();
         $this->assertNotEmpty($mandateDatabaseRows);
+        $this->assertCount(1, $mandateDatabaseRows);
         $this->assertSame($this->pencePerMonth, $mandateDatabaseRows[0]['donationAmount_amountInPence']);
         $this->assertSame(1, $mandateDatabaseRows[0]['tbgComms']);
         $this->assertSame(1, $mandateDatabaseRows[0]['charityComms']);
