@@ -74,6 +74,46 @@ jobs:
       - run: ./matchbot matchbot:write-schema-files --check
 
       - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
+      - run: composer run integration-test
 
       - store_test_results:
           path: reports
