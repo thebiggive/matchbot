@@ -37,8 +37,8 @@ class FundingWithdrawal extends Model
 
     public function __construct(CampaignFunding $campaignFunding)
     {
-        echo "\nfunding withdrawl constructor\n";
-        debug_print_backtrace();
+//        echo "\nfunding withdrawl constructor\n";
+//        debug_print_backtrace();
 
         $this->campaignFunding = $campaignFunding;
     }

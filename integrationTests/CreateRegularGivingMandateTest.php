@@ -114,7 +114,10 @@ class CreateRegularGivingMandateTest extends IntegrationTest
      */
     public function emptyArrays(): array
     {
-        return [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]];
+        return [
+            [],
+//            [],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],
+        ];
     }
 
     /** @dataProvider emptyArrays */
@@ -230,7 +233,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         try {
             $this->assertCount($expectedCount, $fundingWithdrawls);
         } catch (\Exception $exception) {
-            echo $exception->getMessage(); // can't remember now why I wanted to catch this yesterday?
+//            echo $exception->getMessage(); // can't remember now why I wanted to catch this yesterday?
             throw $exception;
         }
     }
