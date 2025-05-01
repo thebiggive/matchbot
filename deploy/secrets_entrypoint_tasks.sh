@@ -15,8 +15,8 @@ export $(aws s3 cp s3://${SECRETS_BUCKET_NAME}/secrets - | grep -v '^#' | xargs)
 composer doctrine:ensure-prod || exit 2
 
 echo "Running migrations before start if necessary..."
-composer doctrine:cache:clear
-composer doctrine:migrate
+composer doctrine:cache:clear:live
+composer doctrine:migrate:live
 composer doctrine:generate-proxies
 
 echo "Starting task..."
