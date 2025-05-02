@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Psr\Log\LoggerInterface;
+use Stripe\Customer;
+use Stripe\PaymentMethod;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -34,11 +37,14 @@ class DeleteStalePaymentDetails extends LockingCommand
     protected function configure(): void
     {
         $this->setDescription('Deletes unused and likely-non-customer-deletable payment methods from Stripe');
+        $this->addOption(name: 'dry-run', mode: InputOption::VALUE_NONE);
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $startTime = microtime(true);
+        $isDryRun = (bool) $input->getOption('dry-run');
+
         $customerCount = 0;
         $methodsDeleted = 0;
         $oneDayAgo = $this->initDate
@@ -70,12 +76,7 @@ class DeleteStalePaymentDetails extends LockingCommand
 
             foreach ($paymentMethods->autoPagingIterator() as $paymentMethod) {
                 // Soft-delete / prevent reuse of the payment method.
-                $this->logger->info(sprintf(
-                    'Detaching payment method %s, previously of customer %s',
-                    $paymentMethod->id,
-                    $customer->id,
-                ));
-                $this->stripeClient->paymentMethods->detach($paymentMethod->id);
+                $this->detachPaymentMethod($isDryRun, $paymentMethod, $customer);
                 $methodsDeleted++;
             }
 
@@ -89,10 +90,43 @@ class DeleteStalePaymentDetails extends LockingCommand
         $timeTaken = round($timeTaken, 2);
 
         $output->writeln(
+            $isDryRun ?
+                "DRY RUN: Would have deleted $methodsDeleted payment methods from Stripe, having checked " .
+                "$customerCount customers. Time Taken: {$timeTaken}s" :
             "Deleted $methodsDeleted payment methods from Stripe, having checked " .
                 "$customerCount customers. Time Taken: {$timeTaken}s"
         );
 
         return 0;
+    }
+
+    /**
+     * PHP types are wider than docblock types as we have some tests that pass stdClasses that are awkward to change
+     * now. Actual stripe library returns PaymentMethod and Customer instances.
+     *
+     * @param PaymentMethod $paymentMethod
+     * @param Customer $customer
+     */
+    public function detachPaymentMethod(
+        bool $isDryRun,
+        PaymentMethod|\stdClass $paymentMethod,
+        Customer|\stdClass $customer): void
+    {
+        if ($isDryRun) {
+            $this->logger->info(sprintf(
+                'DRY RUN: full run would detach payment method %s, from customer %s',
+                $paymentMethod->id,
+                $customer->id,
+            ));
+
+            return;
+        }
+
+        $this->logger->info(sprintf(
+            'Detaching payment method %s, previously of customer %s',
+            $paymentMethod->id,
+            $customer->id,
+        ));
+        $this->stripeClient->paymentMethods->detach($paymentMethod->id);
     }
 }
