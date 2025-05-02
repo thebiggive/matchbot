@@ -6,13 +6,19 @@ namespace MatchBot\Tests\Application\Commands;
 
 use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Client\Stripe;
+use MatchBot\Domain\DonorAccount;
+use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\Application\StripeFormattingTrait;
 use MatchBot\Tests\TestCase;
+use MatchBot\Tests\TestData\Identity;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
 use Stripe\Customer;
 use Stripe\PaymentMethod;
 use Stripe\Service\ChargeService;
@@ -28,6 +34,15 @@ class DeleteStalePaymentDetailsTest extends TestCase
     use DonationTestDataTrait;
     use StripeFormattingTrait;
 
+    /** @var ObjectProphecy<DonorAccountRepository>  */
+    private ObjectProphecy $donorAccountRepositoryProphecy;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->donorAccountRepositoryProphecy = $this->prophesize(DonorAccountRepository::class);
+    }
+
     public function testDeletingOneStaleCard(): void
     {
         // arrange
@@ -39,11 +54,13 @@ class DeleteStalePaymentDetailsTest extends TestCase
 
         $stripeClientProphecy = $this->prophesize(Stripe::class);
 
-        $stripeClientProphecy->listAllPaymentMethodsForTreasury([
-            'customer' => $testCustomerId,
+        $stripeClientProphecy->listAllPaymentMethodsForCustomer(
+            StripeCustomerId::of($testCustomerId),
+            [
             'type' => 'card',
             'limit' => 100,
-        ])
+            ]
+        )
             ->willReturn($this->buildCollectionFromSingleObjectFixture(
                 $this->getStripeHookMock('ApiResponse/pm'),
             ));
@@ -94,7 +111,7 @@ class DeleteStalePaymentDetailsTest extends TestCase
         $paymentMethod1->allow_redisplay = 'always';
 
         $paymentMethod2 = new PaymentMethod('pm_2');
-        $paymentMethod2->allow_redisplay = 'never';
+        $paymentMethod2->allow_redisplay = 'limited';
 
         $stripeClientProphecy->detatchPaymentMethod(StripePaymentMethodId::of('pm_1'))->shouldBeCalled();
         $stripeClientProphecy->detatchPaymentMethod(StripePaymentMethodId::of('pm_2'))->shouldBeCalled();
@@ -104,11 +121,18 @@ class DeleteStalePaymentDetailsTest extends TestCase
             ["metadata" => ["paymentMethodsCleared" => "2025-01-01 00:00:00"]]
         )->shouldBeCalled();
 
-        $sut = new DeleteStalePaymentDetails(new \DateTimeImmutable('2025-01-01 00:00:00'), new NullLogger(), $stripeClientProphecy->reveal());
+        $sut = new DeleteStalePaymentDetails(
+            new \DateTimeImmutable('2025-01-01 00:00:00'),
+            new NullLogger(),
+            $stripeClientProphecy->reveal(),
+            $this->donorAccountRepositoryProphecy->reveal(),
+        );
+
         $detatchedCount = $sut->detachStaleMethods(
             paymentMethods: [$paymentMethod1, $paymentMethod2],
             isDryRun: false,
-            customer: $customer
+            customer: $customer,
+            donorAccount: null,
         );
 
         $this->assertSame(2, $detatchedCount);
@@ -121,11 +145,18 @@ class DeleteStalePaymentDetailsTest extends TestCase
         $customer->metadata = new StripeObject();
         $customer->metadata['hasPasswordSince'] = 'any non null value';
 
+        $donorAccount = Identity::donorAccount();
+        $donorAccount->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_3'));
+
         $paymentMethod1 = new PaymentMethod('pm_1');
         $paymentMethod1->allow_redisplay = 'always';
 
         $paymentMethod2 = new PaymentMethod('pm_2');
-        $paymentMethod2->allow_redisplay = 'never';
+        $paymentMethod2->allow_redisplay = 'limited';
+
+        // this one is the customer's regular giving PM so should not be detatched.
+        $paymentMethod3 = new PaymentMethod('pm_3');
+        $paymentMethod3->allow_redisplay = 'limited';
 
         $stripeClientProphecy->detatchPaymentMethod(StripePaymentMethodId::of('pm_2'))->shouldBeCalled();
 
@@ -134,11 +165,18 @@ class DeleteStalePaymentDetailsTest extends TestCase
             ["metadata" => ["paymentMethodsCleared" => "2025-01-01 00:00:00"]]
         )->shouldBeCalled();
 
-        $sut = new DeleteStalePaymentDetails(new \DateTimeImmutable('2025-01-01 00:00:00'), new NullLogger(), $stripeClientProphecy->reveal());
+        $sut = new DeleteStalePaymentDetails(
+            new \DateTimeImmutable('2025-01-01 00:00:00'),
+            new NullLogger(),
+            $stripeClientProphecy->reveal(),
+            $this->donorAccountRepositoryProphecy->reveal(),
+        );
+
         $detatchedCount = $sut->detachStaleMethods(
-            paymentMethods: [$paymentMethod1, $paymentMethod2],
+            paymentMethods: [$paymentMethod1, $paymentMethod2, $paymentMethod3],
             isDryRun: false,
-            customer: $customer
+            customer: $customer,
+            donorAccount: $donorAccount,
         );
 
         $this->assertSame(1, $detatchedCount);
@@ -152,7 +190,7 @@ class DeleteStalePaymentDetailsTest extends TestCase
         \DateTimeImmutable $initDate,
     ): DeleteStalePaymentDetails {
         $stripeClient = $stripeClientProphecy->reveal();
-        $command = new DeleteStalePaymentDetails($initDate, new NullLogger(), $stripeClient);
+        $command = new DeleteStalePaymentDetails($initDate, new NullLogger(), $stripeClient, $this->donorAccountRepositoryProphecy->reveal());
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
 

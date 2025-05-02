@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use MatchBot\Client\Stripe;
+use MatchBot\Domain\DonorAccount;
+use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use Psr\Log\LoggerInterface;
 use Stripe\Customer;
@@ -13,10 +17,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Deletes payment methods from Stripe if:
- *   1. they (or more specifically, their Customer) are 24h+ old; and
- *   2. they do not belong to a Person with a password set
- *   3. they are a credit/debit card based method; and
+ * Deletes payment methods from Stripe which are not useful to keep.
  */
 class DeleteStalePaymentDetails extends LockingCommand
 {
@@ -29,17 +30,34 @@ class DeleteStalePaymentDetails extends LockingCommand
     public function __construct(
         private readonly \DateTimeImmutable $initDate,
         private LoggerInterface $logger,
-        private readonly \MatchBot\Client\Stripe $stripe,
+        private readonly Stripe $stripe,
+        private DonorAccountRepository $donorAccountRepository,
     ) {
         parent::__construct();
+    }
+
+    /**
+     * @param PaymentMethod $paymentMethod
+     */
+    private function paymentMethodMayBeUsedInFuture(?DonorAccount $donorAccount, mixed $paymentMethod, bool $customerHasPasswordSet): bool
+    {
+        $thisIsCustomersRGMethod =  StripePaymentMethodId::of($paymentMethod->id)->equals(
+            $donorAccount?->getRegularGivingPaymentMethod()
+        );
+
+        return $customerHasPasswordSet && ($paymentMethod->allow_redisplay !== 'limited' || $thisIsCustomersRGMethod);
     }
 
     /**
      * @param iterable<array-key, PaymentMethod> $paymentMethods
      * @param Customer $customer
      */
-    public function detachStaleMethods(iterable $paymentMethods, bool $isDryRun, Customer|\stdClass $customer): int
-    {
+    public function detachStaleMethods(
+        iterable $paymentMethods,
+        bool $isDryRun,
+        Customer|\stdClass $customer,
+        ?DonorAccount $donorAccount
+    ): int {
         $metadata = $customer->metadata;
 
         /** @psalm-suppress DocblockTypeContradiction */
@@ -54,20 +72,10 @@ class DeleteStalePaymentDetails extends LockingCommand
         $methodsDeleted = 0;
 
         foreach ($paymentMethods as $paymentMethod) {
-            if ($customerHasPasswordSet && $paymentMethod->allow_redisplay === 'always') {
-                // the customer may wish to use this method in future so do not detach it it.
+            if ($this->paymentMethodMayBeUsedInFuture($donorAccount, $paymentMethod, $customerHasPasswordSet)) {
+                // the customer may wish to use this method in future so do not detach it.
                 continue;
             }
-
-            // we now know that the method is not useful - either the customer has no password
-            // so they can not log in to use it, or they did not choose to have it redisplayed
-            // so they don't want to use it.
-
-            // In theory it could also be their selected regular giving method which we should
-            // not delete so delete this code before closing ticket MAT-390 and definitely before
-            // releasing the regular giving product - change back to only detach methods
-            // for password-less customers once we have detached all the ones we don't need and
-            // stopped adding any more.
 
             $this->detachPaymentMethod($isDryRun, $paymentMethod, $customer);
             $methodsDeleted++;
@@ -98,14 +106,8 @@ class DeleteStalePaymentDetails extends LockingCommand
             ->sub(new \DateInterval('P1D'))
             ->getTimestamp();
 
-        // Get all Stripe customers without the password set metadata field, who are over 24h old.
-        // The metadata restriction lets us better leave people with passwords since April 2023,
-        // so this `query` covers conditions (1) and (2) from the class doc block.
-
-        // temporarily including customers *with* passwords so we can iterate through them all once and
-        // clear any payment methods that don't have allow_redisplay = 'always'. When ticket MAT-390 is
-        // change below back to include
-        //  'query' => "created<$oneDayAgo and metadata['hasPasswordSince']:null " .
+        // Get all Stripe customers who are over 24h old. This means that if they don't have a password now they never
+        // will have, so we can treat their password or not status as final.
         $customers = $this->stripe->searchCustomers([
             'query' => "created<$oneDayAgo " .
                 "and metadata['paymentMethodsCleared']:null",
@@ -120,21 +122,22 @@ class DeleteStalePaymentDetails extends LockingCommand
 
             $customerCount++;
 
-            $paymentMethods = $this->stripe->listAllPaymentMethodsForTreasury([
-                'customer' => $customer->id,
+            $stripeAccountId = StripeCustomerId::of($customer->id);
+
+            $paymentMethods = $this->stripe->listAllPaymentMethodsForCustomer($stripeAccountId, [
                 'type' => 'card',
                 'limit' => static::STRIPE_PAGE_SIZE,
             ]);
 
+            /** @var \Generator<array-key, PaymentMethod>|array<PaymentMethod> $paymentMethodsIterator */
             $paymentMethodsIterator = $paymentMethods->autoPagingIterator();
 
-            /**
-             * @psalm-suppress MixedArgumentTypeCoercion - I don't understand this error, why is the type on the left not the parent?
-             *   Argument 1 of MatchBot\Application\Commands\DeleteStalePaymentDetails::detachStaleMethods expects
-             *       iterable<array-key, Stripe\PaymentMethod>, but parent type Generator|array<array-key, Stripe\PaymentMethod>
-             *      provided (see https://psalm.dev/194)
-             */
-            $methodsDeleted += $this->detachStaleMethods($paymentMethodsIterator, $isDryRun, $customer);
+            $methodsDeleted += $this->detachStaleMethods(
+                $paymentMethodsIterator,
+                $isDryRun,
+                $customer,
+                $this->donorAccountRepository->findByStripeIdOrNull($stripeAccountId)
+            );
         }
 
         $timeTaken = microtime(true) - $startTime;

@@ -83,9 +83,5 @@ interface Stripe
 
     public function searchCustomers(array $searchParams): SearchResult|Collection;
 
-    /**
-     * Returns a list of PaymentMethods for Treasury flows.
-     * @return \Stripe\Collection<\Stripe\PaymentMethod>
-     */
-    public function listAllPaymentMethodsForTreasury(array $array): Collection;
+    public function listAllPaymentMethodsForCustomer(StripeCustomerId $id, array $params): Collection;
 }

@@ -141,8 +141,8 @@ class LiveStripeClient implements Stripe
         return $this->stripeClient->customers->search($searchParams);
     }
 
-    #[\Override] public function listAllPaymentMethodsForTreasury(array $array): Collection
+    #[\Override] public function listAllPaymentMethodsForCustomer(StripeCustomerId $id, array $params): Collection
     {
-        return $this->stripeClient->paymentMethods->all(params: $array);
+        return $this->stripeClient->customers->allPaymentMethods($id->stripeCustomerId, params: $params);
     }
 }

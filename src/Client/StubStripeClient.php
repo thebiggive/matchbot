@@ -125,7 +125,7 @@ class StubStripeClient implements Stripe
         throw new \Exception("updateCustomer not implemented in stub- not currently used in load tests");
     }
 
-    #[\Override] public function listAllPaymentMethodsForTreasury(array $array): Collection
+    #[\Override] public function listAllPaymentMethodsForCustomer(StripeCustomerId $id, array $params): Collection
     {
         throw new \Exception("updateCustomer not implemented in stub- not currently used in load tests");
     }
