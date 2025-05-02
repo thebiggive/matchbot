@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use MatchBot\Domain\StripePaymentMethodId;
 use Psr\Log\LoggerInterface;
 use Stripe\Customer;
 use Stripe\PaymentMethod;
-use Stripe\StripeClient;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -29,7 +29,7 @@ class DeleteStalePaymentDetails extends LockingCommand
     public function __construct(
         private readonly \DateTimeImmutable $initDate,
         private LoggerInterface $logger,
-        private readonly StripeClient $stripeClient,
+        private readonly \MatchBot\Client\Stripe $stripe,
     ) {
         parent::__construct();
     }
@@ -40,18 +40,44 @@ class DeleteStalePaymentDetails extends LockingCommand
      */
     public function detachStaleMethods(iterable $paymentMethods, bool $isDryRun, Customer|\stdClass $customer): int
     {
+        $metadata = $customer->metadata;
+
+        /** @psalm-suppress DocblockTypeContradiction */
+        if ($metadata instanceof \stdClass) {
+            // accounting for an awkard to change test.
+            $metadataArray = (array) $metadata;
+        } else {
+            $metadataArray = $metadata?->toArray();
+        }
+        $customerHasPasswordSet = ($metadataArray['hasPasswordSince'] ?? null) !== null;
+
         $methodsDeleted = 0;
 
         foreach ($paymentMethods as $paymentMethod) {
-            // Soft-delete / prevent reuse of the payment method.
+            if ($customerHasPasswordSet && $paymentMethod->allow_redisplay === 'always') {
+                // the customer may wish to use this method in future so do not detach it it.
+                continue;
+            }
+
+            // we now know that the method is not useful - either the customer has no password
+            // so they can not log in to use it, or they did not choose to have it redisplayed
+            // so they don't want to use it.
+
+            // In theory it could also be their selected regular giving method which we should
+            // not delete so delete this code before closing ticket MAT-390 and definitely before
+            // releasing the regular giving product - change back to only detach methods
+            // for password-less customers once we have detached all the ones we don't need and
+            // stopped adding any more.
+
             $this->detachPaymentMethod($isDryRun, $paymentMethod, $customer);
             $methodsDeleted++;
         }
 
-        $this->stripeClient->customers->update(
+        $this->stripe->updateCustomer(
             $customer->id,
             ['metadata' => ['paymentMethodsCleared' => $this->initDate->format('Y-m-d H:i:s')]]
         );
+
         return $methodsDeleted;
     }
 
@@ -75,12 +101,18 @@ class DeleteStalePaymentDetails extends LockingCommand
         // Get all Stripe customers without the password set metadata field, who are over 24h old.
         // The metadata restriction lets us better leave people with passwords since April 2023,
         // so this `query` covers conditions (1) and (2) from the class doc block.
-        $customers = $this->stripeClient->customers->search([
-            'query' => "created<$oneDayAgo and metadata['hasPasswordSince']:null " .
+
+        // temporarily including customers *with* passwords so we can iterate through them all once and
+        // clear any payment methods that don't have allow_redisplay = 'always'. When ticket MAT-390 is
+        // change below back to include
+        //  'query' => "created<$oneDayAgo and metadata['hasPasswordSince']:null " .
+        $customers = $this->stripe->searchCustomers([
+            'query' => "created<$oneDayAgo " .
                 "and metadata['paymentMethodsCleared']:null",
             'limit' => static::STRIPE_PAGE_SIZE,
         ]);
 
+        /** @var Customer $customer */
         foreach ($customers->autoPagingIterator() as $customer) {
             if ($customerCount >= self::MAX_CUSTOMER_COUNT_TO_DETATCH_PER_RUN) {
                 break;
@@ -88,7 +120,7 @@ class DeleteStalePaymentDetails extends LockingCommand
 
             $customerCount++;
 
-            $paymentMethods = $this->stripeClient->paymentMethods->all([
+            $paymentMethods = $this->stripe->listAllPaymentMethodsForTreasury([
                 'customer' => $customer->id,
                 'type' => 'card',
                 'limit' => static::STRIPE_PAGE_SIZE,
@@ -129,12 +161,14 @@ class DeleteStalePaymentDetails extends LockingCommand
     public function detachPaymentMethod(
         bool $isDryRun,
         PaymentMethod|\stdClass $paymentMethod,
-        Customer|\stdClass $customer): void
-    {
+        Customer|\stdClass $customer
+    ): void {
+        $paymentMethodId = StripePaymentMethodId::of($paymentMethod->id);
+
         if ($isDryRun) {
             $this->logger->info(sprintf(
                 'DRY RUN: full run would detach payment method %s, from customer %s',
-                $paymentMethod->id,
+                $paymentMethodId->stripePaymentMethodId,
                 $customer->id,
             ));
 
@@ -143,9 +177,9 @@ class DeleteStalePaymentDetails extends LockingCommand
 
         $this->logger->info(sprintf(
             'Detaching payment method %s, previously of customer %s',
-            $paymentMethod->id,
+            $paymentMethodId->stripePaymentMethodId,
             $customer->id,
         ));
-        $this->stripeClient->paymentMethods->detach($paymentMethod->id);
+        $this->stripe->detatchPaymentMethod($paymentMethodId);
     }
 }

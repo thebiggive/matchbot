@@ -5,16 +5,21 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Commands;
 
 use MatchBot\Application\Commands\DeleteStalePaymentDetails;
+use MatchBot\Client\Stripe;
+use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\Application\StripeFormattingTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
+use Stripe\Customer;
+use Stripe\PaymentMethod;
 use Stripe\Service\ChargeService;
 use Stripe\Service\CustomerService;
 use Stripe\Service\PaymentMethodService;
 use Stripe\StripeClient;
+use Stripe\StripeObject;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
@@ -32,8 +37,9 @@ class DeleteStalePaymentDetailsTest extends TestCase
         $testCustomerId = 'cus_aaaaaaaaaaaa11';
         $testPaymentMethodId = 'pm_aaaaaaaaaaaa13';
 
-        $stripePaymentMethodsProphecy = $this->prophesize(PaymentMethodService::class);
-        $stripePaymentMethodsProphecy->all([
+        $stripeClientProphecy = $this->prophesize(Stripe::class);
+
+        $stripeClientProphecy->listAllPaymentMethodsForTreasury([
             'customer' => $testCustomerId,
             'type' => 'card',
             'limit' => 100,
@@ -42,9 +48,8 @@ class DeleteStalePaymentDetailsTest extends TestCase
                 $this->getStripeHookMock('ApiResponse/pm'),
             ));
 
-        $stripeCustomersProphecy = $this->prophesize(CustomerService::class);
-        $stripeCustomersProphecy->search([
-            'query' => "created<{$previousDay->getTimestamp()} and metadata['hasPasswordSince']:null " .
+        $stripeClientProphecy->searchCustomers([
+            'query' => "created<{$previousDay->getTimestamp()} " .
                 "and metadata['paymentMethodsCleared']:null",
             'limit' => 100,
         ])
@@ -52,23 +57,15 @@ class DeleteStalePaymentDetailsTest extends TestCase
                 $this->getStripeHookMock('ApiResponse/customer'),
             ));
 
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-
-        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
-        // code, and may get mutation tests working again.
-        @$stripeClientProphecy->customers = $stripeCustomersProphecy->reveal();
-        @$stripeClientProphecy->paymentMethods = $stripePaymentMethodsProphecy->reveal();
-
         $commandTester = new CommandTester($this->getCommand(
             $stripeClientProphecy,
             $initDate,
         ));
 
-        // assert
         // One PM should be detached i.e. soft deleted.
-        $stripePaymentMethodsProphecy->detach($testPaymentMethodId)->shouldBeCalledOnce();
+        $stripeClientProphecy->detatchPaymentMethod(StripePaymentMethodId::of($testPaymentMethodId))->shouldBeCalledOnce();
 
-        $stripeCustomersProphecy->update(
+        $stripeClientProphecy->updateCustomer(
             $testCustomerId,
             ['metadata' => ['paymentMethodsCleared' => '2023-04-10 00:00:00']]
         )->shouldBeCalledOnce();
@@ -87,8 +84,68 @@ class DeleteStalePaymentDetailsTest extends TestCase
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
+    public function testItDetatchesAllMethodsFromACustomerWithNoPassword(): void
+    {
+        $stripeClientProphecy = $this->prophesize(Stripe::class);
+        $customer = new Customer('cus_some_cust_id');
+        $customer->metadata = new StripeObject();
+
+        $paymentMethod1 = new PaymentMethod('pm_1');
+        $paymentMethod1->allow_redisplay = 'always';
+
+        $paymentMethod2 = new PaymentMethod('pm_2');
+        $paymentMethod2->allow_redisplay = 'never';
+
+        $stripeClientProphecy->detatchPaymentMethod(StripePaymentMethodId::of('pm_1'))->shouldBeCalled();
+        $stripeClientProphecy->detatchPaymentMethod(StripePaymentMethodId::of('pm_2'))->shouldBeCalled();
+
+        $stripeClientProphecy->updateCustomer(
+            "cus_some_cust_id",
+            ["metadata" => ["paymentMethodsCleared" => "2025-01-01 00:00:00"]]
+        )->shouldBeCalled();
+
+        $sut = new DeleteStalePaymentDetails(new \DateTimeImmutable('2025-01-01 00:00:00'), new NullLogger(), $stripeClientProphecy->reveal());
+        $detatchedCount = $sut->detachStaleMethods(
+            paymentMethods: [$paymentMethod1, $paymentMethod2],
+            isDryRun: false,
+            customer: $customer
+        );
+
+        $this->assertSame(2, $detatchedCount);
+    }
+
+    public function testItDetatchesOnlyNonUsableMethodsFromACustomerWithPasswordSet(): void
+    {
+        $stripeClientProphecy = $this->prophesize(Stripe::class);
+        $customer = new Customer('cus_some_cust_id');
+        $customer->metadata = new StripeObject();
+        $customer->metadata['hasPasswordSince'] = 'any non null value';
+
+        $paymentMethod1 = new PaymentMethod('pm_1');
+        $paymentMethod1->allow_redisplay = 'always';
+
+        $paymentMethod2 = new PaymentMethod('pm_2');
+        $paymentMethod2->allow_redisplay = 'never';
+
+        $stripeClientProphecy->detatchPaymentMethod(StripePaymentMethodId::of('pm_2'))->shouldBeCalled();
+
+        $stripeClientProphecy->updateCustomer(
+            "cus_some_cust_id",
+            ["metadata" => ["paymentMethodsCleared" => "2025-01-01 00:00:00"]]
+        )->shouldBeCalled();
+
+        $sut = new DeleteStalePaymentDetails(new \DateTimeImmutable('2025-01-01 00:00:00'), new NullLogger(), $stripeClientProphecy->reveal());
+        $detatchedCount = $sut->detachStaleMethods(
+            paymentMethods: [$paymentMethod1, $paymentMethod2],
+            isDryRun: false,
+            customer: $customer
+        );
+
+        $this->assertSame(1, $detatchedCount);
+    }
+
     /**
-     * @param ObjectProphecy<StripeClient> $stripeClientProphecy
+     * @param ObjectProphecy<Stripe> $stripeClientProphecy
      */
     private function getCommand(
         ObjectProphecy $stripeClientProphecy,

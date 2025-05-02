@@ -8,12 +8,14 @@ use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use Stripe\BalanceTransaction;
 use Stripe\Charge;
+use Stripe\Collection;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
+use Stripe\SearchResult;
 use Stripe\SetupIntent;
 
 /**
@@ -35,6 +37,11 @@ interface Stripe
      * @throws ApiErrorException
      */
     public function updatePaymentIntent(string $paymentIntentId, array $updateData): void;
+
+    /**
+     * @throws ApiErrorException
+     */
+    public function updateCustomer(string $customerId, array $updateData): void;
 
     /**
      * @throws ApiErrorException
@@ -73,4 +80,12 @@ interface Stripe
     public function retrievePaymentMethod(StripeCustomerId $customerId, StripePaymentMethodId $methodId): PaymentMethod;
 
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void;
+
+    public function searchCustomers(array $searchParams): SearchResult|Collection;
+
+    /**
+     * Returns a list of PaymentMethods for Treasury flows.
+     * @return \Stripe\Collection<\Stripe\PaymentMethod>
+     */
+    public function listAllPaymentMethodsForTreasury(array $array): Collection;
 }
