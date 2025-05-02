@@ -34,6 +34,27 @@ class DeleteStalePaymentDetails extends LockingCommand
         parent::__construct();
     }
 
+    /**
+     * @param iterable<array-key, PaymentMethod> $paymentMethods
+     * @param Customer $customer
+     */
+    public function detachStaleMethods(iterable $paymentMethods, bool $isDryRun, Customer|\stdClass $customer): int
+    {
+        $methodsDeleted = 0;
+
+        foreach ($paymentMethods as $paymentMethod) {
+            // Soft-delete / prevent reuse of the payment method.
+            $this->detachPaymentMethod($isDryRun, $paymentMethod, $customer);
+            $methodsDeleted++;
+        }
+
+        $this->stripeClient->customers->update(
+            $customer->id,
+            ['metadata' => ['paymentMethodsCleared' => $this->initDate->format('Y-m-d H:i:s')]]
+        );
+        return $methodsDeleted;
+    }
+
     protected function configure(): void
     {
         $this->setDescription('Deletes unused and likely-non-customer-deletable payment methods from Stripe');
@@ -67,23 +88,21 @@ class DeleteStalePaymentDetails extends LockingCommand
 
             $customerCount++;
 
-            // Get all *card* type payment methods for this customer – condition (3).
             $paymentMethods = $this->stripeClient->paymentMethods->all([
                 'customer' => $customer->id,
                 'type' => 'card',
                 'limit' => static::STRIPE_PAGE_SIZE,
             ]);
 
-            foreach ($paymentMethods->autoPagingIterator() as $paymentMethod) {
-                // Soft-delete / prevent reuse of the payment method.
-                $this->detachPaymentMethod($isDryRun, $paymentMethod, $customer);
-                $methodsDeleted++;
-            }
+            $paymentMethodsIterator = $paymentMethods->autoPagingIterator();
 
-            $this->stripeClient->customers->update(
-                $customer->id,
-                ['metadata' => ['paymentMethodsCleared' => $this->initDate->format('Y-m-d H:i:s')]]
-            );
+            /**
+             * @psalm-suppress MixedArgumentTypeCoercion - I don't understand this error, why is the type on the left not the parent?
+             *   Argument 1 of MatchBot\Application\Commands\DeleteStalePaymentDetails::detachStaleMethods expects
+             *       iterable<array-key, Stripe\PaymentMethod>, but parent type Generator|array<array-key, Stripe\PaymentMethod>
+             *      provided (see https://psalm.dev/194)
+             */
+            $methodsDeleted += $this->detachStaleMethods($paymentMethodsIterator, $isDryRun, $customer);
         }
 
         $timeTaken = microtime(true) - $startTime;
