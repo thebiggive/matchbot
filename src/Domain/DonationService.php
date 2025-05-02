@@ -127,20 +127,6 @@ class DonationService
             $this->logger->warning($message . ': ' . $e->getMessage());
 
             throw new DonationCreateModelLoadFailure(previous: $e);
-        } catch (UniqueConstraintViolationException) {
-            $this->logger->error('Unique Constraint Vio caught, will retry but expecting EM closed error');
-            // If we get this, the most likely explanation is that another donation request
-            // created the same campaign a very short time before this request tried to. We
-            // saw this 3 times in the opening minutes of CC20 on 1 Dec 2020.
-            // If this happens, the latest campaign data should already have been pulled and
-            // persisted in the last second. So give the same call one more try, as
-            // buildFromAPIRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
-            $this->logger->info(sprintf(
-                'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
-                $donationData->projectId->value,
-            ));
-
-            $donation = $this->buildFromAPIRequest($donationData, $donorId, false);
         }
 
         if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
@@ -167,13 +153,13 @@ class DonationService
      * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
      * @throws NotFoundException
      */
-    public function buildFromAPIRequest(DonationCreate $donationData, PersonId $donorId, bool $useFake = true): Donation
+    public function buildFromAPIRequest(DonationCreate $donationData, PersonId $donorId): Donation
     {
         // can't work out why one test (testSuccessWithMatchedCampaignAndInitialCampaignDuplicateError)
         // is failing if we don't pass useFake false here - the verison on develop seems to also return a
         // donation object passed in from the test case on the second invocation.
 
-        if ($this->fakeDonationProviderForTestUseOnly && $useFake) {
+        if ($this->fakeDonationProviderForTestUseOnly) {
             return $this->fakeDonationProviderForTestUseOnly->__invoke();
         }
 
