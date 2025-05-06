@@ -7,9 +7,6 @@ namespace MatchBot\Migrations;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
-/**
- * Auto-generated Migration: Please modify to your needs!
- */
 final class Version20250506171748 extends AbstractMigration
 {
     public function getDescription(): string
@@ -19,7 +16,6 @@ final class Version20250506171748 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // this up() migration is auto-generated, please modify it to your needs
         $this->addSql('ALTER TABLE Campaign CHANGE charity_id charity_id INT UNSIGNED NOT NULL');
         $this->addSql('ALTER TABLE CampaignFunding CHANGE fund_id fund_id INT UNSIGNED NOT NULL');
         $this->addSql('ALTER TABLE Donation CHANGE campaign_id campaign_id INT UNSIGNED NOT NULL');
@@ -27,7 +23,6 @@ final class Version20250506171748 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        // this down() migration is auto-generated, please modify it to your needs
         $this->addSql('ALTER TABLE Campaign CHANGE charity_id charity_id INT UNSIGNED DEFAULT NULL');
         $this->addSql('ALTER TABLE CampaignFunding CHANGE fund_id fund_id INT UNSIGNED DEFAULT NULL');
         $this->addSql('ALTER TABLE Donation CHANGE campaign_id campaign_id INT UNSIGNED DEFAULT NULL');

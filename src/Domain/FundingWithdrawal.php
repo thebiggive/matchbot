@@ -17,11 +17,11 @@ class FundingWithdrawal extends Model
     use TimestampsTrait;
 
     /**
-     * @var Donation
      * @psalm-suppress PossiblyUnusedProperty - probably used in DB queries
      */
     #[ORM\ManyToOne(targetEntity: Donation::class, inversedBy: 'fundingWithdrawals', fetch: 'EAGER')]
-    protected ?Donation $donation = null;
+    #[ORM\JoinColumn(nullable: false)]
+    protected Donation $donation;
 
     /**
      * @var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
