@@ -133,7 +133,7 @@ class DonationService
             throw new \UnexpectedValueException(sprintf(
                 'Route customer ID %s did not match %s in donation body',
                 $pspCustomerId,
-                $donation->getPspCustomerId()?->stripeCustomerId ?? 'null'
+                $donation->getPspCustomerId()->stripeCustomerId ?? 'null'
             ));
         }
 
@@ -252,7 +252,6 @@ class DonationService
                 );
 
                 $seconds = (new Randomizer())->getFloat(0.1, 1.1);
-                \assert(is_float($seconds)); // See https://github.com/vimeo/psalm/issues/10830
                 $this->clock->sleep($seconds);
 
                 if ($retryCount === self::MAX_RETRY_COUNT) {
@@ -758,7 +757,7 @@ class DonationService
         $card = $charge->payment_method_details?->toArray()['card'] ?? null;
         if (is_array($card)) {
             /** @var Card $card */
-            $card = (object)$card;
+            $card = (object)$card; // @phpstan-ignore varTag.nativeType
         }
 
         $cardBrand = CardBrand::fromNameOrNull($card?->brand);

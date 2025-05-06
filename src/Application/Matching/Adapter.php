@@ -247,7 +247,6 @@ class Adapter
         foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
             $funding = $fundingWithdrawal->getCampaignFunding();
             $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
-            Assertion::numeric($fundingWithDrawalAmount);
 
             $newTotal = $this->addAmount($funding, $fundingWithDrawalAmount);
             $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithDrawalAmount, 2);

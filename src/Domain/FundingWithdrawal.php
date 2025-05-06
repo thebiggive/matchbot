@@ -21,7 +21,7 @@ class FundingWithdrawal extends Model
      * @psalm-suppress PossiblyUnusedProperty - probably used in DB queries
      */
     #[ORM\ManyToOne(targetEntity: Donation::class, inversedBy: 'fundingWithdrawals', fetch: 'EAGER')]
-    protected Donation $donation;
+    protected ?Donation $donation = null;
 
     /**
      * @var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
@@ -31,9 +31,10 @@ class FundingWithdrawal extends Model
 
     /**
      * @var CampaignFunding
+     * phpstan error below ignored, consider migrating DB to make column non-null if possible.
      */
     #[ORM\ManyToOne(targetEntity: CampaignFunding::class, fetch: 'EAGER')]
-    private readonly CampaignFunding $campaignFunding;
+    private readonly CampaignFunding $campaignFunding; // @phpstan-ignore doctrine.associationType
 
     public function __construct(CampaignFunding $campaignFunding)
     {

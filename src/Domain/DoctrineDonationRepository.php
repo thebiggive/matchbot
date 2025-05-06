@@ -85,7 +85,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             $this->getEntityManager()->persist($newWithdrawal);
             $donation->addFundingWithdrawal($newWithdrawal);
             $newWithdrawalAmount = $newWithdrawal->getAmount();
-            Assertion::numeric($newWithdrawalAmount);
+
             $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawalAmount, 2);
         }
 
@@ -577,7 +577,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
                     '%s: Lock unavailable to set Salesforce fields on donation %s with Salesforce ID %s on try #%d',
                     get_class($exception),
                     $uuid,
-                    $salesforceId?->value ?? 'null',
+                    $salesforceId->value ?? 'null',
                     $tries,
                 ));
             } catch (DBALException\ConnectionLost $exception) {

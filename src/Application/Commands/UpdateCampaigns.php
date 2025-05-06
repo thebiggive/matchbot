@@ -45,8 +45,8 @@ EOT
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var Campaign[] $campaigns */
         if ($input->getOption('all')) {
+            /** @var Campaign[] $campaigns */
             $campaigns = $this->campaignRepository->findAll();
         } else {
             $campaigns = $this->campaignRepository->findCampaignsThatNeedToBeUpToDate();
@@ -114,6 +114,8 @@ EOT
 
     /**
      * @throws NotFoundException
+     * @throws TransferException
+     * @throws DomainCurrencyMustNotChangeException
      */
     protected function pull(Campaign $campaign, OutputInterface $output): void
     {

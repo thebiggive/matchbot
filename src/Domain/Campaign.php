@@ -26,10 +26,11 @@ class Campaign extends SalesforceReadProxy
      * @var Charity
      */
     #[ORM\ManyToOne(targetEntity: Charity::class, cascade: ['persist'])]
-    #[ORM\JoinColumn(name: 'charity_id', referencedColumnName: 'id')]
+    #[ORM\JoinColumn(name: 'charity_id', referencedColumnName: 'id', nullable: false)]
     protected Charity $charity;
 
     /**
+     * @var Collection<int, CampaignFunding>
      * @psalm-suppress PossiblyUnusedProperty Used in Doctrine ORM mapping
      */
     #[ORM\ManyToMany(targetEntity: CampaignFunding::class, mappedBy: 'campaigns')]
@@ -39,7 +40,7 @@ class Campaign extends SalesforceReadProxy
      * @var string  ISO 4217 code for the currency in which donations can be accepted and matching's organised.
      */
     #[ORM\Column(length: 3)]
-    protected ?string $currencyCode;
+    protected string $currencyCode;
 
     /**
      * Status as sent from SF API. Not currently used in matchbot but here for ad-hoc DB queries and
@@ -210,7 +211,7 @@ class Campaign extends SalesforceReadProxy
             // envrionments
 
             $_charity = $this->charity;
-        } catch (\Error $e) {
+        } catch (\Error $e) { // @phpstan-ignore catch.neverThrown
             throw new \Exception(
                 "Error on attempt to persist campaign #{$this->id}, sfID {$this->getSalesforceId()}: \n{$e}"
             );

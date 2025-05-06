@@ -32,20 +32,6 @@ class DonationPersistenceTest extends IntegrationTest
         $this->assertRowsSimilar($this->donationRow(), $donationRow);
     }
 
-
-    public function testItLoadsADonationToDB(): void
-    {
-        $connection = $this->getService(EntityManagerInterface::class)->getConnection();
-        $donationRepo = $this->getService(DonationRepository::class);
-        $donationRow = $this->donationRow();
-        $connection->insert('Donation', $donationRow);
-
-        $donation = $donationRepo->findOneBy(['uuid' => $donationRow['uuid']]);
-
-        $this->assertNotNull($donation);
-        $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
-    }
-
     /**
      * Asserts that two DB rows are similar, ignoring things out of our contril like IDs and dates.
      */

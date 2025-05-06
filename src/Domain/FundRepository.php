@@ -144,14 +144,16 @@ class FundRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @param array{currencyCode: string, name: string, type: string, id:string, ...} $fundData
+     * @param array{currencyCode: ?string, name: ?string, type: string, id:string, ...} $fundData
      */
     private function setAnyFundData(Fund $fund, array $fundData): Fund
     {
-        if ($fund->hasBeenPersisted() && $fund->getCurrencyCode() !== $fundData['currencyCode']) {
+        $currencyCode = $fundData['currencyCode'] ?? 'GBP';
+
+        if ($fund->hasBeenPersisted() && $fund->getCurrencyCode() !== $currencyCode) {
             $this->logWarning(sprintf(
                 'Refusing to update fund currency to %s for SF ID %s',
-                $fundData['currencyCode'],
+                $currencyCode,
                 $fundData['id'],
             ));
 
@@ -175,7 +177,7 @@ class FundRepository extends SalesforceReadProxyRepository
             ));
         }
 
-        $fund->setCurrencyCode($fundData['currencyCode'] ?? 'GBP');
+        $fund->setCurrencyCode($currencyCode);
         $fund->setName($fundData['name'] ?? '');
         $fund->setSalesforceLastPull(new DateTime('now'));
 
