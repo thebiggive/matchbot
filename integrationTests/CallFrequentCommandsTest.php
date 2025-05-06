@@ -16,6 +16,7 @@ use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Lock\LockFactory;
 
 class CallFrequentCommandsTest extends IntegrationTest
@@ -27,10 +28,17 @@ class CallFrequentCommandsTest extends IntegrationTest
         $output = new BufferedOutput();
         $application = $this->buildMinimalApp($lockFactory);
 
-        // act
+
         $command = new CallFrequentTasks();
         $command->setApplication($application);
         $command->setLockFactory($lockFactory);
+
+        // pre-run same command to make sure any donations ready to expire are expired before the main test
+        // so that we always see "Released 0 donations' matching" in the output on the next run (unless expiration
+        // happens to become due between the next to lines but that's very unlikely)
+        $command->run(new ArrayInput([]), new NullOutput());
+
+        // act
         $command->run(new ArrayInput([]), $output);
 
         // assert
@@ -84,7 +92,7 @@ class CallFrequentCommandsTest extends IntegrationTest
     private function getMockCloudWatchClient(): CloudWatchClient
     {
         $cloudWatchClientProphecy = $this->prophesize(CloudWatchClient::class);
-        $cloudWatchClientProphecy->putMetricData(Argument::type('array'))->shouldBeCalledOnce();
+        $cloudWatchClientProphecy->putMetricData(Argument::type('array'))->shouldBeCalled();
 
         return $cloudWatchClientProphecy->reveal();
     }

@@ -373,12 +373,6 @@ parameters:
 			path: src/Domain/DonationService.php
 
 		-
-			message: '#^Dead catch \- Doctrine\\DBAL\\Exception\\UniqueConstraintViolationException is never thrown in the try block\.$#'
-			identifier: catch.neverThrown
-			count: 1
-			path: src/Domain/DonationService.php
-
-		-
 			message: '#^Dead catch \- GuzzleHttp\\Exception\\ClientException is never thrown in the try block\.$#'
 			identifier: catch.neverThrown
 			count: 1
