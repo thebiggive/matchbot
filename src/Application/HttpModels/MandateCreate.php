@@ -37,7 +37,7 @@ readonly class MandateCreate
      * @psalm-suppress PossiblyUnusedMethod - called by Symfony Serializer
      *
      *
-     * @param null|array{addressLine1: string, postcode: string, isOutsideUK: boolean} $home
+     * @param null|array{addressLine1: string, postcode: ?string, isOutsideUK: boolean} $home
      */
     public function __construct(
         // not taking any value objects as constructor params as at least with our current config or

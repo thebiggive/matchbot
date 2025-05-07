@@ -7,7 +7,7 @@
 
 CREATE TABLE `Campaign` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `charity_id` int unsigned DEFAULT NULL,
+  `charity_id` int unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
   `startDate` datetime NOT NULL,
   `endDate` datetime NOT NULL,

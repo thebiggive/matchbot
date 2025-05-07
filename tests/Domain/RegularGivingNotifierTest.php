@@ -114,7 +114,6 @@ class RegularGivingNotifierTest extends TestCase
 
         /** @var Collection<int, FundingWithdrawal> $fundingWithdrawals */
         $fundingWithdrawals = $property->getValue($donation);
-        Assertion::isInstanceOf($fundingWithdrawals, Collection::class);
         $fundingWithdrawals->add($withdrawal);
     }
 

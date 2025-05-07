@@ -44,7 +44,7 @@ class SlackHandler implements HandlerInterface
 
         $lines = explode(PHP_EOL, $message);
 
-        $messageFirstLine = $lines[0] ?? '';
+        $messageFirstLine = $lines[0];
         $messageFirstSeveralLines = implode(\PHP_EOL, array_slice($lines, 0, 9)) . \PHP_EOL;
 
         $heading = "Matchbot $levelName: $messageFirstLine";
