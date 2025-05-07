@@ -16,15 +16,23 @@ final class Version20250506171108 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
+        $this->addSql('SET FOREIGN_KEY_CHECKS = 0');
+
         $this->addSql('ALTER TABLE Campaign CHANGE charity_id charity_id INT UNSIGNED NOT NULL');
         $this->addSql('ALTER TABLE CampaignFunding CHANGE fund_id fund_id INT UNSIGNED NOT NULL');
         $this->addSql('ALTER TABLE Donation CHANGE campaign_id campaign_id INT UNSIGNED NOT NULL');
+
+        $this->addSql('SET FOREIGN_KEY_CHECKS = 1');
     }
 
     public function down(Schema $schema): void
     {
+        $this->addSql('SET FOREIGN_KEY_CHECKS = 0');
+
         $this->addSql('ALTER TABLE Campaign CHANGE charity_id charity_id INT UNSIGNED DEFAULT NULL');
         $this->addSql('ALTER TABLE CampaignFunding CHANGE fund_id fund_id INT UNSIGNED DEFAULT NULL');
         $this->addSql('ALTER TABLE Donation CHANGE campaign_id campaign_id INT UNSIGNED DEFAULT NULL');
+
+        $this->addSql('SET FOREIGN_KEY_CHECKS = 1');
     }
 }
