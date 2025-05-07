@@ -187,18 +187,6 @@ parameters:
 			path: tests/Application/Actions/Hooks/StripePaymentsUpdateTest.php
 
 		-
-			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$customers\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Application/Commands/DeleteStalePaymentDetailsTest.php
-
-		-
-			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$paymentMethods\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Application/Commands/DeleteStalePaymentDetailsTest.php
-
-		-
 			message: '#^Method MatchBot\\Tests\\Application\\Commands\\HandleOutOfSyncFundsTest\:\:getCampaignFundingRepoPropechy\(\) never returns MatchBot\\Domain\\CampaignFundingRepository so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
