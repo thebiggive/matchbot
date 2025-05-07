@@ -58,16 +58,7 @@ class DeleteStalePaymentDetails extends LockingCommand
         Customer|\stdClass $customer,
         ?DonorAccount $donorAccount
     ): int {
-        $metadata = $customer->metadata;
-
-        /** @psalm-suppress DocblockTypeContradiction */
-        if ($metadata instanceof \stdClass) {
-            // accounting for an awkard to change test.
-            $metadataArray = (array) $metadata;
-        } else {
-            $metadataArray = $metadata?->toArray();
-        }
-        $customerHasPasswordSet = ($metadataArray['hasPasswordSince'] ?? null) !== null;
+        $customerHasPasswordSet = ! \is_null($donorAccount);
 
         $methodsDeleted = 0;
 

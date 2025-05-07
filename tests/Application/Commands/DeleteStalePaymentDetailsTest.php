@@ -143,7 +143,11 @@ class DeleteStalePaymentDetailsTest extends TestCase
         $stripeClientProphecy = $this->prophesize(Stripe::class);
         $customer = new Customer('cus_some_cust_id');
         $customer->metadata = new StripeObject();
-        $customer->metadata['hasPasswordSince'] = 'any non null value';
+
+        // next line commented out because we failed to set this metadata for some customers in April and May
+        // 2025, so we should not rely on it. See ID-52
+        //
+        // $customer->metadata['hasPasswordSince'] = 'any non null value';
 
         $donorAccount = Identity::donorAccount();
         $donorAccount->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_3'));
