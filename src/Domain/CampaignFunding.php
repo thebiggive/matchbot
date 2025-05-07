@@ -37,7 +37,7 @@ class CampaignFunding extends Model
     protected Collection $campaigns;
 
     #[ORM\ManyToOne(targetEntity: Fund::class, cascade: ['persist'], inversedBy: 'campaignFundings')]
-    #[ORm\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false)]
     protected Fund $fund;
 
     /**
