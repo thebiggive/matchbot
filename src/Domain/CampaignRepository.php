@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use Assert\AssertionFailedException;
 use DateTime;
+use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Client;
 use MatchBot\Client\NotFoundException;
@@ -91,6 +92,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /**
      * @param Salesforce18Id<Campaign> $salesforceId
      * @throws NotFoundException
+     * @throws ClientException
      */
     public function pullNewFromSf(Salesforce18Id $salesforceId): Campaign
     {
@@ -285,7 +287,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
     {
         $campaign = $proxy;
 
-        /** @psalm-suppress RedundantConditionGivenDocblockType - redundant for Psalm but useful for PHPStorm */
+        /** @psalm-suppress RedundantConditionGivenDocblockType - redundant for Psalm but useful for PHPStorm
+         **/
         \assert($campaign instanceof Campaign);
 
         $client = $this->getClient();
@@ -316,7 +319,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
 
         $campaign->updateFromSfPull(
-            currencyCode: $campaignData['currencyCode'] ?? 'GBP',
+            currencyCode: $campaignData['currencyCode'],
             status: $campaignData['status'],
             endDate: new DateTime($campaignData['endDate']),
             isMatched: $campaignData['isMatched'],

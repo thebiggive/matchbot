@@ -7,7 +7,7 @@
 
 CREATE TABLE `CampaignFunding` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `fund_id` int unsigned DEFAULT NULL,
+  `fund_id` int unsigned NOT NULL,
   `amount` decimal(18,2) NOT NULL,
   `amountAvailable` decimal(18,2) NOT NULL,
   `createdAt` datetime NOT NULL,

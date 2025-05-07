@@ -71,6 +71,7 @@ class Donation extends SalesforceWriteProxy
      * @var Campaign
      */
     #[ORM\ManyToOne(targetEntity: Campaign::class)]
+    #[ORM\JoinColumn(nullable: false)]
     protected Campaign $campaign;
 
     /**
@@ -878,6 +879,8 @@ class Donation extends SalesforceWriteProxy
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
             $fundTypeOfThisWithdrawal = $fundingWithdrawal->getCampaignFunding()->getFund()->getFundType();
 
+            // I don't think the match.unhandled error from phpstan here can be right - we handle 12 cases: 3 cases of enum * 2 values of bool * 2 values of bool
+            // @phpstan-ignore match.unhandled
             $key = match ([$fundTypeOfThisWithdrawal, $this->donationStatus->isSuccessful(), $this->donationStatus === DonationStatus::PreAuthorized  ]) {
                 [FundType::ChampionFund, true, true] => throw new \LogicException("impossible status"),
                 [FundType::ChampionFund, true, false] => 'amountMatchedByChampionFunds',
@@ -1251,6 +1254,9 @@ class Donation extends SalesforceWriteProxy
                     'allow_redirects' => 'never',
                 ]
             ],
+            null => throw new \RuntimeException(
+                'Cannot get stripe method properties, no stripe method for donation ' . $this->uuid->toString()
+            ),
         };
 
         if ($this->paymentMethodType === PaymentMethodType::CustomerBalance) {

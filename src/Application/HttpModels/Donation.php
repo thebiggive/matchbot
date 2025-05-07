@@ -43,10 +43,6 @@ readonly class Donation
         public ?bool $optInChampionEmail = null,
         public ?string $tipAmount = null,
         public ?bool $tipGiftAid = null,
-        ?bool $donationMatched = null,
-        ?string $charityId = null,
-        ?string $transactionId = null,
-        ?string $projectId = null,
     ) {
         $this->emailAddress = (! is_null($emailAddress) && ! ($emailAddress === ''))
             ? EmailAddress::of($emailAddress)

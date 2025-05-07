@@ -223,7 +223,7 @@ class TestCase extends PHPUnitTestCase
         ?EmailAddress $emailAddress = null,
     ): Charity {
         return new Charity(
-            salesforceId: $salesforceId?->value ?? ('123CharityId' . self::randomHex(3)),
+            salesforceId: $salesforceId->value ?? ('123CharityId' . self::randomHex(3)),
             charityName: $name,
             stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
             hmrcReferenceNumber: 'H' . self::randomHex(3),
