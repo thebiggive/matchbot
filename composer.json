@@ -161,10 +161,6 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:claim-gift-aid --with-resends"
         ],
-        "matchbot:delete-stale-payment-details": [
-            "Composer\\Config::disableProcessTimeout",
-            "php matchbot-cli.php matchbot:delete-stale-payment-details"
-        ],
         "matchbot:expire-match-funds": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:expire-match-funds"

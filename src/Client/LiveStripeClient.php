@@ -130,19 +130,4 @@ class LiveStripeClient implements Stripe
     {
         $this->stripeClient->paymentMethods->detach($paymentMethodId->stripePaymentMethodId);
     }
-
-    #[\Override] public function updateCustomer(string $customerId, array $updateData): void
-    {
-        $this->stripeClient->customers->update($customerId, $updateData);
-    }
-
-    #[\Override] public function searchCustomers(array $searchParams): SearchResult
-    {
-        return $this->stripeClient->customers->search($searchParams);
-    }
-
-    #[\Override] public function listAllPaymentMethodsForCustomer(StripeCustomerId $id, array $params): Collection
-    {
-        return $this->stripeClient->customers->allPaymentMethods($id->stripeCustomerId, params: $params);
-    }
 }
