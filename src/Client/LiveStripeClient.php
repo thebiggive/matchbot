@@ -29,6 +29,7 @@ class LiveStripeClient implements Stripe
         'payment_element' => [
             'enabled' => true,
             'features' => [
+                'payment_method_allow_redisplay_filters' => ['always', 'unspecified'],
                 'payment_method_redisplay' => 'enabled',
                 'payment_method_redisplay_limit' => 3, // Keep default 3; 10 is max stripe allows.
                 // default value – need to ensure it stays off to avoid breaking Regular Giving by mistake,
@@ -100,6 +101,7 @@ class LiveStripeClient implements Stripe
         $components = self::SESSION_COMPONENTS;
         $components['payment_element']['features']['payment_method_save_usage'] = 'off_session';
         $components['payment_element']['features']['payment_method_redisplay'] = 'disabled';
+        unset($components['payment_element']['features']['payment_method_allow_redisplay_filters']);
         unset($components['payment_element']['features']['payment_method_redisplay_limit']);
 
         return $this->stripeClient->customerSessions->create([
