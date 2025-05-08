@@ -13,7 +13,7 @@ use Psr\Log\LogLevel;
  * @psalm-type fundArray array{
  *      currencyCode: string,
  *      id: string,
- *      name: string,
+ *      name: ?string,
  *      type: string,
  *      amountForCampaign: string|null|numeric,
  *      isShared: boolean,

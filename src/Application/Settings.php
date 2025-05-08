@@ -213,7 +213,7 @@ class Settings
     public function withApiClient(array $apiClient): self
     {
         $settings = clone($this);
-        $settings->apiClient = $apiClient;
+        $settings->apiClient = $apiClient; // @phpstan-ignore property.readOnlyByPhpDocAssignNotInConstructor
 
         return $settings;
     }

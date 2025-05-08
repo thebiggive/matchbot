@@ -8,12 +8,14 @@ use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use Stripe\BalanceTransaction;
 use Stripe\Charge;
+use Stripe\Collection;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidArgumentException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
+use Stripe\SearchResult;
 use Stripe\SetupIntent;
 use Stripe\StripeClient;
 
@@ -121,11 +123,24 @@ class LiveStripeClient implements Stripe
         );
     }
 
-    /**
-     * @throws ApiErrorException
-     */
+
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void
     {
         $this->stripeClient->paymentMethods->detach($paymentMethodId->stripePaymentMethodId);
+    }
+
+    #[\Override] public function updateCustomer(string $customerId, array $updateData): void
+    {
+        $this->stripeClient->customers->update($customerId, $updateData);
+    }
+
+    #[\Override] public function searchCustomers(array $searchParams): SearchResult
+    {
+        return $this->stripeClient->customers->search($searchParams);
+    }
+
+    #[\Override] public function listAllPaymentMethodsForCustomer(StripeCustomerId $id, array $params): Collection
+    {
+        return $this->stripeClient->customers->allPaymentMethods($id->stripeCustomerId, params: $params);
     }
 }

@@ -574,7 +574,7 @@ class RegularGivingServiceTest extends TestCase
                 matchDonations: true,
                 homeIsOutsideUk: false,
             );
-            $this->assertFalse(true);
+            $this->fail('expected to throw CampaignNotOpen');
         } catch (CampaignNotOpen $_e) {
             // no-op
         }

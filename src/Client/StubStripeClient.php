@@ -8,10 +8,12 @@ use MatchBot\Domain\StripePaymentMethodId;
 use Ramsey\Uuid\Uuid;
 use Stripe\BalanceTransaction;
 use Stripe\Charge;
+use Stripe\Collection;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
+use Stripe\SearchResult;
 use Stripe\SetupIntent;
 use Stripe\StripeObject;
 
@@ -111,5 +113,20 @@ class StubStripeClient implements Stripe
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void
     {
         throw new \Exception("Detatch Payment Method not implemented in stub - not currently used in load tests");
+    }
+
+    #[\Override] public function updateCustomer(string $customerId, array $updateData): void
+    {
+        throw new \Exception("updateCustomer not implemented in stub- not currently used in load tests");
+    }
+
+    #[\Override] public function searchCustomers(array $searchParams): SearchResult
+    {
+        throw new \Exception("updateCustomer not implemented in stub- not currently used in load tests");
+    }
+
+    #[\Override] public function listAllPaymentMethodsForCustomer(StripeCustomerId $id, array $params): Collection
+    {
+        throw new \Exception("updateCustomer not implemented in stub- not currently used in load tests");
     }
 }

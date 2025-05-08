@@ -28,4 +28,13 @@ readonly class StripePaymentMethodId
     {
         return new self($stripeID);
     }
+
+    public function equals(StripePaymentMethodId|null $that): bool
+    {
+        if ($that === null) {
+            return false;
+        }
+
+        return $this->stripePaymentMethodId === $that->stripePaymentMethodId;
+    }
 }

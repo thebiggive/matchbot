@@ -31,18 +31,9 @@ class Identity
             "psp_id" => self::STRIPE_ID,
         ]
     ];
+    public const string TEST_PERSON_MANDATE_ENDPOINT = '/v1/people/' . self::IDENTITY_UUID . '/regular-giving';
+    public const string TEST_PERSON_NEW_DONATION_ENDPOINT = '/v1/people/' . self::IDENTITY_UUID . '/donations';
 
-
-
-    public static function getTestPersonNewDonationEndpoint(): string
-    {
-        return '/v1/people/' . self::IDENTITY_UUID . '/donations';
-    }
-
-    public static function getTestPersonMandateEndpoint(): string
-    {
-        return '/v1/people/' . self::IDENTITY_UUID . '/regular-giving';
-    }
 
     /**
      * @see self::getTestIdentityTokenIncomplete()

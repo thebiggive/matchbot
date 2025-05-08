@@ -7,7 +7,7 @@
 
 CREATE TABLE `FundingWithdrawal` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `donation_id` int unsigned DEFAULT NULL,
+  `donation_id` int unsigned NOT NULL,
   `amount` decimal(18,2) NOT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,

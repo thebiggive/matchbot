@@ -355,21 +355,20 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
         $offset = $sequenceNumber->number - 2;
 
-        $preAuthorizationdate = $secondDonationDate->modify("+$offset months");
-        Assertion::isInstanceOf($preAuthorizationdate, \DateTimeImmutable::class);
+        $preAuthorizationDate = $secondDonationDate->modify("+$offset months");
 
-        if ($campaign->regularGivingCollectionIsEndedAt($preAuthorizationdate)) {
+        if ($campaign->regularGivingCollectionIsEndedAt($preAuthorizationDate)) {
             $collectionEnd = $campaign->getRegularGivingCollectionEnd();
             Assertion::notNull($collectionEnd);
 
             throw new RegularGivingCollectionEndPassed(
-                "Cannot pre-authorize a donation for {$preAuthorizationdate->format('Y-m-d')}, " .
+                "Cannot pre-authorize a donation for {$preAuthorizationDate->format('Y-m-d')}, " .
                 "regular giving collections for campaign {$campaign->getSalesforceId()} end " .
                 "at {$collectionEnd->format('Y-m-d')}"
             );
         }
 
-        $donation->preAuthorize($preAuthorizationdate);
+        $donation->preAuthorize($preAuthorizationDate);
 
         return $donation;
     }

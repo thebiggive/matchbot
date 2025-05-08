@@ -7,7 +7,7 @@
 
 CREATE TABLE `Donation` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `campaign_id` int unsigned DEFAULT NULL,
+  `campaign_id` int unsigned NOT NULL,
   `uuid` char(36) NOT NULL COMMENT '(DC2Type:uuid)',
   `transactionId` varchar(255) DEFAULT NULL,
   `amount` decimal(18,2) NOT NULL,

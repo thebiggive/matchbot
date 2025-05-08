@@ -96,7 +96,7 @@ class Charity extends SalesforceReadProxy
      * @var key-of<self::REGULATORS> |null
      */
     #[ORM\Column(length: 4, nullable: true)]
-    protected ?string $regulator = null;
+    protected ?string $regulator = null; // @phpstan-ignore doctrine.columnType
 
     #[ORM\Column(length: 10, nullable: true)]
     protected ?string $regulatorNumber = null;
