@@ -8,7 +8,7 @@ if (getenv('CI') === false) {
     putenv("MYSQL_SCHEMA=matchbot_test");
 }
 
-if (! in_array(getenv('APP_ENV'), ['local', 'test'])) {
+if (! in_array(getenv('APP_ENV'), ['local', 'test'], true)) {
     throw new \Exception("Don't run integration tests in live!");
 }
 

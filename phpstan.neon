@@ -17,15 +17,15 @@ parameters:
 		booleansInLoopConditions: false
 		uselessCast: false
 		requireParentConstructorCall: false
-		disallowedBacktick: false
+		disallowedBacktick: true
 		disallowedEmpty: false
 		disallowedImplicitArrayCreation: false
 		disallowedShortTernary: false
 		overwriteVariablesWithLoop: false
 		closureUsesThis: false
 		matchingInheritedMethodNames: false
-		numericOperandsInArithmeticOperators: false
-		strictFunctionCalls: false
+		numericOperandsInArithmeticOperators: true
+		strictFunctionCalls: true
 		dynamicCallOnStaticMethod: false
 		switchConditionsMatchingType: false
 		noVariableVariables: false
