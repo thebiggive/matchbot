@@ -124,12 +124,20 @@ class DeleteStalePaymentDetails extends LockingCommand
             /** @var \Generator<array-key, PaymentMethod>|array<PaymentMethod> $paymentMethodsIterator */
             $paymentMethodsIterator = $paymentMethods->autoPagingIterator();
 
-            $methodsDeleted += $this->detachStaleMethods(
-                $paymentMethodsIterator,
-                $isDryRun,
-                $customer,
-                $this->donorAccountRepository->findByStripeIdOrNull($stripeAccountId)
-            );
+
+            try {
+                $methodsDeleted += $this->detachStaleMethods(
+                    $paymentMethodsIterator,
+                    $isDryRun,
+                    $customer,
+                    $this->donorAccountRepository->findByStripeIdOrNull($stripeAccountId)
+                );
+            } catch (ApiErrorException $e) {
+                // likely just overlapping deletion attempts or similar. We'll retry deletion on the next run if still required.
+                $this->logger->info(
+                    "Error attempting to detach method for customer {$stripeAccountId->stripeCustomerId}: " . $e->getMessage()
+                );
+            }
         }
 
         $timeTaken = microtime(true) - $startTime;
@@ -176,11 +184,6 @@ class DeleteStalePaymentDetails extends LockingCommand
             $customer->id,
         ));
 
-        try {
-            $this->stripe->detatchPaymentMethod($paymentMethodId);
-        } catch (ApiErrorException $e) {
-            // likely just overlapping deletion attempts or similar. We'll retry deletion on the next run if still required.
-            $this->logger->info("Error attempting to detach method $paymentMethod: " . $e->getMessage());
-        }
+        $this->stripe->detatchPaymentMethod($paymentMethodId);
     }
 }
