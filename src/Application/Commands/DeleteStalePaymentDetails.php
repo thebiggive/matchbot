@@ -11,6 +11,7 @@ use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use Psr\Log\LoggerInterface;
 use Stripe\Customer;
+use Stripe\Exception\ApiErrorException;
 use Stripe\PaymentMethod;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -123,12 +124,20 @@ class DeleteStalePaymentDetails extends LockingCommand
             /** @var \Generator<array-key, PaymentMethod>|array<PaymentMethod> $paymentMethodsIterator */
             $paymentMethodsIterator = $paymentMethods->autoPagingIterator();
 
-            $methodsDeleted += $this->detachStaleMethods(
-                $paymentMethodsIterator,
-                $isDryRun,
-                $customer,
-                $this->donorAccountRepository->findByStripeIdOrNull($stripeAccountId)
-            );
+
+            try {
+                $methodsDeleted += $this->detachStaleMethods(
+                    $paymentMethodsIterator,
+                    $isDryRun,
+                    $customer,
+                    $this->donorAccountRepository->findByStripeIdOrNull($stripeAccountId)
+                );
+            } catch (ApiErrorException $e) {
+                // likely just overlapping deletion attempts or similar. We'll retry deletion on the next run if still required.
+                $this->logger->info(
+                    "Error attempting to detach method for customer {$stripeAccountId->stripeCustomerId}: " . $e->getMessage()
+                );
+            }
         }
 
         $timeTaken = microtime(true) - $startTime;
@@ -174,6 +183,7 @@ class DeleteStalePaymentDetails extends LockingCommand
             $paymentMethodId->stripePaymentMethodId,
             $customer->id,
         ));
+
         $this->stripe->detatchPaymentMethod($paymentMethodId);
     }
 }

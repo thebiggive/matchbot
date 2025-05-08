@@ -123,9 +123,7 @@ class LiveStripeClient implements Stripe
         );
     }
 
-    /**
-     * @throws ApiErrorException
-     */
+
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void
     {
         $this->stripeClient->paymentMethods->detach($paymentMethodId->stripePaymentMethodId);
