@@ -37,7 +37,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
      */
     private const int EXPIRY_SECONDS = 32 * 60; // 32 minutes: 30 min official timed window plus 2 mins grace.
 
-    private Matching\Adapter $matchingAdapter;
+    private Matching\Adapter $matchingAdapter; // @phpstan-ignore property.uninitialized
 
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {

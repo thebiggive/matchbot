@@ -9,6 +9,8 @@ parameters:
 		- integrationTests
 		- app
 	treatPhpDocTypesAsCertain: false
+	checkUninitializedProperties: true
+	rememberPossiblyImpureFunctionValues: false
 	ignoreErrors:
 #	     see https://github.com/phpstan/phpstan/issues/10#issuecomment-264988090 :
 		- '#Call to an undefined static method MatchBot\\Application\\Assertion::[a-zA-Z0-9_]+\(\)#'
@@ -18,3 +20,9 @@ parameters:
 
 #		Allow unused params if name starts with _
 		- '#has an unused parameter \$_#'
+		-
+			identifier: property.uninitialized
+			# properties in tests are initialised in setup instead of __construct.
+			paths:
+				- tests/*
+				- integrationTests/*
