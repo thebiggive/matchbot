@@ -79,6 +79,9 @@ interface Stripe
      */
     public function retrievePaymentMethod(StripeCustomerId $customerId, StripePaymentMethodId $methodId): PaymentMethod;
 
+    /**
+     * @throws ApiErrorException
+     */
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void;
 
     public function searchCustomers(array $searchParams): SearchResult|Collection;

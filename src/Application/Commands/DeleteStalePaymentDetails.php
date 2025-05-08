@@ -11,6 +11,7 @@ use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use Psr\Log\LoggerInterface;
 use Stripe\Customer;
+use Stripe\Exception\ApiErrorException;
 use Stripe\PaymentMethod;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -174,6 +175,12 @@ class DeleteStalePaymentDetails extends LockingCommand
             $paymentMethodId->stripePaymentMethodId,
             $customer->id,
         ));
-        $this->stripe->detatchPaymentMethod($paymentMethodId);
+
+        try {
+            $this->stripe->detatchPaymentMethod($paymentMethodId);
+        } catch (ApiErrorException $e) {
+            // likely just overlapping deletion attempts or similar. We'll retry deletion on the next run if still required.
+            $this->logger->info("Error attempting to detach method $paymentMethod: " . $e->getMessage());
+        }
     }
 }
