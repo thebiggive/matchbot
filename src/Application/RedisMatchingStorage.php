@@ -38,7 +38,7 @@ class RedisMatchingStorage implements RealTimeMatchingStorage
         return new self($return);
     }
 
-    public function incrBy(string $key, int $increment): string|self|bool|int
+    public function incrBy(string $key, int $increment): string|self|false|int
     {
         $return = $this->redis->incrBy($key, $increment);
 

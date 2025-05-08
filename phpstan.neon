@@ -11,6 +11,28 @@ parameters:
 	treatPhpDocTypesAsCertain: false
 	checkUninitializedProperties: true
 	rememberPossiblyImpureFunctionValues: false
+	strictRules:
+		disallowedLooseComparison: false
+		booleansInConditions: false
+		booleansInLoopConditions: false
+		uselessCast: false
+		requireParentConstructorCall: false
+		disallowedBacktick: false
+		disallowedEmpty: false
+		disallowedImplicitArrayCreation: false
+		disallowedShortTernary: false
+		overwriteVariablesWithLoop: false
+		closureUsesThis: false
+		matchingInheritedMethodNames: false
+		numericOperandsInArithmeticOperators: false
+		strictFunctionCalls: false
+		dynamicCallOnStaticMethod: false
+		switchConditionsMatchingType: false
+		noVariableVariables: false
+		strictArrayFilter: false
+		illegalConstructorMethodCall: false
+	editorUrlTitle: '%%file%%:%%line%%'
+	editorUrl: '//'
 	ignoreErrors:
 #	     see https://github.com/phpstan/phpstan/issues/10#issuecomment-264988090 :
 		- '#Call to an undefined static method MatchBot\\Application\\Assertion::[a-zA-Z0-9_]+\(\)#'

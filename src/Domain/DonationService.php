@@ -702,7 +702,7 @@ class DonationService
             ]
         );
 
-        $this->logger->info("PaymentIntent: {$paymentIntent->toJson()}");
+        $this->logger->info("PaymentIntent: {$paymentIntent->toJSON()}");
 
         if ($paymentIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
             // @todo-regular-giving-mat-407: create a new db field on Donation - e.g. payment_attempt_count and update here
@@ -749,7 +749,7 @@ class DonationService
 
     public function updateDonationStatusFromSuccessfulCharge(Charge $charge, Donation $donation): void
     {
-        $this->logger->info('updating donation from charge: ' . $charge->toJson());
+        $this->logger->info('updating donation from charge: ' . $charge->toJSON());
 
         /**
          * @var array|Card|null $card
@@ -818,6 +818,7 @@ class DonationService
         /**
          * See https://docs.stripe.com/api/balance_transactions/object#balance_transaction_object-fee_details
          * @var object{currency: string, type: string} $feeDetail
+         * // @phpstan-ignore varTag.type
          */
         $feeDetail = $txn->fee_details[0];
 

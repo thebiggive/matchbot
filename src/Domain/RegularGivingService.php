@@ -305,7 +305,7 @@ readonly class RegularGivingService
         return array_map(/**
          * @param array{0: RegularGivingMandate, 1: Charity} $tuple
          * @return array
-         */            static fn(array $tuple) => $tuple[0]->toFrontendApiModel($tuple[1], $currentUKTime),
+         */            static fn(array $tuple) => $tuple[0]->toFrontEndApiModel($tuple[1], $currentUKTime),
             $mandatesWithCharities
         );
     }
