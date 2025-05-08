@@ -60,13 +60,18 @@ abstract class Stripe extends Action
         }
 
         if (!$this->event->livemode && getenv('APP_ENV') === 'production') {
+            $message = 'Skipping non-live %s webhook in Production';
             /**
              * This is normal for Connect events so just `info()` log it in that case.
              * "...both live and test webhooks will be sent to your production webhook URLs."
              * @link https://stripe.com/docs/connect/webhooks
              */
-            $method = $connect ? 'info' : 'warning';
-            $this->logger->$method(sprintf('Skipping non-live %s webhook in Production', $this->event->type));
+            if ($connect) {
+                $this->logger->info(sprintf($message, $this->event->type));
+            } else {
+                $this->logger->warning(sprintf($message, $this->event->type));
+            }
+
 
             return $this->respond($response, new ActionPayload(204));
         }

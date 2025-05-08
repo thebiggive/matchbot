@@ -274,15 +274,24 @@ class Update extends Action
             );
         }
 
-        foreach (['optInCharityEmail', 'optInTbgEmail'] as $requiredBoolean) {
-            if (!isset($donationData->$requiredBoolean)) {
-                $this->entityManager->rollback();
+        if (!isset($donationData->optInCharityEmail)) {
+            $this->entityManager->rollback();
+            return $this->validationError(
+                $response,
+                "Required boolean field 'optInCharityEmail' not set",
+                null,
+                true
+            );
+        }
 
-                return $this->validationError($response, sprintf(
-                    "Required boolean field '%s' not set",
-                    $requiredBoolean,
-                ), null, true);
-            }
+        if (!isset($donationData->optInTbgEmail)) {
+            $this->entityManager->rollback();
+            return $this->validationError(
+                $response,
+                "Required boolean field 'optInTbgEmail' not set",
+                null,
+                true
+            );
         }
 
         if ($donationData->currencyCode === 'GBP' && !isset($donationData->giftAid)) {

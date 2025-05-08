@@ -21,16 +21,16 @@ parameters:
 		disallowedEmpty: false
 		disallowedImplicitArrayCreation: false
 		disallowedShortTernary: false
-		overwriteVariablesWithLoop: false
+		overwriteVariablesWithLoop: true
 		closureUsesThis: false
-		matchingInheritedMethodNames: false
+		matchingInheritedMethodNames: true
 		numericOperandsInArithmeticOperators: true
 		strictFunctionCalls: true
 		dynamicCallOnStaticMethod: false
 		switchConditionsMatchingType: false
-		noVariableVariables: false
-		strictArrayFilter: false
-		illegalConstructorMethodCall: false
+		noVariableVariables: true
+		strictArrayFilter: true
+		illegalConstructorMethodCall: true
 	editorUrlTitle: '%%file%%:%%line%%'
 	editorUrl: '//'
 	ignoreErrors:
