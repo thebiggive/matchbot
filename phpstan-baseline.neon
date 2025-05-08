@@ -13,12 +13,6 @@ parameters:
 			path: app/dependencies.php
 
 		-
-			message: '#^Property MatchBot\\Application\\Matching\\Adapter@anonymous/integrationTests/DonationMatchingTest\.php\:96\:\:\$inTransaction is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: integrationTests/DonationMatchingTest.php
-
-		-
 			message: '#^PHPDoc tag @var with type array\{global\: array\{timeout\: string\}, salesforce\: array\{baseUri\: string\}, mailer\: array\{baseUri\: string, sendSecret\: string\}\} is not subtype of native type array\{global\: ArrayAccess@anonymous/integrationTests/IntegrationTest\.php\:120, mailer\: array\{baseUri\: ''dummy\-mailer\-base…''\}, salesforce\: array\{baseUri\: ''dummy\-salesforce…''\}\}\.$#'
 			identifier: varTag.nativeType
 			count: 1

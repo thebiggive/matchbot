@@ -15,8 +15,8 @@ parameters:
 		disallowedLooseComparison: false
 		booleansInConditions: false
 		booleansInLoopConditions: false
-		uselessCast: false
-		requireParentConstructorCall: false
+		uselessCast: true
+		requireParentConstructorCall: true
 		disallowedBacktick: true
 		disallowedEmpty: false
 		disallowedImplicitArrayCreation: false
@@ -27,7 +27,7 @@ parameters:
 		numericOperandsInArithmeticOperators: true
 		strictFunctionCalls: true
 		dynamicCallOnStaticMethod: false
-		switchConditionsMatchingType: false
+		switchConditionsMatchingType: true
 		noVariableVariables: true
 		strictArrayFilter: true
 		illegalConstructorMethodCall: true
