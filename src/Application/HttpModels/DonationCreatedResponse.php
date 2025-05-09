@@ -10,6 +10,10 @@ namespace MatchBot\Application\HttpModels;
  */
 readonly class DonationCreatedResponse
 {
+    /**
+     * @param array<string,mixed> $donation donation model as returned by
+     *     {@see \MatchBot\Domain\Donation::toFrontEndApiModel}
+     */
     public function __construct(
         public array $donation,
         public string $jwt,

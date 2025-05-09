@@ -16,6 +16,8 @@ use MatchBot\Domain\Salesforce18Id;
 class Donation extends Common
 {
     /**
+     * @return null|Salesforce18Id<\MatchBot\Domain\Donation>
+     *
      * @throws BadRequestException
      * @throws BadResponseException
      * @throws NotFoundException on missing campaign in a sandbox
@@ -28,12 +30,14 @@ class Donation extends Common
             return null;
         }
 
-        return $this->postUpdateToSalesforce(
+        /** @var Salesforce18Id<\MatchBot\Domain\Donation> $salesforce18Id */
+        $salesforce18Id = $this->postUpdateToSalesforce(
             $this->baseUri() . '/' . $message->uuid,
             $jsonSnapshot,
             $message->uuid,
             'donation',
         );
+        return $salesforce18Id;
     }
 
     private function baseUri(): string

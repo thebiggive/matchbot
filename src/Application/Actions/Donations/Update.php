@@ -251,6 +251,7 @@ class Update extends Action
 
     /**
      * Assumes it will be called only after starting a transaction pre-donation-select.
+     * @param array{donationId: string, ...} $args
      * @throws InvalidRequestException
      * @throws ApiErrorException if confirm() fails other than because of a missing payment method.
      * @throws \UnexpectedValueException

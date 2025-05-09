@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions;
 
 use Assert\Assertion;
+use Assert\AssertionFailedException;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -30,7 +31,7 @@ abstract class Action
     /**
      * @param Request  $request
      * @param Response $response
-     * @param array    $args
+     * @param array<string, string|bool|float|int> $args
      * @return Response
      * @throws HttpNotFoundException
      * @throws HttpBadRequestException
@@ -48,6 +49,7 @@ abstract class Action
      * @return Response
      * @throws DomainRecordNotFoundException
      * @throws HttpBadRequestException
+     * @param array<string, string|bool|float|int> $args
      */
     abstract protected function action(Request $request, Response $response, array $args): Response;
 
@@ -66,6 +68,9 @@ abstract class Action
         );
     }
 
+    /**
+     * @param array<string, mixed> $args
+     */
     protected function argToUuid(array $args, string $argName): UuidInterface
     {
         Assertion::keyExists($args, $argName);
@@ -80,6 +85,7 @@ abstract class Action
 
     /**
      * @param  string $name
+     * @param array<string, mixed> $args
      * @return mixed
      * @throws HttpBadRequestException
      */
@@ -98,7 +104,7 @@ abstract class Action
      * @param bool          $reduceSeverity Whether to log this error only at INFO level. Used to
      *                                      avoid noise from known issues.
      * @param ActionError::* $errorType Identifier for the type of error to be used by FE.
-     * @param array $errorData JSON-serializable detailed error data for use in FE.
+     * @param array<string, mixed> $errorData JSON-serializable detailed error data for use in FE.
      * @return Response with 400 HTTP response code.
      */
     protected function validationError(
@@ -120,7 +126,7 @@ abstract class Action
     }
 
     /**
-     * @param  array|object|null $data
+     * @param  array<string|int,mixed>|object|null $data
      * @return Response
      */
     protected function respondWithData(Response $response, $data = null, int $statusCode = 200): Response

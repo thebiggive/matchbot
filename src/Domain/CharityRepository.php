@@ -17,6 +17,7 @@ use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 class CharityRepository extends EntityRepository
 {
     /**
+     * @param Salesforce18Id<Charity> $sfId
      * @throws DomainRecordNotFoundException
      */
     public function findOneBySfIDOrThrow(Salesforce18Id $sfId): Charity

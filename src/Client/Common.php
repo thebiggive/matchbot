@@ -79,6 +79,7 @@ abstract class Common
      * @throws BadResponseException
      * @throws NotFoundException
      * @throws GuzzleException
+     *
      */
     protected function postUpdateToSalesforce(string $uri, array $jsonSnapshot, string $uuid, string $entityType): Salesforce18Id
     {

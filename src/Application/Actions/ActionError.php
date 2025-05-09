@@ -7,6 +7,7 @@ namespace MatchBot\Application\Actions;
 use JetBrains\PhpStorm\ArrayShape;
 use JetBrains\PhpStorm\Pure;
 use JsonSerializable;
+use phpDocumentor\Reflection\DocBlock\Description;
 
 class ActionError implements JsonSerializable
 {
@@ -21,6 +22,9 @@ class ActionError implements JsonSerializable
     public const string VERIFICATION_ERROR = 'VERIFICATION_ERROR';
     public const string INSUFFICIENT_MATCH_FUNDS = 'INSUFFICIENT_MATCH_FUNDS';
 
+    /**
+     * @param array<string, mixed> $data
+     */
     #[Pure]
     public function __construct(
         private string $type,
@@ -68,7 +72,7 @@ class ActionError implements JsonSerializable
     }
 
     /**
-     * @return array
+     * @return array{type: string, description: string, ...}
      */
     #[ArrayShape([
         'type' => 'string',

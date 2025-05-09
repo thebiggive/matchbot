@@ -54,6 +54,9 @@ class RedisMatchingStorage implements RealTimeMatchingStorage
         $this->redis->del($key);
     }
 
+    /**
+     * @return list<mixed>|false|self
+     */
     public function exec(): self|array|false
     {
         $return = $this->redis->exec();

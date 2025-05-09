@@ -2,6 +2,7 @@
 
 namespace MatchBot\Application\Messenger;
 
+use Assert\AssertionFailedException;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\Donation;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;
@@ -15,6 +16,9 @@ class DonationUpserted implements MessageGroupAwareInterface
 {
     public const string SNAPSHOT_TAKEN_AT = 'snapshot_taken_at';
 
+    /**
+     * @param array<string, mixed> $jsonSnapshot
+     */
     protected function __construct(
         public string $uuid,
         public array|null $jsonSnapshot

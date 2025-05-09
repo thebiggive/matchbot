@@ -4,6 +4,9 @@ namespace MatchBot\Application;
 
 interface RealTimeMatchingStorage
 {
+    /**
+     * @param array<int|string, int|string> $options
+     */
     public function set(string $key, string|int $value, array $options): bool|self;
 
     /**
@@ -26,7 +29,7 @@ interface RealTimeMatchingStorage
     public function del(string $key): void;
 
     /**
-     * @return array|false|self
+     * @return list<mixed>|false|self
      */
     public function exec();
 }

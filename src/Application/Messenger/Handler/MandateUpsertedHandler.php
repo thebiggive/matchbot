@@ -11,6 +11,7 @@ use MatchBot\Client\BadResponseException;
 use MatchBot\Client\Mandate as MandateClient;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
@@ -92,6 +93,8 @@ readonly class MandateUpsertedHandler
     /**
      * Consider DRYing up duplication with DoctrineDonationRepository::setSalesforceFields before
      * making a third copy
+     *
+     * @param null|Salesforce18Id<RegularGivingMandate> $salesforceId
      */
     private function setSalesforceFields(string $uuid, ?Salesforce18Id $salesforceId): void
     {
