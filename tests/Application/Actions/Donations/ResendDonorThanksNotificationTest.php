@@ -48,7 +48,7 @@ class ResendDonorThanksNotificationTest extends TestCase
                 body: '{"sendToEmailAddress": "new-email@example.com"}'
             ),
             new Response(),
-            ['donationId' => $donation->getUUID()->toString()]
+            ['donationId' => $donation->getUuid()->toString()]
         );
 
         $this->assertSame(200, $response->getStatusCode());

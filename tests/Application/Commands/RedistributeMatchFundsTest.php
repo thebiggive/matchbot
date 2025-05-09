@@ -117,16 +117,16 @@ class RedistributeMatchFundsTest extends TestCase
         )->willReturn([$donation]);
 
         $donationRepoProphecy->releaseMatchFunds($donation)
-            ->shouldbeCalledTimes($shouldRedistribute ? 1 : 0);
+            ->shouldBeCalledTimes($shouldRedistribute ? 1 : 0);
         $donationRepoProphecy->allocateMatchFunds($donation)
-            ->shouldbeCalledTimes($shouldRedistribute ? 1 : 0)
+            ->shouldBeCalledTimes($shouldRedistribute ? 1 : 0)
             ->willReturn('10.00');
 
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
         $loggerProphecy->error(Argument::type('string'))->shouldNotBeCalled();
 
         $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))
-            ->shouldbeCalledTimes($shouldRedistribute ? 1 : 0)
+            ->shouldBeCalledTimes($shouldRedistribute ? 1 : 0)
             ->willReturnArgument();
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);

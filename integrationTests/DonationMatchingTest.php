@@ -94,9 +94,7 @@ class DonationMatchingTest extends IntegrationTest
         Adapter $matchingAdapater
     ): Adapter {
         return new class ($matchingAdapater) extends Adapter {
-            private bool $inTransaction = false;
-
-            public function __construct(private Adapter $wrappedAdapter)
+            public function __construct(private Adapter $wrappedAdapter) // @phpstan-ignore constructor.missingParentCall
             {
             }
 

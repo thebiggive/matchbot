@@ -13,18 +13,6 @@ parameters:
 			path: app/dependencies.php
 
 		-
-			message: '#^Call to static method Assert\\Assertion\:\:isInstanceOf\(\) with MatchBot\\Domain\\Campaign and ''MatchBot\\\\Domain\\\\Campaign'' will always evaluate to true\.$#'
-			identifier: staticMethod.alreadyNarrowedType
-			count: 1
-			path: integrationTests/CampaignRepositoryTest.php
-
-		-
-			message: '#^Property MatchBot\\Application\\Matching\\Adapter@anonymous/integrationTests/DonationMatchingTest\.php\:96\:\:\$inTransaction is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: integrationTests/DonationMatchingTest.php
-
-		-
 			message: '#^PHPDoc tag @var with type array\{global\: array\{timeout\: string\}, salesforce\: array\{baseUri\: string\}, mailer\: array\{baseUri\: string, sendSecret\: string\}\} is not subtype of native type array\{global\: ArrayAccess@anonymous/integrationTests/IntegrationTest\.php\:120, mailer\: array\{baseUri\: ''dummy\-mailer\-base…''\}, salesforce\: array\{baseUri\: ''dummy\-salesforce…''\}\}\.$#'
 			identifier: varTag.nativeType
 			count: 1
@@ -125,6 +113,30 @@ parameters:
 			identifier: parameter.unresolvableType
 			count: 1
 			path: src/Domain/DonationService.php
+
+		-
+			message: '#^Class MatchBot\\Domain\\FundingWithdrawal has an uninitialized property \$amount\. Give it default value or assign it in the constructor\.$#'
+			identifier: property.uninitialized
+			count: 1
+			path: src/Domain/FundingWithdrawal.php
+
+		-
+			message: '#^Class MatchBot\\Domain\\FundingWithdrawal has an uninitialized property \$createdAt\. Give it default value or assign it in the constructor\.$#'
+			identifier: property.uninitialized
+			count: 1
+			path: src/Domain/FundingWithdrawal.php
+
+		-
+			message: '#^Class MatchBot\\Domain\\FundingWithdrawal has an uninitialized property \$donation\. Give it default value or assign it in the constructor\.$#'
+			identifier: property.uninitialized
+			count: 1
+			path: src/Domain/FundingWithdrawal.php
+
+		-
+			message: '#^Class MatchBot\\Domain\\FundingWithdrawal has an uninitialized property \$updatedAt\. Give it default value or assign it in the constructor\.$#'
+			identifier: property.uninitialized
+			count: 1
+			path: src/Domain/FundingWithdrawal.php
 
 		-
 			message: '#^PHPDoc tag @var with type array\{array\{campaignId\: int, campaignFundingId\: int, fundId\: int\}\} is not subtype of native type array\{array\{campaignId\: 7438, campaignFundingId\: 31205, fundId\: 25353, amount\: 500\}, array\{campaignId\: 7836, campaignFundingId\: 33424, fundId\: 27195, amount\: 336\.5\}, array\{campaignId\: 7735, campaignFundingId\: 32828, fundId\: 26696, amount\: 100\}, array\{campaignId\: 7735, campaignFundingId\: 32829, fundId\: 26697, amount\: 100\}, array\{campaignId\: 7735, campaignFundingId\: 32830, fundId\: 26698, amount\: 100\}, array\{campaignId\: 7735, campaignFundingId\: 32831, fundId\: 26699, amount\: 500\}, array\{campaignId\: 7735, campaignFundingId\: 32832, fundId\: 26700, amount\: 110\}, array\{campaignId\: 7735, campaignFundingId\: 32833, fundId\: 26701, amount\: 100\}, \.\.\.\}\.$#'
@@ -275,12 +287,6 @@ parameters:
 			identifier: identical.alwaysTrue
 			count: 1
 			path: tests/Application/Matching/AdapterTest.php
-
-		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''DateTime'' and null will always evaluate to false\.$#'
-			identifier: method.impossibleType
-			count: 1
-			path: tests/Application/Messenger/Handler/GiftAidResultHandlerTest.php
 
 		-
 			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$balanceTransactions\.$#'

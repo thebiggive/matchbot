@@ -26,7 +26,7 @@ class InMemoryDonationRepository implements DonationRepository
     #[\Override] public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation
     {
         foreach ($this->donations as $donation) {
-            if ($donation->getUUID()->equals($donationId)) {
+            if ($donation->getUuid()->equals($donationId)) {
                 return $donation;
             }
         }

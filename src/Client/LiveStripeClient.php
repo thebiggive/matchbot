@@ -29,8 +29,12 @@ class LiveStripeClient implements Stripe
         'payment_element' => [
             'enabled' => true,
             'features' => [
-                'payment_method_allow_redisplay_filters' => ['always', 'unspecified'],
                 'payment_method_redisplay' => 'enabled',
+
+                // include both recently added cards where donor ticked box to have card saved, and older cards
+                // where we didn't ask them.
+                'payment_method_allow_redisplay_filters' => ['always', 'unspecified'],
+
                 'payment_method_redisplay_limit' => 3, // Keep default 3; 10 is max stripe allows.
                 // default value – need to ensure it stays off to avoid breaking Regular Giving by mistake,
                 // since the list can include `off_session` saved cards that may be mandate-linked.
@@ -123,9 +127,7 @@ class LiveStripeClient implements Stripe
         );
     }
 
-    /**
-     * @throws ApiErrorException
-     */
+
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void
     {
         $this->stripeClient->paymentMethods->detach($paymentMethodId->stripePaymentMethodId);
