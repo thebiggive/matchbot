@@ -73,14 +73,14 @@ readonly class MandateUpsertedHandler
         } catch (BadRequestException | BadResponseException $exception) {
             // no trace needed for these exception types.
             $this->logger->error(sprintf(
-                "MUH: %s on attempt to push donation %s: %s",
+                "MUH: %s on attempt to push mandate %s: %s",
                 get_class($exception),
                 $uuid,
                 $exception->getMessage(),
             ));
         } catch (\Throwable $exception) {
             $this->logger->error(sprintf(
-                "MUH: Exception %s on attempt to push donation %s: %s. Trace: %s",
+                "MUH: Exception %s on attempt to push mandate %s: %s. Trace: %s",
                 get_class($exception),
                 $uuid,
                 $exception->getMessage(),
