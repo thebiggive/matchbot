@@ -41,22 +41,22 @@ class GetPaymentMethods extends Action
 
         $regularGivingPaymentMethod = null;
 
-        // exclude payment methods with 'allow_redisplay' set to limited:
-        $displayableMethods = array_values(array_filter(
+        $nonRegularGivingMethods = array_values(array_filter(
             $paymentMethodArray,
             static function (array $paymentMethod) use ($donor, &$regularGivingPaymentMethod) {
                 if ($paymentMethod['id'] === $donor->getRegularGivingPaymentMethod()?->stripePaymentMethodId) {
                     $regularGivingPaymentMethod = $paymentMethod;
-                } else {
-                    return in_array($paymentMethod['allow_redisplay'], ['always', 'unspecified'], true);
+                    return false;
                 }
+
+                return true;
             }
         ));
 
         return $this->respondWithData(
             $response,
             [
-                'data' => $displayableMethods,
+                'data' => $nonRegularGivingMethods,
                 'regularGivingPaymentMethod' => $regularGivingPaymentMethod
             ]
         );
