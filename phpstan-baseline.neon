@@ -109,12 +109,6 @@ parameters:
 			path: src/Application/Auth/SalesforceAuthMiddleware.php
 
 		-
-			message: '#^Unsafe access to private constant MatchBot\\Application\\Commands\\DeleteStalePaymentDetails\:\:STRIPE_PAGE_SIZE through static\:\:\.$#'
-			identifier: staticClassAccess.privateConstant
-			count: 2
-			path: src/Application/Commands/DeleteStalePaymentDetails.php
-
-		-
 			message: '#^PHPDoc tag @param for parameter \$fakeDonationProviderForTestUseOnly contains unresolvable type\.$#'
 			identifier: parameter.unresolvableType
 			count: 1
