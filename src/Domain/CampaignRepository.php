@@ -20,7 +20,7 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
-    private FundRepository $fundRepository;
+    private FundRepository $fundRepository; // @phpstan-ignore property.uninitialized
 
     /**
      * Gets campaigns that it is particular important matchbot has up-to-date information about.

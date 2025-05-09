@@ -32,7 +32,7 @@ class UpdateCampaignsTest extends TestCase
         $campaignRepoProphecy->updateFromSf($campaign)->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
-        $fundRepoProphecy->pullForCampaign($campaign)->shouldbeCalledOnce();
+        $fundRepoProphecy->pullForCampaign($campaign)->shouldBeCalledOnce();
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
@@ -209,7 +209,7 @@ class UpdateCampaignsTest extends TestCase
         $campaignRepoProphecy->updateFromSf($campaign)->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
-        $fundRepoProphecy->pullForCampaign($campaign)->shouldbeCalledOnce();
+        $fundRepoProphecy->pullForCampaign($campaign)->shouldBeCalledOnce();
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),

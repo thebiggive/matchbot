@@ -48,7 +48,7 @@ class GetPaymentMethods extends Action
                 if ($paymentMethod['id'] === $donor->getRegularGivingPaymentMethod()?->stripePaymentMethodId) {
                     $regularGivingPaymentMethod = $paymentMethod;
                 } else {
-                    return in_array($paymentMethod['allow_redisplay'], ['always', 'unspecified']);
+                    return in_array($paymentMethod['allow_redisplay'], ['always', 'unspecified'], true);
                 }
             }
         ));

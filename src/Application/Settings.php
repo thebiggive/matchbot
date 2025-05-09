@@ -61,7 +61,7 @@ class Settings
         $appEnv = $this->getNonEmptyStringEnv($env, 'APP_ENV', true);
 
         $this->appEnv = $appEnv;
-        if (!in_array($appEnv, ['local', 'test'])) {
+        if (!in_array($appEnv, ['local', 'test'], true)) {
             $doctrineConnectionOptions[PDO::MYSQL_ATTR_SSL_CA] =
                 dirname(__DIR__) . '/../deploy/rds-ca-eu-west-1-bundle.pem';
         }

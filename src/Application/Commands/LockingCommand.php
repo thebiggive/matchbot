@@ -16,9 +16,9 @@ use Symfony\Component\Lock\LockInterface;
  */
 abstract class LockingCommand extends Command
 {
-    private LockFactory $lockFactory;
-    private LockInterface $lock;
-    private LoggerInterface $logger;
+    private LockFactory $lockFactory; // @phpstan-ignore property.uninitialized
+    private LockInterface $lock; // @phpstan-ignore property.uninitialized
+    private LoggerInterface $logger; // @phpstan-ignore property.uninitialized
 
     public function setLockFactory(LockFactory $lockFactory): void
     {

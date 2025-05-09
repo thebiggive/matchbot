@@ -279,7 +279,7 @@ class DonationTest extends TestCase
                 'updatedTime' => $donation->getUpdatedDate()->format('c'),
                 'confirmationByMatchbot' => false,
             ],
-            $donation->toSfAPIModel()
+            $donation->toSFApiModel()
         );
     }
 
