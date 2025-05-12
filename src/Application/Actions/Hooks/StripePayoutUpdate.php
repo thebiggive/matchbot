@@ -113,7 +113,7 @@ class StripePayoutUpdate extends Stripe
          * @psalm-suppress UndefinedMagicPropertyFetch
          * @var object{id: string} $object
          */
-        $object = $event->data->object;
+        $object = $event->data->object; // @phpstan-ignore varTag.type
         $payoutId = $object->id;
 
         if (!$object->automatic) {

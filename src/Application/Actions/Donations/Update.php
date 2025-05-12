@@ -415,7 +415,8 @@ class Update extends Action
                 $transactionId = $donation->getTransactionId();
                 Assertion::notNull($transactionId);
                 try {
-                    $confirmedIntent = $this->stripe->confirmPaymentIntent($transactionId);
+                    /** @psalm-suppress InvalidArgument */
+                    $confirmedIntent = $this->stripe->confirmPaymentIntent(paymentIntentId: $transactionId, params: []); // @phpstan-ignore argument.type
 
                     /* @var string|null $nextActionType */
                     $nextActionType = null;
@@ -515,7 +516,8 @@ class Update extends Action
             return;
         }
 
-        $this->stripe->updatePaymentIntent($paymentIntentId, [
+        /** @psalm-suppress InvalidArgument */
+        $this->stripe->updatePaymentIntent($paymentIntentId, [ // @phpstan-ignore argument.type
             'amount' => $donation->getAmountFractionalIncTip(),
             'currency' => $donation->currency()->isoCode(case: 'lower'),
             'metadata' => [

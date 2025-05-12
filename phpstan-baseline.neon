@@ -7,12 +7,6 @@ parameters:
 			path: app/dependencies.php
 
 		-
-			message: '#^Strict comparison using \=\=\= between ''2024\-06\-20'' and ''2024\-06\-20'' will always evaluate to true\.$#'
-			identifier: identical.alwaysTrue
-			count: 1
-			path: app/dependencies.php
-
-		-
 			message: '#^PHPDoc tag @var with type array\{global\: array\{timeout\: string\}, salesforce\: array\{baseUri\: string\}, mailer\: array\{baseUri\: string, sendSecret\: string\}\} is not subtype of native type array\{global\: ArrayAccess@anonymous/integrationTests/IntegrationTest\.php\:120, mailer\: array\{baseUri\: ''dummy\-mailer\-base…''\}, salesforce\: array\{baseUri\: ''dummy\-salesforce…''\}\}\.$#'
 			identifier: varTag.nativeType
 			count: 1
@@ -49,22 +43,10 @@ parameters:
 			path: src/Application/Actions/Donations/Update.php
 
 		-
-			message: '#^Access to an undefined property Stripe\\StripeObject\:\:\$object\.$#'
-			identifier: property.notFound
-			count: 4
-			path: src/Application/Actions/Hooks/StripePaymentsUpdate.php
-
-		-
 			message: '#^Variable \$donation in PHPDoc tag @var does not exist\.$#'
 			identifier: varTag.variableNotFound
 			count: 1
 			path: src/Application/Actions/Hooks/StripePaymentsUpdate.php
-
-		-
-			message: '#^Access to an undefined property Stripe\\StripeObject\:\:\$object\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Application/Actions/Hooks/StripePayoutUpdate.php
 
 		-
 			message: '#^Unsafe access to private property MatchBot\\Application\\Auth\\DonationToken\:\:\$algorithm through static\:\:\.$#'
@@ -149,12 +131,6 @@ parameters:
 			identifier: varTag.nativeType
 			count: 1
 			path: src/Migrations/Version20241128165753.php
-
-		-
-			message: '#^Property Stripe\\PaymentMethod\:\:\$card \(Stripe\\StripeObject\|null\) does not accept array\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: tests/Application/Actions/Donations/ConfirmTest.php
 
 		-
 			message: '#^PHPDoc tag @var for property MatchBot\\Tests\\Application\\Actions\\Donations\\CreateTest\:\:\$previousClock with type mixed is not subtype of native type Symfony\\Component\\Clock\\ClockInterface\.$#'

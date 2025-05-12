@@ -463,8 +463,19 @@ class StripePaymentsUpdate extends Stripe
     {
         Assertion::eq('customer_cash_balance_transaction.created', $event->type);
 
+        /** @var array $eventAsArray
+         * @psalm-suppress MixedMethodCall
+         * (not sure why Psalm can't tell that this is an array since Upgrade to stripe Library v.17)
+         */
+        $eventAsArray = $event->data->toArray();
+
+        /** @psalm-suppress DocblockTypeContradiction */
+        if (! \is_array($eventAsArray)) {
+            $this->logger->error('Result of $event->data->toArray() not array');
+        }
+
         /** @var array{customer: string, currency: string, net_amount: int, ending_balance: int, type: string} $webhookObject */
-        $webhookObject = $event->data->toArray()['object'];
+        $webhookObject = $eventAsArray['object'];  //
 
         $stripeAccountId = StripeCustomerId::of($webhookObject['customer']);
 

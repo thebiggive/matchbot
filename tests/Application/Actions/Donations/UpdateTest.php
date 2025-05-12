@@ -1400,7 +1400,7 @@ class UpdateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent(Argument::cetera())
             ->shouldNotBeCalled();
-        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123', [])
             ->shouldNotBeCalled();
 
         $this->setDoublesInContainer($container, $entityManagerProphecy, $stripeProphecy);
@@ -1519,7 +1519,7 @@ class UpdateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', Argument::type('array'))
             ->shouldBeCalledOnce();
-        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123', [])
             ->willThrow(new InvalidRequestException('Not the one we know!'))
             ->shouldBeCalledOnce();
 
@@ -1596,10 +1596,11 @@ class UpdateTest extends TestCase
         if ($nextActionRequired !== null) {
             $nextAction = new ErrorObject();
             $nextAction->type = $nextActionRequired;
+            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $updatedPaymentIntent->next_action = $nextAction;
         }
 
-        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123', [])
             ->shouldBeCalledOnce()
             ->willReturn($updatedPaymentIntent);
 

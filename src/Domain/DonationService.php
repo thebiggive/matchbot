@@ -293,9 +293,10 @@ class DonationService
 
         $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
 
+        /** @psalm-suppress InvalidArgument */
         $updatedIntent = $this->stripe->confirmPaymentIntent(
             $paymentIntentId,
-            [
+            [ // @phpstan-ignore argument.type
                 'confirmation_token' => $tokenId->stripeConfirmationTokenId,
             ]
         );
@@ -438,7 +439,8 @@ class DonationService
 
         $paymentIntentId = $donation->getTransactionId();
         if ($paymentIntentId !== null) {
-            $this->stripe->updatePaymentIntent($paymentIntentId, $updatedIntentData);
+            /** @psalm-suppress InvalidArgument  */
+            $this->stripe->updatePaymentIntent($paymentIntentId, $updatedIntentData); // @phpstan-ignore argument.type
         }
     }
 
@@ -695,9 +697,10 @@ class DonationService
     {
         $paymentIntentId = $donation->getTransactionId();
         Assertion::notNull($paymentIntentId);
+        /** @psalm-suppress InvalidArgument */
         $paymentIntent = $this->stripe->confirmPaymentIntent(
             $paymentIntentId,
-            [
+            [ // @phpstan-ignore argument.type
                 'payment_method' => $paymentMethod->stripePaymentMethodId,
             ]
         );
@@ -752,6 +755,7 @@ class DonationService
         $this->logger->info('updating donation from charge: ' . $charge->toJSON());
 
         /**
+         * @psalm-suppress MixedMethodCall
          * @var array|Card|null $card
          */
         $card = $charge->payment_method_details?->toArray()['card'] ?? null;
