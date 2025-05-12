@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ec068c6bb3e09645a94526b1e9cd2e95",
+    "content-hash": "8d80bf0555f111336901824633675f0d",
     "packages": [
         {
             "name": "async-aws/core",
@@ -4175,16 +4175,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v15.10.0",
+            "version": "v17.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "3df1a19a33477af9ead8984dbd84e8f637c36199"
+                "reference": "ff2364c75533b71116ea11994d6bd08989b7f67b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/3df1a19a33477af9ead8984dbd84e8f637c36199",
-                "reference": "3df1a19a33477af9ead8984dbd84e8f637c36199",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/ff2364c75533b71116ea11994d6bd08989b7f67b",
+                "reference": "ff2364c75533b71116ea11994d6bd08989b7f67b",
                 "shasum": ""
             },
             "require": {
@@ -4194,7 +4194,7 @@
                 "php": ">=5.6.0"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "3.5.0",
+                "friendsofphp/php-cs-fixer": "3.72.0",
                 "phpstan/phpstan": "^1.2",
                 "phpunit/phpunit": "^5.7 || ^9.0"
             },
@@ -4228,9 +4228,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v15.10.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v17.2.0"
             },
-            "time": "2024-09-18T18:38:30+00:00"
+            "time": "2025-04-30T19:20:34+00:00"
         },
         {
             "name": "symfony/amazon-sqs-messenger",
@@ -12473,5 +12473,5 @@
     "platform-overrides": {
         "php": "8.3.1"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.3.0"
 }
