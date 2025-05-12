@@ -293,10 +293,9 @@ class DonationService
 
         $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
 
-        /** @psalm-suppress InvalidArgument */
         $updatedIntent = $this->stripe->confirmPaymentIntent(
             $paymentIntentId,
-            [ // @phpstan-ignore argument.type
+            [
                 'confirmation_token' => $tokenId->stripeConfirmationTokenId,
             ]
         );
@@ -697,10 +696,9 @@ class DonationService
     {
         $paymentIntentId = $donation->getTransactionId();
         Assertion::notNull($paymentIntentId);
-        /** @psalm-suppress InvalidArgument */
         $paymentIntent = $this->stripe->confirmPaymentIntent(
             $paymentIntentId,
-            [ // @phpstan-ignore argument.type
+            [
                 'payment_method' => $paymentMethod->stripePaymentMethodId,
             ]
         );
