@@ -8,11 +8,13 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 final class Version20240812112954 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Create fake regular giving mandate in staging for manual test purposes';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         if (getenv('APP_ENV') !== 'staging') {
@@ -40,6 +42,7 @@ final class Version20240812112954 extends AbstractMigration
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         if (getenv('APP_ENV') !== 'staging') {

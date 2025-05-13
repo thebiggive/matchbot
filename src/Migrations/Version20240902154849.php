@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240902154849 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Add columns to DonorAccount table to support regular giving';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
@@ -26,6 +28,7 @@ final class Version20240902154849 extends AbstractMigration
 );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql(<<<'SQL'

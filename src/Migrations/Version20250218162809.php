@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20250218162809 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Add cancellation related properties to regular giving mandate';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
@@ -25,6 +27,7 @@ final class Version20250218162809 extends AbstractMigration
             );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql(

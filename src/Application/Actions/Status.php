@@ -34,6 +34,7 @@ class Status extends Action
     /**
      * @return Response
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         /** @var string|null $errorMessage */

@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240830164310 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Add columns and indexes for regular giving, delete unused columns';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Donation ADD mandate_id INT UNSIGNED DEFAULT NULL, ADD mandateSequenceNumber INT DEFAULT NULL');
@@ -24,6 +26,7 @@ final class Version20240830164310 extends AbstractMigration
         $this->addSql('CREATE INDEX donationsCreatedUpTo ON RegularGivingMandate (donationsCreatedUpTo)');
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Donation DROP FOREIGN KEY FK_C893E3F66C1129CD');

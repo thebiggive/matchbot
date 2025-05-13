@@ -15,11 +15,13 @@ use MatchBot\Application\Assertion;
  */
 final class Version20241217162011 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Remove Gift Aid from 2 donations, and tip from 1';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         /**
@@ -50,6 +52,7 @@ final class Version20241217162011 extends AbstractMigration
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch.

@@ -36,6 +36,7 @@ class GetAllForUser extends Action
      * @return Response
      * @throws DomainRecordNotFoundException
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         $customerId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME);

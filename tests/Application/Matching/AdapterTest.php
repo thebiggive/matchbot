@@ -16,6 +16,7 @@ class AdapterTest extends TestCase
     private ArrayMatchingStorage $storage;
     private Adapter $sut;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->storage = new ArrayMatchingStorage();

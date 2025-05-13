@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20241016110231 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Patch one donation where twin pushes caused a status blip';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $updateSql = <<<EOT
@@ -28,6 +30,7 @@ final class Version20241016110231 extends AbstractMigration
         $this->addSql($updateSql);
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

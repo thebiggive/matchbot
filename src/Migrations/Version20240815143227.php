@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240815143227 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Fake Regular Giving for testing on staging';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         if (getenv('APP_ENV') !== 'staging') {
@@ -63,6 +65,7 @@ final class Version20240815143227 extends AbstractMigration
 
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // this down() migration is auto-generated, please modify it to your needs

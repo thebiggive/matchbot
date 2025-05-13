@@ -23,11 +23,13 @@ readonly class CharityUpdated implements MessageDeduplicationAwareInterface, Mes
      *
      * @link https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues-exactly-once-processing.html
      */
+    #[\Override]
     public function getMessageDeduplicationId(): ?string
     {
         return $this->requestTraceId;
     }
 
+    #[\Override]
     public function getMessageGroupId(): ?string
     {
         return 'charity.updated.' . $this->charityAccountId->value;

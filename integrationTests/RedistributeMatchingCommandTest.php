@@ -43,6 +43,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
     /** @var ObjectProphecy<RoutableMessageBus> */
     private ObjectProphecy $messageBusProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();

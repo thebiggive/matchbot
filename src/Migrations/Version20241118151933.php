@@ -13,11 +13,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20241118151933 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Stop attempting to send today\'s un-sendable donations to SF';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
@@ -31,6 +33,7 @@ SQL
 );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         throw new \Exception("No un-patch");

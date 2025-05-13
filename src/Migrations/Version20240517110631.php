@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240517110631 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Remove PII from pending donations relating to deleted accounts';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<SQL
@@ -32,6 +34,7 @@ final class Version20240517110631 extends AbstractMigration
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         throw new \Exception("Irreversible migration");

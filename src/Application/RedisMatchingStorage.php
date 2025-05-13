@@ -8,6 +8,7 @@ class RedisMatchingStorage implements RealTimeMatchingStorage
     {
     }
 
+    #[\Override]
     public function get(string $key)
     {
         $return = $this->redis->get($key);
@@ -18,6 +19,7 @@ class RedisMatchingStorage implements RealTimeMatchingStorage
         return $return;
     }
 
+    #[\Override]
     public function set(string $key, string|int $value, array $options): bool|self
     {
         $return = $this->redis->set($key, (string)$value, $options);
@@ -28,6 +30,7 @@ class RedisMatchingStorage implements RealTimeMatchingStorage
         return $return;
     }
 
+    #[\Override]
     public function multi(): self|bool
     {
         $return = $this->redis->multi();
@@ -38,6 +41,7 @@ class RedisMatchingStorage implements RealTimeMatchingStorage
         return new self($return);
     }
 
+    #[\Override]
     public function incrBy(string $key, int $increment): string|self|false|int
     {
         $return = $this->redis->incrBy($key, $increment);
@@ -49,11 +53,13 @@ class RedisMatchingStorage implements RealTimeMatchingStorage
         return $return;
     }
 
+    #[\Override]
     public function del(string $key): void
     {
         $this->redis->del($key);
     }
 
+    #[\Override]
     public function exec(): self|array|false
     {
         $return = $this->redis->exec();
@@ -64,6 +70,7 @@ class RedisMatchingStorage implements RealTimeMatchingStorage
         return $return;
     }
 
+    #[\Override]
     public function decrBy(string $key, int $decrement)
     {
         $return = $this->redis->decr($key, $decrement);

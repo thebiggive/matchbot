@@ -69,6 +69,7 @@ class DonationServiceTest extends TestCase
      */
     private ObjectProphecy $entityManagerProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->donorAccountRepoProphecy = $this->prophesize(DonorAccountRepository::class);

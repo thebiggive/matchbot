@@ -12,16 +12,19 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20240828120951 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Add payment method ID for use in regular giving to DB';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql('ALTER TABLE DonorAccount ADD regularGivingPaymentMethod VARCHAR(255) DEFAULT NULL');
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('ALTER TABLE DonorAccount DROP regularGivingPaymentMethod');

@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20250324163644 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'MAT-410: Adjust allocation orders for funds converted from pledge to topuppledge';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
@@ -23,6 +25,7 @@ final class Version20250324163644 extends AbstractMigration
         SQL);
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch.

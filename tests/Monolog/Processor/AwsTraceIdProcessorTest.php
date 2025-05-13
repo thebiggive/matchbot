@@ -14,6 +14,7 @@ use Psr\Log\LoggerInterface;
 
 class AwsTraceIdProcessorTest extends TestCase
 {
+    #[\Override]
     public function setUp(): void
     {
         unset($_SERVER['HTTP_X_AMZN_TRACE_ID']);

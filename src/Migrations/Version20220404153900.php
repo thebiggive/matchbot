@@ -14,11 +14,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220404153900 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return "Update 4 April 2022 morning donations' Gift Aid claim data";
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $donationIdsClaimed = [
@@ -80,6 +82,7 @@ EOT,
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-fix.

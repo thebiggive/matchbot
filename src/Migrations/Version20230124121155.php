@@ -15,11 +15,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20230124121155 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Patch paid out donation statuses';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $updateStatusSql = <<<EOT
@@ -52,6 +54,7 @@ EOT;
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

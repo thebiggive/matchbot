@@ -14,11 +14,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220623122551 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Mark some donations for re-claiming for ticket MAT-251 (as two charities had wrong HMRC references).';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         // MAT-251. 76 donations to the affected charity not fully processed, hence LIMIT 76 added.
@@ -59,6 +61,7 @@ final class Version20220623122551 extends AbstractMigration
 
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

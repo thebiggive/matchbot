@@ -199,6 +199,7 @@ class RegularGivingNotifierTest extends TestCase
         $sut->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
     }
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

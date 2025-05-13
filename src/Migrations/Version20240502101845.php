@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240502101845 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Match fund corrections for MAT-361 campaigns';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<SQL
@@ -37,6 +39,7 @@ final class Version20240502101845 extends AbstractMigration
             SQL);
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql(<<<SQL

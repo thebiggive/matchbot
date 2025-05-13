@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20240813153254 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Move a pledge link back to the correct Fund';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<SQL
@@ -28,6 +30,7 @@ final class Version20240813153254 extends AbstractMigration
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch.

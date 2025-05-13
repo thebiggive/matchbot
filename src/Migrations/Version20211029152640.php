@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20211029152640 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription() : string
     {
         return 'Add new Donation fields for in-house Gift Aid processing; add and populated a `collectedAt` datetime';
     }
 
+    #[\Override]
     public function up(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
@@ -28,6 +30,7 @@ final class Version20211029152640 extends AbstractMigration
         $this->addSql("UPDATE Donation SET collectedAt = createdAt WHERE collectedAt IS NULL AND (donationStatus IN ('Collected', 'Paid'))");
     }
 
+    #[\Override]
     public function down(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');

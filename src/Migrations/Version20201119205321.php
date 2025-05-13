@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20201119205321 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription() : string
     {
         return 'Update 3 Mousetrap Theatre missed donations to Paid status and mark for re-pushing to Salesforce.';
     }
 
+    #[\Override]
     public function up(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
@@ -30,6 +32,7 @@ EOT;
         $this->addSql($updateSql);
     }
 
+    #[\Override]
     public function down(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');

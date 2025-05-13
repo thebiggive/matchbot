@@ -42,6 +42,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
 
     private DonationRepository $sut;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();

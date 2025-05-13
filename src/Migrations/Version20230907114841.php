@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20230907114841 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Resubmit Gift Aid claims (MAT-311)';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $campaignIdForMAT311 = 4661;
@@ -40,6 +42,7 @@ final class Version20230907114841 extends AbstractMigration
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         throw new \Exception("No going back");

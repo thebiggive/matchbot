@@ -69,6 +69,7 @@ class Mailer extends Common
         }
     }
 
+    #[\Override]
     private function hash(string $body): string
     {
         return hash_hmac('sha256', trim($body), $this->getMailerSetting('sendSecret'));

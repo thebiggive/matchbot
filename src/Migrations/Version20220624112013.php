@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220624112013 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'CLA-28 prepare donations for claiming to test claims with more than 10 donations per claim';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         // This DB migration is only to be ran in staging!
@@ -46,6 +48,7 @@ final class Version20220624112013 extends AbstractMigration
         }
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // nothing here

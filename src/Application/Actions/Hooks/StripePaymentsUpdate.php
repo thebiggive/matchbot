@@ -78,6 +78,7 @@ class StripePaymentsUpdate extends Stripe
     /**
      * @return Response
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         $validationErrorResponse = $this->prepareEvent(

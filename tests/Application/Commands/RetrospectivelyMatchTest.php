@@ -36,6 +36,7 @@ class RetrospectivelyMatchTest extends TestCase
      */
     private ObjectProphecy $matchFundsRedistributorProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         $chatterProphecy = $this->prophesize(ChatterInterface::class);

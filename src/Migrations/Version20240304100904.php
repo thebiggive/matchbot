@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240304100904 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Avoid claiming gift aid for specific donations where charity is planning to claim it for themselves';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<SQL
@@ -25,6 +27,7 @@ final class Version20240304100904 extends AbstractMigration
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql(<<<SQL

@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20200925104750 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription() : string
     {
         return 'Add new Donation field championComms';
     }
 
+    #[\Override]
     public function up(Schema $schema) : void
     {
         // this up() migration is auto-generated, please modify it to your needs
@@ -25,6 +27,7 @@ final class Version20200925104750 extends AbstractMigration
         $this->addSql('ALTER TABLE Donation ADD championComms TINYINT(1) DEFAULT NULL');
     }
 
+    #[\Override]
     public function down(Schema $schema) : void
     {
         // this down() migration is auto-generated, please modify it to your needs

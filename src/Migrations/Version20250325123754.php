@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20250325123754 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Prepare schema for new allocation order method';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql('DROP INDEX available_fundings ON CampaignFunding');
@@ -25,6 +27,7 @@ final class Version20250325123754 extends AbstractMigration
         $this->addSql('CREATE INDEX allocationOrder ON Fund (allocationOrder)');
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('DROP INDEX available_fundings ON CampaignFunding');

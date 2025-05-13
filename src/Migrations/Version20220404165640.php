@@ -14,11 +14,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220404165640 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return "Update 4 April 2022 afternoon donations' Gift Aid claim data";
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $correlationId = '8BF8ADF17D304ED7B5032A8692D3B6EC';
@@ -95,6 +97,7 @@ EOT,
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-fix.

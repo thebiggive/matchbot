@@ -27,6 +27,7 @@ class HandleOutOfSyncFundsTest extends TestCase
     private CampaignFunding $fundingOverMatched;
     private CampaignFunding $fundingUnderMatchedWithNothingAllocated;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->fundingUnderMatched = $this->getFundingUnderMatched();

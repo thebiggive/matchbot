@@ -76,6 +76,7 @@ readonly class Money implements \JsonSerializable, \Stringable
     /**
      * @psalm-suppress PossiblyUnusedMethod - used indirectly
      */
+    #[\Override]
     public function jsonSerialize(): mixed
     {
         return ['amountInPence' => $this->amountInPence, 'currency' => $this->currency->isoCode()];
@@ -99,6 +100,7 @@ readonly class Money implements \JsonSerializable, \Stringable
         return $this->amountInPence > $that->amountInPence;
     }
 
+    #[\Override]
     public function __toString()
     {
         return $this->currency->isoCode() . ' ' . ($this->amountInPence / 100);

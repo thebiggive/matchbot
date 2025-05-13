@@ -9,16 +9,19 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240819164301 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Add column matchbot.Donation.totalPaidByDonor';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Donation ADD totalPaidByDonor NUMERIC(18, 2) DEFAULT NULL');
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Donation DROP totalPaidByDonor');

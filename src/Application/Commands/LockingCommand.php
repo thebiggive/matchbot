@@ -30,6 +30,7 @@ abstract class LockingCommand extends Command
         $this->logger = $logger;
     }
 
+    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->start($input, $output);

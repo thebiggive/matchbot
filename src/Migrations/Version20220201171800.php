@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220201171800 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Un-mark donations sent for Gift Aid processing prematurely';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
@@ -24,6 +26,7 @@ final class Version20220201171800 extends AbstractMigration
         $this->addSql('UPDATE Donation SET tbgGiftAidRequestQueuedAt = NULL WHERE tbgGiftAidRequestQueuedAt IS NOT NULL');
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

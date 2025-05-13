@@ -10,11 +10,13 @@ use MatchBot\Domain\Donation;
 
 final class Version20240611093804 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Prevent Gift Aid claims for a charity briefly onboarded who wish to claim manually';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<EOT
@@ -35,6 +37,7 @@ final class Version20240611093804 extends AbstractMigration
         EOT);
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

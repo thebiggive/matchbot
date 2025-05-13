@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220421090453 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Prepare donations to date for claim with new method';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<EOT
@@ -33,6 +35,7 @@ WHERE
 EOT);
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

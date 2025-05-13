@@ -283,6 +283,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
      */
+    #[\Override]
     protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
     {
         $campaign = $proxy;

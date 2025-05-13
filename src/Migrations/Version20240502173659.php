@@ -16,11 +16,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20240502173659 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Make Fund.amount nullable / default null';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<SQL
@@ -29,6 +31,7 @@ final class Version20240502173659 extends AbstractMigration
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql(<<<SQL

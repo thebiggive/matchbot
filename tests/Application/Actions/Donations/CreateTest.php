@@ -75,6 +75,7 @@ class CreateTest extends TestCase
     /** @var ObjectProphecy<EntityManagerInterface>  */
     private ObjectProphecy $entityManagerProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();

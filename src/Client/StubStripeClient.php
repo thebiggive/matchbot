@@ -24,6 +24,7 @@ use Stripe\StripeObject;
  */
 class StubStripeClient implements Stripe
 {
+    #[\Override]
     public function cancelPaymentIntent(string $paymentIntentId): void
     {
         $this->pause();
@@ -36,11 +37,13 @@ class StubStripeClient implements Stripe
         usleep(500_000);
     }
 
+    #[\Override]
     public function updatePaymentIntent(string $paymentIntentId, array $updateData): void
     {
         $this->pause();
     }
 
+    #[\Override]
     public function confirmPaymentIntent(string $paymentIntentId, array $params): PaymentIntent
     {
         $this->pause();
@@ -51,11 +54,13 @@ class StubStripeClient implements Stripe
         return $pi;
     }
 
+    #[\Override]
     public function retrievePaymentIntent(string $paymentIntentId): never
     {
         throw new \Exception("Retrieve Payment Intent not implemented in stub- not currently used in load tests");
     }
 
+    #[\Override]
     public function createPaymentIntent(array $createPayload): PaymentIntent
     {
         $this->pause();
@@ -67,6 +72,7 @@ class StubStripeClient implements Stripe
         return substr(Uuid::uuid4()->toString(), 0, 15);
     }
 
+    #[\Override]
     public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
     {
         $session = new CustomerSession();
@@ -75,6 +81,7 @@ class StubStripeClient implements Stripe
         return $session;
     }
 
+    #[\Override]
     public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken
     {
         $confirmationToken = new ConfirmationToken();
@@ -90,31 +97,37 @@ class StubStripeClient implements Stripe
         return $confirmationToken;
     }
 
+    #[\Override]
     public function createRegularGivingCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
     {
         return $this->createCustomerSession($stripeCustomerId);
     }
 
+    #[\Override]
     public function retrieveCharge(string $chargeId): Charge
     {
         throw new \Exception("Retrieve Charge not implemented in stub- not currently used in load tests");
     }
 
+    #[\Override]
     public function retrieveBalanceTransaction(string $id): BalanceTransaction
     {
         throw new \Exception("Retrieve Balance Transaction not implemented in stub- not currently used in load tests");
     }
 
+    #[\Override]
     public function createSetupIntent(StripeCustomerId $stripeCustomerId): SetupIntent
     {
         throw new \Exception("Create setup intent not implemented in stub - not currently used in load tests");
     }
 
+    #[\Override]
     public function retrievePaymentMethod(StripeCustomerId $customerId, StripePaymentMethodId $methodId): PaymentMethod
     {
         throw new \Exception("Retrieve Payment Method not implemented in stub - not currently used in load tests");
     }
 
+    #[\Override]
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void
     {
         throw new \Exception("Detatch Payment Method not implemented in stub - not currently used in load tests");

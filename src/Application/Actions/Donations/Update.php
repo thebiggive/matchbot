@@ -68,6 +68,7 @@ class Update extends Action
      * @throws ApiErrorException if Stripe Payment Intent confirm() fails, other than because of a
      *                           missing payment method.
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         if (empty($args['donationId']) || ! is_string($args['donationId'])) {

@@ -88,6 +88,7 @@ class RegularGivingServiceTest extends TestCase
     private array $donations;
 
 
+    #[\Override]
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);

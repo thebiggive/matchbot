@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240902163827 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Remove redundancy in new DonorAccount property names';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
@@ -29,6 +31,7 @@ final class Version20240902163827 extends AbstractMigration
             );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql(<<<'SQL'

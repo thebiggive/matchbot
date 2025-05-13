@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20230928150700 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Add tbgApprovedToClaimGiftAid to Charity';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Charity ADD tbgApprovedToClaimGiftAid TINYINT(1) NOT NULL');
@@ -25,6 +27,7 @@ final class Version20230928150700 extends AbstractMigration
         $this->addSql('UPDATE Charity SET tbgApprovedToClaimGiftAid = tbgClaimingGiftAid');
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Charity DROP tbgApprovedToClaimGiftAid');

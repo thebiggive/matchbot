@@ -70,6 +70,7 @@ class ActionError implements JsonSerializable
     /**
      * @return array
      */
+    #[\Override]
     #[ArrayShape([
         'type' => 'string',
         'description' => 'string'

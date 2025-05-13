@@ -50,6 +50,7 @@ class Create extends Action
      * @throws \MatchBot\Application\Matching\TerminalLockException if the matching adapter can't allocate funds
      * @see PersonManagementAuthMiddleware
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         // The route at `/people/{personId}/donations` validates that the donor has permission to act

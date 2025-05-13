@@ -16,6 +16,7 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 class PersonWithPasswordAuthMiddleware extends PersonManagementAuthMiddleware
 {
+    #[\Override]
     protected function checkCompleteness(ServerRequestInterface $request): void
     {
         if (!$this->token->isComplete($this->jws)) {

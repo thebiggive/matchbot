@@ -14,11 +14,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220819094649 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Re-queue 392 donations missed due to HMRC enrolment errors';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $campaignIds = [2596, 3028, 3046];
@@ -42,6 +44,7 @@ EOT,
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch.

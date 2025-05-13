@@ -101,6 +101,7 @@ class TakeRegularGivingDonations extends LockingCommand
         }
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $bufferedOutput = new BufferedOutput();

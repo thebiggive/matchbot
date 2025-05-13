@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20250311182346 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Add Charity.address_* columns';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
@@ -30,6 +32,7 @@ final class Version20250311182346 extends AbstractMigration
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql(<<<'SQL'

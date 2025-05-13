@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20250129150903 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Add RegularGivingMandate tbgComms and charityComms columns';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
@@ -24,6 +26,7 @@ final class Version20250129150903 extends AbstractMigration
             );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('ALTER TABLE RegularGivingMandate DROP tbgComms, DROP charityComms');

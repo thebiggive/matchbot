@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20240313113938 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'See MAT-357';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $campaignIdForMat357 = '4684';
@@ -43,6 +45,7 @@ final class Version20240313113938 extends AbstractMigration
         //                               AND donationStatus = "Paid" AND giftAid = 1;
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         throw new \Exception("No back-takesies!");

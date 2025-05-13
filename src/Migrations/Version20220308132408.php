@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220308132408 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Remove temporary test donation & campaign records';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $campaignId = 3076;
@@ -36,6 +38,7 @@ final class Version20220308132408 extends AbstractMigration
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-fix

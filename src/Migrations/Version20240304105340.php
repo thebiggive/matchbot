@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240304105340 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'no-op migration';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         // no-op
@@ -22,6 +24,7 @@ final class Version20240304105340 extends AbstractMigration
         // previously.
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // no-op

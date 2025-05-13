@@ -14,11 +14,13 @@ final class Version20240717173149 extends AbstractMigration
 {
     const POSTCODE_GREEN_TRUST_FUND_ID = 24089;
 
+    #[\Override]
     public function getDescription(): string
     {
         return 'Move some CampaignFundings to match Salesforce';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $campaignsToUpdate = [
@@ -45,6 +47,7 @@ final class Version20240717173149 extends AbstractMigration
         }
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch.

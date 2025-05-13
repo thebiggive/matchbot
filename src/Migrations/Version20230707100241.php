@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20230707100241 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Re-claim Gift Aid for a charity who were incorrectly enrolled the first time';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<SQL
@@ -38,6 +40,7 @@ final class Version20230707100241 extends AbstractMigration
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

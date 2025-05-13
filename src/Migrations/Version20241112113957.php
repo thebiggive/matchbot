@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20241112113957 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Status patch for an October 2024 payout';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<SQL
@@ -31,6 +33,7 @@ final class Version20241112113957 extends AbstractMigration
         SQL);
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch.

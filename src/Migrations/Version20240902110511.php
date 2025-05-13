@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240902110511 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Delete unused fee cover related columns where not already deleted';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         /** We already deleted these columns in non-prod envs but then decided to delay deleting them in
@@ -30,6 +32,7 @@ final class Version20240902110511 extends AbstractMigration
         $this->addSql('ALTER TABLE Charity DROP updateFromSFRequiredSince');
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         throw new \Exception("no going back");

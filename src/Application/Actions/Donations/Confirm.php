@@ -44,6 +44,7 @@ class Confirm extends Action
      * using the payment method provided. Does not update the donation status, that only gets updated when stripe calls
      * back to say the money is taken.
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         try {

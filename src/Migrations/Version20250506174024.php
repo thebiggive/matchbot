@@ -9,11 +9,13 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20250506174024 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Make FundingWithdrawal.donation_id non-null to match actual usage';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         // SET FOREIGN_KEY_CHECKS required to allow changing type of a foreign key, even when making
@@ -26,6 +28,7 @@ final class Version20250506174024 extends AbstractMigration
         $this->addSql('SET FOREIGN_KEY_CHECKS = 1');
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('SET FOREIGN_KEY_CHECKS = 0');

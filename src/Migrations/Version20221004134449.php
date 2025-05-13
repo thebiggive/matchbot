@@ -14,11 +14,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20221004134449 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'MAT-259 Re-queue every single donation for LAW CENTRES FEDERATION and CYMDEITHAS ERYRI THE SNOWDONIA SOCIETY';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $campaignIds = [1805, 2758, 2469];
@@ -41,6 +43,7 @@ EOT,
             ['campaignIdsToRequeue' => ArrayParameterType::INTEGER],
         );
     }
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

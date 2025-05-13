@@ -13,11 +13,13 @@ use MatchBot\Application\Assertion;
  */
 final class Version20241126163843 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Delete pledges loaded in advance of CC24 that are no longer available';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         /** @var array{array{campaignId: int, campaignFundingId: int, fundId: int}} $deleteSets */
@@ -117,6 +119,7 @@ final class Version20241126163843 extends AbstractMigration
         }
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch.

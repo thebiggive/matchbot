@@ -12,11 +12,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220705130951 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return 'Re-queue end of June donations sent to old SQS queue';
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<EOT
@@ -35,6 +37,7 @@ LIMIT 148
 EOT);
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch.

@@ -45,11 +45,13 @@ abstract class IntegrationTest extends TestCase
     public static ?ContainerInterface $integrationTestContainer = null;
     public static ?App $app = null;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
 
         $noOpMiddleware = new class implements MiddlewareInterface {
+            #[\Override]
             public function process(
                 ServerRequestInterface $request,
                 RequestHandlerInterface $handler,
@@ -118,21 +120,25 @@ abstract class IntegrationTest extends TestCase
         /** @var ApiClient $client */
         $client = [
             'global' => new /** @implements ArrayAccess<string, never> */ class implements ArrayAccess {
+                #[\Override]
                 public function offsetExists(mixed $offset): bool
                 {
                     return true;
                 }
 
+                #[\Override]
                 public function offsetGet(mixed $offset): never
                 {
                     throw new \Exception("Do not use real API client in tests");
                 }
 
+                #[\Override]
                 public function offsetSet(mixed $offset, mixed $value): never
                 {
                     throw new \Exception("Do not use real API client in tests");
                 }
 
+                #[\Override]
                 public function offsetUnset(mixed $offset): never
                 {
                     throw new \Exception("Do not use real API client in tests");

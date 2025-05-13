@@ -13,11 +13,13 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20241218162432 extends AbstractMigration
 {
+    #[\Override]
     public function getDescription(): string
     {
         return "Patch total charged following £0'd tip from 1 missed donation";
     }
 
+    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<EOT
@@ -29,6 +31,7 @@ final class Version20241218162432 extends AbstractMigration
         );
     }
 
+    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch.

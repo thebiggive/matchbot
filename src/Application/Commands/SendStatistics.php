@@ -35,6 +35,7 @@ class SendStatistics extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $time = $this->clock->now()->getTimestamp();

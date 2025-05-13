@@ -54,6 +54,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     /** @var ObjectProphecy<RoutableMessageBus> */
     private ObjectProphecy $messageBusProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
