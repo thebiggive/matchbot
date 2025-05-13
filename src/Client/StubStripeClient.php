@@ -125,4 +125,9 @@ class StubStripeClient implements Stripe
     {
         throw new \Exception("Detatch Payment Method not implemented in stub - not currently used in load tests");
     }
+
+    #[\Override] public function updateCustomer(string $customerId, array $updateData): void
+    {
+        throw new \Exception("updateCustomer not implemented in stub- not currently used in load tests");
+    }
 }

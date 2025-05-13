@@ -145,10 +145,6 @@ class LiveStripeClient implements Stripe
         $this->stripeClient->paymentMethods->detach($paymentMethodId->stripePaymentMethodId);
     }
 
-
-    /**
-     * @param array{address?: null|array{city?: string, country?: string, line1?: string, line2?: string, postal_code?: string, state?: string}, balance?: int, cash_balance?: array{settings?: array{reconciliation_mode?: string}}, default_source?: string, description?: string, email?: string, expand?: string[], invoice_prefix?: string, invoice_settings?: array{custom_fields?: null|array{name: string, value: string}[], default_payment_method?: string, footer?: string, rendering_options?: null|array{amount_tax_display?: null|string, template?: string}}, metadata?: null|\Stripe\StripeObject, name?: string, next_invoice_sequence?: int, phone?: string, preferred_locales?: string[], shipping?: null|array{address: array{city?: string, country?: string, line1?: string, line2?: string, postal_code?: string, state?: string}, name: string, phone?: string}, source?: string, tax?: array{ip_address?: null|string, validate_location?: string}, tax_exempt?: null|string, validate?: bool} $updateData
-     **/
     #[\Override] public function updateCustomer(string $customerId, array $updateData): void
     {
         $this->stripeClient->customers->update($customerId, $updateData);
