@@ -1,3 +1,0 @@
-Argument 2 of Stripe\Service\PaymentMethodService::update expects
-array{allow_redisplay?: string, billing_details?: array{address?: array{city?: string, country?: string, line1?: string, line2?: string, postal_code?: string, state?: string}|null, email?: null|string, name?: null|string, phone?: null|string, tax_id?: string}, card?: array{exp_month?: int, exp_year?: int, networks?: array{preferred?: null|string}}, expand?: array<array-key, string>, link?: array<never, never>, metadata?: Stripe\StripeObject|null, pay_by_bank?: array<never, never>, us_bank_account?: array{account_holder_type?: string, account_type?: string}}|null, but parent type
-array<array-key, mixed> provided (see https://psalm.dev/194)
