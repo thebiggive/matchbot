@@ -471,11 +471,13 @@ class StripePaymentsUpdate extends Stripe
 
         /** @psalm-suppress DocblockTypeContradiction */
         if (! \is_array($eventAsArray)) {
+            // I don't think this will ever happen but logging an error in case of a change since stripe
+            // SDK upgrade
             $this->logger->error('Result of $event->data->toArray() not array');
         }
 
         /** @var array{customer: string, currency: string, net_amount: int, ending_balance: int, type: string} $webhookObject */
-        $webhookObject = $eventAsArray['object'];  //
+        $webhookObject = $eventAsArray['object'];
 
         $stripeAccountId = StripeCustomerId::of($webhookObject['customer']);
 
