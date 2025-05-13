@@ -163,18 +163,6 @@ parameters:
 			path: tests/Application/Actions/Hooks/StripePaymentsUpdateTest.php
 
 		-
-			message: '#^Method MatchBot\\Tests\\Application\\Commands\\HandleOutOfSyncFundsTest\:\:getCampaignFundingRepoPropechy\(\) never returns MatchBot\\Domain\\CampaignFundingRepository so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: tests/Application/Commands/HandleOutOfSyncFundsTest.php
-
-		-
-			message: '#^Method MatchBot\\Tests\\Application\\Commands\\HandleOutOfSyncFundsTest\:\:getFundingWithdrawalRepoProphecy\(\) never returns MatchBot\\Domain\\FundingWithdrawalRepository so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: tests/Application/Commands/HandleOutOfSyncFundsTest.php
-
-		-
 			message: '#^Variable \$card_brand might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
