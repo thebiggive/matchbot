@@ -516,7 +516,7 @@ class Update extends Action
         }
 
         /** @psalm-suppress InvalidArgument */
-        $this->stripe->updatePaymentIntent($paymentIntentId, [ // @phpstan-ignore argument.type
+        $this->stripe->updatePaymentIntent($paymentIntentId, [
             'amount' => $donation->getAmountFractionalIncTip(),
             'currency' => $donation->currency()->isoCode(case: 'lower'),
             'metadata' => [

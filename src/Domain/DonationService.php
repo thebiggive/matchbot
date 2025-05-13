@@ -439,7 +439,7 @@ class DonationService
         $paymentIntentId = $donation->getTransactionId();
         if ($paymentIntentId !== null) {
             /** @psalm-suppress InvalidArgument  */
-            $this->stripe->updatePaymentIntent($paymentIntentId, $updatedIntentData); // @phpstan-ignore argument.type
+            $this->stripe->updatePaymentIntent($paymentIntentId, $updatedIntentData);
         }
     }
 
