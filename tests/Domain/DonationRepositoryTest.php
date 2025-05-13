@@ -44,6 +44,7 @@ class DonationRepositoryTest extends TestCase
     /** @var ObjectProphecy<EntityManagerInterface> */
     private ObjectProphecy $entityManagerProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         $connectionWhichUpdatesFine = $this->prophesize(Connection::class);

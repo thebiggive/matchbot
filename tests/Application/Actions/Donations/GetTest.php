@@ -24,6 +24,7 @@ class GetTest extends TestCase
     public const string DONATION_UUID = '2c6f3408-b405-11ef-a2fe-6b6ac08448a0';
     private InMemoryDonationRepository $donationRepository;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();

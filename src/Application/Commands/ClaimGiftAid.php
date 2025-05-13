@@ -30,6 +30,7 @@ class ClaimGiftAid extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function configure(): void
     {
         $this->setDescription('Sends applicable donations to ClaimBot for HMRC Gift Aid claims');
@@ -41,6 +42,7 @@ class ClaimGiftAid extends LockingCommand
         );
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $toClaim = $this->donationRepository->findReadyToClaimGiftAid(

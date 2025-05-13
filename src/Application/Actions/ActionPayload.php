@@ -47,6 +47,7 @@ class ActionPayload implements JsonSerializable
     /**
      * @return object | array | null
      */
+    #[\Override]
     public function jsonSerialize(): object | array | null
     {
         $payload = null;

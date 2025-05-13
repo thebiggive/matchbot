@@ -122,7 +122,9 @@ class CalculatorTest extends TestCase
         );
 
         $this->assertSame('0.35', $fees->coreFee);
-        $this->assertSame(9.65, $donationAmount - $fees->coreFee);
+
+        // @phpstan-ignore method.alreadyNarrowedType
+        $this->assertSame(9.65, (float)$donationAmount - (float)$fees->coreFee);
     }
 
     /**
@@ -131,7 +133,7 @@ class CalculatorTest extends TestCase
     public function testGBP10WVithGiftAidProvides1208(): void
     {
         $donationAmount = '10.00';
-        $giftAidAmount = $donationAmount / 4;
+        $giftAidAmount = (int)$donationAmount / 4;
 
         $fees = Calculator::calculate(
             psp: 'stripe',
@@ -143,7 +145,9 @@ class CalculatorTest extends TestCase
         );
 
         $this->assertSame('0.43', $fees->coreFee);
-        $this->assertSame(12.07, $donationAmount - $fees->coreFee + $giftAidAmount);
+
+        // @phpstan-ignore method.alreadyNarrowedType
+        $this->assertSame(12.07, (float)$donationAmount - (float)$fees->coreFee + $giftAidAmount);
     }
 
     /**
@@ -163,6 +167,8 @@ class CalculatorTest extends TestCase
         );
 
         $this->assertSame('0.52', $fees->coreFee);
-        $this->assertSame(9.48, $donationAmount - $fees->coreFee);
+
+        // @phpstan-ignore method.alreadyNarrowedType
+        $this->assertSame(9.48, (float)$donationAmount - (float)$fees->coreFee);
     }
 }

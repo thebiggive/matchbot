@@ -41,6 +41,7 @@ class StripePaymentsUpdateTest extends StripeTest
     /** @var ObjectProphecy<Mailer> */
     private $mailerClientProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
@@ -623,6 +624,7 @@ class StripePaymentsUpdateTest extends StripeTest
         return $settings->stripe['accountWebhookSecret'];
     }
 
+    #[\Override]
     public function getContainer(): ContainerInterface
     {
         $container = parent::getContainer();
@@ -636,7 +638,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $donation->collectFromStripeCharge(
             $chargeId,
-            (int) ((float) $donation->getTotalPaidByDonor() * 100),
+            (int) ((float) $donation->getTotalPaidByDonor() * 100.0),
             '-',
             null,
             null,

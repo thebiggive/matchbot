@@ -26,6 +26,7 @@ class Get extends Action
         parent::__construct($logger);
     }
 
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         $authedUser = $this->security->requireAuthenticatedDonorAccountWithPassword($request);

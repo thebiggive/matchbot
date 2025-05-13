@@ -56,6 +56,7 @@ class RetrospectivelyMatch extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function configure(): void
     {
         $this->addArgument(
@@ -65,6 +66,7 @@ class RetrospectivelyMatch extends LockingCommand
         );
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $recentlyClosedMode = !is_numeric($input->getArgument('days-back'));

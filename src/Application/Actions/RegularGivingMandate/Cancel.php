@@ -35,6 +35,7 @@ class Cancel extends Action
         parent::__construct($logger);
     }
 
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         $authenticatedDonor = $this->securityService->requireAuthenticatedDonorAccountWithPassword($request);
@@ -67,7 +68,7 @@ class Cancel extends Action
         }
 
         if (! $authenticatedDonor->id()->equals($mandate->donorId())) {
-            throw new HttpUnauthorizedException($request, 'Mandate does not below to donor ID ' . $authenticatedDonor->id()->id);
+            throw new HttpUnauthorizedException($request, 'Mandate does not below to donor ID ' . $authenticatedDonor->id()->id->toString());
         }
 
         try {

@@ -36,6 +36,7 @@ class RedistributeMatchFundsTest extends TestCase
     private ObjectProphecy $messageBusProphecy;
 
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

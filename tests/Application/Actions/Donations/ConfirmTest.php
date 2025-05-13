@@ -60,6 +60,7 @@ class ConfirmTest extends TestCase
     private ObjectProphecy $entityManagerProphecy;
     private \Ramsey\Uuid\UuidInterface $donationId;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

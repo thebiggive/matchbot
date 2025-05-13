@@ -28,6 +28,7 @@ class MandateUpserted implements MessageGroupAwareInterface
         );
     }
 
+    #[\Override]
     public function getMessageGroupId(): ?string
     {
         return 'manadate.upserted.' . $this->uuid;

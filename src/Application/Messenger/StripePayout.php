@@ -15,6 +15,7 @@ readonly class StripePayout implements MessageGroupAwareInterface
     ) {
     }
 
+    #[\Override]
     public function getMessageGroupId(): ?string
     {
         return 'payout.paid.' . $this->connectAccountId;

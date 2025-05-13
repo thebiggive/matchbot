@@ -21,11 +21,13 @@ class PushDonations extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function configure(): void
     {
         $this->setDescription('Pushes details of any new or updated donations not yet synced to Salesforce');
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         if (($numberAbandoned = $this->donationRepository->abandonOldCancelled()) > 0) {

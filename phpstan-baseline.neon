@@ -7,12 +7,6 @@ parameters:
 			path: app/dependencies.php
 
 		-
-			message: '#^PHPDoc tag @var with type array\{global\: array\{timeout\: string\}, salesforce\: array\{baseUri\: string\}, mailer\: array\{baseUri\: string, sendSecret\: string\}\} is not subtype of native type array\{global\: ArrayAccess@anonymous/integrationTests/IntegrationTest\.php\:120, mailer\: array\{baseUri\: ''dummy\-mailer\-base…''\}, salesforce\: array\{baseUri\: ''dummy\-salesforce…''\}\}\.$#'
-			identifier: varTag.nativeType
-			count: 1
-			path: integrationTests/IntegrationTest.php
-
-		-
 			message: '#^Access to an undefined property Stripe\\StripeObject\:\:\$type\.$#'
 			identifier: property.notFound
 			count: 1
@@ -167,18 +161,6 @@ parameters:
 			identifier: property.notFound
 			count: 2
 			path: tests/Application/Actions/Hooks/StripePaymentsUpdateTest.php
-
-		-
-			message: '#^Method MatchBot\\Tests\\Application\\Commands\\HandleOutOfSyncFundsTest\:\:getCampaignFundingRepoPropechy\(\) never returns MatchBot\\Domain\\CampaignFundingRepository so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: tests/Application/Commands/HandleOutOfSyncFundsTest.php
-
-		-
-			message: '#^Method MatchBot\\Tests\\Application\\Commands\\HandleOutOfSyncFundsTest\:\:getFundingWithdrawalRepoProphecy\(\) never returns MatchBot\\Domain\\FundingWithdrawalRepository so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: tests/Application/Commands/HandleOutOfSyncFundsTest.php
 
 		-
 			message: '#^Variable \$card_brand might not be defined\.$#'

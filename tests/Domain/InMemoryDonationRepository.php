@@ -207,21 +207,25 @@ class InMemoryDonationRepository implements DonationRepository
         throw new \Exception("Method not implemented in test double");
     }
 
+    #[\Override]
     public function push(DonationUpserted $changeMessage): void
     {
         throw new \Exception("Method not implemented in test double");
     }
 
+    #[\Override]
     public function findPendingAndPreAuthedForMandate(UuidInterface $mandateId): array
     {
         throw new \Exception("Method not implemented in test double");
     }
 
+    #[\Override]
     public function findAllForMandate(UuidInterface $mandateId): array
     {
         throw new \Exception("Method not implemented in test double");
     }
 
+    #[\Override]
     public function findOneByUUID(UuidInterface $donationUUID): ?Donation
     {
         return $this->findOneBy(['uuid' => $donationUUID]);

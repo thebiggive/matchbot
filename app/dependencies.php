@@ -261,6 +261,7 @@ return function (ContainerBuilder $containerBuilder) {
                 public function __construct(private string $commit_id)
                 {
                 }
+                #[\Override]
                 public function __invoke(array $record)
                 {
                     $record['extra']['commit'] = substr($this->commit_id, offset: 0, length: 7);

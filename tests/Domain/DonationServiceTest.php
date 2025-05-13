@@ -69,6 +69,7 @@ class DonationServiceTest extends TestCase
      */
     private ObjectProphecy $entityManagerProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->donorAccountRepoProphecy = $this->prophesize(DonorAccountRepository::class);
@@ -282,7 +283,7 @@ class DonationServiceTest extends TestCase
         // before adding VAT, then round it again after:
         $this->assertSame(
             52.0,
-            round(round(15_00 * 1.5 / 100 + 20) * 1.2)
+            round(round(15_00.0 * 1.5 / 100.0 + 20.0) * 1.2)
         );
 
         $this->stripeProphecy->updatePaymentIntent($paymentIntentId, [

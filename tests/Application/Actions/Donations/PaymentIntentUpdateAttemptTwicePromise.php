@@ -24,6 +24,7 @@ class PaymentIntentUpdateAttemptTwicePromise implements PromiseInterface
     ) {
     }
 
+    #[\Override]
     public function execute(array $args, ObjectProphecy $object, MethodProphecy $method): void
     {
         if ($this->callsCount === 0 || (!$this->succeedSecondTry && !$this->throwAlreadyCapturedSecondTry)) {

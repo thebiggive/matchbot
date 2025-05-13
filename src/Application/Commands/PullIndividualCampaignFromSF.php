@@ -35,6 +35,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     public function configure(): void
     {
         $this->addArgument(
@@ -43,6 +44,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
             '18 Character Salesforce ID of the campaign, as found in the donate page URI etc',
         );
     }
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         Assertion::notEq($this->environment, Environment::Production);

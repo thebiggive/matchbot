@@ -16,6 +16,7 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 class PersonWithPasswordAuthMiddleware extends PersonManagementAuthMiddleware
 {
+    #[\Override]
     protected function checkCompleteness(ServerRequestInterface $request): void
     {
         if (!$this->token->isComplete($this->jws)) {
@@ -25,7 +26,7 @@ class PersonWithPasswordAuthMiddleware extends PersonManagementAuthMiddleware
             // probably due to state changes in another tab in the same session. Just warn about these so it
             // doesn't fire alerts.
             $this->logger->warning(
-                'JWT error: not complete - request URI:' . $request->getUri()  . " referer:" .
+                'JWT error: not complete - request URI:' . $request->getUri()->__toString()  . " referer:" .
                 ($serverParams['HTTP_REFERER'] ?? 'no_referror')
             );
             $this->unauthorised($this->logger, false, $request);

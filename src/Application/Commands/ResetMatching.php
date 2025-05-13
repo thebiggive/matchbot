@@ -25,11 +25,13 @@ class ResetMatching extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function configure(): void
     {
         $this->setDescription('Delete fund balance data from the matching adapter');
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         if (getenv('APP_ENV') === 'production') {

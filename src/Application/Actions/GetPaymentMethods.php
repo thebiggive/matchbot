@@ -27,6 +27,7 @@ class GetPaymentMethods extends Action
     /**
      * @see PersonWithPasswordAuthMiddleware
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         $donor = $this->securityService->requireAuthenticatedDonorAccountWithPassword($request);

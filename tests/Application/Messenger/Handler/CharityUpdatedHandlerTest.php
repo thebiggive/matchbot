@@ -19,6 +19,7 @@ class CharityUpdatedHandlerTest extends TestCase
 
     private Salesforce18Id $charityId;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->charityId = Salesforce18Id::ofCharity('charity89012345678');
