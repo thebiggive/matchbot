@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20210311133325 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription() : string
     {
         return 'Add Donation.originalPspFee';
     }
 
-    #[\Override]
     public function up(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
@@ -26,7 +24,6 @@ final class Version20210311133325 extends AbstractMigration
         $this->addSql('ALTER TABLE Donation ADD originalPspFee NUMERIC(18, 2) NOT NULL');
     }
 
-    #[\Override]
     public function down(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');

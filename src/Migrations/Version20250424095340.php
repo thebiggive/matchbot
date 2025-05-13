@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20250424095340 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Correct wrong donor details for one donation in prod';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $rows = $this->connection->fetchAllAssociative(
@@ -56,7 +54,6 @@ final class Version20250424095340 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // no-un-patch.

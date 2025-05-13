@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20240315145404 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Make Donation.giftaid non-null';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<SQL
@@ -32,7 +30,6 @@ final class Version20240315145404 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         throw new \Exception("no going back");

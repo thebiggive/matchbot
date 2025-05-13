@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20191110112409 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription() : string
     {
         return 'Add link between FundingWithdrawal and CampaignFunding';
     }
 
-    #[\Override]
     public function up(Schema $schema) : void
     {
         // this up() migration is auto-generated, please modify it to your needs
@@ -29,7 +27,6 @@ final class Version20191110112409 extends AbstractMigration
         $this->addSql('CREATE INDEX IDX_5C8EAC12CB9EBA34 ON FundingWithdrawal (campaignFunding_id)');
     }
 
-    #[\Override]
     public function down(Schema $schema) : void
     {
         // this down() migration is auto-generated, please modify it to your needs

@@ -12,19 +12,16 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20221205110006 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Add indexes to support faster queries for retrospective matching';
     }
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql('CREATE INDEX end_date_and_is_matched ON Campaign (endDate, isMatched)');
         $this->addSql('CREATE INDEX campaign_and_status ON Donation (campaign_id, donationStatus)');
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('DROP INDEX end_date_and_is_matched ON Campaign');

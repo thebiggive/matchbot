@@ -12,19 +12,16 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20230913111156 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Drop Charity.donateLinkId';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Charity DROP donateLinkId');
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Charity ADD donateLinkId VARCHAR(255) NOT NULL');

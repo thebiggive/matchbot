@@ -9,13 +9,11 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240604153509 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Submit CC23 GA';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(
@@ -24,7 +22,6 @@ final class Version20240604153509 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql(

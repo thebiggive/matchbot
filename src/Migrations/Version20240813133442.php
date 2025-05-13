@@ -9,13 +9,11 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240813133442 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Resubmit gift aid claims for campaign # 6620';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
@@ -35,7 +33,6 @@ final class Version20240813133442 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         throw new \Exception("no going back");

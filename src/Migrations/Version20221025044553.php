@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20221025044553 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Add Donation.paymentMethodType';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         if (!$schema->getTable('Donation')->hasColumn('paymentMethodType')) {
@@ -30,7 +28,6 @@ final class Version20221025044553 extends AbstractMigration
 //        $this->addSql("UPDATE Donation SET paymentMethodType = 'card' WHERE paymentMethodType IS NULL");
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Donation DROP paymentMethodType');

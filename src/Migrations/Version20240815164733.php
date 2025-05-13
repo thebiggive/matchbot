@@ -9,13 +9,11 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240815164733 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Remove test regular giving mandate on staging with invalid uuid';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         if (getenv('APP_ENV') !== 'staging') {
@@ -26,7 +24,6 @@ final class Version20240815164733 extends AbstractMigration
         $this->addSql('DELETE FROM RegularGivingMandate where NOT IS_UUID(uuid);');
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // no undo

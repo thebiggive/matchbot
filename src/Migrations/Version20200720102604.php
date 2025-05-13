@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20200720102604 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription() : string
     {
         return 'Add field for Stripe Connected Account ID';
     }
 
-    #[\Override]
     public function up(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
@@ -27,7 +25,6 @@ final class Version20200720102604 extends AbstractMigration
         $this->addSql('CREATE UNIQUE INDEX UNIQ_4CC08E8293A8A818 ON Charity (stripeAccountId)');
     }
 
-    #[\Override]
     public function down(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');

@@ -8,13 +8,11 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 final class Version20240911101617 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Pause collections from existing test regular giving mandates in staging env.';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         if (getenv('APP_ENV') !== 'staging') {
@@ -29,7 +27,6 @@ final class Version20240911101617 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql(<<<SQL

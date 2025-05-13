@@ -9,13 +9,11 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20250506171748 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return '';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql('SET FOREIGN_KEY_CHECKS = 0');
@@ -27,7 +25,6 @@ final class Version20250506171748 extends AbstractMigration
         $this->addSql('SET FOREIGN_KEY_CHECKS = 1');
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('SET FOREIGN_KEY_CHECKS = 0');

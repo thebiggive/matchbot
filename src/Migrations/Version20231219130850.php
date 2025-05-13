@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20231219130850 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Remove a Gift Aid declaration from 1 donation, 19/12/23 patch';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql( <<<EOT
@@ -31,7 +29,6 @@ final class Version20231219130850 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

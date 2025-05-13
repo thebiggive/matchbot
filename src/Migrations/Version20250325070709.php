@@ -13,13 +13,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20250325070709 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Patch 2 pledge types + orders';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $fundIds = [30751, 30752]; // SF pledge IDs a0AWS0000084tFp2AI, a0AWS0000084v4j2AA.
@@ -35,7 +33,6 @@ final class Version20250325070709 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch.

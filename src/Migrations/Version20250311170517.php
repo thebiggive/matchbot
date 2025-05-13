@@ -9,13 +9,11 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20250311170517 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'ADD Charity.phoneNumber column';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         // next line was auto-generated, it doesn't really matter what if any default we have.
@@ -24,7 +22,6 @@ final class Version20250311170517 extends AbstractMigration
         $this->addSql('ALTER TABLE Charity ADD phoneNumber VARCHAR(255) DEFAULT NULL');
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Campaign CHANGE salesforceData salesforceData JSON DEFAULT \'_utf8mb4\\\\\'\'{}\\\\\'\'\' NOT NULL');

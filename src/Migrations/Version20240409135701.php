@@ -12,19 +12,16 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20240409135701 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Add index Donation.updated_date_and_status';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql('CREATE INDEX updated_date_and_status ON Donation (updatedAt, donationStatus)');
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('DROP INDEX updated_date_and_status ON Donation');

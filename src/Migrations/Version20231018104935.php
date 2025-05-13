@@ -14,13 +14,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20231018104935 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Add unique index ON DonorAccount(stripeCustomerId) - for faster lookups + prevent duplicate entries';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         // we have a duplicate already in staging, but we don't care much about any of the data in this table yet.
@@ -28,7 +26,6 @@ final class Version20231018104935 extends AbstractMigration
         $this->addSql('CREATE UNIQUE INDEX UNIQ_STRIPE_ID ON DonorAccount(stripeCustomerId) ');
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('DROP INDEX UNIQ_STRIPE_ID ON DonorAccount');

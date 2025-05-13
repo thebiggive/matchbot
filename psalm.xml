@@ -43,6 +43,15 @@
                 <directory name="/"/>
             </errorLevel>
         </ClassMustBeFinal>
+        <MissingOverrideAttribute>
+            <errorLevel type="suppress">
+                <!-- Looks like psalm is confused by this file overriding a method 'hash' from a trait -->
+                <file name="src/Client/Mailer.php" />
+
+                <!-- Not important to use this attribute in migrations -->
+                <directory name="src/Migrations/" />
+            </errorLevel>
+        </MissingOverrideAttribute>
     </issueHandlers>
     <plugins>
         <pluginClass class="Psalm\PhpUnitPlugin\Plugin"/>

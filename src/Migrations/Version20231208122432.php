@@ -9,13 +9,11 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20231208122432 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Similar to migration 20231207104909 except that the first part of that had a mistake and did not match any donation';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql( <<<EOT
@@ -29,7 +27,6 @@ final class Version20231208122432 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         throw new \Exception("no going back!");

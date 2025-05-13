@@ -9,13 +9,11 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20241210152513 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Remove gift aid added to donation by mistake';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(
@@ -28,7 +26,6 @@ final class Version20241210152513 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // no un-patch

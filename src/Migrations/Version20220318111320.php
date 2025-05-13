@@ -13,13 +13,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220318111320 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Un-mark donations for TBG Gift Aid claiming where orgs have told us they will claim it themselves';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<EOT
@@ -30,7 +28,6 @@ EOT
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch.

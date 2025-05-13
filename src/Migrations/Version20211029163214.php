@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20211029163214 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription() : string
     {
         return 'Add new Charity fields for in-house Gift Aid support, with `tbgClaimingGiftAid` temporarily nullable';
     }
 
-    #[\Override]
     public function up(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
@@ -30,7 +28,6 @@ final class Version20211029163214 extends AbstractMigration
         $this->addSql('UPDATE Charity SET tbgClaimingGiftAid = 0 WHERE tbgClaimingGiftAid IS NULL');
     }
 
-    #[\Override]
     public function down(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');

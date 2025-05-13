@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20250325140707 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Populate new field; remove old allocation order from CampaignFunding';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         // Patch new Fund field with previous linked CampaignFundings' allocation orders.
@@ -33,7 +31,6 @@ final class Version20250325140707 extends AbstractMigration
         $this->addSql('ALTER TABLE CampaignFunding DROP allocationOrder');
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('ALTER TABLE CampaignFunding ADD allocationOrder INT NOT NULL');

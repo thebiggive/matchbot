@@ -14,13 +14,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20230117173337 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Patch 3x donation values';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $updateCollectedAtSql = <<<EOT
@@ -44,7 +42,6 @@ EOT;
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

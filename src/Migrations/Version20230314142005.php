@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20230314142005 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Set Salesforce push status on 3 refunded donations';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<SQL
@@ -33,7 +31,6 @@ final class Version20230314142005 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

@@ -9,13 +9,11 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240404134524 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Remove spurious data - see ticket MAT-220';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<SQL
@@ -29,7 +27,6 @@ final class Version20240404134524 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
        throw new \Exception("no going back");

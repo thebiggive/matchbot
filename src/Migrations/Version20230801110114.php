@@ -9,13 +9,11 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20230801110114 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Resubmit Gift Aid claims (MAT-308)';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         // SQL copied from \MatchBot\Migrations\Version20230707100241, campaign id changed.
@@ -38,7 +36,6 @@ final class Version20230801110114 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         throw new \Exception("No going back");

@@ -12,20 +12,17 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20240709162926 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return '';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
         $this->addSql('ALTER TABLE Charity CHANGE updateFromSFRequiredSince updateFromSFRequiredSince DATETIME DEFAULT NULL COMMENT \'(DC2Type:datetime_immutable)\'');
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // this down() migration is auto-generated, please modify it to your needs

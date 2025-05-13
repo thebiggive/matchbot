@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220503091108 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Patch one GMF donation where Gift Aid was claimed in error';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<EOT
@@ -33,7 +31,6 @@ EOT,
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

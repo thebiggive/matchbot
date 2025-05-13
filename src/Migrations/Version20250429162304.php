@@ -9,13 +9,11 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20250429162304 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Remove numbers from names';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
@@ -38,7 +36,6 @@ final class Version20250429162304 extends AbstractMigration
         SQL);
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // no going back

@@ -16,13 +16,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220531094925 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Mark some donations as never claimable and some for re-claiming';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         // MAT-246.
@@ -66,7 +64,6 @@ EOT,
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20240102154931 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Clear email address for one donation';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<EOT
@@ -29,7 +27,6 @@ final class Version20240102154931 extends AbstractMigration
 EOT);
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

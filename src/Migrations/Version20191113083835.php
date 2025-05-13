@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20191113083835 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription() : string
     {
         return 'Add indexes to improved key queries\' performance';
     }
 
-    #[\Override]
     public function up(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
@@ -28,7 +26,6 @@ final class Version20191113083835 extends AbstractMigration
         $this->addSql('CREATE INDEX salesforcePushStatus ON Donation (salesforcePushStatus)');
     }
 
-    #[\Override]
     public function down(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');

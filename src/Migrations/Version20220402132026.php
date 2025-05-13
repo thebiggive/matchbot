@@ -12,19 +12,16 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20220402132026 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Add fields to store more Gift Aid claim outcome metadata';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Donation ADD tbgGiftAidRequestConfirmedCompleteAt DATETIME DEFAULT NULL, ADD tbgGiftAidRequestCorrelationId VARCHAR(255) DEFAULT NULL, ADD tbgGiftAidResponseDetail TEXT DEFAULT NULL');
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Donation DROP tbgGiftAidRequestConfirmedCompleteAt, DROP tbgGiftAidRequestCorrelationId, DROP tbgGiftAidResponseDetail');

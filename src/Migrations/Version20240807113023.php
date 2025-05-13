@@ -9,13 +9,11 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20240807113023 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Clear wrong HMRC ref number that was already removed from SF';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(sql: <<<SQL
@@ -24,7 +22,6 @@ final class Version20240807113023 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         throw new \Exception("no going back");

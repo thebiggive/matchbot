@@ -13,13 +13,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20211209083200 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription() : string
     {
         return 'Update incorrect data from CC21 edge cases and mark for re-pushing to Salesforce.';
     }
 
-    #[\Override]
     public function up(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
@@ -41,7 +39,6 @@ EOT;
         $this->addSql($updateDonorGAIncorrectlyClaimed);
     }
 
-    #[\Override]
     public function down(Schema $schema) : void
     {
         $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');

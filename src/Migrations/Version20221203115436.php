@@ -13,14 +13,12 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20221203115436 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'MAT-278 fix invalid donor email addresses that have two dots (..com -> .com).
         These emails were accidentally persisted after DON-698.';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $this->addSql(<<<EOT
@@ -28,7 +26,6 @@ final class Version20221203115436 extends AbstractMigration
 EOT,[]);
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20240102160835 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Resubmit donations as requested by HMRC';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $campaignIdForMat351 = 4741;
@@ -42,7 +40,6 @@ final class Version20240102160835 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch

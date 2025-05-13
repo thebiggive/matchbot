@@ -15,13 +15,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20221101143104 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Update missed donations to Paid status and mark for re-pushing to Salesforce';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         $updateSql = <<<EOT
@@ -44,7 +42,6 @@ EOT;
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-fix.

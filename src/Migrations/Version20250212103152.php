@@ -12,13 +12,11 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20250212103152 extends AbstractMigration
 {
-    #[\Override]
     public function getDescription(): string
     {
         return 'Re-re-queue 1 campaign\'s donations for Gift Aid';
     }
 
-    #[\Override]
     public function up(Schema $schema): void
     {
         // 1 campaign with 64 donations where submission was acknowledged but HMRC have asked us to resubmit.
@@ -39,7 +37,6 @@ EOT,
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         // No un-patch.

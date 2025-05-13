@@ -12,7 +12,6 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20240206145629 extends AbstractMigration
 {
-    #[\Override]
     public function up(Schema $schema): void
     {
         $campaignIdForBG22550 = '5041';
@@ -37,7 +36,6 @@ final class Version20240206145629 extends AbstractMigration
         );
     }
 
-    #[\Override]
     public function down(Schema $schema): void
     {
         throw new \Exception("No going back");
