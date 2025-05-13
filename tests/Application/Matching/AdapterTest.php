@@ -55,7 +55,7 @@ class AdapterTest extends TestCase
         // amount returned in the getAmountAvailable call has to be from the realtime storage.
         $funding->setAmountAvailable('3');
 
-        \assert(50 + 12.53 === 62.53);
+        \assert(50.0 + 12.53 === 62.53);
         $this->assertSame('62.53', $this->sut->getAmountAvailable($funding));
     }
 
@@ -71,7 +71,7 @@ class AdapterTest extends TestCase
 
         $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
 
-        \assert(50 - 10.10 === 39.9);
+        \assert(50.0 - 10.10 === 39.9);
         $this->assertSame('39.90', $this->sut->getAmountAvailable($funding));
         $this->assertSame('39.90', $fundBalanceReturned);
     }

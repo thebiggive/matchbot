@@ -68,7 +68,7 @@ class Cancel extends Action
         }
 
         if (! $authenticatedDonor->id()->equals($mandate->donorId())) {
-            throw new HttpUnauthorizedException($request, 'Mandate does not below to donor ID ' . $authenticatedDonor->id()->id);
+            throw new HttpUnauthorizedException($request, 'Mandate does not below to donor ID ' . $authenticatedDonor->id()->id->toString());
         }
 
         try {

@@ -113,7 +113,7 @@ class HandleOutOfSyncFundsTest extends TestCase
     /**
      * Funding + withdrawal repo propechies are designed to have 1 fund in sync, 1 over-matched and 1 under-matched.
      * @see getFundingWithdrawalRepoProphecy()
-     * @return ObjectProphecy|CampaignFundingRepository
+     * @return ObjectProphecy<CampaignFundingRepository>
      */
     private function getCampaignFundingRepoPropechy()
     {
@@ -137,7 +137,7 @@ class HandleOutOfSyncFundsTest extends TestCase
      * somehow. This is the main scenario the one-off fix case is intended to deal with.
      *
      * @see getCampaignFundingRepoPropechy()
-     * @return ObjectProphecy|FundingWithdrawalRepository
+     * @return ObjectProphecy<FundingWithdrawalRepository>
      */
     private function getFundingWithdrawalRepoProphecy()
     {
@@ -266,12 +266,10 @@ class HandleOutOfSyncFundsTest extends TestCase
         $campaignRepo = $noopAdapter
             ? $this->prophesize(CampaignFundingRepository::class)->reveal()
             : $this->getCampaignFundingRepoPropechy()->reveal();
-        \assert($campaignRepo instanceof CampaignFundingRepository);
 
         $withdrawalRepo = $noopAdapter
             ? $this->prophesize(FundingWithdrawalRepository::class)->reveal()
             : $this->getFundingWithdrawalRepoProphecy()->reveal();
-        \assert($withdrawalRepo instanceof FundingWithdrawalRepository);
 
         $command = new HandleOutOfSyncFunds(
             $campaignRepo,

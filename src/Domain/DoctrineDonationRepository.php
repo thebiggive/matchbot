@@ -69,7 +69,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             $newWithdrawals = $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart);
             $lockEndTime = microtime(true);
         } catch (Matching\TerminalLockException $exception) {
-            $waitTime = round(microtime(true) - $lockStartTime, 6);
+            $waitTime = round(microtime(true) - (float)$lockStartTime, 6);
             $this->logError(
                 "Match allocate error: ID {$donation->getUuid()} got " . get_class($exception) .
                 " after {$waitTime}s: {$exception->getMessage()}"
@@ -92,8 +92,8 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
 
         $this->getEntityManager()->flush(); // Flush `$newWithdrawals` if any.
 
-        $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);
-        $this->logInfo('Allocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
+        $this->logInfo('ID ' . $donation->getUuid()->toString() . ' allocated new match funds totalling ' . $amountNewlyMatched);
+        $this->logInfo('Allocation took ' . (string) round($lockEndTime - $lockStartTime, 6) . ' seconds');
 
         return $amountNewlyMatched;
     }
@@ -115,14 +115,14 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         } catch (Matching\TerminalLockException $exception) {
             $waitTime = round(microtime(true) - $startTime, 6);
             $this->logError(
-                'Match release error: ID ' . $donation->getUuid() . ' got ' . get_class($exception) .
+                'Match release error: ID ' . $donation->getUuid()->toString() . ' got ' . get_class($exception) .
                 " after {$waitTime}s: {$exception->getMessage()}"
             );
             throw $exception; // Re-throw exception after logging the details if not recoverable
         }
 
         $this->logInfo("Taking from ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
-        $this->logInfo('Deallocation took ' . round($endTime - $startTime, 6) . ' seconds');
+        $this->logInfo('Deallocation took ' . (string) round($endTime - $startTime, 6) . ' seconds');
     }
 
     #[\Override]
@@ -352,7 +352,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             return null;
         }
 
-        return (float) $result['completeCount'] / $result['donationCount'];
+        return (float) ($result['completeCount'] / $result['donationCount']);
     }
 
     #[\Override]

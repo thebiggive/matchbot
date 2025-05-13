@@ -103,7 +103,7 @@ readonly class Money implements \JsonSerializable, \Stringable
     #[\Override]
     public function __toString()
     {
-        return $this->currency->isoCode() . ' ' . ($this->amountInPence / 100);
+        return $this->currency->isoCode() . ' ' . (string)($this->amountInPence / 100);
     }
 
     /**

@@ -210,7 +210,7 @@ class Update extends Action
                 ));
 
                 // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
-                $seconds = (0.1 * (2 ** $retryCount));
+                $seconds = (0.1 * (2.0 ** (float)$retryCount));
                 $this->clock->sleep($seconds);
                 $retryCount++;
 

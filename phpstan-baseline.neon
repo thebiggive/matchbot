@@ -7,12 +7,6 @@ parameters:
 			path: app/dependencies.php
 
 		-
-			message: '#^PHPDoc tag @var with type array\{global\: array\{timeout\: string\}, salesforce\: array\{baseUri\: string\}, mailer\: array\{baseUri\: string, sendSecret\: string\}\} is not subtype of native type array\{global\: ArrayAccess@anonymous/integrationTests/IntegrationTest\.php\:120, mailer\: array\{baseUri\: ''dummy\-mailer\-base…''\}, salesforce\: array\{baseUri\: ''dummy\-salesforce…''\}\}\.$#'
-			identifier: varTag.nativeType
-			count: 1
-			path: integrationTests/IntegrationTest.php
-
-		-
 			message: '#^Access to an undefined property Stripe\\StripeObject\:\:\$type\.$#'
 			identifier: property.notFound
 			count: 1

@@ -117,33 +117,36 @@ abstract class IntegrationTest extends TestCase
      */
     private function fakeApiClientSettingsThatAlwaysThrow(): array
     {
+        /** @var array{timeout: string} $global @phpstan-ignore varTag.nativeType */
+        $global = new /** @implements ArrayAccess<string, never> */ class implements ArrayAccess {
+            #[\Override]
+            public function offsetExists(mixed $offset): bool
+            {
+                return true;
+            }
+
+            #[\Override]
+            public function offsetGet(mixed $offset): never
+            {
+                throw new \Exception("Do not use real API client in tests");
+            }
+
+            #[\Override]
+            public function offsetSet(mixed $offset, mixed $value): never
+            {
+                throw new \Exception("Do not use real API client in tests");
+            }
+
+            #[\Override]
+            public function offsetUnset(mixed $offset): never
+            {
+                throw new \Exception("Do not use real API client in tests");
+            }
+        };
+
         /** @var ApiClient $client */
         $client = [
-            'global' => new /** @implements ArrayAccess<string, never> */ class implements ArrayAccess {
-                #[\Override]
-                public function offsetExists(mixed $offset): bool
-                {
-                    return true;
-                }
-
-                #[\Override]
-                public function offsetGet(mixed $offset): never
-                {
-                    throw new \Exception("Do not use real API client in tests");
-                }
-
-                #[\Override]
-                public function offsetSet(mixed $offset, mixed $value): never
-                {
-                    throw new \Exception("Do not use real API client in tests");
-                }
-
-                #[\Override]
-                public function offsetUnset(mixed $offset): never
-                {
-                    throw new \Exception("Do not use real API client in tests");
-                }
-            },
+            'global' => $global,
             'mailer' => [
                 'baseUri' => 'dummy-mailer-base-uri',
             ],

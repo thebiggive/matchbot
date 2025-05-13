@@ -638,7 +638,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $donation->collectFromStripeCharge(
             $chargeId,
-            (int) ((float) $donation->getTotalPaidByDonor() * 100),
+            (int) ((float) $donation->getTotalPaidByDonor() * 100.0),
             '-',
             null,
             null,
