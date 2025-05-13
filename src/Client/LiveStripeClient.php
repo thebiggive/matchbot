@@ -62,9 +62,6 @@ class LiveStripeClient implements Stripe
         $this->stripeClient->paymentIntents->update($paymentIntentId, $updateData);
     }
 
-    /**
-     * @psalm-suppress InvalidArgument
-     */
     #[\Override]
     public function confirmPaymentIntent(string $paymentIntentId, array $params): PaymentIntent
     {
