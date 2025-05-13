@@ -58,7 +58,6 @@ class LiveStripeClient implements Stripe
     #[\Override]
     public function updatePaymentIntent(string $paymentIntentId, array $updateData): void
     {
-        // param type copied from stripe library
         $this->stripeClient->paymentIntents->update($paymentIntentId, $updateData);
     }
 
