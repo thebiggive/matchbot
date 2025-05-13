@@ -515,7 +515,6 @@ class Update extends Action
             return;
         }
 
-        /** @psalm-suppress InvalidArgument */
         $this->stripe->updatePaymentIntent($paymentIntentId, [
             'amount' => $donation->getAmountFractionalIncTip(),
             'currency' => $donation->currency()->isoCode(case: 'lower'),

@@ -55,9 +55,14 @@ class LiveStripeClient implements Stripe
         $this->stripeClient->paymentIntents->cancel($paymentIntentId);
     }
 
+    /**
+     * @psalm-suppress InvalidArgument (see comment inside function)
+     */
     #[\Override]
     public function updatePaymentIntent(string $paymentIntentId, array $updateData): void
     {
+        // see https://github.com/stripe/stripe-php/issues/1854 "The doctype regarding metadata is wrong"
+        // @phpstan-ignore argument.type
         $this->stripeClient->paymentIntents->update($paymentIntentId, $updateData);
     }
 

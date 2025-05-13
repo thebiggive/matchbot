@@ -35,7 +35,7 @@ interface Stripe
 
     /**
      * @throws ApiErrorException
-     * @param array{amount?: int} $updateData
+     * @param array{amount?: int, currency?: string, metadata: array<string, mixed>, application_fee_amount: int} $updateData
      */
     public function updatePaymentIntent(string $paymentIntentId, array $updateData): void;
 
