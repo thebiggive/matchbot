@@ -49,41 +49,54 @@ class LiveStripeClient implements Stripe
     {
     }
 
+    #[\Override]
     public function cancelPaymentIntent(string $paymentIntentId): void
     {
         $this->stripeClient->paymentIntents->cancel($paymentIntentId);
     }
 
+    /**
+     * @psalm-suppress InvalidArgument (see comment inside function)
+     */
+    #[\Override]
     public function updatePaymentIntent(string $paymentIntentId, array $updateData): void
     {
+        // see https://github.com/stripe/stripe-php/issues/1854 "The doctype regarding metadata is wrong"
+        // @phpstan-ignore argument.type
         $this->stripeClient->paymentIntents->update($paymentIntentId, $updateData);
     }
 
-    public function confirmPaymentIntent(string $paymentIntentId, array $params = []): PaymentIntent
+    #[\Override]
+    public function confirmPaymentIntent(string $paymentIntentId, array $params): PaymentIntent
     {
         return $this->stripeClient->paymentIntents->confirm($paymentIntentId, $params);
     }
 
+    #[\Override]
     public function retrievePaymentIntent(string $paymentIntentId): PaymentIntent
     {
         return $this->stripeClient->paymentIntents->retrieve($paymentIntentId);
     }
 
+    #[\Override]
     public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken
     {
         return $this->stripeClient->confirmationTokens->retrieve($confirmationTokenId->stripeConfirmationTokenId);
     }
 
+    #[\Override]
     public function retrieveCharge(string $chargeId): Charge
     {
         return $this->stripeClient->charges->retrieve($chargeId);
     }
 
+    #[\Override]
     public function createPaymentIntent(array $createPayload): PaymentIntent
     {
         return $this->stripeClient->paymentIntents->create($createPayload);
     }
 
+    #[\Override]
     public function createSetupIntent(StripeCustomerId $stripeCustomerId): SetupIntent
     {
         return $this->stripeClient->setupIntents->create([
@@ -92,6 +105,7 @@ class LiveStripeClient implements Stripe
             ]);
     }
 
+    #[\Override]
     public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
     {
         return $this->stripeClient->customerSessions->create([
@@ -100,6 +114,7 @@ class LiveStripeClient implements Stripe
         ]);
     }
 
+    #[\Override]
     public function createRegularGivingCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
     {
         $components = self::SESSION_COMPONENTS;
@@ -114,11 +129,13 @@ class LiveStripeClient implements Stripe
         ]);
     }
 
+    #[\Override]
     public function retrieveBalanceTransaction(string $id): BalanceTransaction
     {
         return $this->stripeClient->balanceTransactions->retrieve($id);
     }
 
+    #[\Override]
     public function retrievePaymentMethod(StripeCustomerId $customerId, StripePaymentMethodId $methodId): PaymentMethod
     {
         return $this->stripeClient->customers->retrievePaymentMethod(
@@ -128,6 +145,7 @@ class LiveStripeClient implements Stripe
     }
 
 
+    #[\Override]
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void
     {
         $this->stripeClient->paymentMethods->detach($paymentMethodId->stripePaymentMethodId);

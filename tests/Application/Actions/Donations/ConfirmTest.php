@@ -327,7 +327,7 @@ class ConfirmTest extends TestCase
         $paymentMethod->type = 'card';
 
         /** @psalm-suppress InvalidPropertyAssignmentValue */
-        $paymentMethod->card = $cardDetails;
+        $paymentMethod->card = $cardDetails; //  @phpstan-ignore assign.propertyType
 
         $updatedPaymentIntent = new PaymentIntent(['id' => 'id-doesnt-matter-for-test', ...$updatedIntentData]);
         $updatedPaymentIntent->status = $updatedIntentData['status'];
@@ -338,8 +338,14 @@ class ConfirmTest extends TestCase
 
         if (is_string($confirmationTokenId)) {
             $confirmationToken = new ConfirmationToken();
+
+            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $confirmationToken->payment_method_preview = new StripeObject();
+
+            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $confirmationToken->payment_method_preview['type'] = 'card';
+
+            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $confirmationToken->payment_method_preview['card'] = $cardDetails;
 
             $this->stripeProphecy->retrieveConfirmationToken(StripeConfirmationTokenId::of($confirmationTokenId))

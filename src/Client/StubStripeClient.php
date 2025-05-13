@@ -41,7 +41,7 @@ class StubStripeClient implements Stripe
         $this->pause();
     }
 
-    public function confirmPaymentIntent(string $paymentIntentId, array $params = []): PaymentIntent
+    public function confirmPaymentIntent(string $paymentIntentId, array $params): PaymentIntent
     {
         $this->pause();
 
@@ -78,8 +78,13 @@ class StubStripeClient implements Stripe
     public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken
     {
         $confirmationToken = new ConfirmationToken();
+        /** @psalm-suppress InvalidPropertyAssignmentValue */
         $confirmationToken->payment_method_preview = new StripeObject();
+
+        /** @psalm-suppress InvalidPropertyAssignmentValue */
         $confirmationToken->payment_method_preview['type'] = 'card';
+
+        /** @psalm-suppress InvalidPropertyAssignmentValue */
         $confirmationToken->payment_method_preview['card'] = ['brand' => 'discover', 'country' => 'GB'];
 
         return $confirmationToken;

@@ -438,6 +438,7 @@ class DonationService
 
         $paymentIntentId = $donation->getTransactionId();
         if ($paymentIntentId !== null) {
+            /** @psalm-suppress InvalidArgument  */
             $this->stripe->updatePaymentIntent($paymentIntentId, $updatedIntentData);
         }
     }
@@ -752,6 +753,7 @@ class DonationService
         $this->logger->info('updating donation from charge: ' . $charge->toJSON());
 
         /**
+         * @psalm-suppress MixedMethodCall
          * @var array|Card|null $card
          */
         $card = $charge->payment_method_details?->toArray()['card'] ?? null;

@@ -81,6 +81,9 @@ class UpdatePaymentMethod extends Action
 
         try {
             // see https://stripe.com/docs/api/payment_methods/update
+            /**
+             * @psalm-suppress MixedArgumentTypeCoercion - up to the FE to supply the right params in `$newBillingDetails`
+             */
             $this->stripeClient->paymentMethods->update($paymentMethodId, $newBillingDetails);
         } catch (ApiErrorException $e) {
             // Error message could be e.g. "Your card's security code is incorrect." in which case the donor

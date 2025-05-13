@@ -35,13 +35,15 @@ interface Stripe
 
     /**
      * @throws ApiErrorException
+     * @param array{amount?: int, currency?: string, metadata: array<string, mixed>, application_fee_amount: int} $updateData
      */
     public function updatePaymentIntent(string $paymentIntentId, array $updateData): void;
 
     /**
+     * @param array{confirmation_token?: string, payment_method?: string} $params
      * @throws ApiErrorException
      */
-    public function confirmPaymentIntent(string $paymentIntentId, array $params = []): PaymentIntent;
+    public function confirmPaymentIntent(string $paymentIntentId, array $params): PaymentIntent;
 
     /**
      * @throws ApiErrorException
@@ -49,6 +51,10 @@ interface Stripe
     public function retrievePaymentIntent(string $paymentIntentId): PaymentIntent;
 
     /**
+     * @param array{
+     *     amount: int,
+     *     currency: string
+     * } $createPayload
      * @throws ApiErrorException
      * @throws InvalidRequestException - e.g. if the CVC wasn't collected, presumably due to bots accessing the system.
      */

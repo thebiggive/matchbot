@@ -415,7 +415,7 @@ class Update extends Action
                 $transactionId = $donation->getTransactionId();
                 Assertion::notNull($transactionId);
                 try {
-                    $confirmedIntent = $this->stripe->confirmPaymentIntent($transactionId);
+                    $confirmedIntent = $this->stripe->confirmPaymentIntent(paymentIntentId: $transactionId, params: []);
 
                     /* @var string|null $nextActionType */
                     $nextActionType = null;

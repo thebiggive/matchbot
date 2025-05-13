@@ -111,7 +111,7 @@ class StripePayoutUpdate extends Stripe
     {
         /**
          * @psalm-suppress UndefinedMagicPropertyFetch
-         * @var object{id: string} $object
+         * @var \Stripe\StripeObject&object{id: string, automatic: bool} $object
          */
         $object = $event->data->object;
         $payoutId = $object->id;
