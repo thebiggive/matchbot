@@ -25,12 +25,4 @@ trait StripeFormattingTrait
 
         return $iterableCollection->reveal();
     }
-
-    protected function buildCollectionFromSingleObjectFixture(string $json): Collection|ObjectProphecy
-    {
-        $collectionRaw = new \stdClass();
-        $collectionRaw->data = [json_decode($json, false)];
-
-        return $this->buildAutoIterableCollection(json_encode($collectionRaw, \JSON_THROW_ON_ERROR));
-    }
 }

@@ -41,11 +41,6 @@ interface Stripe
     /**
      * @throws ApiErrorException
      */
-    public function updateCustomer(string $customerId, array $updateData): void;
-
-    /**
-     * @throws ApiErrorException
-     */
     public function confirmPaymentIntent(string $paymentIntentId, array $params = []): PaymentIntent;
 
     /**
@@ -83,8 +78,4 @@ interface Stripe
      * @throws ApiErrorException
      */
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void;
-
-    public function searchCustomers(array $searchParams): SearchResult|Collection;
-
-    public function listAllPaymentMethodsForCustomer(StripeCustomerId $id, array $params): Collection;
 }
