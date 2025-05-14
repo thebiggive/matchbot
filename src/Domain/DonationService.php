@@ -3,6 +3,7 @@
 namespace MatchBot\Domain;
 
 use Doctrine\Common\Cache\CacheProvider;
+use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
@@ -227,12 +228,16 @@ class DonationService
      * @param string $actionName The name of the action, used in logs.
      * @throws ORMException|DBALServerException if they're occurring when max retry count reached.
      */
-    private function runWithPossibleRetry(\Closure $retryable, string $actionName): void
-    {
+    private function runWithPossibleRetry(
+        \Closure $retryable,
+        string $actionName,
+        ?Donation $donation = null,
+        ?\Closure $onErrorTidy = null
+    ): void {
         $retryCount = 0;
         while ($retryCount < self::MAX_RETRY_COUNT) {
             try {
-                $retryable();
+                $retryable($donation);
                 if ($retryCount > 0) {
                     $this->logger->error(
                         "$actionName SUCCEEDED after $retryCount retry - retry process is not useless. " .
@@ -240,7 +245,11 @@ class DonationService
                     );
                 }
                 return;
-            } catch (ORMException | DBALServerException $exception) {
+            } catch (RetryableException $exception) {
+                if ($onErrorTidy) {
+                    $onErrorTidy($donation);
+                }
+
                 $retryCount++;
                 $this->logger->info(
                     sprintf(
@@ -265,6 +274,14 @@ class DonationService
 
                     throw $exception;
                 }
+            } catch (\Throwable $exception) {
+                // todo log more including whether we "tidied" anything
+                if ($onErrorTidy) {
+                    $onErrorTidy($donation);
+                }
+
+                // No retries for exceptions we aren't confident of recovering from
+                throw $exception;
             }
         }
     }
@@ -396,7 +413,6 @@ class DonationService
         if ($campaign->isMatched() && $attemptMatching) {
             $this->attemptFundingAllocation($donation);
         }
-
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
         if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {
@@ -563,7 +579,7 @@ class DonationService
             );
         }
 
-        $this->logger->info("Cancelled ID {$donation->getUuid()}");
+        $this->logger->info("Cancelled donation UUID {$donation->getUuid()}");
 
         $donation->cancel();
 
@@ -804,7 +820,6 @@ class DonationService
         }
     }
 
-
     private function getOriginalFeeFractional(string $balanceTransactionId, string $expectedCurrencyCode): int
     {
         $txn = $this->stripe->retrieveBalanceTransaction($balanceTransactionId);
@@ -846,26 +861,20 @@ class DonationService
     {
         // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
         $this->runWithPossibleRetry(
-            function () use ($donation) {
-                try {
-                    $this->donationRepository->allocateMatchFunds($donation);
-                } catch (\Throwable $t) {
-                    // warning indicates that we *may* retry, as it depends on whether this is in the last retry or
-                    // not.
-                    $this->logger->warning(sprintf('Allocation got error, may retry: %s', $t->getMessage()));
+            retryable: fn (Donation $donation) => $this->donationRepository->allocateMatchFunds($donation),
+            actionName: 'allocate match funds',
+            donation: $donation,
+            onErrorTidy: function (Donation $donation) {
+                $this->logger->info(sprintf('Resetting after match error for UUID %s', $donation->getUuid()));
 
-                    $this->matchingAdapter->releaseNewlyAllocatedFunds();
+                $this->matchingAdapter->releaseNewlyAllocatedFunds();
 
-                    // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
-                    // would be reduced again when the donation expires.
-                    $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
+                // `DoctrineDonationRepository` *should* have already `clear()`ed the EM in this case, but
+                // do it again just in case. We want ot ensure that no FundingWithdrawals of CampaignFunding
+                // DB copies get out of sync with the Redis source of truth.
 
-                    $this->entityManager->flush();
-
-                    throw $t;
-                }
+                $this->entityManager->clear();
             },
-            'allocate match funds'
         );
     }
 

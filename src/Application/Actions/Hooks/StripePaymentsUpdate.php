@@ -10,8 +10,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
-use MatchBot\Domain\CardBrand;
-use MatchBot\Domain\Country;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationFundsNotifier;
@@ -27,19 +25,11 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Ramsey\Uuid\Uuid;
-use Stripe\Card;
 use Stripe\Charge;
 use Stripe\Dispute;
 use Stripe\Event;
 use Stripe\PaymentIntent;
-use Stripe\StripeClient;
-use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Stamp\DelayStamp;
-use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
-use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
-use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
@@ -284,7 +274,7 @@ class StripePaymentsUpdate extends Stripe
 
         $this->entityManager->beginTransaction();
 
-        $donation = $this->donationRepository->findOneBy(['chargeId' => $charge->id]);
+        $donation = $this->donationRepository->findAndLockOneBy(['chargeId' => $charge->id]);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Charge ID %s', $charge->id));
@@ -364,7 +354,12 @@ class StripePaymentsUpdate extends Stripe
         $paymentIntent = $event->data->object;
         \assert($paymentIntent instanceof PaymentIntent);
 
-        $donation = $this->donationRepository->findOneBy(['transactionId' => $paymentIntent->id]);
+        $this->entityManager->beginTransaction();
+        // Locking this fails StripeCancelsDonationTest currently, probably because of
+        // https://github.com/doctrine/orm/issues/9505 combined with the test creating and
+        // then patching the donation in one thread? Doctrine doesn't recognise the donation
+        // to cancel as the same and gets an error trying to set the readonly $amount property.
+        $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $paymentIntent->id]);
 
         if ($donation === null) {
             if (getenv('APP_ENV') !== 'production') {
@@ -393,6 +388,7 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->entityManager->flush();
+        $this->entityManager->commit();
         $this->queueSalesforceUpdate($donation);
 
         return $this->respond($response, new ActionPayload(200));

@@ -76,7 +76,7 @@ class DonationMatchingTest extends IntegrationTest
             $this->createDonation(
                 withPremadeCampaign: false,
                 campaignSfID: $campaign->getSalesforceId(),
-                amountInPounds: 10
+                amountInPounds: 10,
             );
         } catch (\Exception $e) {
             $this->assertEquals(

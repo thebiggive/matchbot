@@ -3,8 +3,8 @@
 namespace MatchBot\Tests\Domain;
 
 use Doctrine\Common\Cache\CacheProvider;
-use Doctrine\DBAL\Driver\PDO\Exception;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\Driver\PDO\Exception as PDOException;
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -144,7 +144,7 @@ class DonationServiceTest extends TestCase
         $this->stripeProphecy->createPaymentIntent(Argument::any())
             ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
 
-        $this->expectException(UniqueConstraintViolationException::class);
+        $this->expectException(LockWaitTimeoutException::class);
 
         $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil());
     }
@@ -187,6 +187,7 @@ class DonationServiceTest extends TestCase
     }
 
     /**
+     * @param bool $withAlwaysCrashingEntityManager Whether to simulate EM always throwing a *retryable* exception
      * @param ObjectProphecy<CampaignRepository>|null $campaignRepoProphecy
      * @param ObjectProphecy<FundRepository>|null $fundRepoProphecy
      */
@@ -202,7 +203,7 @@ class DonationServiceTest extends TestCase
              * @psalm-suppress InternalClass Hard to simulate `final` exception otherwise
              */
             $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willThrow(
-                new UniqueConstraintViolationException(new Exception('EXCEPTION_MESSAGE'), null)
+                new LockWaitTimeoutException(new PDOException('EXCEPTION_MESSAGE'), null)
             );
         } else {
             $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willReturn(null);

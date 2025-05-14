@@ -11,6 +11,8 @@ class StripeCancelsDonationTest extends IntegrationTest
 {
     public function testStripeCanCancelDonation(): void
     {
+        $this->markTestSkipped('See comment in StripePaymentsUpdate::handlePaymentIntentCancelled()');
+
         /**
          * @psalm-suppress MixedArrayAccess
          * @var array<string,string> $donation
@@ -32,6 +34,9 @@ class StripeCancelsDonationTest extends IntegrationTest
         );
     }
 
+    /**
+     * @psalm-suppress UnusedMethod will be used if we fix test
+     */
     private function sendCancellationWebhookFromStripe(string $transactionId): void
     {
         $paymentIntentId = $transactionId;

@@ -92,11 +92,13 @@ class HandleOutOfSyncFunds extends LockingCommand
                 continue;
             }
 
-            // Amount allocated from the CampaignFunding
+            // Amount allocated from the CampaignFunding according to Redis which is the source
+            // of truth for these balances.
             $fundingAvailable = $this->matchingAdapter->getAmountAvailable($funding);
             $campaignFundingAllocated = bcsub($funding->getAmount(), $fundingAvailable, 2);
 
-            // Get the sum of all FundingWithdrawals for donations, whether complete or active reservations.
+            // Get the sum of all FundingWithdrawals for donations, whether complete or active reservations,
+            // according to the database.
             $fundingWithdrawalTotal = $this->fundingWithdrawalRepository->getWithdrawalsTotal($funding);
 
             $comparison = bccomp($campaignFundingAllocated, $fundingWithdrawalTotal, 2);

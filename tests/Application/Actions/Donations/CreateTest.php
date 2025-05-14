@@ -806,7 +806,10 @@ class CreateTest extends TestCase
         $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
     }
 
-    public function testErrorWhenAllDbPersistCallsFail(): void
+    /**
+     * Persist itself failing with a non-retryable exception should mean we give up immediately.
+     */
+    public function testErrorWhenDbPersistCallFails(): void
     {
         $donation = $this->getTestDonation(true, true, true);
 
@@ -821,7 +824,7 @@ class CreateTest extends TestCase
         $this->entityManagerProphecy->isOpen()->willReturn(true);
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))
             ->willThrow($this->prophesize(DBALServerException::class)->reveal())
-            ->shouldBeCalledTimes(3); // DonationService::MAX_RETRY_COUNT
+            ->shouldBeCalledOnce(); // DonationService::MAX_RETRY_COUNT
         $this->entityManagerProphecy->flush()->shouldNotBeCalled();
 
         $this->diContainer()->set(ClockInterface::class, new MockClock($this->now));

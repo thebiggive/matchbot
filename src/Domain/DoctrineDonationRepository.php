@@ -9,7 +9,6 @@ use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Query;
 use GuzzleHttp\Exception\BadResponseException;
-use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
@@ -52,7 +51,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         // is most often empty (for new donations) so this will frequently be 0.00.
         $amountMatchedAtStart = $donation->getFundingWithdrawalTotal();
 
-        $lockStartTime = 0; // dummy value, should always be overwritten before usage.
+        $allocateStartTime = 0; // dummy value, should always be overwritten before usage.
         try {
             /** @var list<CampaignFunding> $likelyAvailableFunds */
             $likelyAvailableFunds = $this->getEntityManager()
@@ -65,11 +64,12 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
                 }
             }
 
-            $lockStartTime = microtime(true);
-            $newWithdrawals = $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart);
-            $lockEndTime = microtime(true);
+            $allocateStartTime = microtime(true);
+//            $newWithdrawals = $this->getEntityManager()->wrapInTransaction(fn () => $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart));
+            $newWithdrawals = $this->allocateFundsAndPrepareDBChanges($donation, $likelyAvailableFunds, $amountMatchedAtStart);
+            $allocateEndTime = microtime(true);
         } catch (Matching\TerminalLockException $exception) {
-            $waitTime = round(microtime(true) - (float)$lockStartTime, 6);
+            $waitTime = round(microtime(true) - (float)$allocateStartTime, 6);
             $this->logError(
                 "Match allocate error: ID {$donation->getUuid()} got " . get_class($exception) .
                 " after {$waitTime}s: {$exception->getMessage()}"
@@ -77,9 +77,6 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             throw $exception; // Re-throw exception after logging the details if not recoverable
         }
 
-        // We release the allocation lock prior to inserting the funding withdrawal records, to keep the lock
-        // time short. These are new entities, so except in a system crash the withdrawal totals will almost
-        // immediately match the amount deducted from the fund.
         $amountNewlyMatched = '0.0';
 
         foreach ($newWithdrawals as $newWithdrawal) {
@@ -90,10 +87,28 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawalAmount, 2);
         }
 
-        $this->getEntityManager()->flush(); // Flush `$newWithdrawals` if any.
+        try {
+            // Flush `$newWithdrawals` if any and updates to DB copies of CampaignFundings.
+            $this->getEntityManager()->flush();
+        } catch (\Throwable $exception) {
+            $this->getLogger()->error(sprintf(
+                'Failed to flush DB for new withdrawals so donation UUID %s did not get matching: %s',
+                $donation->getUuid()->toString(),
+                $exception->getMessage(),
+            ));
+
+            // todo pick one
+            $this->matchingAdapter->releaseNewlyAllocatedFunds();
+            //$this->reverseMatchingAllocations($donation, $newWithdrawals, $likelyAvailableFunds);
+
+            // Ensure nothing later tries to persist the pending Donation or CampaignFunding changes.
+            $this->getEntityManager()->clear();
+
+            return '0.0';
+        }
 
         $this->logInfo('ID ' . $donation->getUuid()->toString() . ' allocated new match funds totalling ' . $amountNewlyMatched);
-        $this->logInfo('Allocation took ' . (string) round($lockEndTime - $lockStartTime, 6) . ' seconds');
+        $this->logInfo('Allocation took ' . (string) round($allocateEndTime - $allocateStartTime, 6) . ' seconds');
 
         return $amountNewlyMatched;
     }
@@ -425,8 +440,11 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     }
 
     /**
-     * Attempt an allocation of funds. For use inside a transaction as a self-contained unit that can be rolled back
-     * and retried.
+     * Attempt an allocation of funds. When all is well this:
+     *
+     * * updates the Redis authoritative store of fund balances,
+     * * updates the CampaignFunding balances from those copies to match (in entity manager but not flushed yet); and
+     * * updates the FundingWithdrawal records in the entity manager (also not flushed yet).
      *
      * @param Donation $donation
      * @param CampaignFunding[] $fundings   Fundings likely to have funds available. To be re-queried with a
@@ -436,11 +454,11 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
      *                                              started.
      * @return FundingWithdrawal[]
      */
-    private function safelyAllocateFunds(Donation $donation, array $fundings, string $amountMatchedAtStart): array
+    private function allocateFundsAndPrepareDBChanges(Donation $donation, array $fundings, string $amountMatchedAtStart): array
     {
         $amountLeftToMatch = bcsub($donation->getAmount(), $amountMatchedAtStart, 2);
         $currentFundingIndex = 0;
-        /** @var FundingWithdrawal[] $newWithdrawals Track these to persist outside the lock window, to keep it short */
+        /** @var FundingWithdrawal[] $newWithdrawals Track these to persist to DB after the main allocation */
         $newWithdrawals = [];
 
         // Loop as long as there are still campaign funds not allocated and we have allocated less than the donation
@@ -462,7 +480,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             } catch (Matching\LessThanRequestedAllocatedException $exception) {
                 $amountAllocated = $exception->getAmountAllocated();
                 $this->logInfo(
-                    "Amount available from funding {$funding->getId()} changed: - got $amountAllocated " .
+                    "Amount available from funding ID {$funding->getId()} changed: - got $amountAllocated " .
                     "of requested $amountToAllocateNow"
                 );
             }
@@ -474,7 +492,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
                 $withdrawal->setDonation($donation);
                 $withdrawal->setAmount($amountAllocated);
                 $newWithdrawals[] = $withdrawal;
-                $this->logInfo("Successfully withdrew $amountAllocated from funding {$funding->getId()}");
+                $this->logInfo("Successfully withdrew $amountAllocated from funding ID {$funding->getId()} for UUID {$donation->getUuid()}");
                 $this->logInfo("New fund total for {$funding->getId()}: $newTotal");
             }
 
@@ -887,4 +905,20 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     {
         return $this->findOneBy(['uuid' => $donationUUID]);
     }
+
+//    #[\Override]
+//    public function reverseMatchingAllocations(?Donation $donation, array $newWithdrawals, array $likelyAvailableFundings): void
+//    {
+//        // todo is this just `releaseNewlyAllocatedFunds()` repeated?
+//        foreach ($newWithdrawals as $newWithdrawal) {
+//            $this->matchingAdapter->addAmount($newWithdrawal->getCampaignFunding(), $newWithdrawal->getAmount());
+//        }
+//
+////        $em = $this->getEntityManager();
+////        $em->refresh($donation);
+////
+////        foreach ($likelyAvailableFundings as $campaignFunding) {
+////            $em->refresh($campaignFunding);
+////        }
+//    }
 }
