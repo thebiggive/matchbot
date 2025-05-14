@@ -782,7 +782,7 @@ class DonationService
         $donation->collectFromStripeCharge(
             chargeId: $charge->id,
             totalPaidFractional: $charge->amount,
-            transferId: (string)$charge->transfer,
+            transferId: $charge->transfer ?? null,
             cardBrand: $cardBrand,
             cardCountry: $cardCountry,
             originalFeeFractional: (string)$originalFeeFractional,
