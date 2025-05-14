@@ -6,11 +6,11 @@ declare(strict_types=1);
 use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\CancelStaleDonationFundTips;
 use MatchBot\Application\Commands\ClaimGiftAid;
-use MatchBot\Application\Commands\Command;
+use MatchBot\Application\Commands\CommandRenamed;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\ExpirePendingMandates;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
-use MatchBot\Application\Commands\LockingCommand;
+use MatchBot\Application\Commands\LockingCommandRenamed;
 use MatchBot\Application\Commands\PullIndividualCampaignFromSF;
 use MatchBot\Application\Commands\PullMetaCampaignFromSF;
 use MatchBot\Application\Commands\PushDailyFundTotals;
@@ -71,7 +71,7 @@ $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleEvent $event) 
     $logger = $psr11App->get(Logger::class);
     $input = $event->getInput();
 
-    if ($input->getOption(Command::CLI_OPTION_NOLOG)) {
+    if ($input->getOption(CommandRenamed::CLI_OPTION_NOLOG)) {
         array_filter(
             $logger->getHandlers(),
             (static fn ($handler) => $handler instanceof StreamHandler)
@@ -83,7 +83,7 @@ $cliApp = new Application();
 $cliApp->setDispatcher($dispatcher);
 $cliApp->getDefinition()->addOption(
     new InputOption(
-        Command::CLI_OPTION_NOLOG,
+        CommandRenamed::CLI_OPTION_NOLOG,
         null,
         InputOption::VALUE_NONE,
         'Suppresses debug & info log, show only warnings and errors'
@@ -91,7 +91,7 @@ $cliApp->getDefinition()->addOption(
 );
 
 foreach ($commands as $command) {
-    if ($command instanceof LockingCommand) { // i.e. not Symfony Messenger's built-in consumer.
+    if ($command instanceof LockingCommandRenamed) { // i.e. not Symfony Messenger's built-in consumer.
         $command->setLockFactory($psr11App->get(LockFactory::class));
         $command->setLogger($psr11App->get(LoggerInterface::class));
     }

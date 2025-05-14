@@ -102,10 +102,6 @@ return function (App $app) {
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
-        $versionGroup->get(
-            '/test-donation-collection-for-date/{date}',
-            \MatchBot\Application\Actions\CollectRegularGivingForTest::class
-        );
 
         $versionGroup->post('/regular-giving/mandate/{mandateId:[a-z0-9-]{36}}/cancel', RegularGivingMandate\CancelAsAdmin::class)
             ->add(SalesforceAuthMiddleware::class);

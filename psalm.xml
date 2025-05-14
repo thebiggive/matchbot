@@ -15,9 +15,9 @@
         <directory name="app"/>
         <directory name="public"/>
         <directory name="src"/>
-        <file name="matchbot-cli.php"/>
-        <directory name="tests"/>
-        <directory name="integrationTests"/>
+<!--        <file name="matchbot-cli.php"/>-->
+<!--        <directory name="tests"/>-->
+<!--        <directory name="integrationTests"/>-->
         <ignoreFiles>
             <directory name="vendor"/>
         </ignoreFiles>
@@ -33,7 +33,6 @@
             <errorLevel type="suppress">
                 <!-- Constructors in the following directories are called by the DI container not by us -->
                 <directory name="src/Application/Actions"/>
-                <directory name="src/Application/Commands"/>
                 <directory name="src/Application/Messenger/Handler"/>
             </errorLevel>
         </PossiblyUnusedMethod>
@@ -52,6 +51,8 @@
                 <directory name="src/Migrations/" />
             </errorLevel>
         </MissingOverrideAttribute>
+        <PossiblyUnusedMethod errorLevel="suppress"/>
+        <PossiblyUnusedReturnValue errorLevel="suppress"/>
     </issueHandlers>
     <plugins>
         <pluginClass class="Psalm\PhpUnitPlugin\Plugin"/>
