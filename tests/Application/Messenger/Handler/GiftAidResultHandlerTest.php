@@ -146,10 +146,18 @@ class GiftAidResultHandlerTest extends TestCase
     private function getEntityManagerExpectingPersist(): EntityManagerInterface
     {
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+
+        /**
+         * @psalm-suppress MixedFunctionCall
+         */
+        $entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))
+            ->will(function (array $args): mixed {
+                return $args[0]();
+            })
+            ->shouldBeCalledOnce();
+
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         return $entityManagerProphecy->reveal();
     }
