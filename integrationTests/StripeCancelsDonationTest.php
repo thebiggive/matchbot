@@ -40,9 +40,6 @@ class StripeCancelsDonationTest extends IntegrationTest
         );
     }
 
-    /**
-     * @psalm-suppress UnusedMethod will be used if we fix test
-     */
     private function sendCancellationWebhookFromStripe(string $transactionId): void
     {
         $paymentIntentId = $transactionId;
