@@ -12,7 +12,7 @@ use Doctrine\Migrations\AbstractMigration;
  */
 final class Version20250515172831 extends AbstractMigration
 {
-    private $donationId = 248739;
+    private int $donationId = 248739;
 
     public function getDescription(): string
     {
