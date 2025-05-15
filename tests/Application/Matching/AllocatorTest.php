@@ -60,9 +60,8 @@ class AllocatorTest extends TestCase
 
         $this->sut = new Allocator(
             $matchingAdapter,
-            $this->campaignFundingsRepositoryProphecy->reveal(),
             $this->emProphecy->reveal(),
-            new NullLogger()
+            new NullLogger(),
         );
 
         $this->campaign = \MatchBot\Tests\TestCase::someCampaign();
@@ -322,7 +321,13 @@ class AllocatorTest extends TestCase
 
         $donation = $this->getTestDonation();
 
+        $sut = new Allocator(
+            $matchingAdapterProphecy->reveal(),
+            $this->emProphecy->reveal(),
+            new NullLogger(),
+        );
+
         /** @psalm-suppress InternalMethod */
-        $this->sut->releaseMatchFunds($donation);
+        $sut->releaseMatchFunds($donation);
     }
 }

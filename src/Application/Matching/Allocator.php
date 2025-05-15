@@ -14,12 +14,17 @@ use Psr\Log\LoggerInterface;
 
 class Allocator
 {
+    /**
+     * Seems we must do this dynamically to avoid circular dependency. Remains null for some tests for now.
+     */
+    private ?CampaignFundingRepository $campaignFundingRepository = null;
+
     public function __construct(
         private Adapter $adapter,
-        private CampaignFundingRepository $campaignFundingRepository,
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
     ) {
+        $this->campaignFundingRepository = $entityManager->getRepository(CampaignFunding::class);
     }
 
     /**

@@ -538,15 +538,6 @@ return function (ContainerBuilder $containerBuilder) {
 
         EventDispatcherInterface::class => fn() => new EventDispatcher(),
 
-        Matching\Allocator::class => static function (ContainerInterface $c): Matching\Allocator {
-            return new Matching\Allocator(
-                $c->get(Matching\Adapter::class),
-                $c->get(CampaignFundingRepository::class),
-                $c->get(EntityManagerInterface::class),
-                $c->get(LoggerInterface::class),
-            );
-        },
-
         Auth\SalesforceAuthMiddleware::class =>
             function (ContainerInterface $c) {
                /**

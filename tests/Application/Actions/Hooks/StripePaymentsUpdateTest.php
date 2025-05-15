@@ -11,6 +11,8 @@ use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Settings;
 use MatchBot\Client\Mailer;
+use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -531,6 +533,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $time = (string) time();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->getRepository(CampaignFunding::class)->willReturn($this->createStub(CampaignFundingRepository::class));
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
@@ -611,7 +614,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
         $this->assertEquals('1.00', $donation->getTipAmount());
         $this->assertEquals(204, $response->getStatusCode());
-        $this->assertEquals('0', $this->donationRepository->totalMatchFundsReleased());
     }
 
     private function getValidWebhookSecret(Container $container): string

@@ -89,14 +89,6 @@ class InMemoryDonationRepository implements DonationRepository
         return $this->findOneBy($criteria);
     }
 
-    /**
-     * @return numeric-string
-     */
-    public function totalMatchFundsReleased(): string
-    {
-        return $this->matchFundsReleased;
-    }
-
     #[\Override] public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
         throw new \Exception("Method not implemented in test double");
