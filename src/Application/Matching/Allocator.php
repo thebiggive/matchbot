@@ -27,7 +27,7 @@ class Allocator
     ) {
         // For now, just type this as a few tests don't set it up. We assert before use in allocateMatchFunds() where
         // it's really needed.
-        /** @var CampaignFundingRepository $campaignFundingRepo */
+        /** @var CampaignFundingRepository $campaignFundingRepo */ // @phpstan-ignore varTag.type
         $campaignFundingRepo = $entityManager->getRepository(CampaignFunding::class);
         $this->campaignFundingRepository = $campaignFundingRepo;
     }
