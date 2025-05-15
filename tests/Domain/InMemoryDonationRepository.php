@@ -230,10 +230,4 @@ class InMemoryDonationRepository implements DonationRepository
     {
         return $this->findOneBy(['uuid' => $donationUUID]);
     }
-//
-//    #[\Override]
-//    public function reverseMatchingAllocations(Donation $donation, array $newWithdrawals, array $likelyAvailableFundings): void
-//    {
-//        throw new \Exception("Method not implemented in test double");
-//    }
 }

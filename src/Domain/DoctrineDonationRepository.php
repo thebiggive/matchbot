@@ -91,20 +91,14 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             // Flush `$newWithdrawals` if any and updates to DB copies of CampaignFundings.
             $this->getEntityManager()->flush();
         } catch (\Throwable $exception) {
-            $this->getLogger()->error(sprintf(
-                'Failed to flush DB for new withdrawals so donation UUID %s did not get matching: %s',
-                $donation->getUuid()->toString(),
-                $exception->getMessage(),
-            ));
-
-            // todo pick one
             $this->matchingAdapter->releaseNewlyAllocatedFunds();
-            //$this->reverseMatchingAllocations($donation, $newWithdrawals, $likelyAvailableFunds);
 
             // Ensure nothing later tries to persist the pending Donation or CampaignFunding changes.
-            $this->getEntityManager()->clear();
-
-            return '0.0';
+            $this->getEntityManager()->close();
+            throw new \RuntimeException(
+                'Failed to flush DB for new withdrawals so donation UUID ' . $donation->getUuid()->toString() .
+                ' did not get matching: ' . $exception->getMessage(),
+            );
         }
 
         $this->logInfo('ID ' . $donation->getUuid()->toString() . ' allocated new match funds totalling ' . $amountNewlyMatched);
@@ -905,20 +899,4 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     {
         return $this->findOneBy(['uuid' => $donationUUID]);
     }
-
-//    #[\Override]
-//    public function reverseMatchingAllocations(?Donation $donation, array $newWithdrawals, array $likelyAvailableFundings): void
-//    {
-//        // todo is this just `releaseNewlyAllocatedFunds()` repeated?
-//        foreach ($newWithdrawals as $newWithdrawal) {
-//            $this->matchingAdapter->addAmount($newWithdrawal->getCampaignFunding(), $newWithdrawal->getAmount());
-//        }
-//
-////        $em = $this->getEntityManager();
-////        $em->refresh($donation);
-////
-////        foreach ($likelyAvailableFundings as $campaignFunding) {
-////            $em->refresh($campaignFunding);
-////        }
-//    }
 }

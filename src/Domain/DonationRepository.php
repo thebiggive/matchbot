@@ -200,6 +200,4 @@ interface DonationRepository
     public function findOneBy(array $criteria);
 
     public function findOneByUUID(UuidInterface $donationUUID): ?Donation;
-
-//    public function reverseMatchingAllocations(Donation $donation, array $newWithdrawals, array $likelyAvailableFundings): void;
 }
