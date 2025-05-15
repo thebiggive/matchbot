@@ -6,6 +6,7 @@ namespace MatchBot\Application\Matching;
 
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assertion;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\Donation;
@@ -24,7 +25,9 @@ class Allocator
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
     ) {
-        $this->campaignFundingRepository = $entityManager->getRepository(CampaignFunding::class);
+        $campaignFundingRepo = $entityManager->getRepository(CampaignFunding::class);
+        \assert($campaignFundingRepo instanceof CampaignFundingRepository);
+        $this->campaignFundingRepository = $campaignFundingRepo;
     }
 
     /**
@@ -39,6 +42,8 @@ class Allocator
      */
     public function allocateMatchFunds(Donation $donation): string
     {
+        Assertion::notNull($this->campaignFundingRepository);
+
         // We look up matching withdrawals to allow for the case where retrospective matching was required
         // and the donation is not new, and *some* (or full) matching already occurred. The collection of withdrawals
         // is most often empty (for new donations) so this will frequently be 0.00.

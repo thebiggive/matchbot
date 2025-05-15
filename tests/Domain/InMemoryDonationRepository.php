@@ -18,11 +18,6 @@ class InMemoryDonationRepository implements DonationRepository
     /** @var array<int, Donation> */
     private $donations = [];
 
-    /**
-     * @var numeric-string
-     */
-    private string $matchFundsReleased = '0';
-
     #[\Override] public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation
     {
         foreach ($this->donations as $donation) {
