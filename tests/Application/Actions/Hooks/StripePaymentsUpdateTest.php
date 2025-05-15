@@ -290,10 +290,6 @@ class StripePaymentsUpdateTest extends StripeTest
             ->findAndLockOneBy(['transactionId' => 'pi_externalId_123'])
             ->shouldNotBeCalled();
 
-        $donationRepoProphecy
-            ->releaseMatchFunds($donation)
-            ->shouldNotBeCalled();
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());

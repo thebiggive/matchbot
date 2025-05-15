@@ -9,6 +9,7 @@ use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Messenger\DonationUpserted;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
@@ -62,6 +63,9 @@ class CreateTest extends TestCase
     private ClockInterface $previousClock;
     private \DateTimeImmutable $now;
     private ?Campaign $campaign = null;
+
+    /** @var ObjectProphecy<Allocator> */
+    private ObjectProphecy $allocatorProphecy;
 
     /** @var ObjectProphecy<CampaignRepository> */
     private ObjectProphecy $campaignRepositoryProphecy;
@@ -140,10 +144,11 @@ class CreateTest extends TestCase
         $this->donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $this->diContainer()->set(DonationRepository::class, $this->donationRepoProphecy->reveal());
 
+        $this->allocatorProphecy = $this->prophesize(Allocator::class);
+        $this->diContainer()->set(Allocator::class, $this->allocatorProphecy->reveal());
+
         $this->stripeProphecy = $this->prophesize(Stripe::class);
         $this->diContainer()->set(Stripe::class, $this->stripeProphecy->reveal());
-
-
 
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
 
@@ -217,7 +222,10 @@ class CreateTest extends TestCase
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
 
         $app = $this->getAppInstance();
-        $this->donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
+
+        $allocatorProphecy = $this->prophesize(Allocator::class);
+        $allocatorProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
+
         $this->donationRepoProphecy->push(Argument::type(DonationUpserted::class));
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
@@ -232,6 +240,7 @@ class CreateTest extends TestCase
 
         $this->stripeProphecy->createPaymentIntent(Argument::any())->shouldNotBeCalled();
 
+        $this->diContainer()->set(Allocator::class, $allocatorProphecy->reveal());
         $this->diContainer()->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
         $this->diContainer()->set(DonationRepository::class, $this->donationRepoProphecy->reveal());
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
@@ -295,11 +304,14 @@ class CreateTest extends TestCase
         $app = $this->getAppInstance();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
+
+        $allocatorProphecy = $this->prophesize(Allocator::class);
+        $allocatorProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $this->entityManagerProphecy->flush()->shouldNotBeCalled();
 
+        $this->diContainer()->set(Allocator::class, $allocatorProphecy->reveal());
         $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
 
@@ -863,6 +875,7 @@ class CreateTest extends TestCase
         bool $skipEmExpectations = false
     ): App {
         $app = $this->getAppInstance();
+        $allocatorProphecy = $this->prophesize(Allocator::class);
         $donationRepoProphecy = $this->donationRepoProphecy;
         $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CampaignId12345'])->willReturn($this->campaign);
 
@@ -880,9 +893,9 @@ class CreateTest extends TestCase
         }
 
         if ($donationMatched) {
-            $donationRepoProphecy->allocateMatchFunds($donation)->shouldBeCalledOnce();
+            $allocatorProphecy->allocateMatchFunds($donation)->shouldBeCalledOnce();
         } else {
-            $donationRepoProphecy->allocateMatchFunds($donation)->shouldNotBeCalled();
+            $allocatorProphecy->allocateMatchFunds($donation)->shouldNotBeCalled();
         }
 
         $this->entityManagerProphecy->isOpen()->willReturn(true);
@@ -901,6 +914,7 @@ class CreateTest extends TestCase
             }
         }
 
+        $this->diContainer()->set(Allocator::class, $allocatorProphecy->reveal());
         $this->diContainer()->set(CampaignRepository::class, $this->campaignRepositoryProphecy->reveal());
         $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $this->diContainer()->set(RoutableMessageBus::class, $this->messageBusProphecy->reveal());

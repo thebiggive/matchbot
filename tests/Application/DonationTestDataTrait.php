@@ -5,7 +5,6 @@ namespace MatchBot\Tests\Application;
 use DateTime;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorName;
@@ -17,7 +16,6 @@ use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
-use Stripe\Charge;
 
 trait DonationTestDataTrait
 {

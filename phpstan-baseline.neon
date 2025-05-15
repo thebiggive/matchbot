@@ -247,6 +247,18 @@ parameters:
 			path: tests/Application/Matching/AdapterTest.php
 
 		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: tests/Application/Matching/AllocatorTest.php
+
+		-
+			message: '#^Loose comparison using \=\= between 4 and 4 will always evaluate to true\.$#'
+			identifier: equal.alwaysTrue
+			count: 1
+			path: tests/Application/Matching/AllocatorTest.php
+
+		-
 			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$balanceTransactions\.$#'
 			identifier: property.notFound
 			count: 5
@@ -263,18 +275,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: tests/Application/Messenger/Handler/StripePayoutHandlerTest.php
-
-		-
-			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: tests/Domain/DonationRepositoryMatchFundsAllocationTest.php
-
-		-
-			message: '#^Loose comparison using \=\= between 4 and 4 will always evaluate to true\.$#'
-			identifier: equal.alwaysTrue
-			count: 1
-			path: tests/Domain/DonationRepositoryMatchFundsAllocationTest.php
 
 		-
 			message: '#^Property Stripe\\ConfirmationToken\:\:\$payment_method_preview \(Stripe\\StripeObject\|null\) does not accept array\<string, array\<string, string\>\>\.$#'

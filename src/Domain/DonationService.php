@@ -11,11 +11,12 @@ use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
+use MatchBot\Application\Matching\Allocator;
+use MatchBot\Application\Matching\DbErrorPreventedMatch;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
@@ -82,6 +83,7 @@ class DonationService
     private ?\Closure $fakeDonationProviderForTestUseOnly = null;
 
     public function __construct(
+        private Allocator $allocator,
         private DonationRepository $donationRepository,
         private CampaignRepository $campaignRepository,
         private LoggerInterface $logger,
@@ -116,6 +118,7 @@ class DonationService
      * @throws RateLimitExceededException
      * @throws WrongCampaignType
      * @throws \MatchBot\Client\NotFoundException
+     * @throws DbErrorPreventedMatch
      */
     public function createDonation(DonationCreate $donationData, string $pspCustomerId, PersonId $donorId): Donation
     {
@@ -589,8 +592,7 @@ class DonationService
         $this->save($donation);
 
         if ($donation->getCampaign()->isMatched()) {
-            /** @psalm-suppress InternalMethod */
-            $this->donationRepository->releaseMatchFunds($donation);
+            $this->allocator->releaseMatchFunds($donation);
         }
 
         $transactionId = $donation->getTransactionId();
@@ -599,7 +601,7 @@ class DonationService
                 $this->stripe->cancelPaymentIntent($transactionId);
             } catch (ApiErrorException $exception) {
                 /**
-                 * As per the notes in {@see DonationRepository::releaseMatchFunds()}, we
+                 * As per the notes in {@see Allocator::releaseMatchFunds()}, we
                  * occasionally see double-cancels from the frontend. If Stripe tell us the
                  * Cancelled Donation's PI is canceled [note US spelling doesn't match our internal
                  * status], in all CC21 checks this seemed to be the situation.
@@ -683,7 +685,7 @@ class DonationService
             $donation = $this->donationRepository->findAndLockOneByUUID($donationId);
             Assertion::notNull($donation);
 
-            $this->donationRepository->releaseMatchFunds($donation);
+            $this->allocator->releaseMatchFunds($donation);
 
             $this->entityManager->flush();
         });
@@ -864,7 +866,7 @@ class DonationService
         // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
         $this->runWithPossibleRetry(
             retryable: function () use ($donation) {
-                $this->donationRepository->allocateMatchFunds($donation);
+                $this->allocator->allocateMatchFunds($donation);
             },
             actionName: 'allocate match funds',
             onErrorTidy: function () use ($donation) {

@@ -97,16 +97,6 @@ class InMemoryDonationRepository implements DonationRepository
         return $this->matchFundsReleased;
     }
 
-    #[\Override] public function releaseMatchFunds(Donation $donation): void
-    {
-        $this->matchFundsReleased = bcadd($this->matchFundsReleased, $donation->getAmount());
-    }
-
-    #[\Override] public function allocateMatchFunds(Donation $donation): string
-    {
-        throw new \Exception("Method not implemented in test double");
-    }
-
     #[\Override] public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
         throw new \Exception("Method not implemented in test double");
@@ -153,11 +143,6 @@ class InMemoryDonationRepository implements DonationRepository
     }
 
     #[\Override] public function abandonOldCancelled(): int
-    {
-        throw new \Exception("Method not implemented in test double");
-    }
-
-    #[\Override] public function removeAllFundingWithdrawalsForDonation(Donation $donation): void
     {
         throw new \Exception("Method not implemented in test double");
     }

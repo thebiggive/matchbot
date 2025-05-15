@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Actions\Donations;
 
-use Assert\AssertionFailedException;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Donations\Confirm;
-use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -78,6 +77,7 @@ class ConfirmTest extends TestCase
             bus: $messageBusStub,
             clock: new MockClock('2025-01-01'),
             donationService: new DonationService(
+                allocator: $this->createStub(Allocator::class),
                 donationRepository: $this->getDonationRepository(),
                 campaignRepository: $this->createStub(CampaignRepository::class),
                 logger: new NullLogger(),

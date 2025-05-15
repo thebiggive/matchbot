@@ -7,6 +7,7 @@ use Doctrine\DBAL\Driver\PDO\Exception as PDOException;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
@@ -217,6 +218,7 @@ class DonationServiceTest extends TestCase
         $fundRepoProphecy ??= $this->prophesize(FundRepository::class);
 
         return new DonationService(
+            allocator: $this->createStub(Allocator::class),
             donationRepository: $this->donationRepoProphecy->reveal(),
             campaignRepository: $campaignRepoProphecy->reveal(),
             logger: $logger,
