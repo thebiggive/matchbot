@@ -97,26 +97,27 @@ class StripePaymentsUpdate extends Stripe
         $type = $event->type;
         $this->logger->info(sprintf('Received Stripe account event type "%s"', $type));
 
-        switch ($type) {
-            case Event::CHARGE_DISPUTE_CLOSED:
-                return $this->handleChargeDisputeClosed($event, $response);
-            case Event::CHARGE_REFUNDED:
-                return $this->handleChargeRefunded($event, $response);
+        return match ($type) {
+            Event::CHARGE_DISPUTE_CLOSED =>
+                 $this->handleChargeDisputeClosed($event, $response),
+            Event::CHARGE_REFUNDED =>
+                 $this->handleChargeRefunded($event, $response),
                 // we have to listen for both CHARGE_SUCCEEDED and CHARGE_UPDATED - succeded comes much quicker and
                // we need to thank the donor for their donation quickly so they know it worked. Updated comes later and
             // gives us further information that we'll need for charity payouts, e.g. transfer ID.
-            case Event::CHARGE_SUCCEEDED:
-                return $this->handleChargeSucceeded($event, $response);
-            case Event::CHARGE_UPDATED:
-                return $this->handleChargeUpdated($event, $response);
-            case Event::PAYMENT_INTENT_CANCELED:
-                return $this->handlePaymentIntentCancelled($event, $response);
-            case Event::CUSTOMER_CASH_BALANCE_TRANSACTION_CREATED:
-                return $this->handleCashBalanceUpdate($event, $response);
-            default:
+            Event::CHARGE_SUCCEEDED =>
+                 $this->handleChargeSucceeded($event, $response),
+            Event::CHARGE_UPDATED =>
+                 $this->handleChargeUpdated($event, $response),
+            Event::PAYMENT_INTENT_CANCELED =>
+                 $this->handlePaymentIntentCancelled($event, $response),
+            Event::CUSTOMER_CASH_BALANCE_TRANSACTION_CREATED =>
+                 $this->handleCashBalanceUpdate($event, $response),
+            default => (function () use ($type, $response) {
                 $this->logger->info(sprintf('Unsupported event type "%s"', $type));
                 return $this->respond($response, new ActionPayload(204));
-        }
+            })()
+        };
     }
 
     private function handleChargeSucceeded(Event $event, Response $response): Response
