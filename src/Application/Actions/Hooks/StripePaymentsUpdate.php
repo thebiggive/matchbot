@@ -123,7 +123,6 @@ class StripePaymentsUpdate extends Stripe
     private function handleChargeSucceeded(Event $event, Response $response): Response
     {
         /**
-         * @psalm-suppress UndefinedMagicPropertyFetch
          * @var Charge $charge
          */
         $charge = $event->data->object;
@@ -190,7 +189,6 @@ class StripePaymentsUpdate extends Stripe
     private function handleChargeUpdated(Event $event, Response $response): Response
     {
         /**
-         * @psalm-suppress UndefinedMagicPropertyFetch
          * @var Charge $charge
          */
         $charge = $event->data->object;
@@ -203,7 +201,6 @@ class StripePaymentsUpdate extends Stripe
 
         $this->entityManager->beginTransaction();
 
-        /** @var Donation $donation */
         if (is_string($intentId)) {
             $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
         } else {
@@ -253,7 +250,6 @@ class StripePaymentsUpdate extends Stripe
     private function handleChargeDisputeClosed(Event $event, Response $response): Response
     {
         /**
-         * @psalm-suppress UndefinedMagicPropertyFetch
          * @var Dispute $dispute
          */
         $dispute = $event->data->object;
@@ -331,7 +327,6 @@ class StripePaymentsUpdate extends Stripe
     private function handleChargeRefunded(Event $event, Response $response): Response
     {
         /**
-         * @psalm-suppress UndefinedMagicPropertyFetch
          * @var Charge $charge
          */
         $charge = $event->data->object;
@@ -422,7 +417,6 @@ class StripePaymentsUpdate extends Stripe
          * https://docs.stripe.com/api/events/types?event_types-invoice.payment_succeeded=#event_types-payment_intent.canceled
          * says "data.object is a payment intent" so:
          *
-         * @psalm-suppress UndefinedMagicPropertyFetch $paymentIntent
          */
         $paymentIntent = $event->data->object;
         \assert($paymentIntent instanceof PaymentIntent);
