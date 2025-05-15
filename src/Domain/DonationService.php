@@ -231,13 +231,12 @@ class DonationService
     private function runWithPossibleRetry(
         \Closure $retryable,
         string $actionName,
-        ?Donation $donation = null,
         ?\Closure $onErrorTidy = null
     ): void {
         $retryCount = 0;
         while ($retryCount < self::MAX_RETRY_COUNT) {
             try {
-                $retryable($donation);
+                $retryable();
                 if ($retryCount > 0) {
                     $this->logger->error(
                         "$actionName SUCCEEDED after $retryCount retry - retry process is not useless. " .
@@ -247,7 +246,9 @@ class DonationService
                 return;
             } catch (RetryableException $exception) {
                 if ($onErrorTidy) {
-                    $onErrorTidy($donation);
+                    $this->logger->info(sprintf('%s retryable error will tidy up', $actionName));
+                    $onErrorTidy();
+                    $this->logger->info(sprintf('%s retryable error did tidy up', $actionName));
                 }
 
                 $retryCount++;
@@ -275,9 +276,10 @@ class DonationService
                     throw $exception;
                 }
             } catch (\Throwable $exception) {
-                // todo log more including whether we "tidied" anything
                 if ($onErrorTidy) {
-                    $onErrorTidy($donation);
+                    $this->logger->info(sprintf('%s non-retryable error will tidy up', $actionName));
+                    $onErrorTidy();
+                    $this->logger->info(sprintf('%s non-retryable error did tidy up', $actionName));
                 }
 
                 // No retries for exceptions we aren't confident of recovering from
@@ -861,10 +863,11 @@ class DonationService
     {
         // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
         $this->runWithPossibleRetry(
-            retryable: fn (Donation $donation) => $this->donationRepository->allocateMatchFunds($donation),
+            retryable: function () use ($donation) {
+                $this->donationRepository->allocateMatchFunds($donation);
+            },
             actionName: 'allocate match funds',
-            donation: $donation,
-            onErrorTidy: function (Donation $donation) {
+            onErrorTidy: function () use ($donation) {
                 $this->logger->info(sprintf('Resetting after match error for UUID %s', $donation->getUuid()));
 
                 $this->matchingAdapter->releaseNewlyAllocatedFunds();
@@ -872,8 +875,9 @@ class DonationService
                 // `DoctrineDonationRepository` *should* have already `clear()`ed the EM in this case, but
                 // do it again just in case. We want ot ensure that no FundingWithdrawals of CampaignFunding
                 // DB copies get out of sync with the Redis source of truth.
-
                 $this->entityManager->clear();
+
+                $this->logger->info(sprintf('Reset tasks done after match error for UUID %s', $donation->getUuid()));
             },
         );
     }
