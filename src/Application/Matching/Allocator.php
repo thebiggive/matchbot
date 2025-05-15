@@ -25,8 +25,10 @@ class Allocator
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
     ) {
+        // For now, just type this as a few tests don't set it up. We assert before use in allocateMatchFunds() where
+        // it's really needed.
+        /** @var CampaignFundingRepository $campaignFundingRepo */
         $campaignFundingRepo = $entityManager->getRepository(CampaignFunding::class);
-        \assert($campaignFundingRepo instanceof CampaignFundingRepository);
         $this->campaignFundingRepository = $campaignFundingRepo;
     }
 
