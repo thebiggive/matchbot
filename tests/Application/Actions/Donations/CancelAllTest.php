@@ -8,7 +8,10 @@ use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Client\BadRequestException;
+use MatchBot\Client\Campaign;
 use MatchBot\Client\Stripe;
+use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonorAccountRepository;
@@ -183,6 +186,7 @@ class CancelAllTest extends TestCase
         ObjectProphecy $stripeProphecy = null,
         ObjectProphecy $allocatorProphecy = null,
     ): void {
+        $container->set(CampaignFundingRepository::class, $this->prophesize(CampaignFundingRepository::class)->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());

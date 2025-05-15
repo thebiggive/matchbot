@@ -45,9 +45,6 @@ class AllocatorTest extends TestCase
         $this->campaignFundingsRepositoryProphecy = $this->prophesize(CampaignFundingRepository::class);
 
         $this->emProphecy = $this->prophesize(\Doctrine\ORM\EntityManagerInterface::class);
-        $this->emProphecy->getRepository(CampaignFunding::class)
-            ->willReturn($this->campaignFundingsRepositoryProphecy->reveal());
-
         $this->emProphecy->wrapInTransaction(Argument::type(\Closure::class))->will(/**
          * @param list<\Closure> $args
          * @return mixed
@@ -62,6 +59,7 @@ class AllocatorTest extends TestCase
             $matchingAdapter,
             $this->emProphecy->reveal(),
             new NullLogger(),
+            $this->campaignFundingsRepositoryProphecy->reveal(),
         );
 
         $this->campaign = \MatchBot\Tests\TestCase::someCampaign();
@@ -325,6 +323,7 @@ class AllocatorTest extends TestCase
             $matchingAdapterProphecy->reveal(),
             $this->emProphecy->reveal(),
             new NullLogger(),
+            $this->campaignFundingsRepositoryProphecy->reveal(),
         );
 
         /** @psalm-suppress InternalMethod */

@@ -15,21 +15,12 @@ use Psr\Log\LoggerInterface;
 
 class Allocator
 {
-    /**
-     * Seems we must do this dynamically to avoid circular dependency. Remains null for some tests for now.
-     */
-    private ?CampaignFundingRepository $campaignFundingRepository = null;
-
     public function __construct(
         private Adapter $adapter,
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
+        private CampaignFundingRepository $campaignFundingRepository,
     ) {
-        // For now, just type this as a few tests don't set it up. We assert before use in allocateMatchFunds() where
-        // it's really needed.
-        /** @var CampaignFundingRepository $campaignFundingRepo */ // @phpstan-ignore varTag.type
-        $campaignFundingRepo = $entityManager->getRepository(CampaignFunding::class);
-        $this->campaignFundingRepository = $campaignFundingRepo;
     }
 
     /**
@@ -44,8 +35,6 @@ class Allocator
      */
     public function allocateMatchFunds(Donation $donation): string
     {
-        Assertion::notNull($this->campaignFundingRepository);
-
         // We look up matching withdrawals to allow for the case where retrospective matching was required
         // and the donation is not new, and *some* (or full) matching already occurred. The collection of withdrawals
         // is most often empty (for new donations) so this will frequently be 0.00.

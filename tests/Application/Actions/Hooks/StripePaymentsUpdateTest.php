@@ -53,6 +53,8 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
         $container->set(RegularGivingMandateRepository::class, $this->createStub(RegularGivingMandateRepository::class));
         $container->set(FundRepository::class, $this->createStub(FundRepository::class));
+        $container->set(CampaignFundingRepository::class, $this->prophesize(CampaignFundingRepository::class)->reveal());
+
 
         $this->donationRepository = new InMemoryDonationRepository();
         $container->set(DonationRepository::class, $this->donationRepository);
