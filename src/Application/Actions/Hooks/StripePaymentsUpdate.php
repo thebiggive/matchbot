@@ -355,10 +355,6 @@ class StripePaymentsUpdate extends Stripe
         \assert($paymentIntent instanceof PaymentIntent);
 
         $this->entityManager->beginTransaction();
-        // Locking this fails StripeCancelsDonationTest currently, probably because of
-        // https://github.com/doctrine/orm/issues/9505 combined with the test creating and
-        // then patching the donation in one thread? Doctrine doesn't recognise the donation
-        // to cancel as the same and gets an error trying to set the readonly $amount property.
         $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $paymentIntent->id]);
 
         if ($donation === null) {

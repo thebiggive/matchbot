@@ -2,6 +2,7 @@
 
 namespace MatchBot\IntegrationTests;
 
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Settings;
 use MatchBot\Domain\DonationStatus;
@@ -11,8 +12,6 @@ class StripeCancelsDonationTest extends IntegrationTest
 {
     public function testStripeCanCancelDonation(): void
     {
-        $this->markTestSkipped('See comment in StripePaymentsUpdate::handlePaymentIntentCancelled()');
-
         /**
          * @psalm-suppress MixedArrayAccess
          * @var array<string,string> $donation
@@ -22,6 +21,13 @@ class StripeCancelsDonationTest extends IntegrationTest
             true,
             flags: \JSON_THROW_ON_ERROR
         )['donation'];
+
+        // Clear the previous copy of the donation, otherwise loading the donation with a lock fails, probably
+        // because of https://github.com/doctrine/orm/issues/9505 combined with the test creating and
+        // then patching the donation in one thread. Doctrine doesn't recognise the donation
+        // to cancel as the same and gets an error trying to set the readonly $amount property.
+        // Having a clear EM at the start of each web request is closer to how the real app runs anyway.
+        $this->getService(EntityManagerInterface::class)->clear();
 
         $this->sendCancellationWebhookFromStripe($donation['transactionId']);
 
