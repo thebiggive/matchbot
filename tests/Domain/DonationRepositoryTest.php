@@ -386,7 +386,8 @@ class DonationRepositoryTest extends TestCase
     /**
      * @param ObjectProphecy<Client\Donation> $donationClientProphecy
      */
-    private function getRepo(?ObjectProphecy $donationClientProphecy = null): DonationRepository {
+    private function getRepo(?ObjectProphecy $donationClientProphecy = null): DonationRepository
+    {
         if (!$donationClientProphecy) {
             $donationClientProphecy = $this->prophesize(Client\Donation::class);
         }
