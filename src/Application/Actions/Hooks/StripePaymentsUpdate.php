@@ -114,7 +114,7 @@ class StripePaymentsUpdate extends Stripe
             Event::CUSTOMER_CASH_BALANCE_TRANSACTION_CREATED =>
                  $this->handleCashBalanceUpdate($event, $response),
             default => (function () use ($type, $response) {
-                $this->logger->info(sprintf('Unsupported event type "%s"', $type));
+                $this->logger->warning(sprintf('Unsupported event type "%s"', $type));
                 return $this->respond($response, new ActionPayload(204));
             })()
         };
