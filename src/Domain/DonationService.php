@@ -127,8 +127,9 @@ class DonationService
         try {
             return $this->doCreateDonation($pspCustomerId, $donationData, $donorId);
         } catch (RetryableException $exception) {
-            // possibly donation will have been left pending as not matched yet - so we abandon that one and try
-            // making a new one.
+            /**
+             * See notes on {@see self::enrollNewDonation} for EM side effect details.
+             */
             $this->logger->warning("Error creating donation, will retry: " . $exception->getMessage());
             return $this->doCreateDonation($pspCustomerId, $donationData, $donorId);
         }
@@ -359,6 +360,9 @@ class DonationService
      * - Allocating match funds to the donation
      * - Creating Stripe Payment intent
      *
+     * On retryable database errors, the passed `$donation` will be detached from the EM on the assumption that
+     * callers will use a new one. The exception is re-thrown when this happens.
+     *
      * @param bool $attemptMatching Whether to use match funds. Match funds will be withdrawn based on
      *                              availability or donation amount, which ever is smaller.
      * @throws CampaignNotOpen
@@ -376,22 +380,32 @@ class DonationService
 
         $campaign->checkIsReadyToAcceptDonation($donation, $this->clock->now());
 
-        $this->entityManager->wrapInTransaction(function () use ($donation, $attemptMatching, $campaign) {
-            // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
-            // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
-            $this->runWithPossibleRetry(function () use ($donation) {
-                $this->entityManager->persist($donation);
-                $this->entityManager->flush();
-            }, 'Donation Create persist before stripe work');
+        // Handling txn ourselves because Doctrine closes EM on errors. We want to only remove the new Donation from
+        // tracking instead so that a retry can work.
+        $this->entityManager->beginTransaction();
 
-            if ($campaign->isMatched() && $attemptMatching) {
-                try {
-                    $this->attemptFundingAllocation($donation);
-                } catch (RetryableException) { // here
-                    $this->attemptFundingAllocation($donation);
-                }
+        // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
+        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
+        $this->runWithPossibleRetry(function () use ($donation) {
+            $this->entityManager->persist($donation);
+            try {
+                $this->entityManager->flush();
+            } catch (\Throwable $exception) {
+                $this->entityManager->rollback();
+                $this->entityManager->detach($donation);
+                throw $exception;
             }
-        });
+        }, 'Donation Create persist before stripe work');
+
+        if ($campaign->isMatched() && $attemptMatching) {
+            try {
+                $this->attemptFundingAllocation($donation);
+            } catch (RetryableException) { // here
+                $this->attemptFundingAllocation($donation);
+            }
+        }
+
+        $this->entityManager->commit();
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
         if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {

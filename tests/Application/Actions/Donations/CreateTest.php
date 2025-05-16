@@ -243,13 +243,8 @@ class CreateTest extends TestCase
         $this->entityManagerProphecy->isOpen()->willReturn(true);
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $this->entityManagerProphecy->flush()->shouldBeCalledOnce();
-        /**
-         * @psalm-suppress MixedFunctionCall
-         */
-        $this->entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))
-            ->will(function (array $args): mixed {
-                return $args[0]();
-            });
+        $this->entityManagerProphecy->beginTransaction()->willReturn(null);
+        $this->entityManagerProphecy->commit()->willReturn(null);
 
         $this->stripeProphecy->createPaymentIntent(Argument::any())->shouldNotBeCalled();
 
@@ -912,13 +907,8 @@ class CreateTest extends TestCase
         }
 
         $this->entityManagerProphecy->isOpen()->willReturn(true);
-        /**
-         * @psalm-suppress MixedFunctionCall
-         */
-        $this->entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))
-            ->will(function (array $args): mixed {
-                return $args[0]();
-            });
+        $this->entityManagerProphecy->beginTransaction()->willReturn(null);
+        $this->entityManagerProphecy->commit()->willReturn(null);
 
         if ($donationPersisted) {
             if (!$skipEmExpectations) {
