@@ -91,7 +91,7 @@ class CreateTest extends TestCase
             ],
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
-            'capture_method' => 'automatic',
+            'capture_method' => 'automatic_async',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
@@ -357,7 +357,7 @@ class CreateTest extends TestCase
             ],
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
-            'capture_method' => 'automatic',
+            'capture_method' => 'automatic_async',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
@@ -464,7 +464,7 @@ class CreateTest extends TestCase
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
-            'capture_method' => 'automatic',
+            'capture_method' => 'automatic_async',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
@@ -561,7 +561,7 @@ class CreateTest extends TestCase
             ],
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
-            'capture_method' => 'automatic',
+            'capture_method' => 'automatic_async',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
