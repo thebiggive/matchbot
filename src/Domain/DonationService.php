@@ -383,42 +383,29 @@ class DonationService
         // Handling txn ourselves because Doctrine closes EM on errors. We want to only remove the new Donation from
         // tracking instead so that a retry can work.
         $this->entityManager->beginTransaction();
-        echo __FILE__ . ':' . __LINE__ . " Started transaction\n";
 
         // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
         // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
         $this->runWithPossibleRetry(function () use ($donation) {
-            echo __FILE__ . ':' . __LINE__ . " Persisting donation\n";
             $this->entityManager->persist($donation);
             try {
-                echo __FILE__ . ':' . __LINE__ . " Flushing donation\n";
                 $this->entityManager->flush();
-                echo __FILE__ . ':' . __LINE__ . " Did flush donation\n";
             } catch (\Throwable $exception) {
-                echo __FILE__ . ':' . __LINE__ . " Will rollback: {$exception->getMessage()}\n";
                 $this->entityManager->rollback();
-                echo __FILE__ . ':' . __LINE__ . " Will detach donation\n";
                 $this->entityManager->detach($donation);
-                echo __FILE__ . ':' . __LINE__ . " Detached donation\n";
                 throw $exception;
             }
         }, 'Donation Create persist before stripe work');
 
         if ($campaign->isMatched() && $attemptMatching) {
             try {
-                echo __FILE__ . ':' . __LINE__ . " Attempting funding allocation\n";
                 $this->attemptFundingAllocation($donation);
-            } catch (RetryableException) {
-                echo __FILE__ . ':' . __LINE__ . " Attempting funding allocation second time\n";
+            } catch (RetryableException) { // here
                 $this->attemptFundingAllocation($donation);
             }
         }
 
-        echo __FILE__ . ':' . __LINE__ . " Will commit\n";
-
         $this->entityManager->commit();
-
-        echo __FILE__ . ':' . __LINE__ . " Did commit\n";
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
         if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {
