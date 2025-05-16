@@ -217,8 +217,7 @@ class DonationService
      */
     private function runWithPossibleRetry(
         \Closure $retryable,
-        string $actionName,
-        ?\Closure $onErrorTidy = null
+        string $actionName
     ): void {
         $retryCount = 0;
         while ($retryCount < self::MAX_RETRY_COUNT) {
@@ -232,12 +231,6 @@ class DonationService
                 }
                 return;
             } catch (RetryableException $exception) {
-                if ($onErrorTidy) {
-                    $this->logger->info(sprintf('%s retryable error will tidy up', $actionName));
-                    $onErrorTidy();
-                    $this->logger->info(sprintf('%s retryable error did tidy up', $actionName));
-                }
-
                 $retryCount++;
                 $this->logger->info(
                     sprintf(
@@ -262,15 +255,6 @@ class DonationService
 
                     throw $exception;
                 }
-            } catch (\Throwable $exception) {
-                if ($onErrorTidy) {
-                    $this->logger->info(sprintf('%s non-retryable error will tidy up', $actionName));
-                    $onErrorTidy();
-                    $this->logger->info(sprintf('%s non-retryable error did tidy up', $actionName));
-                }
-
-                // No retries for exceptions we aren't confident of recovering from
-                throw $exception;
             }
         }
     }
