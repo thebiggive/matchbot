@@ -5,6 +5,7 @@ namespace MatchBot\Domain;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use GuzzleHttp\Exception\ClientException;
@@ -146,7 +147,11 @@ class DonationService
             throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
 
-        $this->enrollNewDonation($donation, attemptMatching: true);
+        try {
+            $this->enrollNewDonation($donation, attemptMatching: true);
+        } catch (RetryableException $exception) {
+            $this->enrollNewDonation($donation, attemptMatching: true);
+        }
 
         return $donation;
     }
@@ -417,7 +422,11 @@ class DonationService
         }, 'Donation Create persist before stripe work');
 
         if ($campaign->isMatched() && $attemptMatching) {
-            $this->attemptFundingAllocation($donation);
+            try {
+                $this->attemptFundingAllocation($donation);
+            } catch (RetryableException) {
+                $this->attemptFundingAllocation($donation);
+            }
         }
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
@@ -862,35 +871,15 @@ class DonationService
         return $txn->fee;
     }
 
-    /**
-     * Must be called with entity manager unit of work empty (i.e. flush() first) so that retries
-     * can work involving an EM clear if needed.
-     *
-     * @throws AssertionFailedException before doing any work, if that condition is not met.
-     */
     public function attemptFundingAllocation(Donation $donation): void
     {
-        // Ensure caller flush()'d immediately before.
-        $this->confirmUnitOfWorkHasNoChanges();
-
-        $this->runWithPossibleRetry(
-            retryable: function () use ($donation) {
-                $this->allocator->allocateMatchFunds($donation);
-            },
-            actionName: 'allocate match funds',
-            onErrorTidy: function () use ($donation) {
-                $this->logger->info(sprintf('Resetting after match error for UUID %s', $donation->getUuid()));
-
-                $this->matchingAdapter->releaseNewlyAllocatedFunds();
-
-                // `DoctrineDonationRepository` *should* have already `clear()`ed the EM in this case, but
-                // do it again just in case. We want ot ensure that no FundingWithdrawals of CampaignFunding
-                // DB copies get out of sync with the Redis source of truth.
-                $this->entityManager->clear();
-
-                $this->logger->info(sprintf('Reset tasks done after match error for UUID %s', $donation->getUuid()));
-            },
-        );
+        try {
+            $this->allocator->allocateMatchFunds($donation);
+        } catch (\Throwable $throwable) {
+            $this->logger->info(sprintf('Releasing allocated funds after match error for UUID %s', $donation->getUuid()));
+            $this->matchingAdapter->releaseNewlyAllocatedFunds();
+            throw $throwable;
+        }
     }
 
     /**
@@ -945,17 +934,17 @@ class DonationService
         $this->fakeDonationProviderForTestUseOnly = $fakeDonationProviderForTestUseOnly;
     }
 
-    private function confirmUnitOfWorkHasNoChanges(): void
+    private function confirmEmHasNoRelaventChanges(): void
     {
         $unitOfWork = $this->entityManager->getUnitOfWork();
         $unitOfWork->computeChangeSets();
 
         Assertion::false($unitOfWork->hasPendingInsertions());
+        $identityMap = $unitOfWork->getIdentityMap();
 
-        foreach ($unitOfWork->getIdentityMap() as $_className => $trackedEntities) {
-            foreach ($trackedEntities as $trackedEntity) {
-                Assertion::eq([], $unitOfWork->getEntityChangeSet($trackedEntity));
-            }
-        }
+        // may have to clear em between redistrubte  match and retro match funds loop iterations.
+
+        Assertion::keyNotExists($identityMap, FundingWithdrawal::class, 'Entity Manager must not have managed FWs before funding allocation');
+        Assertion::keyNotExists($identityMap, CampaignFunding::class, 'Entity Manager must not have managed FWs before funding allocation');
     }
 }

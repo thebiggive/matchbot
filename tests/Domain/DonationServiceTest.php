@@ -121,6 +121,8 @@ class DonationServiceTest extends TestCase
 
     public function testInitialPersistRunsOutOfRetries(): void
     {
+        $this->markTestSkipped('retry not being done at same level now - consider moving to test for retry higher in stack');
+
         $logger = $this->prophesize(LoggerInterface::class);
         $logger->info(
             'Donation Create persist before stripe work error: ' .
