@@ -213,6 +213,14 @@ class DonationServiceTest extends TestCase
             $this->entityManagerProphecy->flush()->willReturn(null);
         }
 
+        /**
+         * @psalm-suppress MixedFunctionCall
+         */
+        $this->entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))
+            ->will(function (array $args): mixed {
+                return $args[0]();
+            });
+
         $logger = $logger ?? new NullLogger();
 
 
