@@ -956,18 +956,4 @@ class DonationService
 
         return $donation;
     }
-
-    private function confirmEmHasNoRelaventChanges(): void
-    {
-        $unitOfWork = $this->entityManager->getUnitOfWork();
-        $unitOfWork->computeChangeSets();
-
-        Assertion::false($unitOfWork->hasPendingInsertions());
-        $identityMap = $unitOfWork->getIdentityMap();
-
-        // may have to clear em between redistrubte  match and retro match funds loop iterations.
-
-        Assertion::keyNotExists($identityMap, FundingWithdrawal::class, 'Entity Manager must not have managed FWs before funding allocation');
-        Assertion::keyNotExists($identityMap, CampaignFunding::class, 'Entity Manager must not have managed FWs before funding allocation');
-    }
 }
