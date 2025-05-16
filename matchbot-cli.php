@@ -7,7 +7,6 @@ use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\CancelStaleDonationFundTips;
 use MatchBot\Application\Commands\ClaimGiftAid;
 use MatchBot\Application\Commands\Command;
-use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\ExpirePendingMandates;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
@@ -46,12 +45,11 @@ $commands = array_map($psr11App->get(...), [
     ClaimGiftAid::class,
     ConsumeMessagesCommand::class,
 
-    DeleteStalePaymentDetails::class,
     ExpireMatchFunds::class,
     ExpirePendingMandates::class,
     HandleOutOfSyncFunds::class,
-
     PullIndividualCampaignFromSF::class,
+
     PullMetaCampaignFromSF::class,
     PushDailyFundTotals::class,
     PushDonations::class,

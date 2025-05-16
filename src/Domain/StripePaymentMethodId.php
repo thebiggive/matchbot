@@ -29,6 +29,9 @@ readonly class StripePaymentMethodId
         return new self($stripeID);
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - simple enough to keep even though not used right now.
+     */
     public function equals(StripePaymentMethodId|null $that): bool
     {
         if ($that === null) {

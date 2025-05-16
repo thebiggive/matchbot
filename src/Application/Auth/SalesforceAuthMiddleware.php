@@ -33,6 +33,7 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
         Assertion::notEmpty($this->sfApiKey);
     }
 
+    #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (!$this->verify($request)) {

@@ -11,7 +11,6 @@ use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\Fund;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\FundingWithdrawal;
@@ -34,6 +33,7 @@ class Status extends Action
     /**
      * @return Response
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         /** @var string|null $errorMessage */

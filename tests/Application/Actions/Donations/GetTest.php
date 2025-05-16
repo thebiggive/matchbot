@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use MatchBot\Application\Auth\DonationToken;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccountRepository;
@@ -24,6 +25,7 @@ class GetTest extends TestCase
     public const string DONATION_UUID = '2c6f3408-b405-11ef-a2fe-6b6ac08448a0';
     private InMemoryDonationRepository $donationRepository;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
@@ -32,6 +34,7 @@ class GetTest extends TestCase
         assert($container instanceof Container);
         $this->donationRepository = new InMemoryDonationRepository();
 
+        $container->set(Allocator::class, $this->createStub(Allocator::class));
         $container->set(DonationRepository::class, $this->donationRepository);
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
         $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));

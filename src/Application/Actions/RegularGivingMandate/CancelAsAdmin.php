@@ -30,6 +30,7 @@ class CancelAsAdmin extends Action
         parent::__construct($logger);
     }
 
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         Assertion::string($args['mandateId'], 'Expected mandateId to be a string');

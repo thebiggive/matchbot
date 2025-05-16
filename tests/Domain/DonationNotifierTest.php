@@ -114,7 +114,7 @@ class DonationNotifierTest extends TestCase
 
         $donation->collectFromStripeCharge(
             chargeId: 'charge-id',
-            totalPaidFractional: (int)((bcadd($amount, $tipAmount)) * 100),
+            totalPaidFractional: (int)((float)(bcadd($amount, $tipAmount)) * 100.0),
             transferId: 'transfer-id',
             cardBrand: null,
             cardCountry: null,

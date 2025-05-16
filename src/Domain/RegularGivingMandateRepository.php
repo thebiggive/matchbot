@@ -158,7 +158,7 @@ class RegularGivingMandateRepository
             $charityId = $mandate->getCharityId();
             return [
                 $mandate,
-                $charities[$charityId] ?? throw new \Exception("Missing charity for mandate " . $mandate->getUuid())
+                $charities[$charityId] ?? throw new \Exception("Missing charity for mandate " . $mandate->getUuid()->toString())
             ];
         },
             $mandates));

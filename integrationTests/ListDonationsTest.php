@@ -13,6 +13,7 @@ use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
  */
 class ListDonationsTest extends IntegrationTest
 {
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();

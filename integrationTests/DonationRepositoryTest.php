@@ -30,6 +30,7 @@ class DonationRepositoryTest extends IntegrationTest
 {
     private const string PSP_CUSTOMER_ID = 'cus_inttest_1';
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();

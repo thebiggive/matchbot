@@ -32,6 +32,7 @@ class RegularGivingMandateEventSubscriber implements EventSubscriber
     {
     }
 
+    #[\Override]
     public function getSubscribedEvents()
     {
         return [

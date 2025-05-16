@@ -15,6 +15,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
 {
+    #[\Override]
     public function tearDown(): void
     {
         $this->getContainer()->set(Client\Fund::class, null);

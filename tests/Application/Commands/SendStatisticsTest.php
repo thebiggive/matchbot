@@ -18,6 +18,7 @@ class SendStatisticsTest extends TestCase
 {
     private \DateTimeImmutable $startOfMockClocksCurrentMinute;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->startOfMockClocksCurrentMinute = new \DateTimeImmutable('@1727866800');

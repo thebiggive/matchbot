@@ -20,7 +20,7 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
-    private FundRepository $fundRepository;
+    private FundRepository $fundRepository; // @phpstan-ignore property.uninitialized
 
     /**
      * Gets campaigns that it is particular important matchbot has up-to-date information about.
@@ -283,6 +283,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
      */
+    #[\Override]
     protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
     {
         $campaign = $proxy;

@@ -30,6 +30,7 @@ class Get extends Action
      * @return Response
      * @throws DomainRecordNotFoundException
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         Assertion::keyExists($args, "donationId");  // shoould always exist as is defined in routes.php

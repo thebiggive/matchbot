@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Actions\Donations;
 
-use Assert\AssertionFailedException;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Donations\Confirm;
-use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -60,6 +59,7 @@ class ConfirmTest extends TestCase
     private ObjectProphecy $entityManagerProphecy;
     private \Ramsey\Uuid\UuidInterface $donationId;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -77,6 +77,7 @@ class ConfirmTest extends TestCase
             bus: $messageBusStub,
             clock: new MockClock('2025-01-01'),
             donationService: new DonationService(
+                allocator: $this->createStub(Allocator::class),
                 donationRepository: $this->getDonationRepository(),
                 campaignRepository: $this->createStub(CampaignRepository::class),
                 logger: new NullLogger(),
@@ -327,7 +328,7 @@ class ConfirmTest extends TestCase
         $paymentMethod->type = 'card';
 
         /** @psalm-suppress InvalidPropertyAssignmentValue */
-        $paymentMethod->card = $cardDetails;
+        $paymentMethod->card = $cardDetails; //  @phpstan-ignore assign.propertyType
 
         $updatedPaymentIntent = new PaymentIntent(['id' => 'id-doesnt-matter-for-test', ...$updatedIntentData]);
         $updatedPaymentIntent->status = $updatedIntentData['status'];
@@ -338,8 +339,14 @@ class ConfirmTest extends TestCase
 
         if (is_string($confirmationTokenId)) {
             $confirmationToken = new ConfirmationToken();
+
+            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $confirmationToken->payment_method_preview = new StripeObject();
+
+            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $confirmationToken->payment_method_preview['type'] = 'card';
+
+            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $confirmationToken->payment_method_preview['card'] = $cardDetails;
 
             $this->stripeProphecy->retrieveConfirmationToken(StripeConfirmationTokenId::of($confirmationTokenId))

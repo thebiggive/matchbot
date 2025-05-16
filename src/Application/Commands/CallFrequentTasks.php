@@ -25,6 +25,7 @@ class CallFrequentTasks extends LockingCommand
         CancelStaleDonationFundTips::class,
     ];
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $app = $this->getApplication();

@@ -8,7 +8,6 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
@@ -19,6 +18,7 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 class MatchFundsRedistributor
 {
     public function __construct(
+        private Allocator $allocator,
         private ChatterInterface $chatter,
         private DonationRepository $donationRepository,
         private \DateTimeImmutable $now,
@@ -89,8 +89,8 @@ class MatchFundsRedistributor
             // take action.
 
             /** @psalm-suppress InternalMethod */
-            $this->donationRepository->releaseMatchFunds($donation);
-            $amountMatchedAfterRedistribution = $this->donationRepository->allocateMatchFunds($donation);
+            $this->allocator->releaseMatchFunds($donation);
+            $amountMatchedAfterRedistribution = $this->allocator->allocateMatchFunds($donation);
 
             // If the new allocation is less, log an error but still count the donation and continue with the loop.
             // We don't expect to actually see this happen as we now intend to run the script only for closed campaigns.

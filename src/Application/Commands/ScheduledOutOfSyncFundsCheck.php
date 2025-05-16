@@ -36,11 +36,13 @@ class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
         parent::__construct($campaignFundingRepository, $entityManager, $fundingWithdrawalRepository, $matchingAdapter);
     }
 
+    #[\Override]
     protected function configure(): void
     {
         // Don't call parent which would add the `mode` argument.
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $bufferedOutput = new BufferedOutput();

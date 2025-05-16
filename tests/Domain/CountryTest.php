@@ -72,7 +72,7 @@ class CountryTest extends TestCase
         ];
 
         return array_map(
-            static fn(string $code) => [$code, in_array($code, $EU_UK_COUNTRY_CODES)],
+            static fn(string $code) => [$code, in_array($code, $EU_UK_COUNTRY_CODES, true)],
             $allPossibleCodes
         );
     }

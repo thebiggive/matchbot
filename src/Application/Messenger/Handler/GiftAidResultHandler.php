@@ -28,28 +28,30 @@ class GiftAidResultHandler
             $donationMessage->id,
         ));
 
-        /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneByUUID(Uuid::fromString($donationMessage->id));
+        $this->entityManager->wrapInTransaction(function () use ($donationMessage) {
+            /** @var Donation $donation */
+            $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($donationMessage->id));
 
-        if ($donationMessage->response_success === false) {
-            $donation->setTbgGiftAidRequestFailedAt(new \DateTime());
-        }
+            if ($donationMessage->response_success === false) {
+                $donation->setTbgGiftAidRequestFailedAt(new \DateTime());
+            }
 
-        if ($donationMessage->response_success === true) {
-            $donation->setTbgGiftAidRequestConfirmedCompleteAt(new \DateTime());
-        }
+            if ($donationMessage->response_success === true) {
+                $donation->setTbgGiftAidRequestConfirmedCompleteAt(new \DateTime());
+            }
 
-        if ($donationMessage->submission_correlation_id !== null && $donationMessage->submission_correlation_id !== '') {
-            $donation->setTbgGiftAidRequestCorrelationId($donationMessage->submission_correlation_id);
-        }
+            if ($donationMessage->submission_correlation_id !== null && $donationMessage->submission_correlation_id !== '') {
+                $donation->setTbgGiftAidRequestCorrelationId($donationMessage->submission_correlation_id);
+            }
 
-        if ($donationMessage->response_detail !== null && $donationMessage->response_detail !== '') {
-            $donation->setTbgGiftAidResponseDetail($donationMessage->response_detail);
-        }
+            if ($donationMessage->response_detail !== null && $donationMessage->response_detail !== '') {
+                $donation->setTbgGiftAidResponseDetail($donationMessage->response_detail);
+            }
 
-        $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
+            $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
 
-        $this->entityManager->persist($donation);
-        $this->entityManager->flush();
+            $this->entityManager->persist($donation);
+            $this->entityManager->flush();
+        });
     }
 }

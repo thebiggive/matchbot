@@ -59,7 +59,6 @@ return static function (ContainerBuilder $containerBuilder) {
 
             $repo->setClient($c->get(Client\Donation::class));
             $repo->setLogger($c->get(LoggerInterface::class));
-            $repo->setMatchingAdapter($c->get(Matching\Adapter::class));
 
             return $repo;
         },

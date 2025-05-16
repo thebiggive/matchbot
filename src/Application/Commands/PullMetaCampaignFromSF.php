@@ -41,10 +41,12 @@ class PullMetaCampaignFromSF extends LockingCommand
     ) {
         parent::__construct();
     }
+    #[\Override]
     public function configure(): void
     {
         $this->addArgument('metaCampaignSlug', InputArgument::REQUIRED);
     }
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $metaCampaginSlug = $input->getArgument('metaCampaignSlug');

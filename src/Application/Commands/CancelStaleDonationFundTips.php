@@ -46,6 +46,7 @@ class CancelStaleDonationFundTips extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         // Cancel tips quicker outside prod to allow for easier testing:

@@ -15,6 +15,7 @@ use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
+use MatchBot\Application\Matching\DbErrorPreventedMatch;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
@@ -50,6 +51,7 @@ class Create extends Action
      * @throws \MatchBot\Application\Matching\TerminalLockException if the matching adapter can't allocate funds
      * @see PersonManagementAuthMiddleware
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         // The route at `/people/{personId}/donations` validates that the donor has permission to act
@@ -176,7 +178,7 @@ class Create extends Action
                     ),
                 ),
             );
-        } catch (ORMException | DBALServerException $ex) {
+        } catch (ORMException | DBALServerException | DbErrorPreventedMatch $ex) {
             // '(D)' errors are DB persistence issues, typically ones that still exist after some retries.
             return $this->respond(
                 $response,

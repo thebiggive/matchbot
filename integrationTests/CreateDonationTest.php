@@ -8,6 +8,7 @@ use Ramsey\Uuid\Uuid;
 
 class CreateDonationTest extends IntegrationTest
 {
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();

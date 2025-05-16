@@ -30,7 +30,6 @@ final class Version20241128165753 extends AbstractMigration
             ],
         ];
 
-        /** @var array{array{campaignFundingId: int, fundId: int, oldAmount: int, newAmount: int}} $deleteSets */
         $reduceAmountSets = [
             // campaign ID 8289:
             [

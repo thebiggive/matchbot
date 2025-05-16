@@ -41,6 +41,7 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
     /**
      * @psalm-suppress PossiblyUnusedReturnValue - presumably used by Slim
      */
+    #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $routeContext = RouteContext::fromRequest($request);

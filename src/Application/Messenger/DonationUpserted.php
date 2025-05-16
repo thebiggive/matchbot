@@ -54,6 +54,7 @@ class DonationUpserted implements MessageGroupAwareInterface
         );
     }
 
+    #[\Override]
     public function getMessageGroupId(): ?string
     {
         return 'donation.upserted.' . $this->uuid;

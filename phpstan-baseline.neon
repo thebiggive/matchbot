@@ -7,30 +7,6 @@ parameters:
 			path: app/dependencies.php
 
 		-
-			message: '#^Strict comparison using \=\=\= between ''2024\-06\-20'' and ''2024\-06\-20'' will always evaluate to true\.$#'
-			identifier: identical.alwaysTrue
-			count: 1
-			path: app/dependencies.php
-
-		-
-			message: '#^Call to static method Assert\\Assertion\:\:isInstanceOf\(\) with MatchBot\\Domain\\Campaign and ''MatchBot\\\\Domain\\\\Campaign'' will always evaluate to true\.$#'
-			identifier: staticMethod.alreadyNarrowedType
-			count: 1
-			path: integrationTests/CampaignRepositoryTest.php
-
-		-
-			message: '#^Property MatchBot\\Application\\Matching\\Adapter@anonymous/integrationTests/DonationMatchingTest\.php\:96\:\:\$inTransaction is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: integrationTests/DonationMatchingTest.php
-
-		-
-			message: '#^PHPDoc tag @var with type array\{global\: array\{timeout\: string\}, salesforce\: array\{baseUri\: string\}, mailer\: array\{baseUri\: string, sendSecret\: string\}\} is not subtype of native type array\{global\: ArrayAccess@anonymous/integrationTests/IntegrationTest\.php\:120, mailer\: array\{baseUri\: ''dummy\-mailer\-base…''\}, salesforce\: array\{baseUri\: ''dummy\-salesforce…''\}\}\.$#'
-			identifier: varTag.nativeType
-			count: 1
-			path: integrationTests/IntegrationTest.php
-
-		-
 			message: '#^Access to an undefined property Stripe\\StripeObject\:\:\$type\.$#'
 			identifier: property.notFound
 			count: 1
@@ -61,22 +37,10 @@ parameters:
 			path: src/Application/Actions/Donations/Update.php
 
 		-
-			message: '#^Access to an undefined property Stripe\\StripeObject\:\:\$object\.$#'
-			identifier: property.notFound
-			count: 4
-			path: src/Application/Actions/Hooks/StripePaymentsUpdate.php
-
-		-
 			message: '#^Variable \$donation in PHPDoc tag @var does not exist\.$#'
 			identifier: varTag.variableNotFound
 			count: 1
 			path: src/Application/Actions/Hooks/StripePaymentsUpdate.php
-
-		-
-			message: '#^Access to an undefined property Stripe\\StripeObject\:\:\$object\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Application/Actions/Hooks/StripePayoutUpdate.php
 
 		-
 			message: '#^Unsafe access to private property MatchBot\\Application\\Auth\\DonationToken\:\:\$algorithm through static\:\:\.$#'
@@ -121,16 +85,34 @@ parameters:
 			path: src/Application/Auth/SalesforceAuthMiddleware.php
 
 		-
-			message: '#^Unsafe access to private constant MatchBot\\Application\\Commands\\DeleteStalePaymentDetails\:\:STRIPE_PAGE_SIZE through static\:\:\.$#'
-			identifier: staticClassAccess.privateConstant
-			count: 2
-			path: src/Application/Commands/DeleteStalePaymentDetails.php
-
-		-
 			message: '#^PHPDoc tag @param for parameter \$fakeDonationProviderForTestUseOnly contains unresolvable type\.$#'
 			identifier: parameter.unresolvableType
 			count: 1
 			path: src/Domain/DonationService.php
+
+		-
+			message: '#^Class MatchBot\\Domain\\FundingWithdrawal has an uninitialized property \$amount\. Give it default value or assign it in the constructor\.$#'
+			identifier: property.uninitialized
+			count: 1
+			path: src/Domain/FundingWithdrawal.php
+
+		-
+			message: '#^Class MatchBot\\Domain\\FundingWithdrawal has an uninitialized property \$createdAt\. Give it default value or assign it in the constructor\.$#'
+			identifier: property.uninitialized
+			count: 1
+			path: src/Domain/FundingWithdrawal.php
+
+		-
+			message: '#^Class MatchBot\\Domain\\FundingWithdrawal has an uninitialized property \$donation\. Give it default value or assign it in the constructor\.$#'
+			identifier: property.uninitialized
+			count: 1
+			path: src/Domain/FundingWithdrawal.php
+
+		-
+			message: '#^Class MatchBot\\Domain\\FundingWithdrawal has an uninitialized property \$updatedAt\. Give it default value or assign it in the constructor\.$#'
+			identifier: property.uninitialized
+			count: 1
+			path: src/Domain/FundingWithdrawal.php
 
 		-
 			message: '#^PHPDoc tag @var with type array\{array\{campaignId\: int, campaignFundingId\: int, fundId\: int\}\} is not subtype of native type array\{array\{campaignId\: 7438, campaignFundingId\: 31205, fundId\: 25353, amount\: 500\}, array\{campaignId\: 7836, campaignFundingId\: 33424, fundId\: 27195, amount\: 336\.5\}, array\{campaignId\: 7735, campaignFundingId\: 32828, fundId\: 26696, amount\: 100\}, array\{campaignId\: 7735, campaignFundingId\: 32829, fundId\: 26697, amount\: 100\}, array\{campaignId\: 7735, campaignFundingId\: 32830, fundId\: 26698, amount\: 100\}, array\{campaignId\: 7735, campaignFundingId\: 32831, fundId\: 26699, amount\: 500\}, array\{campaignId\: 7735, campaignFundingId\: 32832, fundId\: 26700, amount\: 110\}, array\{campaignId\: 7735, campaignFundingId\: 32833, fundId\: 26701, amount\: 100\}, \.\.\.\}\.$#'
@@ -143,12 +125,6 @@ parameters:
 			identifier: varTag.nativeType
 			count: 1
 			path: src/Migrations/Version20241128165753.php
-
-		-
-			message: '#^Property Stripe\\PaymentMethod\:\:\$card \(Stripe\\StripeObject\|null\) does not accept array\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: tests/Application/Actions/Donations/ConfirmTest.php
 
 		-
 			message: '#^PHPDoc tag @var for property MatchBot\\Tests\\Application\\Actions\\Donations\\CreateTest\:\:\$previousClock with type mixed is not subtype of native type Symfony\\Component\\Clock\\ClockInterface\.$#'
@@ -185,18 +161,6 @@ parameters:
 			identifier: property.notFound
 			count: 2
 			path: tests/Application/Actions/Hooks/StripePaymentsUpdateTest.php
-
-		-
-			message: '#^Method MatchBot\\Tests\\Application\\Commands\\HandleOutOfSyncFundsTest\:\:getCampaignFundingRepoPropechy\(\) never returns MatchBot\\Domain\\CampaignFundingRepository so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: tests/Application/Commands/HandleOutOfSyncFundsTest.php
-
-		-
-			message: '#^Method MatchBot\\Tests\\Application\\Commands\\HandleOutOfSyncFundsTest\:\:getFundingWithdrawalRepoProphecy\(\) never returns MatchBot\\Domain\\FundingWithdrawalRepository so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: tests/Application/Commands/HandleOutOfSyncFundsTest.php
 
 		-
 			message: '#^Variable \$card_brand might not be defined\.$#'
@@ -283,10 +247,16 @@ parameters:
 			path: tests/Application/Matching/AdapterTest.php
 
 		-
-			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''DateTime'' and null will always evaluate to false\.$#'
-			identifier: method.impossibleType
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
 			count: 1
-			path: tests/Application/Messenger/Handler/GiftAidResultHandlerTest.php
+			path: tests/Application/Matching/AllocatorTest.php
+
+		-
+			message: '#^Loose comparison using \=\= between 4 and 4 will always evaluate to true\.$#'
+			identifier: equal.alwaysTrue
+			count: 1
+			path: tests/Application/Matching/AllocatorTest.php
 
 		-
 			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$balanceTransactions\.$#'
@@ -305,18 +275,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: tests/Application/Messenger/Handler/StripePayoutHandlerTest.php
-
-		-
-			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: tests/Domain/DonationRepositoryMatchFundsAllocationTest.php
-
-		-
-			message: '#^Loose comparison using \=\= between 4 and 4 will always evaluate to true\.$#'
-			identifier: equal.alwaysTrue
-			count: 1
-			path: tests/Domain/DonationRepositoryMatchFundsAllocationTest.php
 
 		-
 			message: '#^Property Stripe\\ConfirmationToken\:\:\$payment_method_preview \(Stripe\\StripeObject\|null\) does not accept array\<string, array\<string, string\>\>\.$#'

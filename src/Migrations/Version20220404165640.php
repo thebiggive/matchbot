@@ -75,7 +75,7 @@ EOT,
             ]
         );
 
-        $this->addSQL(<<<EOT
+        $this->addSql(<<<EOT
 UPDATE Donation
 SET tbgGiftAidRequestQueuedAt = NULL
 WHERE

@@ -30,6 +30,7 @@ class StatusTest extends TestCase
 {
     private const string DOMAIN_DIR = __DIR__ . '/../../../src/Domain';
 
+    #[\Override]
     public function setUp(): void
     {
         $this->generateORMProxiesAtRealPath();

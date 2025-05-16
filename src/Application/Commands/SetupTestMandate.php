@@ -66,6 +66,7 @@ class SetupTestMandate extends LockingCommand
         $this->now = $now->setTimezone(new \DateTimeZone('Europe/London'));
     }
 
+    #[\Override]
     public function configure(): void
     {
         $this->addOption('donor-uuid', 'du', InputOption::VALUE_REQUIRED, 'UUID of the donor in identity service');
@@ -83,6 +84,7 @@ class SetupTestMandate extends LockingCommand
         $this->addArgument('day-of-month', InputArgument::OPTIONAL, 'Amount in pounds');
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         if ($this->environment == Environment::Production) {

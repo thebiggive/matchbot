@@ -27,11 +27,13 @@ class ExpireMatchFunds extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function configure(): void
     {
         $this->setDescription('Frees up match funding from stale Pending donations');
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $toRelease = $this->donationRepository->findWithExpiredMatching(new \DateTimeImmutable('now'));

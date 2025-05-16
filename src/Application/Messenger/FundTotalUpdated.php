@@ -23,6 +23,7 @@ readonly class FundTotalUpdated implements MessageGroupAwareInterface
         );
     }
 
+    #[\Override]
     public function getMessageGroupId(): ?string
     {
         return 'fund.total.updated.' . $this->salesforceId;

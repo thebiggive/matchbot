@@ -1664,14 +1664,17 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return array Representation of this donation suitable for creating a Stripe Payment intent with
-     * @see \MatchBot\Client\Stripe::createPaymentIntent
+     * @psalm-suppress InvalidReturnType - don't want to write a type with every property here, but
+     * psalm doesn't treat array shapes with extra params as subtypes unless explictily declared open,
+     * and Stripe's are not.
+     *
+     * @return array{amount: int, currency: string}
+     *  @see \MatchBot\Client\Stripe::createPaymentIntent
      */
     public function createStripePaymentIntentPayload(): array
     {
         Assertion::same('stripe', $this->psp);
 
-        /** @var array{metadata: array} $payload */
         $payload = [
             ...$this->getStripeMethodProperties(),
             ...$this->getStripeOnBehalfOfProperties(),
@@ -1714,10 +1717,14 @@ class Donation extends SalesforceWriteProxy
         $mandate = $this->getMandate();
         $sequenceNumber = $this->getMandateSequenceNumber();
         if ($mandate !== null && $sequenceNumber !== null) {
+            /** @psalm-suppress MixedArrayAssignment */
             $payload['metadata']['mandateId'] = $mandate->getId();
+
+            /** @psalm-suppress MixedArrayAssignment */
             $payload['metadata']['mandateSequenceNumber'] = $sequenceNumber->number;
         }
 
+        /** @psalm-suppress InvalidReturnStatement - see note in docblock */
         return $payload;
     }
 
@@ -1793,7 +1800,7 @@ class Donation extends SalesforceWriteProxy
     {
         if (!($this->thisIsInDateRangeToConfirm($now))) {
             throw new RegularGivingDonationToOldToCollect(
-                "Donation #{$this->getid()}} should have been collected at " . "
+                "Donation #{$this->getId()}} should have been collected at " . "
                 {$this->getPreAuthorizationDate()?->format('Y-m-d')}, will not at this time",
             );
         }

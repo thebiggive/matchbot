@@ -64,7 +64,8 @@ readonly class PostalAddress
     public function format(): ?string
     {
         $nonBlankSections = array_filter(
-            [$this->line1, $this->line2, $this->city, $this->postalCode, $this->country]
+            [$this->line1, $this->line2, $this->city, $this->postalCode, $this->country],
+            static fn($line) => \is_string($line) && $line !== ''
         );
 
         if ($nonBlankSections === []) {

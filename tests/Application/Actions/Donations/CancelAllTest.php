@@ -6,8 +6,12 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Client\BadRequestException;
+use MatchBot\Client\Campaign;
 use MatchBot\Client\Stripe;
+use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonorAccountRepository;
@@ -80,7 +84,8 @@ class CancelAllTest extends TestCase
                 }
             );
 
-        $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))
+        $allocatorProphecy = $this->prophesize(Allocator::class);
+        $allocatorProphecy->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledTimes(2);
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -101,7 +106,7 @@ class CancelAllTest extends TestCase
         $stripeProphecy->cancelPaymentIntent($twoDonations[0]->getTransactionId())
             ->shouldBeCalledTimes(2);
 
-        $this->setDoublesInContainer($container, $donationRepoProphecy, $entityManagerProphecy, $stripeProphecy);
+        $this->setDoublesInContainer($container, $donationRepoProphecy, $entityManagerProphecy, $stripeProphecy, $allocatorProphecy);
 
         // act
         $request = $this->createRequest('DELETE', self::ROUTE)
@@ -172,13 +177,16 @@ class CancelAllTest extends TestCase
      * @param ObjectProphecy<DonationRepository> $donationRepoProphecy
      * @param ObjectProphecy<EntityManagerInterface> $entityManagerProphecy
      * @param ObjectProphecy<Stripe>|null $stripeProphecy
+     * @param ObjectProphecy<Allocator>|null $allocatorProphecy
      */
     private function setDoublesInContainer(
         Container $container,
         ObjectProphecy $donationRepoProphecy,
         ObjectProphecy $entityManagerProphecy,
         ObjectProphecy $stripeProphecy = null,
+        ObjectProphecy $allocatorProphecy = null,
     ): void {
+        $container->set(CampaignFundingRepository::class, $this->prophesize(CampaignFundingRepository::class)->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -188,6 +196,10 @@ class CancelAllTest extends TestCase
 
         if ($stripeProphecy !== null) {
             $container->set(Stripe::class, $stripeProphecy->reveal());
+        }
+
+        if ($allocatorProphecy !== null) {
+            $container->set(Allocator::class, $allocatorProphecy->reveal());
         }
     }
 }

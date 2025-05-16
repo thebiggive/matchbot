@@ -262,6 +262,7 @@ EOT;
      *
      * @param Fund $proxy
      */
+    #[\Override]
     protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
     {
         $fundId = $proxy->getSalesforceId();

@@ -8,6 +8,7 @@ use Monolog\Processor\ProcessorInterface;
 
 class AwsTraceIdProcessor implements ProcessorInterface
 {
+    #[\Override]
     public function __invoke(array|\ArrayAccess $record): array
     {
         $traceId = $_SERVER['HTTP_X_AMZN_TRACE_ID'] ?? null;

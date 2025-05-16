@@ -22,6 +22,7 @@ use Ramsey\Uuid\Uuid;
 
 class RegularGivingDonationRepositoryTest extends IntegrationTest
 {
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();

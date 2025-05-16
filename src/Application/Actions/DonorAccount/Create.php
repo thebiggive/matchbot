@@ -34,6 +34,7 @@ class Create extends Action
         parent::__construct($logger);
     }
 
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         // no-op: we rely on getting the donor account synced from Identity server instead.

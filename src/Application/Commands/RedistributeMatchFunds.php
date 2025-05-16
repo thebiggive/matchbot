@@ -21,6 +21,7 @@ class RedistributeMatchFunds extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();

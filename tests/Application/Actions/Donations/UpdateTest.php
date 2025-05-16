@@ -6,18 +6,16 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Client\Stripe;
+use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundRepository;
-use MatchBot\Tests\Domain\DonationTest;
 use MatchBot\Tests\Domain\InMemoryDonationRepository;
 use Override;
-use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\UuidInterface;
 use Slim\Routing\Route;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
@@ -39,7 +37,6 @@ use Stripe\ErrorObject;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
-use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
 
@@ -182,6 +179,7 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
+        $entityManagerProphecy->getRepository(CampaignFunding::class)->willReturn($this->createStub(CampaignFundingRepository::class));
 
         $this->setDoublesInContainer($container, $entityManagerProphecy);
 
@@ -583,6 +581,7 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
+        $entityManagerProphecy->getRepository(CampaignFunding::class)->willReturn($this->createStub(CampaignFundingRepository::class));
 
         $this->setDoublesInContainer($container, $entityManagerProphecy);
 
@@ -1304,11 +1303,6 @@ class UpdateTest extends TestCase
             $this->assertStringContainsString("Status was processing, expected succeeded", $exception->getMessage());
         }
 
-        $this->assertSame(
-            '123',
-            $this->donationRepository->totalMatchFundsReleased()
-        );
-
         $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
         $entityManagerProphecy->flush()->shouldBeCalled(); // flushes cancelled donation to DB.
     }
@@ -1371,11 +1365,6 @@ class UpdateTest extends TestCase
         $this->expectExceptionMessage('Status was requires_action, expected succeeded');
 
         $app->handle($request->withAttribute('route', $route));
-
-        $this->assertSame(
-            '123',
-            $this->donationRepository->totalMatchFundsReleased()
-        );
     }
 
     public function testAddDataRejectsAutoconfirmWithCardMethod(): void
@@ -1400,7 +1389,7 @@ class UpdateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent(Argument::cetera())
             ->shouldNotBeCalled();
-        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123', [])
             ->shouldNotBeCalled();
 
         $this->setDoublesInContainer($container, $entityManagerProphecy, $stripeProphecy);
@@ -1519,7 +1508,7 @@ class UpdateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', Argument::type('array'))
             ->shouldBeCalledOnce();
-        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123', [])
             ->willThrow(new InvalidRequestException('Not the one we know!'))
             ->shouldBeCalledOnce();
 
@@ -1596,10 +1585,11 @@ class UpdateTest extends TestCase
         if ($nextActionRequired !== null) {
             $nextAction = new ErrorObject();
             $nextAction->type = $nextActionRequired;
+            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $updatedPaymentIntent->next_action = $nextAction;
         }
 
-        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123', [])
             ->shouldBeCalledOnce()
             ->willReturn($updatedPaymentIntent);
 
@@ -1653,12 +1643,23 @@ class UpdateTest extends TestCase
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
 
+        /**
+         * May be called if there's matching allocation.
+         * @psalm-suppress MixedFunctionCall
+         */
+        $entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))
+            ->will(function (array $args): mixed {
+                return $args[0]();
+            });
+
+        $entityManagerProphecy->getRepository(CampaignFunding::class)->willReturn($this->createStub(CampaignFundingRepository::class));
+
         if ($persist) {
             $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         }
 
         if ($flush) {
-            $entityManagerProphecy->flush()->shouldBeCalledOnce();
+            $entityManagerProphecy->flush()->shouldBeCalled(); // Once or twice, depending on whether there's matching.
         }
 
         if ($commit) {

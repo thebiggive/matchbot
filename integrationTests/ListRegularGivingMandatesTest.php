@@ -28,6 +28,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
 {
     private PersonId $donorId;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();

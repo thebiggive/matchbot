@@ -25,6 +25,7 @@ class WriteSchemaFile extends Command
         parent::__construct(null);
     }
 
+    #[\Override]
     public function configure(): void
     {
         $this->addOption(
@@ -33,6 +34,7 @@ class WriteSchemaFile extends Command
         );
     }
 
+    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
@@ -55,7 +57,7 @@ class WriteSchemaFile extends Command
         if ($checkModeOn) {
             foreach ($fileNamesOnDisk as $fileName) {
                 $tableName = substr($fileName, 0, -4);
-                if (!in_array($tableName, $tables)) {
+                if (!in_array($tableName, $tables, true)) {
                     $error = sprintf(
                         "%s/%s is on disc but table %s is not in database, please delete or add to db",
                         $schemaDir,
@@ -69,7 +71,7 @@ class WriteSchemaFile extends Command
         }
 
         foreach ($tables as $table) {
-            if (!in_array("$table.sql", $fileNamesOnDisk) && $checkModeOn) {
+            if (!in_array("$table.sql", $fileNamesOnDisk, true) && $checkModeOn) {
                 $error = sprintf("Did not find expected file %s/%s.sql", $schemaDir, $table);
                 $io->error($error);
                 $hasError = true;

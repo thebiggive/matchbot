@@ -1,35 +1,30 @@
 <?php
 
-namespace MatchBot\Tests\Domain;
+namespace MatchBot\Tests\Application\Matching;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\ClassMetadata;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
-use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
-use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\PaymentMethodType;
-use MatchBot\Domain\Fund;
 use MatchBot\Domain\PersonId;
-use MatchBot\Tests\Application\Matching\ArrayMatchingStorage;
-use MatchBot\Tests\TestCase;
+use MatchBot\Tests\Application\DonationTestDataTrait;
+use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
-use Symfony\Component\Messenger\RoutableMessageBus;
 
-/**
- * Focused test class just for the part match fund allocation part of DonationRepository.
- */
-class DonationRepositoryMatchFundsAllocationTest extends TestCase
+class AllocatorTest extends TestCase
 {
+    use DonationTestDataTrait;
     use ProphecyTrait;
 
     /** @var ObjectProphecy<CampaignFundingRepository>  */
@@ -40,8 +35,9 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
     /** @var ObjectProphecy<EntityManagerInterface> */
     private ObjectProphecy $emProphecy;
 
-    private DonationRepository $sut;
+    private Allocator $sut;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
@@ -49,9 +45,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->campaignFundingsRepositoryProphecy = $this->prophesize(CampaignFundingRepository::class);
 
         $this->emProphecy = $this->prophesize(\Doctrine\ORM\EntityManagerInterface::class);
-        $this->emProphecy->getRepository(CampaignFunding::class)
-            ->willReturn($this->campaignFundingsRepositoryProphecy->reveal());
-
         $this->emProphecy->wrapInTransaction(Argument::type(\Closure::class))->will(/**
          * @param list<\Closure> $args
          * @return mixed
@@ -62,14 +55,14 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             new NullLogger(),
         );
 
-        $this->sut = new DoctrineDonationRepository(
+        $this->sut = new Allocator(
+            $matchingAdapter,
             $this->emProphecy->reveal(),
-            new ClassMetadata(Donation::class),
+            new NullLogger(),
+            $this->campaignFundingsRepositoryProphecy->reveal(),
         );
-        $this->sut->setMatchingAdapter($matchingAdapter);
-        $this->sut->setLogger(new NullLogger());
 
-        $this->campaign = TestCase::someCampaign();
+        $this->campaign = \MatchBot\Tests\TestCase::someCampaign();
     }
 
     public function testItAllocatesZeroWhenNoMatchFundsAvailable(): void
@@ -156,7 +149,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
      */
     public function allocationFromTwoFundingsCases(): array
     {
-    // phpcs:disable
+        // phpcs:disable
         return [
             // f0 available, f1 available, donation amount, amount matched, withdrawal0, withdrawal1,
             ['6.00', '1000000', '10', '10.00', '6.00', '4.00'],
@@ -308,5 +301,32 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
 
         // act
         $this->sut->allocateMatchFunds($donation);
+    }
+
+    public function testReleaseMatchFundsSuccess(): void
+    {
+        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
+        $matchingAdapterProphecy->releaseAllFundsForDonation(Argument::cetera())
+            ->willReturn('0.00')
+            ->shouldBeCalledOnce();
+
+        $this->emProphecy->wrapInTransaction(Argument::type(\Closure::class))->will(/**
+         * @param array<\Closure> $args
+         * @return mixed
+         */            fn(array $args) => $args[0]()
+        );
+        $this->emProphecy->flush()->shouldBeCalledOnce();
+
+        $donation = $this->getTestDonation();
+
+        $sut = new Allocator(
+            $matchingAdapterProphecy->reveal(),
+            $this->emProphecy->reveal(),
+            new NullLogger(),
+            $this->campaignFundingsRepositoryProphecy->reveal(),
+        );
+
+        /** @psalm-suppress InternalMethod */
+        $sut->releaseMatchFunds($donation);
     }
 }

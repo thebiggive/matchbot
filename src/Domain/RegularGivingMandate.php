@@ -442,7 +442,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         }
 
         return $this->donationAmount->withPence(
-            (int) (100 * Donation::donationAmountToGiftAidValue(amount: $this->donationAmount->toNumericString()))
+            (int) (100.0 * (float)Donation::donationAmountToGiftAidValue(amount: $this->donationAmount->toNumericString()))
         );
     }
 

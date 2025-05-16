@@ -26,6 +26,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     private MessageBusInterface $originalMessageBus;
     private int $pencePerMonth;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
@@ -90,6 +91,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $this->ensureDbHasDonorAccount();
     }
 
+    #[\Override]
     public function tearDown(): void
     {
         $this->getContainer()->set(MessageBusInterface::class, $this->originalMessageBus);

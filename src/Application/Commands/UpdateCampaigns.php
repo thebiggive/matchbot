@@ -32,6 +32,7 @@ class UpdateCampaigns extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function configure(): void
     {
         $this->setDescription(<<<EOT
@@ -43,6 +44,7 @@ EOT
         $this->addOption('all', null, InputOption::VALUE_NONE, 'Expands the update to ALL historic known campaigns');
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         if ($input->getOption('all')) {

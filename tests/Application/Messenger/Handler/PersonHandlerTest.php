@@ -22,6 +22,7 @@ class PersonHandlerTest extends TestCase
     /** @var ObjectProphecy<DonorAccountRepository>  */
     private ObjectProphecy $donorAccountRepositoryProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->donorAccountRepositoryProphecy = $this->prophesize(DonorAccountRepository::class);

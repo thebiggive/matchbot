@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Actions\RegularGivingMandate;
 
 use DI\Container;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DonationRepository;
@@ -141,6 +142,7 @@ class CancelAsAdminTest extends TestCase
         $container = $app->getContainer();
         \assert($container instanceof Container);
 
+        $container->set(Allocator::class, $this->createStub(Allocator::class));
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
         $container->set(DonationRepository::class, $this->getMockDonationRepository($mandate));
         $container->set(RegularGivingMandateRepository::class, $this->getMockMandateRepository($mandate));
