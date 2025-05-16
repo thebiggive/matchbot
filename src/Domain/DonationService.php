@@ -124,36 +124,14 @@ class DonationService
      */
     public function createDonation(DonationCreate $donationData, string $pspCustomerId, PersonId $donorId): Donation
     {
-        $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
-
         try {
-            $donation = $this->buildFromAPIRequest($donationData, $donorId);
-        } catch (\UnexpectedValueException $e) {
-            $message = 'Donation Create data initial model load';
-            $this->logger->warning($message . ': ' . $e->getMessage());
-
-            throw new DonationCreateModelLoadFailure(previous: $e);
-        }
-
-        if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
-            throw new \UnexpectedValueException(sprintf(
-                'Route customer ID %s did not match %s in donation body',
-                $pspCustomerId,
-                $donation->getPspCustomerId()->stripeCustomerId ?? 'null'
-            ));
-        }
-
-        if (!$donation->getCampaign()->isOpen($this->clock->now())) {
-            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
-        }
-
-        try {
-            $this->enrollNewDonation($donation, attemptMatching: true);
+            return $this->doCreateDonation($pspCustomerId, $donationData, $donorId);
         } catch (RetryableException $exception) {
-            $this->enrollNewDonation($donation, attemptMatching: true);
+            // possibly donation will have been left pending as not matched yet - so we abandon that one and try
+            // making a new one.
+            $this->logger->warning("Error creating donation, will retry: " . $exception->getMessage());
+            return $this->doCreateDonation($pspCustomerId, $donationData, $donorId);
         }
-
-        return $donation;
     }
 
 
@@ -932,6 +910,51 @@ class DonationService
     {
         Assertion::true(Environment::current() === Environment::Test);
         $this->fakeDonationProviderForTestUseOnly = $fakeDonationProviderForTestUseOnly;
+    }
+
+    /**
+     * @param string $pspCustomerId
+     * @param DonationCreate $donationData
+     * @param PersonId $donorId
+     * @return Donation
+     * @throws CampaignNotOpen
+     * @throws CharityAccountLacksNeededCapaiblities
+     * @throws CouldNotMakeStripePaymentIntent
+     * @throws DBALServerException
+     * @throws DonationCreateModelLoadFailure
+     * @throws NotFoundException
+     * @throws ORMException
+     * @throws StripeAccountIdNotSetForAccount
+     * @throws WrongCampaignType
+     */
+    public function doCreateDonation(string $pspCustomerId, DonationCreate $donationData, PersonId $donorId): Donation
+    {
+        $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
+
+        try {
+            $donation = $this->buildFromAPIRequest($donationData, $donorId);
+        } catch (\UnexpectedValueException $e) {
+            $message = 'Donation Create data initial model load';
+            $this->logger->warning($message . ': ' . $e->getMessage());
+
+            throw new DonationCreateModelLoadFailure(previous: $e);
+        }
+
+        if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
+            throw new \UnexpectedValueException(sprintf(
+                'Route customer ID %s did not match %s in donation body',
+                $pspCustomerId,
+                $donation->getPspCustomerId()->stripeCustomerId ?? 'null'
+            ));
+        }
+
+        if (!$donation->getCampaign()->isOpen($this->clock->now())) {
+            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
+        }
+
+        $this->enrollNewDonation($donation, attemptMatching: true);
+
+        return $donation;
     }
 
     private function confirmEmHasNoRelaventChanges(): void
