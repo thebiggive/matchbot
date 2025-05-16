@@ -392,20 +392,22 @@ class DonationService
 
         $campaign->checkIsReadyToAcceptDonation($donation, $this->clock->now());
 
-        // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
-        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
-        $this->runWithPossibleRetry(function () use ($donation) {
-            $this->entityManager->persist($donation);
-            $this->entityManager->flush();
-        }, 'Donation Create persist before stripe work');
+        $this->entityManager->wrapInTransaction(function () use ($donation, $attemptMatching, $campaign) {
+            // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
+            // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
+            $this->runWithPossibleRetry(function () use ($donation) {
+                $this->entityManager->persist($donation);
+                $this->entityManager->flush();
+            }, 'Donation Create persist before stripe work');
 
-        if ($campaign->isMatched() && $attemptMatching) {
-            try {
-                $this->attemptFundingAllocation($donation);
-            } catch (RetryableException) {
-                $this->attemptFundingAllocation($donation);
+            if ($campaign->isMatched() && $attemptMatching) {
+                try {
+                    $this->attemptFundingAllocation($donation);
+                } catch (RetryableException) { // here
+                    $this->attemptFundingAllocation($donation);
+                }
             }
-        }
+        });
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
         if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {
