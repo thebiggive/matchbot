@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Matching\Allocator;
@@ -861,9 +862,17 @@ class DonationService
         return $txn->fee;
     }
 
+    /**
+     * Must be called with entity manager unit of work empty (i.e. flush() first) so that retries
+     * can work involving an EM clear if needed.
+     *
+     * @throws AssertionFailedException before doing any work, if that condition is not met.
+     */
     public function attemptFundingAllocation(Donation $donation): void
     {
-        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
+        // Ensure caller flush()'d immediately before.
+        $this->confirmUnitOfWorkHasNoChanges();
+
         $this->runWithPossibleRetry(
             retryable: function () use ($donation) {
                 $this->allocator->allocateMatchFunds($donation);
@@ -934,5 +943,19 @@ class DonationService
     {
         Assertion::true(Environment::current() === Environment::Test);
         $this->fakeDonationProviderForTestUseOnly = $fakeDonationProviderForTestUseOnly;
+    }
+
+    private function confirmUnitOfWorkHasNoChanges(): void
+    {
+        $unitOfWork = $this->entityManager->getUnitOfWork();
+        $unitOfWork->computeChangeSets();
+
+        Assertion::false($unitOfWork->hasPendingInsertions());
+
+        foreach ($unitOfWork->getIdentityMap() as $_className => $trackedEntities) {
+            foreach ($trackedEntities as $trackedEntity) {
+                Assertion::eq([], $unitOfWork->getEntityChangeSet($trackedEntity));
+            }
+        }
     }
 }

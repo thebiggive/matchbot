@@ -6,7 +6,7 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\UnitOfWork;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Matching\Allocator;
@@ -134,8 +134,14 @@ class CreateTest extends TestCase
         $config = $configurationProphecy->reveal();
         $configurationProphecy->getResultCacheImpl()->willReturn($this->createStub(CacheProvider::class));
 
+        $emptyUow = $this->prophesize(UnitOfWork::class);
+        $emptyUow->computeChangeSets()->willReturn(null); // void
+        $emptyUow->hasPendingInsertions()->willReturn(false);
+        $emptyUow->getIdentityMap()->willReturn([]);
+
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $this->entityManagerProphecy->getConfiguration()->willReturn($config);
+        $this->entityManagerProphecy->getUnitOfWork()->willReturn($emptyUow->reveal());
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
 
         $this->diContainer()->set(CampaignRepository::class, $this->campaignRepositoryProphecy->reveal());
