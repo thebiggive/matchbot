@@ -18,11 +18,6 @@ class InMemoryDonationRepository implements DonationRepository
     /** @var array<int, Donation> */
     private $donations = [];
 
-    /**
-     * @var numeric-string
-     */
-    private string $matchFundsReleased = '0';
-
     #[\Override] public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation
     {
         foreach ($this->donations as $donation) {
@@ -89,24 +84,6 @@ class InMemoryDonationRepository implements DonationRepository
         return $this->findOneBy($criteria);
     }
 
-    /**
-     * @return numeric-string
-     */
-    public function totalMatchFundsReleased(): string
-    {
-        return $this->matchFundsReleased;
-    }
-
-    #[\Override] public function releaseMatchFunds(Donation $donation): void
-    {
-        $this->matchFundsReleased = bcadd($this->matchFundsReleased, $donation->getAmount());
-    }
-
-    #[\Override] public function allocateMatchFunds(Donation $donation): string
-    {
-        throw new \Exception("Method not implemented in test double");
-    }
-
     #[\Override] public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
         throw new \Exception("Method not implemented in test double");
@@ -153,11 +130,6 @@ class InMemoryDonationRepository implements DonationRepository
     }
 
     #[\Override] public function abandonOldCancelled(): int
-    {
-        throw new \Exception("Method not implemented in test double");
-    }
-
-    #[\Override] public function removeAllFundingWithdrawalsForDonation(Donation $donation): void
     {
         throw new \Exception("Method not implemented in test double");
     }

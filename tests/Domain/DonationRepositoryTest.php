@@ -14,6 +14,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
@@ -241,30 +242,6 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals(5_90, $donation->getAmountForCharityFractional());
     }
 
-    public function testReleaseMatchFundsSuccess(): void
-    {
-        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
-        $matchingAdapterProphecy->releaseAllFundsForDonation(Argument::cetera())
-            ->willReturn('0.00')
-            ->shouldBeCalledOnce();
-
-        $this->entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))->will(/**
-         * @param array<\Closure> $args
-         * @return mixed
-         */            fn(array $args) => $args[0]()
-        );
-        $this->entityManagerProphecy->flush()->shouldBeCalledOnce();
-
-        $repo = $this->getRepo(
-            matchingAdapterProphecy: $matchingAdapterProphecy,
-        );
-
-        $donation = $this->getTestDonation();
-
-        /** @psalm-suppress InternalMethod */
-        $repo->releaseMatchFunds($donation);
-    }
-
     public function testAbandonOldCancelled(): void
     {
         $this->getAppInstance();
@@ -408,12 +385,9 @@ class DonationRepositoryTest extends TestCase
 
     /**
      * @param ObjectProphecy<Client\Donation> $donationClientProphecy
-     * @param ObjectProphecy<Adapter> $matchingAdapterProphecy
      */
-    private function getRepo(
-        ?ObjectProphecy $donationClientProphecy = null,
-        ?ObjectProphecy $matchingAdapterProphecy = null,
-    ): DonationRepository {
+    private function getRepo(?ObjectProphecy $donationClientProphecy = null): DonationRepository
+    {
         if (!$donationClientProphecy) {
             $donationClientProphecy = $this->prophesize(Client\Donation::class);
         }
@@ -426,10 +400,6 @@ class DonationRepositoryTest extends TestCase
         );
         $repo->setClient($donationClientProphecy->reveal());
         $repo->setLogger(new NullLogger());
-
-        if ($matchingAdapterProphecy) {
-            $repo->setMatchingAdapter($matchingAdapterProphecy->reveal());
-        }
 
         return $repo;
     }

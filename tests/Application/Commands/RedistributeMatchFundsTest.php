@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Commands;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
@@ -48,6 +49,9 @@ class RedistributeMatchFundsTest extends TestCase
 
     public function testNoEligibleDonations(): void
     {
+        $allocatorProphecy = $this->prophesize(Allocator::class);
+        $allocatorProphecy->releaseMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
+
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
             $this->newYearsEveNoon,
@@ -55,11 +59,11 @@ class RedistributeMatchFundsTest extends TestCase
         )
             ->willReturn([])
             ->shouldBeCalledOnce();
-        $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldNotBeCalled();
 
         $commandTester = new CommandTester($this->getCommand(
+            $allocatorProphecy,
             $this->prophesize(CampaignFundingRepository::class),
             $this->newYearsEveNoon,
             $donationRepoProphecy,
@@ -75,7 +79,6 @@ class RedistributeMatchFundsTest extends TestCase
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
-
 
     /**
      * @return list<array{0: FundType, 1: FundType, 2: bool}>
@@ -111,17 +114,18 @@ class RedistributeMatchFundsTest extends TestCase
     ): void {
         $donation = $this->getTenPoundMatchedDonation($originalFundTypeUsed);
 
+        $allocatorProphecy = $this->prophesize(Allocator::class);
+        $allocatorProphecy->releaseMatchFunds($donation)
+            ->shouldBeCalledTimes($shouldRedistribute ? 1 : 0);
+        $allocatorProphecy->allocateMatchFunds($donation)
+            ->shouldBeCalledTimes($shouldRedistribute ? 1 : 0)
+            ->willReturn('10.00');
+
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
             $this->newYearsEveNoon,
             $this->earlyNovemberNoon,
         )->willReturn([$donation]);
-
-        $donationRepoProphecy->releaseMatchFunds($donation)
-            ->shouldBeCalledTimes($shouldRedistribute ? 1 : 0);
-        $donationRepoProphecy->allocateMatchFunds($donation)
-            ->shouldBeCalledTimes($shouldRedistribute ? 1 : 0)
-            ->willReturn('10.00');
 
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
         $loggerProphecy->error(Argument::type('string'))->shouldNotBeCalled();
@@ -135,6 +139,7 @@ class RedistributeMatchFundsTest extends TestCase
             ->willReturn([$this->getFullyAvailableFunding($availableFundType)]);
 
         $commandTester = new CommandTester($this->getCommand(
+            $allocatorProphecy,
             $campaignFundingRepoProphecy,
             $this->newYearsEveNoon,
             $donationRepoProphecy,
@@ -169,17 +174,18 @@ class RedistributeMatchFundsTest extends TestCase
     {
         $donation = $this->getTenPoundMatchedDonation(FundType::ChampionFund);
 
+        $allocatorProphecy = $this->prophesize(Allocator::class);
+        $allocatorProphecy->releaseMatchFunds($donation)
+            ->shouldBeCalledOnce();
+        $allocatorProphecy->allocateMatchFunds($donation)
+            ->shouldBeCalledOnce()
+            ->willReturn('5.00'); // Half the donation matched after redistribution.
+
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
             $this->newYearsEveNoon,
             $this->earlyNovemberNoon,
         )->willReturn([$donation]);
-
-        $donationRepoProphecy->releaseMatchFunds($donation)
-            ->shouldBeCalledOnce();
-        $donationRepoProphecy->allocateMatchFunds($donation)
-            ->shouldBeCalledOnce()
-            ->willReturn('5.00'); // Half the donation matched after redistribution.
 
         $uuid = $donation->getUuid();
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
@@ -193,6 +199,7 @@ class RedistributeMatchFundsTest extends TestCase
             ->willReturn([$this->getFullyAvailableFunding(FundType::Pledge)]);
 
         $commandTester = new CommandTester($this->getCommand(
+            $allocatorProphecy,
             $campaignFundingRepoProphecy,
             $this->newYearsEveNoon,
             $donationRepoProphecy,
@@ -248,23 +255,26 @@ class RedistributeMatchFundsTest extends TestCase
     }
 
     /**
-     * @param ObjectProphecy<CampaignFundingRepository> $campaignFundingRepository
+     * @param ObjectProphecy<Allocator> $allocatorProphecy
+     * @param ObjectProphecy<CampaignFundingRepository> $campaignFundingRepoProphecy
      * @param ObjectProphecy<DonationRepository> $donationRepoProphecy
      * @param ObjectProphecy<LoggerInterface> $loggerProphecy
      * @return RedistributeMatchFunds
      */
     private function getCommand(
-        ObjectProphecy $campaignFundingRepository,
+        ObjectProphecy $allocatorProphecy,
+        ObjectProphecy $campaignFundingRepoProphecy,
         \DateTimeImmutable $now,
         ObjectProphecy $donationRepoProphecy,
         ObjectProphecy $loggerProphecy,
     ): RedistributeMatchFunds {
         $command = new RedistributeMatchFunds(
             matchFundsRedistributor: new MatchFundsRedistributor(
+                allocator: $allocatorProphecy->reveal(),
                 chatter: $this->createStub(ChatterInterface::class),
                 donationRepository: $donationRepoProphecy->reveal(),
                 now: $now,
-                campaignFundingRepository: $campaignFundingRepository->reveal(),
+                campaignFundingRepository: $campaignFundingRepoProphecy->reveal(),
                 logger: $loggerProphecy->reveal(),
                 entityManager: $this->createStub(EntityManagerInterface::class),
                 bus: $this->messageBusProphecy->reveal(),
