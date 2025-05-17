@@ -28,7 +28,7 @@ class SalesforceAuthMiddlewareTest extends TestCase
 
         $response = $this->getInstance()->process($request, $this->getSuccessHandler());
 
-        $this->assertEquals(401, $response->getStatusCode());
+        $this->assertSame(401, $response->getStatusCode());
     }
 
     public function testWrongAuthRejected(): void
@@ -39,7 +39,7 @@ class SalesforceAuthMiddlewareTest extends TestCase
 
         $response = $this->getInstance()->process($request, $this->getSuccessHandler());
 
-        $this->assertEquals(401, $response->getStatusCode());
+        $this->assertSame(401, $response->getStatusCode());
     }
 
     public function testCorrectAuthAccepted(): void
@@ -50,7 +50,7 @@ class SalesforceAuthMiddlewareTest extends TestCase
         $request = $this->buildRequest($body, $hash);
         $response = $this->getInstance()->process($request, $this->getSuccessHandler());
 
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     private function buildRequest(string $body, ?string $hash = null): ServerRequestInterface

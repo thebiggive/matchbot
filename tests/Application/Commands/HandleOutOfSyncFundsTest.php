@@ -52,8 +52,8 @@ class HandleOutOfSyncFundsTest extends TestCase
             'Checked 4 fundings. Found 1 with correct allocations, 1 over-matched and 2 under-matched',
             'matchbot:handle-out-of-sync-funds complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testFix(): void
@@ -77,8 +77,8 @@ class HandleOutOfSyncFundsTest extends TestCase
             'Checked 4 fundings. Found 1 with correct allocations, 1 over-matched and 2 under-matched',
             'matchbot:handle-out-of-sync-funds complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testWithModeMissing(): void
@@ -106,8 +106,8 @@ class HandleOutOfSyncFundsTest extends TestCase
             'Please set the mode to "check" or "fix"',
             'matchbot:handle-out-of-sync-funds complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(1, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(1, $commandTester->getStatusCode());
     }
 
     /**

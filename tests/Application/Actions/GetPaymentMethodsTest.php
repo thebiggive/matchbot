@@ -72,7 +72,7 @@ class GetPaymentMethodsTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         /** @var array{
          *     data: list<array{card: array{last4: string}}>,
@@ -82,6 +82,6 @@ class GetPaymentMethodsTest extends TestCase
         $payloadArray = json_decode($payload, true);
         $this->assertCount(1, $payloadArray['data']);
 
-        $this->assertEquals('4242', $payloadArray['data'][0]['card']['last4']);
+        $this->assertSame('4242', $payloadArray['data'][0]['card']['last4']);
     }
 }

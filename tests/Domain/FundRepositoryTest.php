@@ -48,7 +48,7 @@ class FundRepositoryTest extends TestCase
 
         $repo->updateFromSf($fund, autoSave: false); // Don't auto-save as non-DB-backed tests can't persist
 
-        $this->assertEquals('API Fund Name', $fund->getName());
+        $this->assertSame('API Fund Name', $fund->getName());
     }
 
     public function testPullForCampaignAllNew(): void
@@ -105,7 +105,7 @@ class FundRepositoryTest extends TestCase
         $this->assertSame('1500', $campaignFunding->getAmountAvailable());
 
         $fund = $campaignFunding->getFund();
-        $this->assertEquals(FundType::ChampionFund, $fund->getFundType());
+        $this->assertSame(FundType::ChampionFund, $fund->getFundType());
         $this->assertSame('sfFundId4567890abc', $fund->getSalesforceId());
         $this->assertSame('GBP', $fund->getCurrencyCode());
     }

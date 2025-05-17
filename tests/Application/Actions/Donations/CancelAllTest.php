@@ -118,17 +118,17 @@ class CancelAllTest extends TestCase
         $response = $app->handle($request);
 
         // assert
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
         $json = (string) $response->getBody();
         $this->assertJson($json);
-        /** @var array{donations: list<array{donationAmount: float, status: string}>} $payload */
+        /** @var array{donations: list<array{donationAmount: float|int, status: string}>} $payload */
         $payload = json_decode($json, true, 512, \JSON_THROW_ON_ERROR);
         $this->assertArrayHasKey('donations', $payload);
         $this->assertCount(2, $payload['donations']);
 
         $donationZero = $payload['donations'][0];
-        $this->assertEquals('Cancelled', $donationZero['status']);
-        $this->assertEquals(10.0, $donationZero['donationAmount']);
+        $this->assertSame('Cancelled', $donationZero['status']);
+        $this->assertSame(10, $donationZero['donationAmount']);
     }
 
     public function testNoAuth(): void

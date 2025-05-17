@@ -23,8 +23,8 @@ class CalculatorTest extends TestCase
         );
 
         // 1.5% + 20p
-        $this->assertEquals('2.05', $fees->coreFee);
-        $this->assertEquals('0.41', $fees->feeVat);
+        $this->assertSame('2.05', $fees->coreFee);
+        $this->assertSame('0.41', $fees->feeVat);
     }
 
     public function testStripeUSCardGBPDonation(): void
@@ -39,7 +39,7 @@ class CalculatorTest extends TestCase
         );
 
         // 3.2% + 20p
-        $this->assertEquals('4.14', $fees->coreFee);
+        $this->assertSame('4.14', $fees->coreFee);
     }
 
     public function testStripeUSCardGBPDonationWithTbgClaimingGiftAid(): void
@@ -54,7 +54,7 @@ class CalculatorTest extends TestCase
         );
 
         // 3.2% + 20p + 0.75% (net)
-        $this->assertEquals('4.15', $fees->coreFee);
+        $this->assertSame('4.15', $fees->coreFee);
     }
 
     public function testStripeUKCardSEKDonation(): void
@@ -69,7 +69,7 @@ class CalculatorTest extends TestCase
         );
 
         // 1.5% + 1.80 SEK
-        $this->assertEquals('3.65', $fees->coreFee);
+        $this->assertSame('3.65', $fees->coreFee);
     }
 
     public function testStripeUSCardSEKDonation(): void
@@ -84,7 +84,7 @@ class CalculatorTest extends TestCase
         );
 
         // 3.2% + 1.80 SEK
-        $this->assertEquals('5.74', $fees->coreFee);
+        $this->assertSame('5.74', $fees->coreFee);
     }
 
     /**
@@ -101,8 +101,8 @@ class CalculatorTest extends TestCase
             false,
         );
 
-        $this->assertEquals('3.50', $fees->coreFee);
-        $this->assertEquals('0.00', $fees->feeVat);
+        $this->assertSame('3.50', $fees->coreFee);
+        $this->assertSame('0.00', $fees->feeVat);
     }
 
     /**

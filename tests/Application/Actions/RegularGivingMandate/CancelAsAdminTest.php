@@ -43,7 +43,7 @@ class CancelAsAdminTest extends TestCase
 
         $response = $app->handle($request->withAttribute('route', $route));
 
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     public function testAlreadyCancelled(): void
@@ -65,7 +65,7 @@ class CancelAsAdminTest extends TestCase
 
         $response = $app->handle($request->withAttribute('route', $route));
 
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame(400, $response->getStatusCode());
 
         $payload = (string) $response->getBody();
         $expectedPayload = new ActionPayload(400, ['error' => [
@@ -74,7 +74,7 @@ class CancelAsAdminTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertSame($expectedSerialised, $payload);
     }
 
     private function getTestMandate(): RegularGivingMandate

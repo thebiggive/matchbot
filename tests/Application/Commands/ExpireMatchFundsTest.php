@@ -37,8 +37,8 @@ class ExpireMatchFundsTest extends TestCase
             "Released 0 donations' matching",
             'matchbot:expire-match-funds complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testTwoExpiries(): void
@@ -61,8 +61,8 @@ class ExpireMatchFundsTest extends TestCase
             "Released 2 donations' matching",
             'matchbot:expire-match-funds complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     /**
