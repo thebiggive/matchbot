@@ -11,6 +11,7 @@ parameters:
 	treatPhpDocTypesAsCertain: false
 	checkUninitializedProperties: true
 	rememberPossiblyImpureFunctionValues: false
+	checkExplicitMixed: true
 	strictRules:
 		disallowedLooseComparison: false
 		booleansInConditions: false
@@ -45,6 +46,11 @@ parameters:
 		-
 			identifier: property.uninitialized
 			# properties in tests are initialised in setup instead of __construct.
+			paths:
+				- tests/*
+				- integrationTests/*
+		-
+			identifier: offsetAccess.nonOffsetAccessible
 			paths:
 				- tests/*
 				- integrationTests/*
