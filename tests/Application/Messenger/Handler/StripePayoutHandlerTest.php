@@ -364,7 +364,7 @@ class StripePayoutHandlerTest extends TestCase
         return $stripeClientProphecy;
     }
 
-    private function getCommonCalloutArgs(): array
+    private function getCommonCalloutArgs(): array // @phpstan-ignore missingType.iterableValue
     {
         return [
             // Based on the date range from our standard test data payout (donation time -6M and +1D).

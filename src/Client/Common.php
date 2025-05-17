@@ -10,6 +10,7 @@ use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Settings;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\SalesforceProxy;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 
@@ -75,10 +76,13 @@ abstract class Common
     }
 
     /**
+     * @param array<mixed> $jsonSnapshot
+     * @return Salesforce18Id<SalesforceProxy>
+     *@throws NotFoundException
+     * @throws GuzzleException
+     *
      * @throws BadRequestException
      * @throws BadResponseException
-     * @throws NotFoundException
-     * @throws GuzzleException
      */
     protected function postUpdateToSalesforce(string $uri, array $jsonSnapshot, string $uuid, string $entityType): Salesforce18Id
     {
@@ -87,6 +91,7 @@ abstract class Common
             throw new BadRequestException('Client push is off');
         }
 
+        // @phpstan-ignore cast.string
         $messageDate = (string)($jsonSnapshot[DonationUpserted::SNAPSHOT_TAKEN_AT] ?? 'unknown date');
 
         try {

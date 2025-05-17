@@ -186,6 +186,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->activeFrom = $activationDate;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toFrontEndApiModel(Charity $charity, \DateTimeImmutable $now): array
     {
         Assertion::same($charity->getSalesforceId(), $this->charityId);
@@ -227,6 +230,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
     }
 
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toSFApiModel(DonorAccount $donor): array
     {
         Assertion::eq($donor->id(), $this->donorId);

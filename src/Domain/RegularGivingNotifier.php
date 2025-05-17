@@ -56,6 +56,8 @@ class RegularGivingNotifier
      * This is currently of course just for regular giving, but we may start using matchbot to send
      * ad-hoc donation email reciepts in future, in which case this function should be able to be moved
      * and re-used
+     *
+     * @return array<string, string|null>
      */
     private function donationToConfirmationEmailFields(
         Donation $firstDonation,
@@ -66,8 +68,6 @@ class RegularGivingNotifier
 
         Assertion::notNull($firstDonationCollectedAt, 'First donation collected at should not be null');
 
-        // todo: consider remvoing duplication below with code in
-        // DonationNotifier::emailCommandForCollectedDonation
         return [
             'currencyCode' => $firstDonation->currency()->isoCode(),
             'donationAmount' => $firstDonation->getAmount(),

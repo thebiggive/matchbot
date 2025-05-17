@@ -456,7 +456,7 @@ class StripePaymentsUpdate extends Stripe
     {
         Assertion::eq('customer_cash_balance_transaction.created', $event->type);
 
-        /** @var array $eventAsArray
+        /** @var array<string, mixed> $eventAsArray
          * @psalm-suppress MixedMethodCall
          * (not sure why Psalm can't tell that this is an array since Upgrade to stripe Library v.17)
          */

@@ -409,6 +409,9 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return count($proxiesToCreate) + count($proxiesToUpdate);
     }
 
+    /**
+     * @param Salesforce18Id<Donation>|null $salesforceId
+     */
     private function setSalesforceFieldsWithRetry(
         DonationUpserted $changeMessage,
         ?Salesforce18Id $salesforceId
@@ -461,6 +464,8 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
      *  Consider DRYing up duplication with MandateUpsertedHandler::setSalesforceFields before
      *  making a third copy
      * /
+     *
+     * @param Salesforce18Id<Donation>|null $salesforceId
      *
      * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock
      */

@@ -16,7 +16,7 @@ class FundTotalUpdatedHandlerTest extends TestCase
 {
     public function testSuccessProcessing(): void
     {
-        $fund = new Fund('GBP', 'Testfund', Salesforce18Id::of('sfFundId4567890abc'), fundType: FundType::Pledge);
+        $fund = new Fund('GBP', 'Testfund', Salesforce18Id::ofFund('sfFundId4567890abc'), fundType: FundType::Pledge);
         $updateMessage = FundTotalUpdated::fromFund($fund);
 
         $fundClientProphecy = $this->prophesize(Client\Fund::class);

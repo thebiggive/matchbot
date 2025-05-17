@@ -65,7 +65,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return $campaigns;
     }
 
-    /** @return list<Campaign> */
+    /**
+     * @param Salesforce18Id<Charity> $charitySfId
+     * @return list<Campaign>
+     */
     public function findUpdatableForCharity(Salesforce18Id $charitySfId): array
     {
         $query = $this->getEntityManager()->createQuery(

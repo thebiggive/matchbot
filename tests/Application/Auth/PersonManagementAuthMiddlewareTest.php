@@ -72,6 +72,7 @@ class PersonManagementAuthMiddlewareTest extends TestCase
 
     /**
      * Simulate a route returning a 200 OK.
+     * @return Route<null>
      */
     private function getSuccessHandler(): Route
     {
