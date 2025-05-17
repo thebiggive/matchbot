@@ -187,7 +187,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         return $id;
     }
 
-    public function assertDonationDetailsInDB(mixed $mandateId): void
+    public function assertDonationDetailsInDB(int $mandateId): void
     {
         $donationDatabaseRows = $this->db()->executeQuery(
             "SELECT * from Donation where Donation.mandate_id = ? ORDER BY mandateSequenceNumber asc",

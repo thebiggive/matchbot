@@ -188,7 +188,7 @@ abstract class IntegrationTest extends TestCase
     /**
      * @param class-string $name
      */
-    protected function setInContainer(string $name, mixed $value): void
+    protected function setInContainer(string $name, object $value): void
     {
         $container = $this->getContainer();
 
