@@ -25,7 +25,7 @@ class DonationToken
     public static function create(string $donationId): string
     {
         /**
-         * @var array $claims
+         * @var array<mixed> $claims
          * @link https://tools.ietf.org/html/rfc7519 has info on the standard keys like `exp`
          */
         $claims = [

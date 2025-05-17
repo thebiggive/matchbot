@@ -32,6 +32,7 @@ class SlackHandler implements HandlerInterface
     }
 
     /**
+     * @param array<string, mixed>|\ArrayAccess<string,mixed> $record
      * @psalm-suppress PossiblyUnusedReturnValue - used by Monolog.
      */
     #[\Override]
@@ -41,7 +42,10 @@ class SlackHandler implements HandlerInterface
             return false; // allows another handle to handle this.
         }
 
+        /** @var string $message */
         $message = $record['message'];
+
+        /** @var string $levelName */
         $levelName = $record['level_name'];
 
         $lines = explode(PHP_EOL, $message);

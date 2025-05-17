@@ -141,7 +141,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $donation = $this->getTestDonation();
         $donation->setTransactionId('pi_externalId_123');
 
-        /** @var array $webhookContent */
+        /** @var array<string, mixed> $webhookContent */
         $webhookContent = json_decode(
             $this->getStripeHookMock('ch_succeeded'),
             associative: true,
@@ -197,7 +197,7 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $donation = $this->getTestDonation('6000.00', currencyCode: 'SEK');
         $this->donationRepository->store($donation);
-        /** @var array $webhookContent */
+        /** @var array<string, mixed> $webhookContent */
         $webhookContent = json_decode(
             $this->getStripeHookMock('ch_succeeded_sek'),
             associative: true,

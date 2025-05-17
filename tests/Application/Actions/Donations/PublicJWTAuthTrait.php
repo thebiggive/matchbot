@@ -16,6 +16,7 @@ use Slim\Routing\Route;
  */
 trait PublicJWTAuthTrait
 {
+    /** @return Route<null> */
     private function getRouteWithDonationId(string $method, string $donationId): Route
     {
         $route = new Route(

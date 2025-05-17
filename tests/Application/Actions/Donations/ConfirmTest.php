@@ -32,6 +32,7 @@ use Ramsey\Uuid\UuidInterface;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Psr7\Response;
 use Stripe\ConfirmationToken;
+use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
@@ -312,6 +313,11 @@ class ConfirmTest extends TestCase
         );
     }
 
+    /**
+     * @param array<mixed> $cardDetails
+     * @param array<mixed> $updatedIntentData
+     * @param array<mixed> $expectedMetadataUpdate
+     */
     private function fakeStripeClient(
         array $cardDetails,
         string $paymentMethodId,

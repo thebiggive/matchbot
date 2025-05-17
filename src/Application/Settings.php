@@ -33,11 +33,11 @@ class Settings
     /** @var array{baseUri: string} */
     public array $identity;
 
-    /** @var array{name: 'matchbot', path: "php://stdout", level: int} */
+    /** @var array{name: 'matchbot', path: "php://stdout", level: Logger::DEBUG|Logger::INFO} */
     public array $logger;
 
     /**
-     * @var array
+     * @var array<string, mixed>
      */
     public array $los_rate_limit;
 
@@ -55,6 +55,9 @@ class Settings
     /** @var array{apiKey: non-empty-string, accountWebhookSecret: string, connectAppWebhookSecret: string} */
     public array $stripe;
 
+    /**
+     * @param array<string, string> $env
+     */
     private function __construct(array $env)
     {
         $doctrineConnectionOptions = [];
@@ -115,7 +118,6 @@ class Settings
             'level' => $appEnv === 'local' ? Logger::DEBUG : Logger::INFO,
         ];
 
-        /** @var string|null $maxCreatesPerIpPer5M */
         $maxCreatesPerIpPer5M = $env['MAX_CREATES_PER_IP_PER_5M'] ?? null;
         if (is_string($maxCreatesPerIpPer5M)) {
             $this->los_rate_limit = [
@@ -173,7 +175,7 @@ class Settings
         ];
     }
 
-    /** @param array $env
+    /** @param array<string, string> $env
      * @return non-empty-string
      */
     private function getNonEmptyStringEnv(array $env, string $varName, bool $throwIfMissing = true): string
@@ -186,6 +188,9 @@ class Settings
         return $value;
     }
 
+    /**
+     * @param array<string, string> $env
+     */
     private function getStringEnv(array $env, string $varName, bool $throwIfMissing = true): string
     {
         $value = $env[$varName] ?? null;
@@ -202,6 +207,9 @@ class Settings
         return $value;
     }
 
+    /**
+     * @param array<string, string> $env
+     */
     public static function fromEnvVars(array $env): self
     {
         return new self($env);

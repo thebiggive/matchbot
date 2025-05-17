@@ -49,6 +49,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
     {
         Assertion::notEq($this->environment, Environment::Production);
 
+        // @phpstan-ignore cast.string
         $campaignId = Salesforce18Id::ofCampaign((string) $input->getArgument('CampaignSFID'));
 
         $campaign = $this->campaignRepository->findOneBySalesforceId($campaignId);

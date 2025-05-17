@@ -33,6 +33,7 @@ use MatchBot\Tests\TestData\Identity;
 use Override;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\App;
@@ -48,6 +49,8 @@ class CreateTest extends TestCase
 {
     public const string PSPCUSTOMERID = 'cus_aaaaaaaaaaaa11';
     public const string DONATION_UUID = '1822c3b6-b405-11ef-9766-63f04fc63fc3';
+
+    /** @var array<string, mixed> */
     private static array $somePaymentIntentArgs;
     /**
      * @var PaymentIntent Mock result, most properites we don't use omitted.
@@ -804,7 +807,7 @@ class CreateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(201, $response->getStatusCode());
 
-        /** @var array<string, string|numeric|boolean|array> $payloadArray */
+        /** @var array<string, string|numeric|boolean|array<array-key, mixed>> $payloadArray */
         $payloadArray = json_decode($payload, true);
 
         $this->assertIsString($payloadArray['jwt']);
@@ -859,7 +862,7 @@ class CreateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(500, $response->getStatusCode());
 
-        /** @var array $payloadArray */
+        /** @var array<string, mixed> $payloadArray */
         $payloadArray = json_decode($payload, true);
 
         $this->assertEquals(['error' => [
@@ -874,6 +877,7 @@ class CreateTest extends TestCase
      *
      * @param bool $skipEmExpectations  Whether to bypass monitoring calls on the entity manager,
      *                                  e.g. because the test will replace it with a more specific one.
+     * @return App<ContainerInterface|null>
      */
     private function getAppWithCommonPersistenceDeps(
         bool $donationPersisted,
@@ -929,7 +933,7 @@ class CreateTest extends TestCase
         $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $this->diContainer()->set(RoutableMessageBus::class, $this->messageBusProphecy->reveal());
 
-        return $app;
+        return $app; // @phpstan-ignore return.type
     }
 
     private function encode(Donation $donation): string

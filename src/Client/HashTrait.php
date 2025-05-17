@@ -6,6 +6,9 @@ namespace MatchBot\Client;
 
 trait HashTrait
 {
+    /**
+     * @return array<string, string>
+     */
     private function getVerifyHeaders(string $json): array
     {
         return ['X-Webhook-Verify-Hash' => $this->hash($json)];

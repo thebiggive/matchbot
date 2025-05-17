@@ -14,6 +14,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;
@@ -30,7 +31,10 @@ use Slim\App;
 use Slim\Factory\AppFactory;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
+use Stripe\Service\CustomerService;
 use Stripe\Service\CustomerSessionService;
+use Stripe\Service\PaymentIntentService;
+use Stripe\Service\PaymentMethodService;
 use Stripe\StripeClient;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
@@ -43,6 +47,10 @@ abstract class IntegrationTest extends TestCase
     use ProphecyTrait;
 
     public static ?ContainerInterface $integrationTestContainer = null;
+
+    /**
+     * @var App<ContainerInterface|null>|null
+     */
     public static ?App $app = null;
 
     #[\Override]
@@ -82,16 +90,20 @@ abstract class IntegrationTest extends TestCase
         $routes($app);
 
         $prophecy = $this->prophesize(MandateSFClient::class);
-        $prophecy->createOrUpdate(Argument::any())->will(self::someSalesForce18Id(...));
+        $prophecy->createOrUpdate(Argument::any())->will(self::someSalesForce18MandateId(...));
 
         $this->getContainer()->set(MandateSFClient::class, $prophecy->reveal());
 
-        self::setApp($app);
+        // not sure what's wrong with this argument type
+        self::setApp($app); // @phpstan-ignore argument.type
     }
 
-    public static function someSalesForce18Id(): Salesforce18Id
+    /**
+     * @return Salesforce18Id<RegularGivingMandate>
+     */
+    public static function someSalesForce18MandateId(): Salesforce18Id
     {
-        return Salesforce18Id::of(self::randomString());
+        return Salesforce18Id::ofRegularGivingMandate(self::randomString());
     }
 
     /**
@@ -107,9 +119,13 @@ abstract class IntegrationTest extends TestCase
         self::$integrationTestContainer = $container;
     }
 
+    /**
+     * @param App<ContainerInterface|null> $app
+     */
     public static function setApp(App $app): void
     {
-        self::$app = $app;
+        // not sure what's wrong with the property type
+        self::$app = $app; // @phpstan-ignore assign.propertyType
     }
 
     /**
@@ -372,12 +388,17 @@ abstract class IntegrationTest extends TestCase
         return (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
     }
 
+    /**
+     * @return App<ContainerInterface|null>
+     */
     protected function getApp(): App
     {
         if (self::$app === null) {
             throw new \Exception("Test app not set");
         }
-        return self::$app;
+
+        // not sure what's wrong with the return type
+        return self::$app; // @phpstan-ignore return.type
     }
 
     /**
@@ -405,6 +426,13 @@ abstract class IntegrationTest extends TestCase
     /**
      * @psalm-suppress UndefinedPropertyAssignment - StripeClient does declare the properties via docblock, not sure
      * Psalm doesn't see them as defined.
+     *
+     * @param ObjectProphecy<PaymentMethodService> $stripePaymentMethodServiceProphecy
+     * @param ObjectProphecy<CustomerService> $stripeCustomerServiceProphecy
+     * @param ObjectProphecy<PaymentIntentService> $stripePaymentIntents
+     * @param ObjectProphecy<CustomerSessionService> $stripeCustomerSessions
+     *
+     * @return StripeClient
      */
     public function fakeStripeClient(
         ObjectProphecy $stripePaymentMethodServiceProphecy,

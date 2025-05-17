@@ -14,20 +14,24 @@ namespace Psr\Container {
          * @template T of object
          * @psalm-param string|class-string<T> $name
          * @psalm-return ($name is class-string ? T : mixed)
+         *
+         * @phpstan-return ($name is class-string<T> ? T : object)
          */
-        public function get(string $name): object;
+        public function get(string $name): mixed;
     }
 }
 
 namespace DI {
     use Psr\Container\ContainerInterface;
     use \DI\FactoryInterface;
-    use Invoker\InvokerInterface;
 
-    class Container implements ContainerInterface, FactoryInterface, InvokerInterface
+    class Container implements ContainerInterface
+    // real class also implements FactoryInterface, InvokerInterface
+    // but those are not used in our code so not represented in stub. For PHPStan if we want to include those interfaces
+    // in stub we have to copy them into the stub.
     {
         /**
-         * @template T of object
+         * @template T
          * @psalm-param string|class-string<T> $name
          * @psalm-param ($name is class-string ? T : mixed) $value
          */
@@ -40,7 +44,9 @@ namespace DI {
          * @template T of object
          * @psalm-param string|class-string<T> $name
          * @psalm-return ($name is class-string ? T : mixed)
+         *
+         * @phpstan-return ($name is class-string<T> ? T : object)
          */
-        public function get(string $name): object;
+        public function get(string $name): mixed;
     }
 }

@@ -19,7 +19,7 @@ class FundTest extends TestCase
         $fund = new Fund(
             'GBP',
             'testGetAmounts fund',
-            Salesforce18Id::of('sfFundId4567890abc'),
+            Salesforce18Id::ofFund('sfFundId4567890abc'),
             fundType: FundType::ChampionFund
         );
         $fund->addCampaignFunding(new CampaignFunding(
@@ -38,7 +38,7 @@ class FundTest extends TestCase
 
     public function testToAmountUsedUpdateModel(): void
     {
-        $fund = new Fund('GBP', 'Testfund', Salesforce18Id::of('sfFundId4567890abc'), fundType: FundType::ChampionFund);
+        $fund = new Fund('GBP', 'Testfund', Salesforce18Id::ofFund('sfFundId4567890abc'), fundType: FundType::ChampionFund);
         $fund->addCampaignFunding(new CampaignFunding(
             fund: $fund,
             amount: '123.45',

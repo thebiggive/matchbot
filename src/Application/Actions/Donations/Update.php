@@ -63,6 +63,7 @@ class Update extends Action
     }
 
     /**
+     * @param array<string, mixed> $args
      * @return Response
      * @throws DomainRecordNotFoundException on missing donation
      * @throws ApiErrorException if Stripe Payment Intent confirm() fails, other than because of a
@@ -252,6 +253,9 @@ class Update extends Action
 
     /**
      * Assumes it will be called only after starting a transaction pre-donation-select.
+     *
+     * @param array{donationId: string, ...} $args
+     *
      * @throws InvalidRequestException
      * @throws ApiErrorException if confirm() fails other than because of a missing payment method.
      * @throws \UnexpectedValueException

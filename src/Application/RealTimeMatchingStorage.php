@@ -2,8 +2,13 @@
 
 namespace MatchBot\Application;
 
+use MatchBot\Application\Matching\Adapter;
+
 interface RealTimeMatchingStorage
 {
+    /**
+     * @param Adapter::REDIS_OPTIONS_FOR_LIMITED_DURATION_STORAGE $options
+     */
     public function set(string $key, string|int $value, array $options): bool|self;
 
     /**
@@ -26,7 +31,7 @@ interface RealTimeMatchingStorage
     public function del(string $key): void;
 
     /**
-     * @return array|false|self
+     * @return array<mixed>|false|self
      */
     public function exec();
 }

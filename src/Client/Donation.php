@@ -16,10 +16,15 @@ use MatchBot\Domain\Salesforce18Id;
 class Donation extends Common
 {
     /**
-     * @throws BadRequestException
-     * @throws BadResponseException
+     * @return Salesforce18Id<\MatchBot\Domain\Donation>|null
+     *@throws BadResponseException
      * @throws NotFoundException on missing campaign in a sandbox
      * @throws GuzzleException
+     *
+     * @psalm-suppress LessSpecificReturnStatement
+     * @psalm-suppress MoreSpecificReturnType
+     *
+     * @throws BadRequestException
      */
     public function createOrUpdate(DonationUpserted $message): ?Salesforce18Id
     {

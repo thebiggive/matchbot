@@ -16,6 +16,7 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Tests\Domain\InMemoryDonationRepository;
 use Override;
+use Psr\Container\ContainerInterface;
 use Slim\Routing\Route;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
@@ -1537,9 +1538,9 @@ class UpdateTest extends TestCase
 
     /**
      * @return array{
-     *     app: App,
+     *     app: App<ContainerInterface|null>,
      * request: ServerRequestInterface,
-     * route: Route,
+     * route: Route<null>,
      * entityManagerProphecy: ObjectProphecy<EntityManagerInterface>,
      * stripeProphecy: ObjectProphecy<Stripe>
      * }
@@ -1606,7 +1607,7 @@ class UpdateTest extends TestCase
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
 
-        return [
+        return [ // @phpstan-ignore return.type
             'app' => $app,
             'request' => $request,
             'route' => $route,
@@ -1669,6 +1670,9 @@ class UpdateTest extends TestCase
         return $entityManagerProphecy;
     }
 
+    /**
+     * @return array<mixed>
+     */
     private function decodePaylode(string $payload): array
     {
         $decoded = json_decode($payload, true, \JSON_THROW_ON_ERROR);

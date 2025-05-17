@@ -81,7 +81,7 @@ class RetrospectivelyMatch extends LockingCommand
                 ->findNotFullyMatchedToCampaignsWhichClosedSince($oneHourBeforeExecStarted);
         } else {
             // Allow + round non-whole day count.
-            $daysBack = round((float) $input->getArgument('days-back'));
+            $daysBack = round((float) $input->getArgument('days-back')); // @phpstan-ignore cast.double
             $output->writeln("Looking at past $daysBack days' donations");
             $sinceDate = (new DateTime('now'))->sub(new \DateInterval("P{$daysBack}D"));
             $toCheckForMatching = $this->donationRepository

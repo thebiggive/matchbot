@@ -139,8 +139,10 @@ class RegularGivingMandateRepository
      * @param \Doctrine\ORM\Query $query . Query must be for mandates and charities jonied together.
      * @return list<array{0: RegularGivingMandate, 1: Charity}>
      */
-    private function getMandatesWithCharities(\Doctrine\ORM\Query $query)
+    private function getMandatesWithCharities(\Doctrine\ORM\Query $query) // @phpstan-ignore missingType.generics
     {
+        // I'm confused about the missingType.generics error - as far as I can see the Query class is not generic.
+
         /** @var list<RegularGivingMandate|Charity> $x */
         $x = $query->getResult();
 

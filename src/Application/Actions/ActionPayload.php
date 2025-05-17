@@ -9,6 +9,9 @@ use JsonSerializable;
 
 class ActionPayload implements JsonSerializable
 {
+    /**
+     * @param array<mixed>|object|null $data
+     */
     #[Pure]
     public function __construct(
         private int $statusCode = 200,
@@ -27,7 +30,7 @@ class ActionPayload implements JsonSerializable
     }
 
     /**
-     * @return array|null|object
+     * @return array<array-key,mixed>|null|object
      */
     #[Pure]
     public function getData(): object | array | null
@@ -45,7 +48,7 @@ class ActionPayload implements JsonSerializable
     }
 
     /**
-     * @return object | array | null
+     * @return object | array<mixed> | null
      */
     #[\Override]
     public function jsonSerialize(): object | array | null

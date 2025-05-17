@@ -572,7 +572,7 @@ return function (ContainerBuilder $containerBuilder) {
              * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
              * is final and does not implement our custom interface.
              */
-                $chatter = $c->get(StripeChatterInterface::class);
+                $chatter = $c->get(StripeChatterInterface::class); // @phpstan-ignore varTag.type
 
                 $rateLimiterFactory = $c->get('donation-creation-rate-limiter-factory');
                 \assert($rateLimiterFactory instanceof RateLimiterFactory);

@@ -82,6 +82,8 @@ interface DonationRepository
      * Locks row in DB to prevent concurrent updates. See jira MAT-260
      * Requires an open transaction to be managed by the caller.
      * @throws LockWaitTimeoutException
+     * @param array<string, string|null> $criteria
+     * @param array<string, string>|null $orderBy
      */
     public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation;
 
@@ -139,6 +141,7 @@ interface DonationRepository
     public function findStaleDonationFundsTips(\DateTimeImmutable $atDateTime, \DateInterval $cancelationDelay): array;
 
     /**
+     * @param Salesforce18Id<Campaign> $campaignId
      * @return list<UuidInterface>
      */
     public function findPendingByDonorCampaignAndMethod(string $donorStripeId, Salesforce18Id $campaignId, PaymentMethodType $paymentMethodType,): array;
@@ -154,11 +157,13 @@ interface DonationRepository
     public function find($id);
 
     /**
+     * @param array{uuid: UuidInterface[]} $criteria
      * @return list<Donation>
      */
     public function findBy(array $criteria);
 
     /**
+     * @phpstan-param array<string, mixed> $criteria
      * @return ?Donation
      */
     public function findOneBy(array $criteria);

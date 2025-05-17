@@ -15,6 +15,7 @@ use Stripe\Collection;
 use Stripe\Service\CustomerService;
 use Stripe\Service\PaymentMethodService;
 use Stripe\StripeClient;
+use Stripe\StripeObject;
 
 class DeletePaymentMethodTest extends TestCase
 {
@@ -74,6 +75,10 @@ class DeletePaymentMethodTest extends TestCase
         $sut->__invoke($request, new Response(), ['payment_method_id' => 'stripe_payment_method_id_35']);
     }
 
+    /**
+     * @param list<array{id: string}> $paymentMethods
+     * @return Stub&Collection<StripeObject>
+     */
     public function stubCollectionOf(array $paymentMethods): Stub&Collection
     {
         $stubCollection = $this->createStub(Collection::class);
@@ -85,6 +90,9 @@ class DeletePaymentMethodTest extends TestCase
     /**
      * @psalm-suppress UndefinedPropertyAssignment
      * Not sure why Psalm isn't reading the `@property` annotation on the StripeClient class
+     *
+     * @param ObjectProphecy<PaymentMethodService> $stripePaymentMethodServiceProphecy
+     * @param ObjectProphecy<CustomerService> $stripeCustomerServiceProphecy
      */
     public function fakeStripeClient(
         ObjectProphecy $stripePaymentMethodServiceProphecy,

@@ -40,7 +40,7 @@ class StripePayoutUpdate extends Stripe
          * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
          * is final and does not implement our custom interface.
          */
-        $chatter = $container->get(StripeChatterInterface::class);
+        $chatter = $container->get(StripeChatterInterface::class); // @phpstan-ignore varTag.type
         $this->chatter = $chatter;
 
         parent::__construct($container, $logger);

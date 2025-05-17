@@ -41,7 +41,7 @@ class InMemoryDonationRepository implements DonationRepository
         $this->donations[$id] = $donation;
     }
 
-    #[\Override] public function findOneBy(array $criteria, ?array $orderBy = null): ?Donation
+    #[\Override] public function findOneBy(array $criteria): ?Donation
     {
         if (array_keys($criteria) === ['transactionId']) {
             foreach ($this->donations as $donation) {
