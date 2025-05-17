@@ -33,7 +33,7 @@ class Settings
     /** @var array{baseUri: string} */
     public array $identity;
 
-    /** @var array{name: 'matchbot', path: "php://stdout", level: int} */
+    /** @var array{name: 'matchbot', path: "php://stdout", level: Logger::DEBUG|Logger::INFO} */
     public array $logger;
 
     /**
