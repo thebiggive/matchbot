@@ -69,6 +69,7 @@ abstract class IntegrationTest extends TestCase
         };
 
         $container = require __DIR__ . '/../bootstrap.php';
+        \assert($container instanceof Container);
         IntegrationTest::setContainer($container);
         $container->set(RateLimitMiddleware::class, $noOpMiddleware);
         $container->set(\Psr\Log\LoggerInterface::class, new \Psr\Log\NullLogger());
