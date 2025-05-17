@@ -124,7 +124,6 @@ class DonationMatchingTest extends IntegrationTest
         };
     }
 
-    /** @psalm-suppress MixedArgument */
     #[\Override]
     public function tearDown(): void
     {

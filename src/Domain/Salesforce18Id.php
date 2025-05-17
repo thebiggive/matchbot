@@ -75,9 +75,6 @@ class Salesforce18Id implements JsonSerializable
         return $this->value;
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - used indirectly
-     */
     #[\Override]
     public function jsonSerialize(): string
     {

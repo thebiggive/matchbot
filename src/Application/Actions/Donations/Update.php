@@ -426,10 +426,6 @@ class Update extends Action
                     $nextActionType = null;
                     if ($confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
                         $nextAction = $confirmedIntent->next_action;
-
-                        /** @psalm-suppress UndefinedMagicPropertyFetch - type is not documented on StripeObject but
-                         * appears to work in this context
-                         */
                         $nextActionType = (string) $nextAction?->type;
                     }
 

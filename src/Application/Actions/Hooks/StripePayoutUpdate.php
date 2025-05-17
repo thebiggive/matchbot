@@ -81,8 +81,6 @@ class StripePayoutUpdate extends Stripe
             case Event::PAYOUT_FAILED:
                 /**
                  * @var string $id
-                 * @psalm-suppress UndefinedMagicPropertyFetch
-                 * @psalm-suppress MixedPropertyFetch
                  */
                 $id = $event->data->object->id;
                 $failureMessage = sprintf(
@@ -111,7 +109,6 @@ class StripePayoutUpdate extends Stripe
     private function handlePayoutPaid(Request $request, Event $event, Response $response): Response
     {
         /**
-         * @psalm-suppress UndefinedMagicPropertyFetch
          * @var \Stripe\StripeObject&object{id: string, automatic: bool} $object
          */
         $object = $event->data->object;

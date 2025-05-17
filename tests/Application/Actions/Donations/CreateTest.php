@@ -776,8 +776,6 @@ class CreateTest extends TestCase
     /**
      * Use unmatched campaign in previous test but also omit all donor-supplied
      * detail except donation and tip amount, to test new 2-step Create setup.
-     *
-     * @psalm-suppress MixedArrayAccess
      */
     public function testSuccessWithMinimalData(): void
     {

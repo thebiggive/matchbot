@@ -175,7 +175,6 @@ class DonationTest extends TestCase
         $this->expectException(AssertionFailedException::class);
         $this->expectExceptionMessage('Value "paypal" does not equal expected value "stripe".');
 
-        /** @psalm-suppress InvalidArgument */
         Donation::fromApiModel(
             new DonationCreate(
                 currencyCode: 'GBP',

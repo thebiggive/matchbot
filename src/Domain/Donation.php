@@ -240,15 +240,10 @@ class Donation extends SalesforceWriteProxy
      * (taken at mandate creation time), 2nd, 3rd etc.
      *
      * Null only iff this is a one-off, non regular-giving donation.
-     *
-     * @psalm-suppress PossiblyUnusedProperty - used in DQL
      */
     #[ORM\Column(nullable: true)]
     protected ?int $mandateSequenceNumber = null;
 
-    /**
-     * @psalm-suppress PossiblyUnusedProperty - used in DQL
-     */
     #[ORM\ManyToOne(targetEntity: RegularGivingMandate::class)]
     private ?RegularGivingMandate $mandate = null;
 
@@ -313,7 +308,6 @@ class Donation extends SalesforceWriteProxy
     protected ?bool $tbgShouldProcessGiftAid = null;
 
     /**
-     * @psalm-suppress PossiblyUnusedProperty - used in DB queries
      * @var ?DateTimeImmutable When a queued message that should lead to a Gift Aid claim was sent.
      */
     #[ORM\Column(nullable: true)]
@@ -367,8 +361,6 @@ class Donation extends SalesforceWriteProxy
     /**
      * We only have permission to collect a preAuthorized donation on or after the given date. Intended to be used
      * with regular giving.
-     *
-     * @psalm-suppress UnusedProperty (will use soon)
      *
      * @see DonationStatus::PreAuthorized
      */
@@ -1662,9 +1654,6 @@ class Donation extends SalesforceWriteProxy
         return DonationSequenceNumber::of($this->mandateSequenceNumber);
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     public function getMandate(): ?RegularGivingMandate
     {
         return $this->mandate;
@@ -1724,10 +1713,7 @@ class Donation extends SalesforceWriteProxy
         $mandate = $this->getMandate();
         $sequenceNumber = $this->getMandateSequenceNumber();
         if ($mandate !== null && $sequenceNumber !== null) {
-            /** @psalm-suppress MixedArrayAssignment */
             $payload['metadata']['mandateId'] = $mandate->getId(); // @phpstan-ignore offsetAccess.nonOffsetAccessible
-
-            /** @psalm-suppress MixedArrayAssignment */
             $payload['metadata']['mandateSequenceNumber'] = $sequenceNumber->number; // @phpstan-ignore offsetAccess.nonOffsetAccessible
         }
 
@@ -1904,9 +1890,6 @@ class Donation extends SalesforceWriteProxy
         $this->tipGiftAid = false;
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - expected to be useful for sending donor thanks emails.
-     */
     public function getDonorId(): ?PersonId
     {
         return $this->donorUUID ? PersonId::ofUUID($this->donorUUID) : null;

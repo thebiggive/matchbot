@@ -27,9 +27,6 @@ use Symfony\Component\Messenger\Stamp\DelayStamp;
 #[AsMessageHandler]
 readonly class MandateUpsertedHandler
 {
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     public function __construct(
         private LoggerInterface $logger,
         private MandateClient $client,

@@ -25,9 +25,6 @@ trait TimestampsTrait
     #[ORM\Column(type: 'datetime')]
     protected DateTime $updatedAt;
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     #[ORM\PrePersist]
     final public function createdNow(): void
     {

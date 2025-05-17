@@ -31,7 +31,6 @@ use UnexpectedValueException;
 
 readonly class RegularGivingService
 {
-    /** @psalm-suppress PossiblyUnusedMethod - will be used by DI */
     public function __construct(
         private \DateTimeImmutable $now,
         private DonationRepository $donationRepository,

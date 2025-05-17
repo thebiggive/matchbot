@@ -150,7 +150,6 @@ class StripePaymentsUpdateTest extends StripeTest
 
         /**
          * @psalm-suppress MixedArrayAssignment
-         * @psalm-suppress MixedArrayAccess
          */
         $webhookContent['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
         $body = json_encode($webhookContent, \JSON_THROW_ON_ERROR);
@@ -206,7 +205,6 @@ class StripePaymentsUpdateTest extends StripeTest
 
         /**
          * @psalm-suppress MixedArrayAssignment
-         * @psalm-suppress MixedArrayAccess
          */
         $webhookContent['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
 

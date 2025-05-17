@@ -95,8 +95,6 @@ interface DonationRepository
      *
      * @return int  Number of objects pushed
      *
-     * @psalm-suppress PossiblyUnusedReturnValue Psalm bug? Value is used in
-     * \MatchBot\Application\Commands\PushDonations::doExecute
      *
      */
     public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus): int;

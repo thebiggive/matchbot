@@ -24,9 +24,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class PullIndividualCampaignFromSF extends LockingCommand
 {
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     public function __construct(
         private Environment $environment,
         private CampaignRepository $campaignRepository,

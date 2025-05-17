@@ -69,6 +69,8 @@ abstract class IntegrationTest extends TestCase
         };
 
         $container = require __DIR__ . '/../bootstrap.php';
+
+        /** @psalm-suppress RedundantConditionGivenDocblockType - probably not redundant for PHPStorm */
         \assert($container instanceof Container);
         IntegrationTest::setContainer($container);
         $container->set(RateLimitMiddleware::class, $noOpMiddleware);
@@ -293,8 +295,6 @@ abstract class IntegrationTest extends TestCase
      * @param string $campaignSfId
      * @return array{charityId: int, campaignId: int, fundId: int, campaignFundingId: int}
      * @throws \Doctrine\DBAL\Exception
-     * @psalm-suppress MoreSpecificReturnType
-     * @psalm-suppress LessSpecificReturnStatement
      */
     public function addFundedCampaignAndCharityToDB(
         string $campaignSfId,
@@ -319,8 +319,6 @@ abstract class IntegrationTest extends TestCase
     /**
      * @param FundType $fundType
      * @return array{fundId: int, campaignFundingId: int}
-     * @psalm-suppress MoreSpecificReturnType
-     * @psalm-suppress LessSpecificReturnStatement
      */
     public function addFunding(
         int $campaignId,

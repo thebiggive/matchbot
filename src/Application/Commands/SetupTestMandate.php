@@ -54,7 +54,6 @@ class SetupTestMandate extends LockingCommand
 {
     private \DateTimeImmutable $now;
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct(
         private Environment $environment,
         private EntityManagerInterface $em,

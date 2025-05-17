@@ -278,8 +278,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
      * Records that all donations we plan to take for this donation before the given time have been created
      * and saved as pre-authorized donations. This means that no more donations need to be created based on this
      * mandate before that date.
-     *
-     * @psalm-suppress PossiblyUnusedMethod - to be used soon.
      */
     public function setDonationsCreatedUpTo(?\DateTimeImmutable $donationsCreatedUpTo): void
     {

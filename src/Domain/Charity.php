@@ -110,7 +110,6 @@ class Charity extends SalesforceReadProxy
     protected bool $tbgClaimingGiftAid = false;
 
     /**
-     * @psalm-suppress UnusedProperty - used in a database query in DonationRepository::findReadyToClaimGiftAid
      * @var bool    Whether the charity's Gift Aid may NOW be claimed by the Big Give according to HMRC.
      */
     #[ORM\Column(type: 'boolean')]

@@ -34,9 +34,6 @@ abstract class Common
      *
      * Suppress psalm issues in this function as Psalm seems to prefer to read the type of the param
      * rather than the type of the property, and its awkward to type the array based param.
-     *
-     * @psalm-suppress MixedAssignment
-     * @psalm-suppress MixedArrayAccess
      */
     public function __construct(
         Settings $settings,

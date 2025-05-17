@@ -21,8 +21,8 @@ readonly class Donation
     /**
      * @psalm-suppress PossiblyUnusedMethod - this constructor is called by the Symfony Serializer
      *
-     * @psalm-suppress PossiblyUnusedParam - some params here are included to document that FE sends them, even though
-     * we don't do anything with them currently in matchbot.
+     * some params were once included here included to document that FE sends them, even though
+     * we don't do anything with them currently in matchbot. Check git history for details.
      */
     public function __construct(
         public float $donationAmount,

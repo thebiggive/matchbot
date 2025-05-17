@@ -49,7 +49,6 @@ class Campaign extends SalesforceReadProxy
      * Consider converting to enum or value object before using in any logic.
      *
      * Default null because campaigns not recently updated in matchbot have not pulled this field from SF.
-     * @psalm-suppress UnusedProperty
      */
     #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
     private ?string $status = null;

@@ -540,10 +540,6 @@ return function (ContainerBuilder $containerBuilder) {
 
         Auth\SalesforceAuthMiddleware::class =>
             function (ContainerInterface $c) {
-               /**
-                * @psalm-suppress MixedArrayAccess
-                * @psalm-suppress MixedArgument
-                */
                 return new Auth\SalesforceAuthMiddleware(
                     sfApiKey: $c->get(Settings::class)->salesforce['apiKey'],
                     logger: $c->get(LoggerInterface::class)
