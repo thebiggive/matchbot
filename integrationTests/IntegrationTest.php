@@ -105,8 +105,14 @@ abstract class IntegrationTest extends TestCase
     #[\Override]
     public function tearDown(): void
     {
-        $this->assertFalse($this->db()->isTransactionActive());
+        $this->assertFalse(
+            $this->db()->isTransactionActive(),
+            'Transaction should not be left open at end of test, will affect following tests. Please commit or rollback'
+        );
+
         $this->clearPreviousCampaignsCharitiesAndRelated();
+
+        parent::tearDown();
     }
 
     public static function setContainer(ContainerInterface $container): void

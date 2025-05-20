@@ -80,6 +80,12 @@ class DonationMatchingTest extends IntegrationTest
                 'Throwing after subtracting funds to test how our system handles the crash',
                 $e->getMessage(),
             );
+
+             // in prod the transaction would be effectively rolled back by the db session
+            // ending without a commit. Here we share the db session with subsequent tests
+            // so we have to explicitly rollback.
+
+            $this->db()->rollBack();
         }
 
         // assert
