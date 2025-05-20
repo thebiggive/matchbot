@@ -19,7 +19,10 @@ use Ramsey\Uuid\UuidInterface;
 
 trait DonationTestDataTrait
 {
-    protected function getStripeHookMock(string $path): string
+    /**
+     * @param array<string, mixed> $dataOverrides - partial array of data to override ach data item within a list
+     */
+    protected function getStripeHookMock(string $path, array $dataOverrides = []): string
     {
         $fullPath = sprintf(
             '%s/TestData/StripeWebhook/%s.json',
@@ -31,7 +34,16 @@ trait DonationTestDataTrait
 
         \assert(is_string($contents));
 
-        return $contents;
+        $contentsAsArray = \json_decode($contents, associative: true, flags: \JSON_THROW_ON_ERROR);
+
+        if (\array_key_exists('data', $contentsAsArray)) {
+            $contentsAsArray['data'] = \array_map(
+                static fn(array $datum) => \array_merge($datum, $dataOverrides),
+                $contentsAsArray['data']
+            );
+        }
+
+        return \json_encode($contentsAsArray, flags: \JSON_PRETTY_PRINT);
     }
 
     /**

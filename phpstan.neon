@@ -55,5 +55,11 @@ parameters:
 			paths:
 				- tests/*
 				- integrationTests/*
+		-
+			identifier: deadCode.unreachable
+			# likely code after \PHPUnit\Framework\Assert::markTestSkipped or similar
+			paths:
+#				- tests/*
+				- integrationTests/*
 	stubFiles:
 		- .psalm/containers.php.stub

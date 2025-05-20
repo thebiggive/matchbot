@@ -258,23 +258,23 @@ parameters:
 			count: 1
 			path: tests/Application/Matching/AllocatorTest.php
 
-		-
-			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$balanceTransactions\.$#'
-			identifier: property.notFound
-			count: 5
-			path: tests/Application/Messenger/Handler/StripePayoutHandlerTest.php
-
-		-
-			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$charges\.$#'
-			identifier: property.notFound
-			count: 4
-			path: tests/Application/Messenger/Handler/StripePayoutHandlerTest.php
-
-		-
-			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$payouts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Application/Messenger/Handler/StripePayoutHandlerTest.php
+#		-
+#			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$balanceTransactions\.$#'
+#			identifier: property.notFound
+#			count: 5
+#			path: tests/Application/Messenger/Handler/StripePayoutHandlerTest.php
+#
+#		-
+#			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$charges\.$#'
+#			identifier: property.notFound
+#			count: 4
+#			path: tests/Application/Messenger/Handler/StripePayoutHandlerTest.php
+#
+#		-
+#			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$payouts\.$#'
+#			identifier: property.notFound
+#			count: 1
+#			path: tests/Application/Messenger/Handler/StripePayoutHandlerTest.php
 
 		-
 			message: '#^Property Stripe\\ConfirmationToken\:\:\$payment_method_preview \(Stripe\\StripeObject\|null\) does not accept array\<string, array\<string, string\>\>\.$#'

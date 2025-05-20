@@ -16,6 +16,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Tests\TestCase as TestCaseAlias;
 use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
@@ -395,11 +396,6 @@ abstract class IntegrationTest extends TestCase
         return $stripePaymentIntentsProphecy;
     }
 
-    public static function randomString(): string
-    {
-        return (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
-    }
-
     /**
      * @return App<ContainerInterface|null>
      */
@@ -519,5 +515,10 @@ abstract class IntegrationTest extends TestCase
                 serverParams: ['REMOTE_ADDR' => '127.0.0.1']
             )
         );
+    }
+
+    protected static function randomString(): string
+    {
+        return TestCaseAlias::randomString();
     }
 }

@@ -64,6 +64,11 @@ class TestCase extends PHPUnitTestCase
         );
     }
 
+    public static function randomString(): string
+    {
+        return (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
+    }
+
     public function getContainer(): ContainerInterface
     {
         $container = $this->getAppInstance()->getContainer();
@@ -290,6 +295,7 @@ class TestCase extends PHPUnitTestCase
         ?EmailAddress $emailAddress = null,
         ?DonorName $donorName = null,
         bool $collected = false,
+        ?string $transferId = null,
     ): Donation {
         $donation = new Donation(
             amount: $amount,
@@ -317,18 +323,18 @@ class TestCase extends PHPUnitTestCase
         $donation->setUuid($uuid ?? Uuid::uuid4());
 
         if ($collected) {
-            self::collectDonation($donation);
+            self::collectDonation($donation, $transferId);
         }
 
         return $donation;
     }
 
-    protected static function collectDonation(Donation $donationResponse): void
+    protected static function collectDonation(Donation $donationResponse, ?string $transferId = null): void
     {
         $donationResponse->collectFromStripeCharge(
-            chargeId: 'testchargeid',
+            chargeId: 'testchargeid_' . self::randomString(),
             totalPaidFractional: 100, // irrelevant
-            transferId: 'test_transfer_id',
+            transferId: $transferId ?? 'test_transfer_id',
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',
