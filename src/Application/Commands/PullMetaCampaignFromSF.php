@@ -32,9 +32,6 @@ use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 )]
 class PullMetaCampaignFromSF extends LockingCommand
 {
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     public function __construct(
         private CampaignRepository $campaignRepository,
         private FundRepository $fundRepository

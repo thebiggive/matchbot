@@ -24,9 +24,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class PullIndividualCampaignFromSF extends LockingCommand
 {
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     public function __construct(
         private Environment $environment,
         private CampaignRepository $campaignRepository,
@@ -49,6 +46,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
     {
         Assertion::notEq($this->environment, Environment::Production);
 
+        // @phpstan-ignore cast.string
         $campaignId = Salesforce18Id::ofCampaign((string) $input->getArgument('CampaignSFID'));
 
         $campaign = $this->campaignRepository->findOneBySalesforceId($campaignId);

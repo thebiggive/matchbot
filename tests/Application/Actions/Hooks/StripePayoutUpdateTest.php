@@ -38,7 +38,7 @@ class StripePayoutUpdateTest extends StripeTest
 
         $response = $app->handle($request);
 
-        $this->assertEquals(204, $response->getStatusCode());
+        $this->assertSame(204, $response->getStatusCode());
     }
 
     public function testMissingSignature(): void
@@ -68,8 +68,8 @@ class StripePayoutUpdateTest extends StripeTest
 
         $payload = (string) $response->getBody();
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function testPayoutPaidQueueDispatchError(): void
@@ -96,7 +96,7 @@ class StripePayoutUpdateTest extends StripeTest
 
         $response = $app->handle($request);
 
-        $this->assertEquals(500, $response->getStatusCode());
+        $this->assertSame(500, $response->getStatusCode());
     }
 
     public function testPayoutPaidProcessingQueued(): void
@@ -120,7 +120,7 @@ class StripePayoutUpdateTest extends StripeTest
 
         $response = $app->handle($request);
 
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
         $this->assertCount(1, $transport->getSent());
     }
 
@@ -153,7 +153,7 @@ class StripePayoutUpdateTest extends StripeTest
             ->shouldBeCalledOnce();
         $response = $app->handle($request);
 
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
         $this->assertCount(0, $transport->getSent());
     }
 }

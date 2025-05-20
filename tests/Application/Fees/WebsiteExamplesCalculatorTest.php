@@ -77,13 +77,9 @@ class WebsiteExamplesCalculatorTest extends TestCase
     ];
 
     /**
-     * @psalm-suppress MixedReturnStatement
-     * @psalm-suppress MoreSpecificReturnType
-     * @psalm-suppress LessSpecificReturnStatement
-     *
      * @return array<string, array<array>>
      */
-    public function getFeeWorkedExamples(): array
+    public function getFeeWorkedExamples(): array // @phpstan-ignore missingType.iterableValue
     {
         return array_map(fn(array $args) => [$args], self::WORKED_EXAMPLES);
     }
@@ -95,9 +91,8 @@ class WebsiteExamplesCalculatorTest extends TestCase
      * @psalm-suppress MixedArgument
      * @psalm-suppress MixedAssignment
      * @psalm-suppress ArgumentTypeCoercion
-     * @psalm-suppress PossiblyInvalidArgument
      */
-    public function testItCalculatesFeesAsShownOnWebsite(array $args): void
+    public function testItCalculatesFeesAsShownOnWebsite(array $args): void // @phpstan-ignore missingType.iterableValue
     {
         extract($args);
 

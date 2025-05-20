@@ -9,9 +9,6 @@ use MatchBot\Client\Mailer;
 
 class DonationNotifier
 {
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - used by DI container
-     */
     public function __construct(
         private Mailer $mailer,
         private EmailVerificationTokenRepository $emailVerificationTokenRepository,

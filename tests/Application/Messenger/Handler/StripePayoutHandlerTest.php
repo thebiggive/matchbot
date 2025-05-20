@@ -164,10 +164,10 @@ class StripePayoutHandlerTest extends TestCase
         $this->invokePayoutHandler($container, new NullLogger());
 
         // We expect donations that are not in 'Collected' status to remain the same.
-        $this->assertEquals(DonationStatus::Failed, $donation->getDonationStatus());
+        $this->assertSame(DonationStatus::Failed, $donation->getDonationStatus());
 
         // Nothing to push to SF.
-        $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_COMPLETE, $donation->getSalesforcePushStatus());
+        $this->assertSame(SalesforceWriteProxy::PUSH_STATUS_COMPLETE, $donation->getSalesforcePushStatus());
     }
 
     public function testSuccessfulUpdateFromFirstPayout(): void
@@ -208,8 +208,8 @@ class StripePayoutHandlerTest extends TestCase
 
         $this->invokePayoutHandler($container, new NullLogger());
 
-        $this->assertEquals(DonationStatus::Paid, $donation->getDonationStatus());
-        $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $donation->getSalesforcePushStatus());
+        $this->assertSame(DonationStatus::Paid, $donation->getDonationStatus());
+        $this->assertSame(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $donation->getSalesforcePushStatus());
     }
 
     /**
@@ -271,8 +271,8 @@ class StripePayoutHandlerTest extends TestCase
 
         $this->invokePayoutHandler($container, new NullLogger(), self::RETRIED_PAYOUT_ID);
 
-        $this->assertEquals(DonationStatus::Paid, $donation->getDonationStatus());
-        $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $donation->getSalesforcePushStatus());
+        $this->assertSame(DonationStatus::Paid, $donation->getDonationStatus());
+        $this->assertSame(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $donation->getSalesforcePushStatus());
     }
 
     /**
@@ -317,7 +317,7 @@ class StripePayoutHandlerTest extends TestCase
         $this->invokePayoutHandler($container, $loggerProphecy->reveal());
 
         // No change because payout's failed.
-        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
+        $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
     }
 
     /**
@@ -364,7 +364,7 @@ class StripePayoutHandlerTest extends TestCase
         return $stripeClientProphecy;
     }
 
-    private function getCommonCalloutArgs(): array
+    private function getCommonCalloutArgs(): array // @phpstan-ignore missingType.iterableValue
     {
         return [
             // Based on the date range from our standard test data payout (donation time -6M and +1D).

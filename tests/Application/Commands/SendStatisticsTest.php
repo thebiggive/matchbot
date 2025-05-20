@@ -69,8 +69,8 @@ class SendStatisticsTest extends TestCase
             'Sent 2 metrics to CloudWatch',
             'matchbot:send-statistics complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testBusyStatsPushThreeFigures(): void
@@ -121,7 +121,7 @@ class SendStatisticsTest extends TestCase
             'Sent 3 metrics to CloudWatch',
             'matchbot:send-statistics complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 }

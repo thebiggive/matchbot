@@ -97,8 +97,8 @@ class GiftAidResultHandlerTest extends TestCase
         $giftAidResultHandler($donationMessage);
 
         $this->assertInstanceOf(\DateTime::class, $testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
-        $this->assertEquals('failingCorrId', $testDonationPassedToProphecy->getTbgGiftAidRequestCorrelationId());
-        $this->assertEquals('Donation error deets', $testDonationPassedToProphecy->getTbgGiftAidResponseDetail());
+        $this->assertSame('failingCorrId', $testDonationPassedToProphecy->getTbgGiftAidRequestCorrelationId());
+        $this->assertSame('Donation error deets', $testDonationPassedToProphecy->getTbgGiftAidResponseDetail());
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestConfirmedCompleteAt());
     }
 
@@ -138,8 +138,8 @@ class GiftAidResultHandlerTest extends TestCase
             \DateTime::class,
             $testDonationPassedToProphecy->getTbgGiftAidRequestConfirmedCompleteAt(),
         );
-        $this->assertEquals('goodCorrId', $testDonationPassedToProphecy->getTbgGiftAidRequestCorrelationId());
-        $this->assertEquals('Thx for ur submission', $testDonationPassedToProphecy->getTbgGiftAidResponseDetail());
+        $this->assertSame('goodCorrId', $testDonationPassedToProphecy->getTbgGiftAidRequestCorrelationId());
+        $this->assertSame('Thx for ur submission', $testDonationPassedToProphecy->getTbgGiftAidResponseDetail());
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
     }
 

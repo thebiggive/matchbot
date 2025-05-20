@@ -28,6 +28,7 @@ readonly class DonationUpsertedHandler
 
         $jsonSnapshot = $message->jsonSnapshot;
 
+        // @phpstan-ignore cast.string
         $messageDate = (string)($jsonSnapshot[DonationUpserted::SNAPSHOT_TAKEN_AT] ?? 'unknown date');
 
         $this->logger->info("DUH invoked for UUID: $donationUUID, handling message from $messageDate");

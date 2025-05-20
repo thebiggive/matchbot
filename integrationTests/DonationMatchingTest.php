@@ -76,7 +76,7 @@ class DonationMatchingTest extends IntegrationTest
                 amountInPounds: 10,
             );
         } catch (\Exception $e) {
-            $this->assertEquals(
+            $this->assertSame(
                 'Throwing after subtracting funds to test how our system handles the crash',
                 $e->getMessage(),
             );
@@ -130,7 +130,6 @@ class DonationMatchingTest extends IntegrationTest
         };
     }
 
-    /** @psalm-suppress MixedArgument */
     #[\Override]
     public function tearDown(): void
     {

@@ -87,7 +87,6 @@ trait DonationTestDataTrait
         // next action, we don't cancel the pending donation.
         $campaign->setName('Big Give General Donations');
 
-        /** @psalm-suppress DeprecatedMethod **/
         $donation = TestCase::someDonation(
             amount: $amount,
             paymentMethodType: $pspMethodType,

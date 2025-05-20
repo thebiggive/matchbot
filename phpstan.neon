@@ -1,8 +1,9 @@
 includes:
 	- phpstan-baseline.neon
+	- phar://phpstan.phar/conf/bleedingEdge.neon
 parameters:
 	# Phpstan levels go the opposite way to Psalm - 1 is the laxest, 10 is the strictest.
-	level: 5
+	level: 6
 	paths:
 		- src
 		- tests
@@ -11,6 +12,7 @@ parameters:
 	treatPhpDocTypesAsCertain: false
 	checkUninitializedProperties: true
 	rememberPossiblyImpureFunctionValues: false
+	checkExplicitMixed: true
 	strictRules:
 		disallowedLooseComparison: false
 		booleansInConditions: false
@@ -48,3 +50,10 @@ parameters:
 			paths:
 				- tests/*
 				- integrationTests/*
+		-
+			identifier: offsetAccess.nonOffsetAccessible
+			paths:
+				- tests/*
+				- integrationTests/*
+	stubFiles:
+		- .psalm/containers.php.stub

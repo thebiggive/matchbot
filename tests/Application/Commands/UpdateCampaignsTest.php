@@ -51,8 +51,8 @@ class UpdateCampaignsTest extends TestCase
             'Updated campaign someCampaignIdxxxx',
             'matchbot:update-campaigns complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testSingleUpdateNotFoundOnSalesforceOutsideProduction(): void
@@ -88,8 +88,8 @@ class UpdateCampaignsTest extends TestCase
             'Skipping unknown sandbox campaign missingOnSfIDxxxxx',
             'matchbot:update-campaigns complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testSingleUpdateHitsTransferExceptionTwice(): void
@@ -132,8 +132,8 @@ class UpdateCampaignsTest extends TestCase
             'Skipping campaign someCampaignIdxxxx due to 2nd transfer error "dummy exc message"',
             'matchbot:update-campaigns complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     /**
@@ -190,11 +190,11 @@ class UpdateCampaignsTest extends TestCase
             'Updated campaign someCampaignIdxxxx',
             'matchbot:update-campaigns complete!',
         ];
-        $this->assertEquals(
+        $this->assertSame(
             implode("\n", $expectedOutputLines) . "\n",
             $commandTester->getDisplay()
         );
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testSingleUpdateSuccessWithAllOption(): void
@@ -228,7 +228,7 @@ class UpdateCampaignsTest extends TestCase
             'Updated campaign someCampaignIdxxxx',
             'matchbot:update-campaigns complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 }

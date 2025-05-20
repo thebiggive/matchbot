@@ -64,8 +64,8 @@ class RetrospectivelyMatchTest extends TestCase
             'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testNonWholeDaysBackIsRounded(): void
@@ -82,8 +82,8 @@ class RetrospectivelyMatchTest extends TestCase
             'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testWholeDaysBackProceeds(): void
@@ -100,8 +100,8 @@ class RetrospectivelyMatchTest extends TestCase
             'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     private function getAllocator(bool $matchingIsAllocated): Allocator

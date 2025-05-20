@@ -315,7 +315,7 @@ class DonationServiceTest extends TestCase
         // act
         $this->getDonationService()->confirmOnSessionDonation($donation, $confirmationTokenId);
 
-        $this->assertEquals('0.52', $donation->getCharityFeeGross());
+        $this->assertSame('0.52', $donation->getCharityFeeGross());
     }
 
 
@@ -342,9 +342,9 @@ class DonationServiceTest extends TestCase
         $donation = $this->getDonationService(campaignRepoProphecy: $campaignRepoProphecy)
             ->buildFromAPIRequest($createPayload, PersonId::nil());
 
-        $this->assertEquals('USD', $donation->currency()->isoCode());
-        $this->assertEquals('123', $donation->getAmount());
-        $this->assertEquals(12_300, $donation->getAmountFractionalIncTip());
+        $this->assertSame('USD', $donation->currency()->isoCode());
+        $this->assertSame('123', $donation->getAmount());
+        $this->assertSame(12_300, $donation->getAmountFractionalIncTip());
     }
 
 

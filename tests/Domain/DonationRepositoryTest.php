@@ -125,8 +125,8 @@ class DonationRepositoryTest extends TestCase
         // Amount after fee = £955.85
 
         // Deduct tip + fee.
-        $this->assertEquals(48_16, $donation->getAmountToDeductFractional());
-        $this->assertEquals(949_49, $donation->getAmountForCharityFractional());
+        $this->assertSame(48_16, $donation->getAmountToDeductFractional());
+        $this->assertSame(949_49, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithTipUsingUSCard(): void
@@ -145,8 +145,8 @@ class DonationRepositoryTest extends TestCase
         // Amount after fee = £955.85
 
         // Deduct tip + fee.
-        $this->assertEquals(48_16, $donation->getAmountToDeductFractional());
-        $this->assertEquals(949_49, $donation->getAmountForCharityFractional());
+        $this->assertSame(48_16, $donation->getAmountToDeductFractional());
+        $this->assertSame(949_49, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithTip(): void
@@ -165,8 +165,8 @@ class DonationRepositoryTest extends TestCase
         // Amount after fee = £972.64
 
         // Deduct tip + fee.
-        $this->assertEquals(28_01, $donation->getAmountToDeductFractional());
-        $this->assertEquals(969_64, $donation->getAmountForCharityFractional());
+        $this->assertSame(28_01, $donation->getAmountToDeductFractional());
+        $this->assertSame(969_64, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityAndFeeVatWithTipAndVat(): void
@@ -185,11 +185,11 @@ class DonationRepositoryTest extends TestCase
         // 20% VAT on fee   = £  3.00 (2 d.p)
         // Amount after fee = £969.64
 
-        $this->assertEquals('15.01', $donation->getCharityFee());
-        $this->assertEquals('3.00', $donation->getCharityFeeVat());
+        $this->assertSame('15.01', $donation->getCharityFee());
+        $this->assertSame('3.00', $donation->getCharityFeeVat());
         // Deduct tip + fee inc. VAT.
-        $this->assertEquals(2_801, $donation->getAmountToDeductFractional());
-        $this->assertEquals(96_964, $donation->getAmountForCharityFractional());
+        $this->assertSame(2_801, $donation->getAmountToDeductFractional());
+        $this->assertSame(96_964, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTip(): void
@@ -205,8 +205,8 @@ class DonationRepositoryTest extends TestCase
         // Total fee in vcat = 18.012
         // Amount after fee = £972.64
 
-        $this->assertEquals(18_01, $donation->getAmountToDeductFractional());
-        $this->assertEquals(96_964, $donation->getAmountForCharityFractional());
+        $this->assertSame(18_01, $donation->getAmountToDeductFractional());
+        $this->assertSame(96_964, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTipWhenTbgClaimingGiftAid(): void
@@ -223,8 +223,8 @@ class DonationRepositoryTest extends TestCase
         // Total fee inc vat = £ 26.904
         // Amount after fee = £965.23
 
-        $this->assertEquals(26_90, $donation->getAmountToDeductFractional());
-        $this->assertEquals(96_075, $donation->getAmountForCharityFractional());
+        $this->assertSame(26_90, $donation->getAmountToDeductFractional());
+        $this->assertSame(96_075, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
@@ -238,8 +238,8 @@ class DonationRepositoryTest extends TestCase
         // Total fee    = £ 0.29
         // Total fee inc vat = £ 0.348
         // After fee    = £ 5.96
-        $this->assertEquals(35, $donation->getAmountToDeductFractional());
-        $this->assertEquals(5_90, $donation->getAmountForCharityFractional());
+        $this->assertSame(35, $donation->getAmountToDeductFractional());
+        $this->assertSame(5_90, $donation->getAmountForCharityFractional());
     }
 
     public function testAbandonOldCancelled(): void
@@ -281,7 +281,7 @@ class DonationRepositoryTest extends TestCase
             new ClassMetadata(Donation::class),
         );
 
-        $this->assertEquals(1, $repo->abandonOldCancelled());
+        $this->assertSame(1, $repo->abandonOldCancelled());
     }
 
     public function testFindReadyToClaimGiftAid(): void
@@ -336,7 +336,7 @@ class DonationRepositoryTest extends TestCase
             new ClassMetadata(Donation::class),
         );
 
-        $this->assertEquals(
+        $this->assertSame(
             [$testDonation],
             $repo->findReadyToClaimGiftAid(false),
         );
@@ -377,7 +377,7 @@ class DonationRepositoryTest extends TestCase
             new ClassMetadata(Donation::class),
         );
 
-        $this->assertEquals(
+        $this->assertSame(
             [$testDonation],
             $repo->findWithTransferIdInArray(['tr_id_from_test_donation']),
         );

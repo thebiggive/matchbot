@@ -59,7 +59,7 @@ class StripePaymentsUpdate extends Stripe
          * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
          * is final and does not implement our custom interface.
          */
-        $chatter = $container->get(StripeChatterInterface::class);
+        $chatter = $container->get(StripeChatterInterface::class); // @phpstan-ignore varTag.type
         $this->chatter = $chatter;
 
         parent::__construct($container, $logger);
@@ -406,7 +406,6 @@ class StripePaymentsUpdate extends Stripe
         /**
          * https://docs.stripe.com/api/events/types?event_types-invoice.payment_succeeded=#event_types-payment_intent.canceled
          * says "data.object is a payment intent" so:
-         *
          */
         $paymentIntent = $event->data->object;
         \assert($paymentIntent instanceof PaymentIntent);
@@ -513,7 +512,7 @@ class StripePaymentsUpdate extends Stripe
     {
         Assertion::eq('customer_cash_balance_transaction.created', $event->type);
 
-        /** @var array $eventAsArray
+        /** @var array<string, mixed> $eventAsArray
          * @psalm-suppress MixedMethodCall
          * (not sure why Psalm can't tell that this is an array since Upgrade to stripe Library v.17)
          */

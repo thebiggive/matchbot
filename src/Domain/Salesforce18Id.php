@@ -28,6 +28,7 @@ class Salesforce18Id implements JsonSerializable
 
     /**
      * @throws AssertionFailedException
+     * @return self<SalesforceProxy>
      */
     public static function of(string $value): self
     {
@@ -46,6 +47,14 @@ class Salesforce18Id implements JsonSerializable
     }
 
     /**
+     * @return self<Fund>
+     */
+    public static function ofFund(string $id): self
+    {
+        return new self($id, Fund::class);
+    }
+
+    /**
      * @return self<Campaign>
      */
     public static function ofCampaign(string $id): self
@@ -53,14 +62,19 @@ class Salesforce18Id implements JsonSerializable
         return new self($id, Campaign::class);
     }
 
+    /**
+     * @return self<RegularGivingMandate>
+     */
+    public static function ofRegularGivingMandate(string $id)
+    {
+        return new self($id, RegularGivingMandate::class);
+    }
+
     public function __toString(): string
     {
         return $this->value;
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - used indirectly
-     */
     #[\Override]
     public function jsonSerialize(): string
     {

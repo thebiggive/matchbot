@@ -40,7 +40,7 @@ class StripePayoutUpdate extends Stripe
          * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
          * is final and does not implement our custom interface.
          */
-        $chatter = $container->get(StripeChatterInterface::class);
+        $chatter = $container->get(StripeChatterInterface::class); // @phpstan-ignore varTag.type
         $this->chatter = $chatter;
 
         parent::__construct($container, $logger);
@@ -81,8 +81,6 @@ class StripePayoutUpdate extends Stripe
             case Event::PAYOUT_FAILED:
                 /**
                  * @var string $id
-                 * @psalm-suppress UndefinedMagicPropertyFetch
-                 * @psalm-suppress MixedPropertyFetch
                  */
                 $id = $event->data->object->id;
                 $failureMessage = sprintf(
@@ -111,7 +109,6 @@ class StripePayoutUpdate extends Stripe
     private function handlePayoutPaid(Request $request, Event $event, Response $response): Response
     {
         /**
-         * @psalm-suppress UndefinedMagicPropertyFetch
          * @var \Stripe\StripeObject&object{id: string, automatic: bool} $object
          */
         $object = $event->data->object;
