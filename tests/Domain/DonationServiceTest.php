@@ -121,19 +121,20 @@ class DonationServiceTest extends TestCase
 
     public function testInitialPersistRunsOutOfRetries(): void
     {
-        $this->markTestSkipped('retry not being done at same level now - consider moving to test for retry higher in stack');
-
         $logger = $this->prophesize(LoggerInterface::class);
         $logger->info(
             'Donation Create persist before stripe work error: ' .
             'An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.'
+        )->shouldBeCalledTimes(2);
+        $logger->warning(
+            'Error creating donation, will retry: An exception occurred in the driver: EXCEPTION_MESSAGE'
         )->shouldBeCalledOnce();
         $logger->info(Argument::type('string'))->shouldBeCalled();
         $logger->error(
             'Donation Create persist before stripe work error: ' .
             'An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.'
         )
-            ->shouldBeCalledOnce();
+            ->shouldBeCalledTimes(2);
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
 
