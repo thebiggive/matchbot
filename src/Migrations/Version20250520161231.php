@@ -31,7 +31,7 @@ final class Version20250520161231 extends AbstractMigration
         $this->addSql(
             <<<SQL
             UPDATE Donation SET 
-                                Donation.donorEmailAddress = 'email-redacted',
+                               donorEmailAddress = 'email-redacted',
                                 salesforcePushStatus = 'pending-update'
                             WHERE Donation.id in 
                                   (402803,515709,516912,517671,517996,600261,643364,643374,643381,643390,643410,690965,691217,691316,691471,840246,840262,840279,842583,854145,854163,1120434,1120546,1120594,1120646,1120782,1124055,1124079)
