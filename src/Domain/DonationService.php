@@ -377,18 +377,10 @@ class DonationService
         // tracking instead so that a retry can work.
         $this->entityManager->beginTransaction();
 
-        // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
-        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
-        $this->runWithPossibleRetry(function () use ($donation) {
-            $this->entityManager->persist($donation);
-            try {
-                $this->entityManager->flush();
-            } catch (\Throwable $exception) {
-                $this->entityManager->rollback();
-                $this->entityManager->detach($donation);
-                throw $exception;
-            }
-        }, 'Donation Create persist before stripe work');
+        // Must persist before Stripe work to have ID available. No retries at this level as it's cleaner to begin
+        // again with a fresh donation.
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
 
         if ($campaign->isMatched() && $attemptMatching) {
             try {

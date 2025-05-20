@@ -140,27 +140,13 @@ class DonationServiceTest extends TestCase
             $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil());
             $this->fail('Should have thrown LockWaitTimeoutException');
         } catch (LockWaitTimeoutException) {
-            // pass
+            // pass – in app context, final exception will be surfaced as an error to Slack etc.
         }
 
-        // We will have a tried persisting the donation a total of six times,
-        // since \MatchBot\Domain\DonationService::createDonation has logic to retry once, and within each of those
-        // two tries \MatchBot\Domain\DonationService::enrollNewDonation calls
-        // \MatchBot\Domain\DonationService::runWithPossibleRetry which retires up to three times.
-        //
-        // Potentially six retries is more than we need.
         $this->assertSame(
             <<<'EOF'
-            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.
-            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 2 of 3.
-            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 3 of 3.
-            error: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.
             warning: Error creating donation, will retry: An exception occurred in the driver: EXCEPTION_MESSAGE
-            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.
-            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 2 of 3.
-            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 3 of 3.
-            error: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.
-            
+
             EOF,
             $logger->logString
         );
