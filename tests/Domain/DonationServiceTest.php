@@ -123,33 +123,33 @@ class DonationServiceTest extends TestCase
     {
         $this->markTestSkipped('retry not being done at same level now - consider moving to test for retry higher in stack');
 
-//        $logger = $this->prophesize(LoggerInterface::class);
-//        $logger->info(
-//            'Donation Create persist before stripe work error: ' .
-//            'An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.'
-//        )->shouldBeCalledOnce();
-//        $logger->info(Argument::type('string'))->shouldBeCalled();
-//        $logger->error(
-//            'Donation Create persist before stripe work error: ' .
-//            'An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.'
-//        )
-//            ->shouldBeCalledOnce();
-//
-//        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-//
-//        $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: true, logger: $logger->reveal(), campaignRepoProphecy: $campaignRepoProphecy);
-//
-//        $donationCreate = $this->getDonationCreate();
-//        $donation = $this->getDonation();
-//        $campaignRepoProphecy->findOneBy(['salesforceId' => self::CAMPAIGN_ID])
-//            ->willReturn($donation->getCampaign());
-//
-//        $this->stripeProphecy->createPaymentIntent(Argument::any())
-//            ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
-//
-//        $this->expectException(LockWaitTimeoutException::class);
-//
-//        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil());
+        $logger = $this->prophesize(LoggerInterface::class);
+        $logger->info(
+            'Donation Create persist before stripe work error: ' .
+            'An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.'
+        )->shouldBeCalledOnce();
+        $logger->info(Argument::type('string'))->shouldBeCalled();
+        $logger->error(
+            'Donation Create persist before stripe work error: ' .
+            'An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.'
+        )
+            ->shouldBeCalledOnce();
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+
+        $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: true, logger: $logger->reveal(), campaignRepoProphecy: $campaignRepoProphecy);
+
+        $donationCreate = $this->getDonationCreate();
+        $donation = $this->getDonation();
+        $campaignRepoProphecy->findOneBy(['salesforceId' => self::CAMPAIGN_ID])
+            ->willReturn($donation->getCampaign());
+
+        $this->stripeProphecy->createPaymentIntent(Argument::any())
+            ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
+
+        $this->expectException(LockWaitTimeoutException::class);
+
+        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil());
     }
 
     public function testRefusesToConfirmPreAuthedDonationForNonActiveMandate(): void
