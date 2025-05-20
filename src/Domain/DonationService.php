@@ -124,14 +124,15 @@ class DonationService
      */
     public function createDonation(DonationCreate $donationData, string $pspCustomerId, PersonId $donorId): Donation
     {
+        $donation = $this->doCreateDonation($pspCustomerId, $donationData, $donorId);
         try {
-            return $this->doCreateDonation($pspCustomerId, $donationData, $donorId);
+            return $donation;
         } catch (RetryableException $exception) {
             /**
              * See notes on {@see self::enrollNewDonation} for EM side effect details.
              */
             $this->logger->warning("Error creating donation, will retry: " . $exception->getMessage());
-            return $this->doCreateDonation($pspCustomerId, $donationData, $donorId);
+            return $donation;
         }
     }
 
@@ -385,7 +386,8 @@ class DonationService
                 $this->entityManager->flush();
             } catch (\Throwable $exception) {
                 $this->entityManager->rollback();
-                $this->entityManager->detach($donation);
+                $this->entityManager->detach($donation); // no-one should be catching Throwable unless going to shutdown or reset the EM so detatching this
+                                                         // probably doesn't matter either way - closing em would be as good?
                 throw $exception;
             }
         }, 'Donation Create persist before stripe work');
