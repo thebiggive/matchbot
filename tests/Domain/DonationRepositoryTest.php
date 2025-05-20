@@ -363,7 +363,7 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->where('d.transferId IN (:transferIds)')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
-        $queryBuilderProphecy->setParameter('transferIds', ['tr_externalId_123'])
+        $queryBuilderProphecy->setParameter('transferIds', ['tr_id_from_test_donation'])
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
 
         $queryBuilderProphecy->getQuery()->willReturn($query->reveal());
@@ -379,7 +379,7 @@ class DonationRepositoryTest extends TestCase
 
         $this->assertEquals(
             [$testDonation],
-            $repo->findWithTransferIdInArray(['tr_externalId_123']),
+            $repo->findWithTransferIdInArray(['tr_id_from_test_donation']),
         );
     }
 

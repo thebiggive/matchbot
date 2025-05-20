@@ -112,7 +112,7 @@ trait DonationTestDataTrait
             $donation->collectFromStripeCharge(
                 chargeId: 'ch_externalId_123',
                 totalPaidFractional: (int)(((float)$amount + (float)$tipAmount) * 100.0),
-                transferId: 'tr_externalId_123',
+                transferId: 'tr_id_from_test_donation',
                 cardBrand: null,
                 cardCountry: null,
                 originalFeeFractional: '122', // £1.22

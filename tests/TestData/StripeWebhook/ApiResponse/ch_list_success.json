@@ -85,7 +85,7 @@
       },
       "review": null,
       "shipping": null,
-      "source_transfer": "tr_externalId_123",
+      "source_transfer": "tr_id_supplied_in_list_success",
       "statement_descriptor": null,
       "statement_descriptor_suffix": null,
       "status": "succeeded",
