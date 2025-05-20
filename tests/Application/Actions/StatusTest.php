@@ -52,8 +52,8 @@ class StatusTest extends TestCase
         $expectedPayload = new ActionPayload(200, ['status' => 'OK']);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
     }
 
     public function testRedisErrorWithDummyHostname(): void
@@ -72,8 +72,8 @@ class StatusTest extends TestCase
         $expectedPayload = new ActionPayload(500, ['error' => 'Redis not connected']);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals(500, $response->getStatusCode());
-        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertSame(500, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
     }
 
     public function testMissingDoctrineORMProxy(): void
@@ -93,8 +93,8 @@ class StatusTest extends TestCase
         $expectedPayload = new ActionPayload(500, ['error' => 'Doctrine proxies not built']);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals(500, $response->getStatusCode());
-        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertSame(500, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
     }
 
     private function getConnectedMockEntityManager(

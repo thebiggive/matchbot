@@ -9,6 +9,7 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
     /** @var array<string,string> */
     private array $storage;
 
+    /** @var list<string|true> */
     private array $responses = [];
 
     private bool $multiMode = false;

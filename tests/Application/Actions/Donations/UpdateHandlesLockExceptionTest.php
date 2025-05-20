@@ -181,7 +181,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
                 throw new LockWaitTimeoutException($testCase->createStub(DriverException::class), null);
             }
 
-            TestCase::assertEquals($newStatus, $donation->getDonationStatus());
+            TestCase::assertSame($newStatus, $donation->getDonationStatus());
             return null;
         });
 

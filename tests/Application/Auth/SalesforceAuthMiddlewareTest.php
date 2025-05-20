@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Auth;
 
 use MatchBot\Application\Auth\SalesforceAuthMiddleware;
 use MatchBot\Tests\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\NullLogger;
 use Slim\CallableResolver;
@@ -27,7 +28,7 @@ class SalesforceAuthMiddlewareTest extends TestCase
 
         $response = $this->getInstance()->process($request, $this->getSuccessHandler());
 
-        $this->assertEquals(401, $response->getStatusCode());
+        $this->assertSame(401, $response->getStatusCode());
     }
 
     public function testWrongAuthRejected(): void
@@ -38,7 +39,7 @@ class SalesforceAuthMiddlewareTest extends TestCase
 
         $response = $this->getInstance()->process($request, $this->getSuccessHandler());
 
-        $this->assertEquals(401, $response->getStatusCode());
+        $this->assertSame(401, $response->getStatusCode());
     }
 
     public function testCorrectAuthAccepted(): void
@@ -49,7 +50,7 @@ class SalesforceAuthMiddlewareTest extends TestCase
         $request = $this->buildRequest($body, $hash);
         $response = $this->getInstance()->process($request, $this->getSuccessHandler());
 
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     private function buildRequest(string $body, ?string $hash = null): ServerRequestInterface
@@ -63,6 +64,8 @@ class SalesforceAuthMiddlewareTest extends TestCase
     /**
      * Simulate a route returning a 200 OK. Test methods should get here only when they expect auth
      * success from the middleware.
+     *
+     * @return Route<null>
      */
     private function getSuccessHandler(): Route
     {

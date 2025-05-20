@@ -187,7 +187,7 @@ class RegularGivingServiceTest extends TestCase
             $this->donations[2]->getPreAuthorizationDate()
         );
 
-        $this->assertEquals(Country::fromEnum(CountryAlpha2::Kiribati)->alpha2->value, $this->donorAccount->getBillingCountryCode());
+        $this->assertSame(Country::fromEnum(CountryAlpha2::Kiribati)->alpha2->value, $this->donorAccount->getBillingCountryCode());
         $this->assertSame('KI0107', $this->donorAccount->getBillingPostcode());
 
         // Pending, and no notification, until Stripe first donation charge succeeded webhook.
@@ -594,10 +594,10 @@ class RegularGivingServiceTest extends TestCase
         $this->donationRepositoryProphecy->findPendingAndPreAuthedForMandate($mandate->getUuid())->willReturn([]);
         $sut->cancelMandate($mandate, 'Because I don\'t have any more money to give', MandateCancellationType::DonorRequestedCancellation);
 
-        $this->assertEquals(MandateStatus::Cancelled, $mandate->getStatus());
-        $this->assertEquals('Because I don\'t have any more money to give', $mandate->cancellationReason());
-        $this->assertEquals(MandateCancellationType::DonorRequestedCancellation, $mandate->cancellationType());
-        $this->assertEquals($now, $mandate->cancelledAt());
+        $this->assertSame(MandateStatus::Cancelled, $mandate->getStatus());
+        $this->assertSame('Because I don\'t have any more money to give', $mandate->cancellationReason());
+        $this->assertSame(MandateCancellationType::DonorRequestedCancellation, $mandate->cancellationType());
+        $this->assertSame($now, $mandate->cancelledAt());
     }
 
     public function testCancellingMandateCancelsPendingDonations(): void

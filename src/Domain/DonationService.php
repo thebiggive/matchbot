@@ -432,7 +432,6 @@ class DonationService
 
         $paymentIntentId = $donation->getTransactionId();
         if ($paymentIntentId !== null) {
-            /** @psalm-suppress InvalidArgument  */
             $this->stripe->updatePaymentIntent($paymentIntentId, $updatedIntentData);
         }
     }
@@ -664,6 +663,9 @@ class DonationService
         });
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function donationAsApiModel(UuidInterface $donationUUID): array
     {
         $donation = $this->donationRepository->findOneByUUID($donationUUID);
@@ -675,6 +677,9 @@ class DonationService
         return $donation->toFrontEndApiModel();
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
     public function findAllCompleteForCustomerAsAPIModels(StripeCustomerId $stripeCustomerId): array
     {
         $donations = $this->donationRepository->findAllCompleteForCustomer($stripeCustomerId);
@@ -747,7 +752,7 @@ class DonationService
 
         /**
          * @psalm-suppress MixedMethodCall
-         * @var array|Card|null $card
+         * @var array<string, mixed>|Card|null $card
          */
         $card = $charge->payment_method_details?->toArray()['card'] ?? null;
         if (is_array($card)) {

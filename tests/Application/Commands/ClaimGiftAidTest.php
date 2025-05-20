@@ -55,8 +55,8 @@ class ClaimGiftAidTest extends TestCase
             'Submitted 0 donations to the ClaimBot queue',
             'matchbot:claim-gift-aid complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testSend(): void
@@ -91,8 +91,8 @@ class ClaimGiftAidTest extends TestCase
             'Submitted 1 donations to the ClaimBot queue',
             'matchbot:claim-gift-aid complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testSendWithResends(): void
@@ -129,8 +129,8 @@ class ClaimGiftAidTest extends TestCase
             'Submitted 1 donations to the ClaimBot queue',
             'matchbot:claim-gift-aid complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     /**

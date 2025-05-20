@@ -24,7 +24,7 @@ class ResetMatchingTest extends TestCase
 {
     public function testSinglePush(): void
     {
-        $fund = new Fund('GBP', name: 'Test Champion Fund 123', salesforceId: Salesforce18Id::of('sfFundId1234567890'), fundType: FundType::ChampionFund);
+        $fund = new Fund('GBP', name: 'Test Champion Fund 123', salesforceId: Salesforce18Id::ofFund('sfFundId1234567890'), fundType: FundType::ChampionFund);
         $fund->setSalesforceLastPull(new \DateTime());
 
         $campaignFunding = new CampaignFunding(
@@ -53,8 +53,8 @@ class ResetMatchingTest extends TestCase
             'Completed matching reset for 1 fundings.',
             'matchbot:reset-matching complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testBlankDb(): void
@@ -96,7 +96,7 @@ class ResetMatchingTest extends TestCase
             'Skipping matching reset as database is empty.',
             'matchbot:reset-matching complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 }

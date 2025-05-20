@@ -68,9 +68,6 @@ class DonorName
         return ($hasFirstName && $hasLastName) ? DonorName::of($firstName, $lastName) : null;
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - likely to be used soon when we send emails.
-     */
     public function fullName(): string
     {
         return "{$this->first} {$this->last}";

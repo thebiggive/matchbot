@@ -63,7 +63,6 @@ readonly class Money implements \JsonSerializable, \Stringable
      */
     public function format(): string
     {
-        /** @psalm-suppress ImpureMethodCall - not sure exactly why symbol is considered impure */
         return $this->currency->symbol() .
             number_format(
                 num: $this->amountInPence / 100,
@@ -73,9 +72,6 @@ readonly class Money implements \JsonSerializable, \Stringable
             );
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - used indirectly
-     */
     #[\Override]
     public function jsonSerialize(): mixed
     {
@@ -122,7 +118,6 @@ readonly class Money implements \JsonSerializable, \Stringable
     {
         $amountInPence = bcmul($amount, '100', 2);
 
-        /** @psalm-suppress ImpureMethodCall */
         Assertion::integerish((float) $amountInPence);
 
         return new self((int) $amountInPence, Currency::GBP);
@@ -135,7 +130,6 @@ readonly class Money implements \JsonSerializable, \Stringable
     {
         $amountInPence = bcmul($amount, '100', 2);
 
-        /** @psalm-suppress ImpureMethodCall */
         Assertion::integerish((float) $amountInPence);
 
         return new self((int) $amountInPence, $currency);

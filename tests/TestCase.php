@@ -47,7 +47,7 @@ class TestCase extends PHPUnitTestCase
     use ProphecyTrait;
 
     /**
-     * @var array<0|1, ?App> array of app instances with and without real redis. Each one may be
+     * @var array<0|1, ?App<ContainerInterface|null>> array of app instances with and without real redis. Each one may be
      *                       initialised up to once per test.
      */
     private array $appInstance = [0 => null, 1 => null];
@@ -73,14 +73,15 @@ class TestCase extends PHPUnitTestCase
     }
 
     /**
-     * @return App
+     * @return App<ContainerInterface|null>
      * @throws Exception
      */
     protected function getAppInstance(bool $withRealRedis = false): App
     {
         $memoizedInstance = $this->appInstance[(int)$withRealRedis];
         if ($memoizedInstance) {
-            return $memoizedInstance;
+            // not sure what's wrong with return type
+            return $memoizedInstance; // @phpstan-ignore return.type
         }
 
         // Instantiate PHP-DI ContainerBuilder
@@ -155,9 +156,11 @@ class TestCase extends PHPUnitTestCase
         $routes($app);
 
         $app->addRoutingMiddleware();
-        $this->appInstance[(int) $withRealRedis] = $app;
+        // not sure what's wrong with assignment here
+        $this->appInstance[(int) $withRealRedis] = $app; // @phpstan-ignore assign.propertyType
 
-        return $app;
+        // not sure what's wrong with return type.
+        return $app; // @phpstan-ignore return.type
     }
 
     /**
@@ -165,8 +168,8 @@ class TestCase extends PHPUnitTestCase
      * @param string $path
      * @param string $bodyString
      * @param array<string, string> $headers
-     * @param array $serverParams
-     * @param array $cookies
+     * @param array<string, string> $serverParams
+     * @param array<string, string> $cookies
      * @return Request
      */
     public static function createRequest(
@@ -213,6 +216,8 @@ class TestCase extends PHPUnitTestCase
     /**
      * Returns some random charity - use if you don't care about the details or will replace them with setters later.
      * Introduced to replace many old calls to instantiate Charity with zero arguments.
+     *
+     * @param Salesforce18Id<Charity>|null $salesforceId
      */
     public static function someCharity(
         ?string $stripeAccountId = null,

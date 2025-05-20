@@ -17,7 +17,6 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 readonly class PersonHandler
 {
-    /** @psalm-suppress PossiblyUnusedMethod Used by Messenger mapping & tests. */
     public function __construct(
         // apparently at the time this is constructed in tests the container isn't ready to give
         // us a donorAccountRepository, so taking a ref to the container instead and getting the

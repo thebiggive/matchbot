@@ -83,12 +83,15 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
         // assert
         $em->clear();
 
-        $charity = $this->getService(CharityRepository::class)->findOneBySfIDOrThrow(Salesforce18Id::of($sfId));
+        $charity = $this->getService(CharityRepository::class)->findOneBySfIDOrThrow(Salesforce18Id::ofCharity($sfId));
         $this->assertSame('New Charity Name', $charity->getName());
         $this->assertFalse($campaign->isReady());
         $this->assertSame('Preview', $campaign->getStatus());
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function simulatedCampaignFromSFAPI(string $sfId, string $newCharityName, string $stripeAccountId): array
     {
         return [

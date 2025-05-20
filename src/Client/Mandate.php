@@ -9,6 +9,7 @@ use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\MandateUpserted;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 
 /**
@@ -23,6 +24,11 @@ class Mandate extends Common
      * @throws BadResponseException
      * @throws NotFoundException on missing campaign in a sandbox
      * @throws GuzzleException
+     *
+     * @psalm-suppress LessSpecificReturnStatement
+     * @psalm-suppress MoreSpecificReturnType
+     *
+     * @return Salesforce18Id<RegularGivingMandate>
      */
     public function createOrUpdate(MandateUpserted $message): Salesforce18Id
     {

@@ -59,7 +59,7 @@ class StripePaymentsUpdate extends Stripe
          * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
          * is final and does not implement our custom interface.
          */
-        $chatter = $container->get(StripeChatterInterface::class);
+        $chatter = $container->get(StripeChatterInterface::class); // @phpstan-ignore varTag.type
         $this->chatter = $chatter;
 
         parent::__construct($container, $logger);
@@ -107,7 +107,6 @@ class StripePaymentsUpdate extends Stripe
     private function handleChargeSucceeded(Event $event, Response $response): Response
     {
         /**
-         * @psalm-suppress UndefinedMagicPropertyFetch
          * @var Charge $charge
          */
         $charge = $event->data->object;
@@ -180,7 +179,6 @@ class StripePaymentsUpdate extends Stripe
     private function handleChargeDisputeClosed(Event $event, Response $response): Response
     {
         /**
-         * @psalm-suppress UndefinedMagicPropertyFetch
          * @var Dispute $dispute
          */
         $dispute = $event->data->object;
@@ -258,7 +256,6 @@ class StripePaymentsUpdate extends Stripe
     private function handleChargeRefunded(Event $event, Response $response): Response
     {
         /**
-         * @psalm-suppress UndefinedMagicPropertyFetch
          * @var Charge $charge
          */
         $charge = $event->data->object;
@@ -348,8 +345,6 @@ class StripePaymentsUpdate extends Stripe
         /**
          * https://docs.stripe.com/api/events/types?event_types-invoice.payment_succeeded=#event_types-payment_intent.canceled
          * says "data.object is a payment intent" so:
-         *
-         * @psalm-suppress UndefinedMagicPropertyFetch $paymentIntent
          */
         $paymentIntent = $event->data->object;
         \assert($paymentIntent instanceof PaymentIntent);
@@ -456,7 +451,7 @@ class StripePaymentsUpdate extends Stripe
     {
         Assertion::eq('customer_cash_balance_transaction.created', $event->type);
 
-        /** @var array $eventAsArray
+        /** @var array<string, mixed> $eventAsArray
          * @psalm-suppress MixedMethodCall
          * (not sure why Psalm can't tell that this is an array since Upgrade to stripe Library v.17)
          */

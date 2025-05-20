@@ -12,7 +12,10 @@ trait StripeFormattingTrait
 {
     use ProphecyTrait;
 
-    protected function buildAutoIterableCollection(string $json): Collection|ObjectProphecy
+    /**
+     * @return Collection<StripeObject>
+     */
+    protected function buildAutoIterableCollection(string $json): Collection
     {
         /** @var \stdClass $itemsArray */
         $itemsArray = json_decode($json, false);
