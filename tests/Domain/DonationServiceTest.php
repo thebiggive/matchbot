@@ -34,6 +34,7 @@ use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
+use MatchBot\Tests\TestLogger;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
@@ -121,35 +122,48 @@ class DonationServiceTest extends TestCase
 
     public function testInitialPersistRunsOutOfRetries(): void
     {
-        $this->markTestSkipped('retry not being done at same level now - consider moving to test for retry higher in stack');
+        $logger = new TestLogger();
 
-//        $logger = $this->prophesize(LoggerInterface::class);
-//        $logger->info(
-//            'Donation Create persist before stripe work error: ' .
-//            'An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.'
-//        )->shouldBeCalledOnce();
-//        $logger->info(Argument::type('string'))->shouldBeCalled();
-//        $logger->error(
-//            'Donation Create persist before stripe work error: ' .
-//            'An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.'
-//        )
-//            ->shouldBeCalledOnce();
-//
-//        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-//
-//        $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: true, logger: $logger->reveal(), campaignRepoProphecy: $campaignRepoProphecy);
-//
-//        $donationCreate = $this->getDonationCreate();
-//        $donation = $this->getDonation();
-//        $campaignRepoProphecy->findOneBy(['salesforceId' => self::CAMPAIGN_ID])
-//            ->willReturn($donation->getCampaign());
-//
-//        $this->stripeProphecy->createPaymentIntent(Argument::any())
-//            ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
-//
-//        $this->expectException(LockWaitTimeoutException::class);
-//
-//        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil());
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+
+        $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: true, logger: $logger, campaignRepoProphecy: $campaignRepoProphecy);
+
+        $donationCreate = $this->getDonationCreate();
+        $donation = $this->getDonation();
+        $campaignRepoProphecy->findOneBy(['salesforceId' => self::CAMPAIGN_ID])
+            ->willReturn($donation->getCampaign());
+
+        $this->stripeProphecy->createPaymentIntent(Argument::any())
+            ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
+
+        try {
+            $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil());
+            $this->fail('Should have thrown LockWaitTimeoutException');
+        } catch (LockWaitTimeoutException) {
+            // pass
+        }
+
+        // We will have a tried persisting the donation a total of six times,
+        // since \MatchBot\Domain\DonationService::createDonation has logic to retry once, and within each of those
+        // two tries \MatchBot\Domain\DonationService::enrollNewDonation calls
+        // \MatchBot\Domain\DonationService::runWithPossibleRetry which retires up to three times.
+        //
+        // Potentially six retries is more than we need.
+        $this->assertSame(
+            <<<'EOF'
+            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.
+            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 2 of 3.
+            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 3 of 3.
+            error: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.
+            warning: Error creating donation, will retry: An exception occurred in the driver: EXCEPTION_MESSAGE
+            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.
+            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 2 of 3.
+            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 3 of 3.
+            error: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.
+            
+            EOF,
+            $logger->logString
+        );
     }
 
     public function testRefusesToConfirmPreAuthedDonationForNonActiveMandate(): void

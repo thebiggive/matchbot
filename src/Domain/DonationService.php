@@ -205,13 +205,6 @@ class DonationService
     }
 
     /**
-     *
-     * We currently think that this retry logic is not useful as we are using it -
-     * if the provided closure fails the first time then it will on all the retrys as well, since the Entity Manager
-     * will have been closed from the first failure.
-     *
-     * However, if we're wrong and it is useful we will find out by an error log with "$actionName SUCCEEDED"
-     *
      * @param \Closure $retryable The action to be executed and then retried if necessary
      * @param string $actionName The name of the action, used in logs.
      * @throws ORMException|DBALServerException if they're occurring when max retry count reached.
