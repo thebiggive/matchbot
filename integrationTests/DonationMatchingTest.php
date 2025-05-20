@@ -55,9 +55,6 @@ class DonationMatchingTest extends IntegrationTest
         // arrange
         $this->matchingAdapater = $this->makeAdapterThatThrowsAfterSubtractingFunds($this->matchingAdapater);
         $this->setInContainer(Adapter::class, $this->matchingAdapater);
-        $donationRepository = $this->getService(\MatchBot\Domain\DonationRepository::class);
-        Assertion::isInstanceOf($donationRepository, DoctrineDonationRepository::class);
-        $donationRepository->setMatchingAdapter($this->matchingAdapater);
 
         $campaignInfo = $this->addFundedCampaignAndCharityToDB(
             campaignSfId: $this->randomString(),
@@ -76,13 +73,19 @@ class DonationMatchingTest extends IntegrationTest
             $this->createDonation(
                 withPremadeCampaign: false,
                 campaignSfID: $campaign->getSalesforceId(),
-                amountInPounds: 10
+                amountInPounds: 10,
             );
         } catch (\Exception $e) {
             $this->assertEquals(
                 'Throwing after subtracting funds to test how our system handles the crash',
                 $e->getMessage(),
             );
+
+             // in prod the transaction would be effectively rolled back by the db session
+            // ending without a commit. Here we share the db session with subsequent tests
+            // so we have to explicitly rollback.
+
+            $this->db()->rollBack();
         }
 
         // assert

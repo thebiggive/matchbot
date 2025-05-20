@@ -9,10 +9,9 @@ use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
-use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Client\Stripe;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationNotifier;
@@ -22,7 +21,6 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\FundRepository;
-use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -45,6 +43,10 @@ class UpdateHandlesLockExceptionTest extends TestCase
     use ProphecyTrait;
 
     private int $alreadyThrewTimes = 0;
+
+    /** @var ObjectProphecy<Allocator> */
+    private ObjectProphecy $allocatorProphecy;
+
     /** @var ObjectProphecy<DonationRepository>  */
     private ObjectProphecy $donationRepositoryProphecy;
 
@@ -57,6 +59,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     #[\Override]
     public function setUp(): void
     {
+        $this->allocatorProphecy = $this->prophesize(Allocator::class);
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
@@ -94,7 +97,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Cancelled);
 
-        $this->donationRepositoryProphecy->releaseMatchFunds($donation)->shouldBeCalled();
+        $this->allocatorProphecy->releaseMatchFunds($donation)->shouldBeCalled();
 
         $updateAction = $this->makeUpdateAction();
 
@@ -212,6 +215,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
             new NullLogger(),
             new MockClock(),
             new DonationService(
+                allocator: $this->allocatorProphecy->reveal(),
                 donationRepository: $donationRepository,
                 campaignRepository: $this->createStub(CampaignRepository::class),
                 fundRepository: $this->createStub(FundRepository::class),

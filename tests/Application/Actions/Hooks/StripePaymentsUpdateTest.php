@@ -11,6 +11,8 @@ use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Settings;
 use MatchBot\Client\Mailer;
+use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -51,6 +53,8 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
         $container->set(RegularGivingMandateRepository::class, $this->createStub(RegularGivingMandateRepository::class));
         $container->set(FundRepository::class, $this->createStub(FundRepository::class));
+        $container->set(CampaignFundingRepository::class, $this->prophesize(CampaignFundingRepository::class)->reveal());
+
 
         $this->donationRepository = new InMemoryDonationRepository();
         $container->set(DonationRepository::class, $this->donationRepository);
@@ -288,10 +292,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->findAndLockOneBy(['transactionId' => 'pi_externalId_123'])
-            ->shouldNotBeCalled();
-
-        $donationRepoProphecy
-            ->releaseMatchFunds($donation)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -535,6 +535,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $time = (string) time();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->getRepository(CampaignFunding::class)->willReturn($this->createStub(CampaignFundingRepository::class));
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
@@ -615,7 +616,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
         $this->assertEquals('1.00', $donation->getTipAmount());
         $this->assertEquals(204, $response->getStatusCode());
-        $this->assertEquals('0', $this->donationRepository->totalMatchFundsReleased());
     }
 
     private function getValidWebhookSecret(Container $container): string

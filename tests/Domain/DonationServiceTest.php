@@ -3,10 +3,11 @@
 namespace MatchBot\Tests\Domain;
 
 use Doctrine\Common\Cache\CacheProvider;
-use Doctrine\DBAL\Driver\PDO\Exception;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\Driver\PDO\Exception as PDOException;
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
@@ -33,6 +34,7 @@ use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
+use MatchBot\Tests\TestLogger;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
@@ -120,21 +122,11 @@ class DonationServiceTest extends TestCase
 
     public function testInitialPersistRunsOutOfRetries(): void
     {
-        $logger = $this->prophesize(LoggerInterface::class);
-        $logger->info(
-            'Donation Create persist before stripe work error: ' .
-            'An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.'
-        )->shouldBeCalledOnce();
-        $logger->info(Argument::type('string'))->shouldBeCalled();
-        $logger->error(
-            'Donation Create persist before stripe work error: ' .
-            'An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.'
-        )
-            ->shouldBeCalledOnce();
+        $logger = new TestLogger();
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
 
-        $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: true, logger: $logger->reveal(), campaignRepoProphecy: $campaignRepoProphecy);
+        $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: true, logger: $logger, campaignRepoProphecy: $campaignRepoProphecy);
 
         $donationCreate = $this->getDonationCreate();
         $donation = $this->getDonation();
@@ -144,9 +136,34 @@ class DonationServiceTest extends TestCase
         $this->stripeProphecy->createPaymentIntent(Argument::any())
             ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
 
-        $this->expectException(UniqueConstraintViolationException::class);
+        try {
+            $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil());
+            $this->fail('Should have thrown LockWaitTimeoutException');
+        } catch (LockWaitTimeoutException) {
+            // pass
+        }
 
-        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil());
+        // We will have a tried persisting the donation a total of six times,
+        // since \MatchBot\Domain\DonationService::createDonation has logic to retry once, and within each of those
+        // two tries \MatchBot\Domain\DonationService::enrollNewDonation calls
+        // \MatchBot\Domain\DonationService::runWithPossibleRetry which retires up to three times.
+        //
+        // Potentially six retries is more than we need.
+        $this->assertSame(
+            <<<'EOF'
+            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.
+            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 2 of 3.
+            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 3 of 3.
+            error: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.
+            warning: Error creating donation, will retry: An exception occurred in the driver: EXCEPTION_MESSAGE
+            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.
+            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 2 of 3.
+            info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 3 of 3.
+            error: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.
+            
+            EOF,
+            $logger->logString
+        );
     }
 
     public function testRefusesToConfirmPreAuthedDonationForNonActiveMandate(): void
@@ -187,6 +204,7 @@ class DonationServiceTest extends TestCase
     }
 
     /**
+     * @param bool $withAlwaysCrashingEntityManager Whether to simulate EM always throwing a *retryable* exception
      * @param ObjectProphecy<CampaignRepository>|null $campaignRepoProphecy
      * @param ObjectProphecy<FundRepository>|null $fundRepoProphecy
      */
@@ -202,12 +220,15 @@ class DonationServiceTest extends TestCase
              * @psalm-suppress InternalClass Hard to simulate `final` exception otherwise
              */
             $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willThrow(
-                new UniqueConstraintViolationException(new Exception('EXCEPTION_MESSAGE'), null)
+                new LockWaitTimeoutException(new PDOException('EXCEPTION_MESSAGE'), null)
             );
         } else {
             $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willReturn(null);
             $this->entityManagerProphecy->flush()->willReturn(null);
         }
+
+        $this->entityManagerProphecy->beginTransaction()->willReturn(null);
+        $this->entityManagerProphecy->commit()->willReturn(null);
 
         $logger = $logger ?? new NullLogger();
 
@@ -216,6 +237,7 @@ class DonationServiceTest extends TestCase
         $fundRepoProphecy ??= $this->prophesize(FundRepository::class);
 
         return new DonationService(
+            allocator: $this->createStub(Allocator::class),
             donationRepository: $this->donationRepoProphecy->reveal(),
             campaignRepository: $campaignRepoProphecy->reveal(),
             logger: $logger,

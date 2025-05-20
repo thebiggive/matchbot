@@ -38,6 +38,7 @@ use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Application\Settings;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
+use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationNotifier;
@@ -577,6 +578,7 @@ return function (ContainerBuilder $containerBuilder) {
                 \assert($rateLimiterFactory instanceof RateLimiterFactory);
 
                 return new DonationService(
+                    allocator: $c->get(Matching\Allocator::class),
                     donationRepository: $c->get(DonationRepository::class),
                     campaignRepository: $c->get(CampaignRepository::class),
                     fundRepository: $c->get(FundRepository::class),
