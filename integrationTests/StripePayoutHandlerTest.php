@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MatchBot\Tests\Application\Messenger\Handler;
+namespace MatchBot\IntegrationTests;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
