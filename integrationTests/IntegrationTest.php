@@ -117,6 +117,19 @@ abstract class IntegrationTest extends TestCase
         return Salesforce18Id::ofCampaign(self::randomString());
     }
 
+    #[\Override]
+    public function tearDown(): void
+    {
+        $this->assertFalse(
+            $this->db()->isTransactionActive(),
+            'Transaction should not be left open at end of test, will affect following tests. Please commit or rollback'
+        );
+
+        $this->clearPreviousCampaignsCharitiesAndRelated();
+
+        parent::tearDown();
+    }
+
     public static function setContainer(ContainerInterface $container): void
     {
         self::$integrationTestContainer = $container;

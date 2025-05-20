@@ -205,13 +205,6 @@ class DonationService
     }
 
     /**
-     *
-     * We currently think that this retry logic is not useful as we are using it -
-     * if the provided closure fails the first time then it will on all the retrys as well, since the Entity Manager
-     * will have been closed from the first failure.
-     *
-     * However, if we're wrong and it is useful we will find out by an error log with "$actionName SUCCEEDED"
-     *
      * @param \Closure $retryable The action to be executed and then retried if necessary
      * @param string $actionName The name of the action, used in logs.
      * @throws ORMException|DBALServerException if they're occurring when max retry count reached.
@@ -384,18 +377,10 @@ class DonationService
         // tracking instead so that a retry can work.
         $this->entityManager->beginTransaction();
 
-        // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
-        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
-        $this->runWithPossibleRetry(function () use ($donation) {
-            $this->entityManager->persist($donation);
-            try {
-                $this->entityManager->flush();
-            } catch (\Throwable $exception) {
-                $this->entityManager->rollback();
-                $this->entityManager->detach($donation);
-                throw $exception;
-            }
-        }, 'Donation Create persist before stripe work');
+        // Must persist before Stripe work to have ID available. No retries at this level as it's cleaner to begin
+        // again with a fresh donation.
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
 
         if ($campaign->isMatched() && $attemptMatching) {
             try {

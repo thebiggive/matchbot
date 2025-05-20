@@ -20,6 +20,8 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
     {
         $this->getContainer()->set(Client\Fund::class, null);
         $this->getContainer()->set(Client\Campaign::class, null);
+
+        parent::tearDown();
     }
 
     public function testItPullsCharityUpdateAfterSalesforceSendsHook(): void

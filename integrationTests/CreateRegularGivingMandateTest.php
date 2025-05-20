@@ -95,6 +95,8 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     public function tearDown(): void
     {
         $this->getContainer()->set(MessageBusInterface::class, $this->originalMessageBus);
+
+        parent::tearDown();
     }
 
     public function testItCreatesRegularGivingMandate(): void
