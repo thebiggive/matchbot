@@ -35,15 +35,18 @@ trait DonationTestDataTrait
         \assert(is_string($contents));
 
         $contentsAsArray = \json_decode($contents, associative: true, flags: \JSON_THROW_ON_ERROR);
+        \assert(\is_array($contentsAsArray));
 
-        if (\array_key_exists('data', $contentsAsArray)) {
+        if (\array_key_exists('data', $contentsAsArray) && $dataOverrides !== []) {
+            $data = $contentsAsArray['data'];
+            \assert(\is_array($data) && \array_is_list($data));
             $contentsAsArray['data'] = \array_map(
                 static fn(array $datum) => \array_merge($datum, $dataOverrides),
-                $contentsAsArray['data']
+                $data
             );
         }
 
-        return \json_encode($contentsAsArray, flags: \JSON_PRETTY_PRINT);
+        return \json_encode($contentsAsArray, flags: \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR);
     }
 
     /**
