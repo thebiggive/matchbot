@@ -381,13 +381,7 @@ class DonationService
         // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
         $this->runWithPossibleRetry(function () use ($donation) {
             $this->entityManager->persist($donation);
-            try {
-                $this->entityManager->flush();
-            } catch (\Throwable $exception) {
-                $this->entityManager->rollback();
-                $this->entityManager->detach($donation);
-                throw $exception;
-            }
+            $this->entityManager->flush();
         }, 'Donation Create persist before stripe work');
 
         if ($campaign->isMatched() && $attemptMatching) {
