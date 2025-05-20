@@ -143,6 +143,12 @@ class DonationServiceTest extends TestCase
             // pass
         }
 
+        // We will have a tried persisting the donation a total of six times,
+        // since \MatchBot\Domain\DonationService::createDonation has logic to retry once, and within each of those
+        // two tries \MatchBot\Domain\DonationService::enrollNewDonation calls
+        // \MatchBot\Domain\DonationService::runWithPossibleRetry which retires up to three times.
+        //
+        // Potentially six retries is more than we need.
         $this->assertSame(
             <<<'EOF'
             info: Donation Create persist before stripe work error: An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.
