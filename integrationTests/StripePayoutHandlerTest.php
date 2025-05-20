@@ -68,16 +68,6 @@ class StripePayoutHandlerTest extends IntegrationTest
         $reflectionClass = new \ReflectionClass(Donation::class);
         $reflectionClass->getProperty('chargeId')->setValue($donationWithInvalidChargeId, 'ch_invalidId_123');
 
-//        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-//        $donationRepoProphecy
-//            ->findWithTransferIdInArray(['tr_invalidId_123'])
-//            ->willReturn([$donationWithInvalidChargeId])
-//            ->shouldBeCalledOnce();
-//        $donationRepoProphecy
-//            ->findAndLockOneBy(['chargeId' => 'ch_invalidId_123'])
-//            ->willReturn(null)
-//            ->shouldBeCalledOnce();
-
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
         $loggerProphecy->info(
             'Payout: Getting all charges related to Payout ID po_externalId_123 for Connect account ID acct_unitTest123'
