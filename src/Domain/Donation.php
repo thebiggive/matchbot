@@ -15,6 +15,7 @@ use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
+use MatchBot\Application\Environment;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
@@ -368,6 +369,20 @@ class Donation extends SalesforceWriteProxy
     private ?DateTimeImmutable $preAuthorizationDate = null;
 
     /**
+     * Stripe payout used to pay this donation out to recipient charity. Null on
+     *  all donations from before May 2025.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?string $stripePayoutId = null;
+
+    /**
+     * Records when (and if) this donation was paid out from Big Give to the recipient charity. Null on
+     * all donations from before May 2025.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?DateTimeImmutable $paidOutAt = null;
+
+    /**
      * @param string|null $billingPostcode
      * @psalm-param numeric-string $amount
      * @psalm-param ?numeric-string $tipAmount
@@ -650,10 +665,9 @@ class Donation extends SalesforceWriteProxy
         return $this->donationStatus;
     }
 
-    public function setDonationStatus(DonationStatus $donationStatus): void
+    public function setDonationStatusForTest(DonationStatus $donationStatus): void
     {
-        // todo at some point - remove this method and replace with more specific command method(s). The only non-test
-        // caller now is passing DonationStatus::Paid.
+        Assertion::eq(Environment::current(), Environment::Test);
 
         /** @psalm-suppress DeprecatedConstant */
         $this->donationStatus = match ($donationStatus) {
@@ -663,11 +677,11 @@ class Donation extends SalesforceWriteProxy
                 throw new \Exception('Donation::cancelled must be used to cancel'),
             DonationStatus::Collected =>
                 throw new \Exception('Donation::collectFromStripe must be used to collect'),
+            DonationStatus::Paid =>
+                throw new \Exception('Donation::recordPayout must be used for paid status'),
             DonationStatus::Chargedback =>
                 throw new \Exception('DonationStatus::Chargedback is deprecated'),
-
             DonationStatus::Failed,
-            DonationStatus::Paid,
             DonationStatus::Pending,
             DonationStatus::PreAuthorized
             => $donationStatus,
@@ -1904,5 +1918,24 @@ class Donation extends SalesforceWriteProxy
     public function setSalesforceUpdatePending(): void
     {
         $this->salesforcePushStatus = SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE;
+    }
+
+    public function recordPayout(string $payoutId, \DateTimeImmutable $payoutDateTime): void
+    {
+        Assertion::startsWith($payoutId, 'po_');
+        $this->stripePayoutId = $payoutId;
+        $this->paidOutAt = $payoutDateTime;
+
+        $this->donationStatus = DonationStatus::Paid;
+    }
+
+    public function getStripePayoutId(): ?string
+    {
+        return $this->stripePayoutId;
+    }
+
+    public function getPaidOutAt(): ?DateTimeImmutable
+    {
+        return $this->paidOutAt;
     }
 }

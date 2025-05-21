@@ -141,11 +141,11 @@ class UpdateTest extends TestCase
         $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
-        $donation->setDonationStatus(DonationStatus::Pending);
+        $donation->setDonationStatusForTest(DonationStatus::Pending);
         $this->donationRepository->store($donation);
 
         $failedDonation = clone $donation;
-        $failedDonation->setDonationStatus(DonationStatus::Failed);
+        $failedDonation->setDonationStatusForTest(DonationStatus::Failed);
 
         $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
@@ -314,7 +314,7 @@ class UpdateTest extends TestCase
         $responseDonation = $this->getTestDonation(charityComms: true, uuid: self::DONATION_UUID);
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
         // mock donation.
-        $responseDonation->setDonationStatus(DonationStatus::Pending);
+        $responseDonation->setDonationStatusForTest(DonationStatus::Pending);
         $this->donationRepository->store($responseDonation);
 
         $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);
@@ -367,7 +367,7 @@ class UpdateTest extends TestCase
         $responseDonation = $this->getTestDonation(uuid: self::DONATION_UUID);
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
         // mock donation.
-        $responseDonation->setDonationStatus(DonationStatus::Pending);
+        $responseDonation->setDonationStatusForTest(DonationStatus::Pending);
         $this->donationRepository->store($responseDonation);
 
         $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true);
@@ -416,7 +416,7 @@ class UpdateTest extends TestCase
         $responseDonation = $this->getTestDonation(uuid: self::DONATION_UUID);
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
         // mock donation.
-        $responseDonation->setDonationStatus(DonationStatus::Pending);
+        $responseDonation->setDonationStatusForTest(DonationStatus::Pending);
         $this->donationRepository->store($responseDonation);
 
         $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);

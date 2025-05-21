@@ -86,6 +86,13 @@ class StripePayoutHandlerTest extends IntegrationTest
         $this->assertSame(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $donationFetchedFromDB->getSalesforcePushStatus());
 
         $this->assertSame(
+            1598535656, // timestamp from po.json
+            $donationFetchedFromDB->getPaidOutAt()?->getTimestamp()
+        );
+
+        $this->assertSame('po_externalId_123', $donationFetchedFromDB->getStripePayoutId());
+
+        $this->assertSame(
             <<<"LOGS"
                 info: Payout: Getting all charges related to Payout ID po_externalId_123 for Connect account ID acct_unitTest123
                 info: Payout: Getting all Connect account paid Charge IDs for Payout ID po_externalId_123 complete, found 1

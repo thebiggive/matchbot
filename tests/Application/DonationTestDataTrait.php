@@ -173,7 +173,7 @@ trait DonationTestDataTrait
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);
-        $donation->setDonationStatus(DonationStatus::Pending);
+        $donation->setDonationStatusForTest(DonationStatus::Pending);
         $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setTipAmount('2.00');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ac'));

@@ -119,7 +119,7 @@ class StripePayoutHandler
             if ($donation->getDonationStatus() === DonationStatus::Collected) {
                 // We're confident to set donation status to paid because this
                 // method is called only when Stripe event `payout.paid` is received.
-                $donation->setDonationStatus(DonationStatus::Paid);
+                $donation->recordPayout($payoutId, $payoutInfo['created']);
 
                 $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
 

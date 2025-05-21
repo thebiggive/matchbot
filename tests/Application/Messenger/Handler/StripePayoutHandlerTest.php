@@ -127,7 +127,7 @@ class StripePayoutHandlerTest extends TestCase
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
         $donation = $this->getTestDonation();
 
-        $donation->setDonationStatus(DonationStatus::Failed);
+        $donation->setDonationStatusForTest(DonationStatus::Failed);
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();

@@ -228,7 +228,7 @@ class CreateTest extends TestCase
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus(DonationStatus::Pending);
+        $donationToReturn->setDonationStatusForTest(DonationStatus::Pending);
 
         $app = $this->getAppInstance();
 
@@ -346,7 +346,7 @@ class CreateTest extends TestCase
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus(DonationStatus::Pending);
+        $donationToReturn->setDonationStatusForTest(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppWithCommonPersistenceDeps(
@@ -466,7 +466,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus(DonationStatus::Pending);
+        $donationToReturn->setDonationStatusForTest(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppWithCommonPersistenceDeps(
@@ -563,7 +563,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus(DonationStatus::Pending);
+        $donationToReturn->setDonationStatusForTest(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppWithCommonPersistenceDeps(
@@ -658,7 +658,7 @@ class CreateTest extends TestCase
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus(DonationStatus::Pending);
+        $donationToReturn->setDonationStatusForTest(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppWithCommonPersistenceDeps(
@@ -686,7 +686,7 @@ class CreateTest extends TestCase
         $donation->setPspCustomerId('cus_zzaaaaaaaaaa99');
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus(DonationStatus::Pending);
+        $donationToReturn->setDonationStatusForTest(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppWithCommonPersistenceDeps(

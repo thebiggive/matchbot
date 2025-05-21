@@ -823,7 +823,11 @@ class DonationTest extends TestCase
             'projectid012345678',
             'stripe',
         ), $this->getMinimalCampaign(), PersonId::nil());
-        $donation->setDonationStatus(DonationStatus::Paid);
+
+        $donation->recordPayout(
+            'po_payout_id_and_date_not_relevant',
+            new \DateTimeImmutable('1970-01-01')
+        );
 
         $this->expectExceptionMessage('Cannot cancel Paid donation');
         $donation->cancel();
