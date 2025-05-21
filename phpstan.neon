@@ -55,11 +55,12 @@ parameters:
 			paths:
 				- tests/*
 				- integrationTests/*
-		-
-			identifier: deadCode.unreachable
-			# likely code after \PHPUnit\Framework\Assert::markTestSkipped or similar
-			paths:
+# commented out below as phpstan does not allow us to suppress non-existent errors, but likely to be useful in future:
+#		-
+#			identifier: deadCode.unreachable
+#			# likely code after \PHPUnit\Framework\Assert::markTestSkipped or similar
+#			paths:
 #				- tests/*
-				- integrationTests/*
+#				- integrationTests/*
 	stubFiles:
 		- .psalm/containers.php.stub

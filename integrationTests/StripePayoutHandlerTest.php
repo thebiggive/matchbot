@@ -35,141 +35,21 @@ class StripePayoutHandlerTest extends IntegrationTest
     private const string CONNECTED_ACCOUNT_ID = 'acct_unitTest123';
     private const string DEFAULT_PAYOUT_ID = 'po_externalId_123';
     private const string RETRIED_PAYOUT_ID = 'po_retrySuccess_234';
+    private TestLogger $testLogger;
 
-    public function testUnrecognisedChargeId(): void
+    #[\Override]
+    public function setUp(): void
     {
-        $this->markTestSkipped();
-        $this->getApp();
-        $container = $this->getContainer();
+        parent::setUp();
+        $this->testLogger = new TestLogger();
 
-        $balanceTxnResponse = $this->getStripeHookMock('ApiResponse/bt_invalid');
-        $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_with_invalid');
-
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-
-        // We call these once per whole loop, now we use txns, to ensure it's closed cleanly.
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-
-        $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        $stripeBalanceTransactionProphecy->all(
-            [
-                'limit' => 100,
-                'payout' => self::DEFAULT_PAYOUT_ID,
-            ],
-            ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
-        )
-            ->shouldBeCalledOnce()
-            ->willReturn($this->buildAutoIterableCollection($balanceTxnResponse));
-
-        $donationWithInvalidChargeId = clone $this->getTestDonation();
-
-        $reflectionClass = new \ReflectionClass(Donation::class);
-        $reflectionClass->getProperty('chargeId')->setValue($donationWithInvalidChargeId, 'ch_invalidId_123');
-
-        $loggerProphecy = $this->prophesize(LoggerInterface::class);
-        $loggerProphecy->info(
-            'Payout: Getting all charges related to Payout ID po_externalId_123 for Connect account ID acct_unitTest123'
-        )
-            ->shouldBeCalledOnce();
-        $loggerProphecy->info(
-            'Payout: Getting all Connect account paid Charge IDs for Payout ID po_externalId_123 complete, found 1'
-        )
-            ->shouldBeCalledOnce();
-        $loggerProphecy->info("Payout: Getting original TBG charge IDs related to payout's Charge IDs")
-            ->shouldBeCalledOnce();
-        $loggerProphecy->log('INFO', 'Payout: Donation not found with Charge ID ch_invalidId_123')
-            ->shouldBeCalledOnce();
-        $loggerProphecy->info('Payout: Finished getting original Charge IDs, found 1 (from ' .
-            '1 source transfer IDs and 1 donations whose transfer IDs matched)')
-            ->shouldBeCalledOnce();
-        $loggerProphecy->info(
-            'Payout: Updating paid donations complete for stripe payout #po_externalId_123, persisted 0'
-        )
-            ->shouldBeCalledOnce();
-
-        $stripeClientProphecy = $this->getStripeClient(withRetriedPayout: false);
-        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
-        // code, and may get mutation tests working again.
-        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
-        @$stripeClientProphecy->charges = $this->getStripeChargeList($chargeResponse);
-
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(LoggerInterface::class, $loggerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
-
-        $this->invokePayoutHandler($container, $loggerProphecy->reveal());
-
-        // Call count assertions above which include that the logger gets the expected
-        // notice are all we need. No donation data changes in this scenario.
+        $this->getContainer()->set(LoggerInterface::class, $this->testLogger);
     }
-
-    public function testInvalidExistingDonationStatus(): void
-    {
-        $this->markTestSkipped();
-        $this->getApp();
-        $container = $this->getContainer();
-
-        $balanceTxnsResponse = $this->getStripeHookMock('ApiResponse/bt_list_success');
-        $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
-        $donation = $this->getTestDonation();
-
-        $donation->setDonationStatus(DonationStatus::Failed);
-
-//        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-//        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-
-        // We call these once per whole loop, now we use txns, to ensure it's closed cleanly.
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-
-        $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        $stripeBalanceTransactionProphecy->all(
-            [
-                'limit' => 100,
-                'payout' => self::DEFAULT_PAYOUT_ID,
-            ],
-            ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
-        )
-            ->shouldBeCalledOnce()
-            ->willReturn($this->buildAutoIterableCollection($balanceTxnsResponse));
-
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->findWithTransferIdInArray(['tr_externalId_123'])
-            ->willReturn([$donation])
-            ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->findAndLockOneBy(['chargeId' => 'ch_externalId_123'])
-            ->willReturn($donation)
-            ->shouldBeCalledOnce();
-
-        $stripeClientProphecy = $this->getStripeClient(withRetriedPayout: false);
-        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
-        @$stripeClientProphecy->charges = $this->getStripeChargeList($chargeResponse);
-
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
-
-        $this->invokePayoutHandler($container, new NullLogger());
-
-        // We expect donations that are not in 'Collected' status to remain the same.
-        $this->assertSame(DonationStatus::Failed, $donation->getDonationStatus());
-
-        // Nothing to push to SF.
-        $this->assertSame(SalesforceWriteProxy::PUSH_STATUS_COMPLETE, $donation->getSalesforcePushStatus());
-    }
-
     public function testSuccessfulUpdateFromFirstPayout(): void
     {
         $transferId = 'tr_' . TestCase::randomString();
         $donation = $this->getPersistedCollectedDonation(transferId: $transferId);
         $donationId = $donation->getId();
-        $testLogger = new TestLogger();
-
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->all(
             [
@@ -192,7 +72,7 @@ class StripePayoutHandlerTest extends IntegrationTest
         $this->getService(EntityManagerInterface::class)->clear();
 
         // act
-        $this->invokePayoutHandler($this->getContainer(), $testLogger);
+        $this->invokePayoutHandler($this->getContainer());
 
         // assert
         $this->getService(EntityManagerInterface::class)->clear();
@@ -215,116 +95,8 @@ class StripePayoutHandlerTest extends IntegrationTest
                 info: Payout: Updating paid donations complete for stripe payout #po_externalId_123, persisted 1
                 
                 LOGS,
-            $testLogger->logString
+            $this->testLogger->logString
         );
-    }
-
-    /**
-     * We expect this scenario when one payout that's directly linked to a charge
-     * was created and failed, and then a subsequent payout succeeds. Stripe doesn't
-     * *directly* list the retried charges in the balance_transactions list but does
-     * list the payout which contains them.
-     */
-    public function testSuccessfulUpdateForRetriedPayout(): void
-    {
-        $this->markTestSkipped();
-        $container = $this->getContainer();
-
-        $donation = $this->getTestDonation();
-        $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
-
-        $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        // First call
-        $stripeBalanceTransactionProphecy->all(
-            [
-                'limit' => 100,
-                'payout' => self::RETRIED_PAYOUT_ID,
-            ],
-            ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
-        )
-            ->shouldBeCalledOnce()
-            ->willReturn($this->buildAutoIterableCollection(
-                $this->getStripeHookMock('ApiResponse/bt_list_only_retried_payout'),
-            ));
-        // Second call based on above mock's payout_failure source.
-        $stripeBalanceTransactionProphecy->all(
-            [
-                'limit' => 100,
-                'payout' => self::DEFAULT_PAYOUT_ID,
-            ],
-            ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
-        )
-            ->shouldBeCalledOnce()
-            ->willReturn($this->buildAutoIterableCollection(
-                $this->getStripeHookMock('ApiResponse/bt_list_success'),
-            ));
-
-
-        $donationRepository = $this->getReconcileMatchDonationRepo($donation);
-
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->getRepository(Donation::class)->willReturn($donationRepository);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
-
-        $stripeClientProphecy = $this->getStripeClient(withRetriedPayout: true);
-        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
-        @$stripeClientProphecy->charges = $this->getStripeChargeList($chargeResponse);
-
-        $container->set(DonationRepository::class, $donationRepository);
-        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
-
-        $this->invokePayoutHandler($container, new NullLogger(), self::RETRIED_PAYOUT_ID);
-
-        $this->assertSame(DonationStatus::Paid, $donation->getDonationStatus());
-        $this->assertSame(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $donation->getSalesforcePushStatus());
-    }
-
-    /**
-     * This scenario is especially pertinent in March 2024 while we're planning use of a one-time script to patch
-     * payouts from historic edge cases. But it's also good to cover the data sanity check for the long term, since
-     * Stripe {@link https://docs.stripe.com/api/payouts/object#payout_object-status say} "Some payouts that fail might
-     * initially show as paid, then change to failed."
-     */
-    public function testNoOpWhenPayoutFailed(): void
-    {
-        $this->markTestSkipped();
-        $container = $this->getContainer();
-
-        $donation = $this->getTestDonation();
-
-        $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        $stripeBalanceTransactionProphecy->all(Argument::cetera())
-            ->shouldNotBeCalled();
-
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->getRepository(Donation::class)->shouldNotBeCalled();
-        $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
-
-        $loggerProphecy = $this->prophesize(LoggerInterface::class);
-        $loggerProphecy->warning(
-            'Payout: Skipping payout ID po_externalId_123 for Connect account ID acct_unitTest123; status is failed'
-        )
-            ->shouldBeCalledOnce();
-        $loggerProphecy->info(
-            'Payout: Exited with no paid Charge IDs for Payout ID po_externalId_123, account acct_unitTest123',
-        )
-            ->shouldBeCalledOnce();
-
-        $stripeClientProphecy = $this->getStripeClient(withRetriedPayout: false, withPayoutSuccess: false);
-        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
-
-        $container->set(DonationRepository::class, $this->prophesize(DonationRepository::class)->reveal());
-        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(LoggerInterface::class, $loggerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
-
-        $this->invokePayoutHandler($container, $loggerProphecy->reveal());
-
-        // No change because payout's failed.
-        $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
     }
 
     /**
@@ -405,16 +177,9 @@ class StripePayoutHandlerTest extends IntegrationTest
      */
     private function invokePayoutHandler(
         Container $container,
-        LoggerInterface $logger,
         string $payoutId = self::DEFAULT_PAYOUT_ID,
     ): void {
-        $payoutHandler = new StripePayoutHandler(
-            $container->get(DonationRepository::class),
-            $container->get(EntityManagerInterface::class),
-            $logger,
-            $container->get(StripeClient::class)
-        );
-
+        $payoutHandler = $container->get(StripePayoutHandler::class);
         $payoutMessage = new StripePayout(connectAccountId: self::CONNECTED_ACCOUNT_ID, payoutId: $payoutId);
         $payoutHandler($payoutMessage);
     }
