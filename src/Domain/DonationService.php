@@ -762,13 +762,14 @@ class DonationService
 
         $cardBrand = CardBrand::fromNameOrNull($card?->brand);
         $cardCountry = Country::fromAlpha2OrNull($card?->country);
-        $balanceTransaction = (string)$charge->balance_transaction;
 
-        // To give *simulated* webhooks, for Donation API-only load tests, an easy way to complete
-        // without crashing, we support skipping the original fee derivation by omitting
-        // `balance_transaction`. Real stripe charge.succeeded webhooks should always have
-        // an associated Balance Transaction.
-        if (!empty($balanceTransaction)) {
+        $balanceTransaction = $charge->balance_transaction;
+
+        // as we didn't ask Stripe for a full B.T. object they will only give us the ID or null -- may be null
+        // for the original async charge success, and then populated later when we handle a charge updated event.
+        Assertion::nullOrString($balanceTransaction);
+
+        if (\is_string($balanceTransaction)) {
             $originalFeeFractional = $this->getOriginalFeeFractional(
                 $balanceTransaction,
                 $donation->currency()->isoCode(),
@@ -780,7 +781,7 @@ class DonationService
         $donation->collectFromStripeCharge(
             chargeId: $charge->id,
             totalPaidFractional: $charge->amount,
-            transferId: (string)$charge->transfer,
+            transferId: $charge->transfer ?? null,
             cardBrand: $cardBrand,
             cardCountry: $cardCountry,
             originalFeeFractional: (string)$originalFeeFractional,
