@@ -145,7 +145,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findWithTransferIdInArray(['tr_externalId_123'])
+            ->findWithTransferIdInArray(['tr_id_supplied_in_list_success'])
             ->willReturn([$donation])
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -399,7 +399,7 @@ class StripePayoutHandlerTest extends TestCase
     {
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findWithTransferIdInArray(['tr_externalId_123'])
+            ->findWithTransferIdInArray(['tr_id_supplied_in_list_success'])
             ->willReturn([$donation])
             ->shouldBeCalledOnce();
         $donationRepoProphecy

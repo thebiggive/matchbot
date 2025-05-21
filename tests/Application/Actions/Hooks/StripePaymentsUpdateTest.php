@@ -182,7 +182,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $response = $app->handle($request);
 
         $this->assertSame('ch_externalId_123', $donation->getChargeId());
-        $this->assertSame('tr_id_t987', $donation->getTransferId());
+        $this->assertSame('tr_id_from_test_donation', $donation->getTransferId());
         $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
         $this->assertSame('0.37', $donation->getOriginalPspFee());
         $this->assertSame(200, $response->getStatusCode());

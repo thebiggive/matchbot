@@ -1494,7 +1494,7 @@ class Donation extends SalesforceWriteProxy
     public function collectFromStripeCharge(
         string $chargeId,
         int $totalPaidFractional,
-        string $transferId,
+        null|string|\Stringable $transferId,
         ?CardBrand $cardBrand,
         ?Country $cardCountry,
         string $originalFeeFractional,
@@ -1503,10 +1503,13 @@ class Donation extends SalesforceWriteProxy
         Assertion::eq(is_null($cardBrand), is_null($cardCountry));
         Assertion::numeric($originalFeeFractional);
         Assertion::notEmpty($chargeId);
-        Assertion::notEmpty($transferId);
+
+        if ($transferId !== null) {
+            Assertion::notEmpty($transferId);
+            $this->transferId = (string) $transferId;
+        }
 
         $this->chargeId = $chargeId;
-        $this->transferId = $transferId;
         $this->donationStatus = DonationStatus::Collected;
         $this->collectedAt = (new \DateTimeImmutable("@$chargeCreationTimestamp"));
         $this->setOriginalPspFeeFractional($originalFeeFractional);
@@ -1680,11 +1683,7 @@ class Donation extends SalesforceWriteProxy
             'amount' => $this->getAmountFractionalIncTip(),
             'currency' => $this->currency()->isoCode(case: 'lower'),
             'description' => $this->getDescription(),
-            // For now we are opting out of async, see MAT-395.
-            // When we go to async we will probably need to listen to the charge.updated
-            // webhook to set the original fee correctly via `balance_transactions`.
-            // https://docs.stripe.com/payments/payment-intents/asynchronous-capture#listen-webhooks
-            'capture_method' => 'automatic',
+            'capture_method' => 'automatic_async', // matches stripes default, including for clarity.
             'metadata' => [
                 /**
                  * Keys like comms opt ins are set only later. See the counterpart
