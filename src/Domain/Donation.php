@@ -568,10 +568,8 @@ class Donation extends SalesforceWriteProxy
             ...$this->toFrontEndApiModel(),
             'originalPspFee' => (float) $this->getOriginalPspFee(),
             'tipRefundAmount' => $this->getTipRefundAmount()?->toMajorUnitFloat(),
-
-            // replace with hard-coded true when date is passed.
-            'confirmationByMatchbot' => $this->donationStatus->isSuccessful() &&
-                $this->getCollectedAt() > new \DateTimeImmutable(self::MAT_400_ENABLE_TIMESTAMP),
+            'stripePayoutId' => $this->stripePayoutId,
+            'paidOutAt' => $this->paidOutAt?->format(DateTimeInterface::ATOM),
         ];
 
         // As of mid 2024 only the actual donate frontend gets this value, to avoid

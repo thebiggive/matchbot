@@ -234,6 +234,8 @@ class DonationTest extends TestCase
     {
         $donation = self::someDonation(amount: '10', tipAmount: '1');
 
+        $donation->recordPayout('po_some_payout_id', new \DateTimeImmutable('2025-05-21T02:17:46+01:00'));
+
         $this->assertEquals(
             [
                 'amountMatchedByChampionFunds' => 0.0,
@@ -268,15 +270,16 @@ class DonationTest extends TestCase
                 'pspCustomerId' => null,
                 'pspMethodType' => 'card',
                 'refundedTime' => null,
-                'status' => DonationStatus::Pending,
+                'status' => DonationStatus::Paid,
                 'tbgGiftAidRequestConfirmedCompleteAt' => null,
                 'tipAmount' => 1.0,
                 'tipGiftAid' => null,
                 'tipRefundAmount' => null,
-                'totalPaid' => null,
+                'totalPaid' => 11.0,
                 'transactionId' => null,
                 'updatedTime' => $donation->getUpdatedDate()->format('c'),
-                'confirmationByMatchbot' => false,
+                'stripePayoutId' => 'po_some_payout_id',
+                'paidOutAt' => '2025-05-21T02:17:46+01:00',
             ],
             $donation->toSFApiModel()
         );
