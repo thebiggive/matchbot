@@ -54,6 +54,9 @@ class Fund extends SalesforceReadProxy
     #[ORM\Column()]
     private int $allocationOrder;
 
+    /**
+     * @param Salesforce18Id<self>|null $salesforceId
+     */
     public function __construct(string $currencyCode, string $name, ?Salesforce18Id $salesforceId, FundType $fundType)
     {
         $this->createdAt = new \DateTime();

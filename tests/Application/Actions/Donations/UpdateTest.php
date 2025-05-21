@@ -6,18 +6,17 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Client\Stripe;
+use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundRepository;
-use MatchBot\Tests\Domain\DonationTest;
 use MatchBot\Tests\Domain\InMemoryDonationRepository;
 use Override;
-use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\UuidInterface;
+use Psr\Container\ContainerInterface;
 use Slim\Routing\Route;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
@@ -39,7 +38,6 @@ use Stripe\ErrorObject;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
-use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
 
@@ -171,8 +169,8 @@ class UpdateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function testMissingStatus(): void
@@ -182,6 +180,7 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
+        $entityManagerProphecy->getRepository(CampaignFunding::class)->willReturn($this->createStub(CampaignFundingRepository::class));
 
         $this->setDoublesInContainer($container, $entityManagerProphecy);
 
@@ -205,8 +204,8 @@ class UpdateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function testCancelRequestAfterDonationFinalised(): void
@@ -250,8 +249,8 @@ class UpdateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function testCancelSuccessWithNoStatusChangesIgnored(): void
@@ -286,19 +285,19 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         $payloadArray = $this->decodePaylode($payload);
-        $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
-        $this->assertEquals('N1 1AA', $payloadArray['billingPostalAddress']);
+        $this->assertSame(DonationStatus::Cancelled->value, $payloadArray['status']);
+        $this->assertSame('N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
         $this->assertTrue($payloadArray['optInCharityEmail']);
         $this->assertFalse($payloadArray['optInTbgEmail']);
-        $this->assertEquals(123.45, $payloadArray['donationAmount']); // Attempt to patch this is ignored
-        $this->assertEquals(0, $payloadArray['matchedAmount']);
-        $this->assertEquals(1.00, $payloadArray['tipAmount']);
-        $this->assertEquals(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
-        $this->assertEquals(0, $payloadArray['charityFeeVat']);
+        $this->assertSame(123.45, $payloadArray['donationAmount']); // Attempt to patch this is ignored
+        $this->assertSame(0, $payloadArray['matchedAmount']);
+        $this->assertSame(1, $payloadArray['tipAmount']);
+        $this->assertSame(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
+        $this->assertSame(0, $payloadArray['charityFeeVat']);
     }
 
     public function testCancelSuccessWithChange(): void
@@ -338,19 +337,19 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         $payloadArray = $this->decodePaylode($payload);
-        $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
-        $this->assertEquals('N1 1AA', $payloadArray['billingPostalAddress']);
+        $this->assertSame(DonationStatus::Cancelled->value, $payloadArray['status']);
+        $this->assertSame('N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
         $this->assertTrue($payloadArray['optInCharityEmail']);
         $this->assertFalse($payloadArray['optInTbgEmail']);
-        $this->assertEquals(123.45, $payloadArray['donationAmount']); // Attempt to patch this is ignored
-        $this->assertEquals(0, $payloadArray['matchedAmount']);
-        $this->assertEquals(1.00, $payloadArray['tipAmount']);
-        $this->assertEquals(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
-        $this->assertEquals(0, $payloadArray['charityFeeVat']);
+        $this->assertSame(123.45, $payloadArray['donationAmount']); // Attempt to patch this is ignored
+        $this->assertSame(0, $payloadArray['matchedAmount']);
+        $this->assertSame(1, $payloadArray['tipAmount']);
+        $this->assertSame(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
+        $this->assertSame(0, $payloadArray['charityFeeVat']);
     }
 
     /**
@@ -399,7 +398,7 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(500, $response->getStatusCode());
+        $this->assertSame(500, $response->getStatusCode());
     }
 
     /**
@@ -447,10 +446,10 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         $payloadArray = $this->decodePaylode($payload);
-        $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
+        $this->assertSame(DonationStatus::Cancelled->value, $payloadArray['status']);
     }
 
     public function testCancelSuccessWithChangeFromPendingAnonymousDonation(): void
@@ -484,16 +483,16 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         $payloadArray = $this->decodePaylode($payload);
-        $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
+        $this->assertSame(DonationStatus::Cancelled->value, $payloadArray['status']);
         $this->assertFalse($payloadArray['giftAid']);
-        $this->assertEquals(124.56, $payloadArray['donationAmount']); // Attempt to patch this is ignored
-        $this->assertEquals(0, $payloadArray['matchedAmount']);
-        $this->assertEquals(2.00, $payloadArray['tipAmount']);
-        $this->assertEquals(2.57, $payloadArray['charityFee']); // 1.9% + 20p.
-        $this->assertEquals(0, $payloadArray['charityFeeVat']);
+        $this->assertSame(124.56, $payloadArray['donationAmount']); // Attempt to patch this is ignored
+        $this->assertSame(0, $payloadArray['matchedAmount']);
+        $this->assertSame(2, $payloadArray['tipAmount']);
+        $this->assertSame(2.57, $payloadArray['charityFee']); // 1.9% + 20p.
+        $this->assertSame(0, $payloadArray['charityFeeVat']);
     }
 
     public function testAddDataAttemptWithDifferentAmount(): void
@@ -528,8 +527,8 @@ class UpdateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function testAddDataAttemptWithRequiredBooleanFieldMissing(): void
@@ -566,8 +565,8 @@ class UpdateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     /**
@@ -583,6 +582,7 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
+        $entityManagerProphecy->getRepository(CampaignFunding::class)->willReturn($this->createStub(CampaignFundingRepository::class));
 
         $this->setDoublesInContainer($container, $entityManagerProphecy);
 
@@ -608,8 +608,8 @@ class UpdateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function testAddDataAttemptWithGiftAidMissingDonatingInGBP(): void
@@ -646,8 +646,8 @@ class UpdateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function testAddDataAttemptWithTipAboveMaximumAllowed(): void
@@ -688,8 +688,8 @@ class UpdateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function testAddDataHitsUnexpectedStripeException(): void
@@ -754,10 +754,10 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(500, $response->getStatusCode());
+        $this->assertSame(500, $response->getStatusCode());
 
         $payloadArray = $this->decodePaylode($payload);
-        $this->assertEquals([
+        $this->assertSame([
             'error' => [
                 'type' => 'SERVER_ERROR',
                 'description' => 'Could not update Stripe Payment Intent [B]',
@@ -836,10 +836,10 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         $payloadArray = $this->decodePaylode($payload);
-        $this->assertEquals(3.08, $payloadArray['charityFee']);
+        $this->assertSame(3.08, $payloadArray['charityFee']);
     }
 
     public function testAddDataHitsAlreadyCapturedStripeExceptionWithFeeChange(): void
@@ -915,10 +915,10 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(500, $response->getStatusCode());
+        $this->assertSame(500, $response->getStatusCode());
 
         $payloadArray = $this->decodePaylode($payload);
-        $this->assertEquals([
+        $this->assertSame([
             'error' => [
                 'type' => 'SERVER_ERROR',
                 'description' => 'Could not update Stripe Payment Intent [A]',
@@ -997,10 +997,10 @@ class UpdateTest extends TestCase
 
         // If retry worked, all good from the API client's perspective.
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         $payloadArray = $this->decodePaylode($payload);
-        $this->assertEquals(3.08, $payloadArray['charityFee']);
+        $this->assertSame(3.08, $payloadArray['charityFee']);
     }
 
     /**
@@ -1074,10 +1074,10 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(500, $response->getStatusCode());
+        $this->assertSame(500, $response->getStatusCode());
 
         $payloadArray = $this->decodePaylode($payload);
-        $this->assertEquals([
+        $this->assertSame([
             'error' => [
                 'type' => 'SERVER_ERROR',
                 'description' => 'Could not update Stripe Payment Intent [C]',
@@ -1159,10 +1159,10 @@ class UpdateTest extends TestCase
         // intermittently from Stripe + don't really need the update, we should
         // succeed from a donor perspective.
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         $payloadArray = $this->decodePaylode($payload);
-        $this->assertEquals(3.08, $payloadArray['charityFee']);
+        $this->assertSame(3.08, $payloadArray['charityFee']);
     }
 
     public function testAddDataSuccessWithAllValues(): void
@@ -1223,32 +1223,32 @@ class UpdateTest extends TestCase
         $responseBody = (string) $response->getBody();
 
         $this->assertJson($responseBody);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         $payload = json_decode($responseBody, true);
         \assert(is_array($payload));
 
         // These two values are unchanged but still returned.
-        $this->assertEquals(123.45, $payload['donationAmount']);
-        $this->assertEquals(DonationStatus::Pending->value, $payload['status']);
+        $this->assertSame(123.45, $payload['donationAmount']);
+        $this->assertSame(DonationStatus::Pending->value, $payload['status']);
 
         // Remaining properties should be updated.
-        $this->assertEquals('US', $payload['countryCode']);
-        $this->assertEquals('USD', $payload['currencyCode']);
+        $this->assertSame('US', $payload['countryCode']);
+        $this->assertSame('USD', $payload['currencyCode']);
         // 1.9% + 20p. cardCountry from Stripe payment method ≠ donor country.
-        $this->assertEquals(3.08, $payload['charityFee']);
-        $this->assertEquals(0, $payload['charityFeeVat']);
-        $this->assertEquals('3.21', $payload['tipAmount']);
+        $this->assertSame(3.08, $payload['charityFee']);
+        $this->assertSame(0, $payload['charityFeeVat']);
+        $this->assertSame(3.21, $payload['tipAmount']);
         $this->assertTrue($payload['giftAid']);
         $this->assertFalse($payload['tipGiftAid']);
-        $this->assertEquals('99 Updated St', $payload['homeAddress']);
-        $this->assertEquals('X1 1XY', $payload['homePostcode']);
-        $this->assertEquals('Saul', $payload['firstName']);
-        $this->assertEquals('Williams', $payload['lastName']);
-        $this->assertEquals('saul@example.com', $payload['emailAddress']);
+        $this->assertSame('99 Updated St', $payload['homeAddress']);
+        $this->assertSame('X1 1XY', $payload['homePostcode']);
+        $this->assertSame('Saul', $payload['firstName']);
+        $this->assertSame('Williams', $payload['lastName']);
+        $this->assertSame('saul@example.com', $payload['emailAddress']);
         $this->assertTrue($payload['optInTbgEmail']);
         $this->assertFalse($payload['optInCharityEmail']);
-        $this->assertEquals('Y1 1YX', $payload['billingPostalAddress']);
+        $this->assertSame('Y1 1YX', $payload['billingPostalAddress']);
     }
 
     public function testAddDataSuccessWithCashBalanceAutoconfirm(): void
@@ -1273,14 +1273,14 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         $payloadArray = $this->decodePaylode($payload);
 
         // These values are unchanged but still returned. Confirming alone doesn't change the
         // response payload.
-        $this->assertEquals(123.45, $payloadArray['donationAmount']);
-        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['status']);
+        $this->assertSame(123.45, $payloadArray['donationAmount']);
+        $this->assertSame(DonationStatus::Pending->value, $payloadArray['status']);
     }
 
     public function testAddDataFailsWithCashBalanceAutoconfirmForDonorWithInsufficentFunds(): void
@@ -1304,11 +1304,6 @@ class UpdateTest extends TestCase
             $this->assertStringContainsString("Status was processing, expected succeeded", $exception->getMessage());
         }
 
-        $this->assertSame(
-            '123',
-            $this->donationRepository->totalMatchFundsReleased()
-        );
-
         $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
         $entityManagerProphecy->flush()->shouldBeCalled(); // flushes cancelled donation to DB.
     }
@@ -1331,16 +1326,16 @@ class UpdateTest extends TestCase
 
         $this->assertJson($payload);
 
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         /**
          * @psalm-var array{donationAmount:float, status:string} $payloadArray
          */
         $payloadArray = $this->decodePaylode($payload);
 
-        $this->assertEquals(123.45, $payloadArray['donationAmount']);
+        $this->assertSame(123.45, $payloadArray['donationAmount']);
         // Bank transfer is still required -> status remains pending.
-        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['status']);
+        $this->assertSame(DonationStatus::Pending->value, $payloadArray['status']);
 
         // Stripe PI must be left pending ready for the bank transfer.
         $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldNotBeCalled();
@@ -1371,11 +1366,6 @@ class UpdateTest extends TestCase
         $this->expectExceptionMessage('Status was requires_action, expected succeeded');
 
         $app->handle($request->withAttribute('route', $route));
-
-        $this->assertSame(
-            '123',
-            $this->donationRepository->totalMatchFundsReleased()
-        );
     }
 
     public function testAddDataRejectsAutoconfirmWithCardMethod(): void
@@ -1400,7 +1390,7 @@ class UpdateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent(Argument::cetera())
             ->shouldNotBeCalled();
-        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123', [])
             ->shouldNotBeCalled();
 
         $this->setDoublesInContainer($container, $entityManagerProphecy, $stripeProphecy);
@@ -1422,7 +1412,7 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame(400, $response->getStatusCode());
 
         $expectedPayload = new ActionPayload(400, ['error' => [
             'type' => 'BAD_REQUEST',
@@ -1430,7 +1420,7 @@ class UpdateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertSame($expectedSerialised, $payload);
     }
 
     public function testCannotAutoConfirmCardPayment(): void
@@ -1476,7 +1466,7 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame(400, $response->getStatusCode());
 
         $expectedPayload = new ActionPayload(400, ['error' => [
             'type' => 'BAD_REQUEST',
@@ -1484,7 +1474,7 @@ class UpdateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertSame($expectedSerialised, $payload);
     }
 
     public function testAddDataAutoconfirmHitsUnknownInvalidRequestException(): void
@@ -1519,7 +1509,7 @@ class UpdateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', Argument::type('array'))
             ->shouldBeCalledOnce();
-        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123', [])
             ->willThrow(new InvalidRequestException('Not the one we know!'))
             ->shouldBeCalledOnce();
 
@@ -1548,9 +1538,9 @@ class UpdateTest extends TestCase
 
     /**
      * @return array{
-     *     app: App,
+     *     app: App<ContainerInterface|null>,
      * request: ServerRequestInterface,
-     * route: Route,
+     * route: Route<null>,
      * entityManagerProphecy: ObjectProphecy<EntityManagerInterface>,
      * stripeProphecy: ObjectProphecy<Stripe>
      * }
@@ -1596,10 +1586,11 @@ class UpdateTest extends TestCase
         if ($nextActionRequired !== null) {
             $nextAction = new ErrorObject();
             $nextAction->type = $nextActionRequired;
+            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $updatedPaymentIntent->next_action = $nextAction;
         }
 
-        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123', [])
             ->shouldBeCalledOnce()
             ->willReturn($updatedPaymentIntent);
 
@@ -1616,7 +1607,7 @@ class UpdateTest extends TestCase
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
 
-        return [
+        return [ // @phpstan-ignore return.type
             'app' => $app,
             'request' => $request,
             'route' => $route,
@@ -1653,12 +1644,23 @@ class UpdateTest extends TestCase
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
 
+        /**
+         * May be called if there's matching allocation.
+         * @psalm-suppress MixedFunctionCall
+         */
+        $entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))
+            ->will(function (array $args): mixed {
+                return $args[0]();
+            });
+
+        $entityManagerProphecy->getRepository(CampaignFunding::class)->willReturn($this->createStub(CampaignFundingRepository::class));
+
         if ($persist) {
             $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         }
 
         if ($flush) {
-            $entityManagerProphecy->flush()->shouldBeCalledOnce();
+            $entityManagerProphecy->flush()->shouldBeCalled(); // Once or twice, depending on whether there's matching.
         }
 
         if ($commit) {
@@ -1668,6 +1670,9 @@ class UpdateTest extends TestCase
         return $entityManagerProphecy;
     }
 
+    /**
+     * @return array<mixed>
+     */
     private function decodePaylode(string $payload): array
     {
         $decoded = json_decode($payload, true, \JSON_THROW_ON_ERROR);

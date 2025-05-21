@@ -1,14 +1,40 @@
 includes:
 	- phpstan-baseline.neon
+	- phar://phpstan.phar/conf/bleedingEdge.neon
 parameters:
 	# Phpstan levels go the opposite way to Psalm - 1 is the laxest, 10 is the strictest.
-	level: 5
+	level: 6
 	paths:
 		- src
 		- tests
 		- integrationTests
 		- app
 	treatPhpDocTypesAsCertain: false
+	checkUninitializedProperties: true
+	rememberPossiblyImpureFunctionValues: false
+	checkExplicitMixed: true
+	strictRules:
+		disallowedLooseComparison: false
+		booleansInConditions: false
+		booleansInLoopConditions: false
+		uselessCast: true
+		requireParentConstructorCall: true
+		disallowedBacktick: true
+		disallowedEmpty: false
+		disallowedImplicitArrayCreation: false
+		disallowedShortTernary: false
+		overwriteVariablesWithLoop: true
+		closureUsesThis: false
+		matchingInheritedMethodNames: true
+		numericOperandsInArithmeticOperators: true
+		strictFunctionCalls: true
+		dynamicCallOnStaticMethod: false
+		switchConditionsMatchingType: true
+		noVariableVariables: true
+		strictArrayFilter: true
+		illegalConstructorMethodCall: true
+	editorUrlTitle: '%%file%%:%%line%%'
+	editorUrl: '//'
 	ignoreErrors:
 #	     see https://github.com/phpstan/phpstan/issues/10#issuecomment-264988090 :
 		- '#Call to an undefined static method MatchBot\\Application\\Assertion::[a-zA-Z0-9_]+\(\)#'
@@ -18,3 +44,16 @@ parameters:
 
 #		Allow unused params if name starts with _
 		- '#has an unused parameter \$_#'
+		-
+			identifier: property.uninitialized
+			# properties in tests are initialised in setup instead of __construct.
+			paths:
+				- tests/*
+				- integrationTests/*
+		-
+			identifier: offsetAccess.nonOffsetAccessible
+			paths:
+				- tests/*
+				- integrationTests/*
+	stubFiles:
+		- .psalm/containers.php.stub

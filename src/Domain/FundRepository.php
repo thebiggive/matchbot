@@ -184,6 +184,7 @@ class FundRepository extends SalesforceReadProxyRepository
         return $fund;
     }
 
+    /** @param array<string, mixed> $fundData */
     protected function getNewFund(array $fundData): Fund
     {
         $currencyCode = $fundData['currencyCode'] ?? 'GBP';
@@ -194,7 +195,7 @@ class FundRepository extends SalesforceReadProxyRepository
         Assertion::string($name);
         Assertion::string($type);
         Assertion::string($id);
-        $fund = new Fund(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($id), fundType: FundType::from($type));
+        $fund = new Fund(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::ofFund($id), fundType: FundType::from($type));
 
         return $fund;
     }
@@ -262,6 +263,7 @@ EOT;
      *
      * @param Fund $proxy
      */
+    #[\Override]
     protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
     {
         $fundId = $proxy->getSalesforceId();

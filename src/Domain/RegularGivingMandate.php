@@ -186,6 +186,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->activeFrom = $activationDate;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toFrontEndApiModel(Charity $charity, \DateTimeImmutable $now): array
     {
         Assertion::same($charity->getSalesforceId(), $this->charityId);
@@ -227,6 +230,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
     }
 
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toSFApiModel(DonorAccount $donor): array
     {
         Assertion::eq($donor->id(), $this->donorId);
@@ -272,8 +278,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
      * Records that all donations we plan to take for this donation before the given time have been created
      * and saved as pre-authorized donations. This means that no more donations need to be created based on this
      * mandate before that date.
-     *
-     * @psalm-suppress PossiblyUnusedMethod - to be used soon.
      */
     public function setDonationsCreatedUpTo(?\DateTimeImmutable $donationsCreatedUpTo): void
     {
@@ -442,7 +446,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         }
 
         return $this->donationAmount->withPence(
-            (int) (100 * Donation::donationAmountToGiftAidValue(amount: $this->donationAmount->toNumericString()))
+            (int) (100.0 * (float)Donation::donationAmountToGiftAidValue(amount: $this->donationAmount->toNumericString()))
         );
     }
 

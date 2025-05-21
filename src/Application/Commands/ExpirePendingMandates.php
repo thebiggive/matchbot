@@ -32,6 +32,7 @@ class ExpirePendingMandates extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $fifteenMinutes = new \DateInterval('PT15M');

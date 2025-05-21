@@ -8,6 +8,9 @@ use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;
 
 readonly class FundTotalUpdated implements MessageGroupAwareInterface
 {
+    /**
+     * @param array<string, mixed> $jsonSnapshot
+     */
     protected function __construct(public string $salesforceId, public array $jsonSnapshot)
     {
     }
@@ -23,6 +26,7 @@ readonly class FundTotalUpdated implements MessageGroupAwareInterface
         );
     }
 
+    #[\Override]
     public function getMessageGroupId(): ?string
     {
         return 'fund.total.updated.' . $this->salesforceId;

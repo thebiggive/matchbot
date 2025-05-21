@@ -3,18 +3,22 @@
 namespace MatchBot\Domain;
 
 use Doctrine\Common\Cache\CacheProvider;
+use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
+use MatchBot\Application\Matching\Allocator;
+use MatchBot\Application\Matching\DbErrorPreventedMatch;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
@@ -81,6 +85,7 @@ class DonationService
     private ?\Closure $fakeDonationProviderForTestUseOnly = null;
 
     public function __construct(
+        private Allocator $allocator,
         private DonationRepository $donationRepository,
         private CampaignRepository $campaignRepository,
         private LoggerInterface $logger,
@@ -115,35 +120,19 @@ class DonationService
      * @throws RateLimitExceededException
      * @throws WrongCampaignType
      * @throws \MatchBot\Client\NotFoundException
+     * @throws DbErrorPreventedMatch
      */
     public function createDonation(DonationCreate $donationData, string $pspCustomerId, PersonId $donorId): Donation
     {
-        $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
-
         try {
-            $donation = $this->buildFromAPIRequest($donationData, $donorId);
-        } catch (\UnexpectedValueException $e) {
-            $message = 'Donation Create data initial model load';
-            $this->logger->warning($message . ': ' . $e->getMessage());
-
-            throw new DonationCreateModelLoadFailure(previous: $e);
+            return $this->doCreateDonation($pspCustomerId, $donationData, $donorId);
+        } catch (RetryableException $exception) {
+            /**
+             * See notes on {@see self::enrollNewDonation} for EM side effect details.
+             */
+            $this->logger->warning("Error creating donation, will retry: " . $exception->getMessage());
+            return $this->doCreateDonation($pspCustomerId, $donationData, $donorId);
         }
-
-        if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
-            throw new \UnexpectedValueException(sprintf(
-                'Route customer ID %s did not match %s in donation body',
-                $pspCustomerId,
-                $donation->getPspCustomerId()->stripeCustomerId ?? 'null'
-            ));
-        }
-
-        if (!$donation->getCampaign()->isOpen($this->clock->now())) {
-            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
-        }
-
-        $this->enrollNewDonation($donation, attemptMatching: true);
-
-        return $donation;
     }
 
 
@@ -216,19 +205,14 @@ class DonationService
     }
 
     /**
-     *
-     * We currently think that this retry logic is not useful as we are using it -
-     * if the provided closure fails the first time then it will on all the retrys as well, since the Entity Manager
-     * will have been closed from the first failure.
-     *
-     * However, if we're wrong and it is useful we will find out by an error log with "$actionName SUCCEEDED"
-     *
      * @param \Closure $retryable The action to be executed and then retried if necessary
      * @param string $actionName The name of the action, used in logs.
      * @throws ORMException|DBALServerException if they're occurring when max retry count reached.
      */
-    private function runWithPossibleRetry(\Closure $retryable, string $actionName): void
-    {
+    private function runWithPossibleRetry(
+        \Closure $retryable,
+        string $actionName
+    ): void {
         $retryCount = 0;
         while ($retryCount < self::MAX_RETRY_COUNT) {
             try {
@@ -240,7 +224,7 @@ class DonationService
                     );
                 }
                 return;
-            } catch (ORMException | DBALServerException $exception) {
+            } catch (RetryableException $exception) {
                 $retryCount++;
                 $this->logger->info(
                     sprintf(
@@ -369,6 +353,9 @@ class DonationService
      * - Allocating match funds to the donation
      * - Creating Stripe Payment intent
      *
+     * On retryable database errors, the passed `$donation` will be detached from the EM on the assumption that
+     * callers will use a new one. The exception is re-thrown when this happens.
+     *
      * @param bool $attemptMatching Whether to use match funds. Match funds will be withdrawn based on
      *                              availability or donation amount, which ever is smaller.
      * @throws CampaignNotOpen
@@ -386,17 +373,24 @@ class DonationService
 
         $campaign->checkIsReadyToAcceptDonation($donation, $this->clock->now());
 
-        // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
-        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
-        $this->runWithPossibleRetry(function () use ($donation) {
-            $this->entityManager->persist($donation);
-            $this->entityManager->flush();
-        }, 'Donation Create persist before stripe work');
+        // Handling txn ourselves because Doctrine closes EM on errors. We want to only remove the new Donation from
+        // tracking instead so that a retry can work.
+        $this->entityManager->beginTransaction();
+
+        // Must persist before Stripe work to have ID available. No retries at this level as it's cleaner to begin
+        // again with a fresh donation.
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
 
         if ($campaign->isMatched() && $attemptMatching) {
-            $this->attemptFundingAllocation($donation);
+            try {
+                $this->attemptFundingAllocation($donation);
+            } catch (RetryableException) { // here
+                $this->attemptFundingAllocation($donation);
+            }
         }
 
+        $this->entityManager->commit();
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
         if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {
@@ -562,7 +556,7 @@ class DonationService
             );
         }
 
-        $this->logger->info("Cancelled ID {$donation->getUuid()}");
+        $this->logger->info("Cancelled donation UUID {$donation->getUuid()}");
 
         $donation->cancel();
 
@@ -570,8 +564,7 @@ class DonationService
         $this->save($donation);
 
         if ($donation->getCampaign()->isMatched()) {
-            /** @psalm-suppress InternalMethod */
-            $this->donationRepository->releaseMatchFunds($donation);
+            $this->allocator->releaseMatchFunds($donation);
         }
 
         $transactionId = $donation->getTransactionId();
@@ -580,7 +573,7 @@ class DonationService
                 $this->stripe->cancelPaymentIntent($transactionId);
             } catch (ApiErrorException $exception) {
                 /**
-                 * As per the notes in {@see DonationRepository::releaseMatchFunds()}, we
+                 * As per the notes in {@see Allocator::releaseMatchFunds()}, we
                  * occasionally see double-cancels from the frontend. If Stripe tell us the
                  * Cancelled Donation's PI is canceled [note US spelling doesn't match our internal
                  * status], in all CC21 checks this seemed to be the situation.
@@ -664,12 +657,15 @@ class DonationService
             $donation = $this->donationRepository->findAndLockOneByUUID($donationId);
             Assertion::notNull($donation);
 
-            $this->donationRepository->releaseMatchFunds($donation);
+            $this->allocator->releaseMatchFunds($donation);
 
             $this->entityManager->flush();
         });
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function donationAsApiModel(UuidInterface $donationUUID): array
     {
         $donation = $this->donationRepository->findOneByUUID($donationUUID);
@@ -681,6 +677,9 @@ class DonationService
         return $donation->toFrontEndApiModel();
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
     public function findAllCompleteForCustomerAsAPIModels(StripeCustomerId $stripeCustomerId): array
     {
         $donations = $this->donationRepository->findAllCompleteForCustomer($stripeCustomerId);
@@ -702,7 +701,7 @@ class DonationService
             ]
         );
 
-        $this->logger->info("PaymentIntent: {$paymentIntent->toJson()}");
+        $this->logger->info("PaymentIntent: {$paymentIntent->toJSON()}");
 
         if ($paymentIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
             // @todo-regular-giving-mat-407: create a new db field on Donation - e.g. payment_attempt_count and update here
@@ -749,10 +748,11 @@ class DonationService
 
     public function updateDonationStatusFromSuccessfulCharge(Charge $charge, Donation $donation): void
     {
-        $this->logger->info('updating donation from charge: ' . $charge->toJson());
+        $this->logger->info('updating donation from charge: ' . $charge->toJSON());
 
         /**
-         * @var array|Card|null $card
+         * @psalm-suppress MixedMethodCall
+         * @var array<string, mixed>|Card|null $card
          */
         $card = $charge->payment_method_details?->toArray()['card'] ?? null;
         if (is_array($card)) {
@@ -802,7 +802,6 @@ class DonationService
         }
     }
 
-
     private function getOriginalFeeFractional(string $balanceTransactionId, string $expectedCurrencyCode): int
     {
         $txn = $this->stripe->retrieveBalanceTransaction($balanceTransactionId);
@@ -818,6 +817,7 @@ class DonationService
         /**
          * See https://docs.stripe.com/api/balance_transactions/object#balance_transaction_object-fee_details
          * @var object{currency: string, type: string} $feeDetail
+         * // @phpstan-ignore varTag.type
          */
         $feeDetail = $txn->fee_details[0];
 
@@ -841,29 +841,13 @@ class DonationService
 
     public function attemptFundingAllocation(Donation $donation): void
     {
-        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
-        $this->runWithPossibleRetry(
-            function () use ($donation) {
-                try {
-                    $this->donationRepository->allocateMatchFunds($donation);
-                } catch (\Throwable $t) {
-                    // warning indicates that we *may* retry, as it depends on whether this is in the last retry or
-                    // not.
-                    $this->logger->warning(sprintf('Allocation got error, may retry: %s', $t->getMessage()));
-
-                    $this->matchingAdapter->releaseNewlyAllocatedFunds();
-
-                    // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
-                    // would be reduced again when the donation expires.
-                    $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
-
-                    $this->entityManager->flush();
-
-                    throw $t;
-                }
-            },
-            'allocate match funds'
-        );
+        try {
+            $this->allocator->allocateMatchFunds($donation);
+        } catch (\Throwable $throwable) {
+            $this->logger->info(sprintf('Releasing allocated funds after match error for UUID %s', $donation->getUuid()));
+            $this->matchingAdapter->releaseNewlyAllocatedFunds();
+            throw $throwable;
+        }
     }
 
     /**
@@ -916,5 +900,50 @@ class DonationService
     {
         Assertion::true(Environment::current() === Environment::Test);
         $this->fakeDonationProviderForTestUseOnly = $fakeDonationProviderForTestUseOnly;
+    }
+
+    /**
+     * @param string $pspCustomerId
+     * @param DonationCreate $donationData
+     * @param PersonId $donorId
+     * @return Donation
+     * @throws CampaignNotOpen
+     * @throws CharityAccountLacksNeededCapaiblities
+     * @throws CouldNotMakeStripePaymentIntent
+     * @throws DBALServerException
+     * @throws DonationCreateModelLoadFailure
+     * @throws NotFoundException
+     * @throws ORMException
+     * @throws StripeAccountIdNotSetForAccount
+     * @throws WrongCampaignType
+     */
+    public function doCreateDonation(string $pspCustomerId, DonationCreate $donationData, PersonId $donorId): Donation
+    {
+        $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
+
+        try {
+            $donation = $this->buildFromAPIRequest($donationData, $donorId);
+        } catch (\UnexpectedValueException $e) {
+            $message = 'Donation Create data initial model load';
+            $this->logger->warning($message . ': ' . $e->getMessage());
+
+            throw new DonationCreateModelLoadFailure(previous: $e);
+        }
+
+        if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
+            throw new \UnexpectedValueException(sprintf(
+                'Route customer ID %s did not match %s in donation body',
+                $pspCustomerId,
+                $donation->getPspCustomerId()->stripeCustomerId ?? 'null'
+            ));
+        }
+
+        if (!$donation->getCampaign()->isOpen($this->clock->now())) {
+            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
+        }
+
+        $this->enrollNewDonation($donation, attemptMatching: true);
+
+        return $donation;
     }
 }

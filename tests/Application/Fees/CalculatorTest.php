@@ -23,8 +23,8 @@ class CalculatorTest extends TestCase
         );
 
         // 1.5% + 20p
-        $this->assertEquals('2.05', $fees->coreFee);
-        $this->assertEquals('0.41', $fees->feeVat);
+        $this->assertSame('2.05', $fees->coreFee);
+        $this->assertSame('0.41', $fees->feeVat);
     }
 
     public function testStripeUSCardGBPDonation(): void
@@ -39,7 +39,7 @@ class CalculatorTest extends TestCase
         );
 
         // 3.2% + 20p
-        $this->assertEquals('4.14', $fees->coreFee);
+        $this->assertSame('4.14', $fees->coreFee);
     }
 
     public function testStripeUSCardGBPDonationWithTbgClaimingGiftAid(): void
@@ -54,7 +54,7 @@ class CalculatorTest extends TestCase
         );
 
         // 3.2% + 20p + 0.75% (net)
-        $this->assertEquals('4.15', $fees->coreFee);
+        $this->assertSame('4.15', $fees->coreFee);
     }
 
     public function testStripeUKCardSEKDonation(): void
@@ -69,7 +69,7 @@ class CalculatorTest extends TestCase
         );
 
         // 1.5% + 1.80 SEK
-        $this->assertEquals('3.65', $fees->coreFee);
+        $this->assertSame('3.65', $fees->coreFee);
     }
 
     public function testStripeUSCardSEKDonation(): void
@@ -84,7 +84,7 @@ class CalculatorTest extends TestCase
         );
 
         // 3.2% + 1.80 SEK
-        $this->assertEquals('5.74', $fees->coreFee);
+        $this->assertSame('5.74', $fees->coreFee);
     }
 
     /**
@@ -101,8 +101,8 @@ class CalculatorTest extends TestCase
             false,
         );
 
-        $this->assertEquals('3.50', $fees->coreFee);
-        $this->assertEquals('0.00', $fees->feeVat);
+        $this->assertSame('3.50', $fees->coreFee);
+        $this->assertSame('0.00', $fees->feeVat);
     }
 
     /**
@@ -122,7 +122,9 @@ class CalculatorTest extends TestCase
         );
 
         $this->assertSame('0.35', $fees->coreFee);
-        $this->assertSame(9.65, $donationAmount - $fees->coreFee);
+
+        // @phpstan-ignore method.alreadyNarrowedType
+        $this->assertSame(9.65, (float)$donationAmount - (float)$fees->coreFee);
     }
 
     /**
@@ -131,7 +133,7 @@ class CalculatorTest extends TestCase
     public function testGBP10WVithGiftAidProvides1208(): void
     {
         $donationAmount = '10.00';
-        $giftAidAmount = $donationAmount / 4;
+        $giftAidAmount = (int)$donationAmount / 4;
 
         $fees = Calculator::calculate(
             psp: 'stripe',
@@ -143,7 +145,9 @@ class CalculatorTest extends TestCase
         );
 
         $this->assertSame('0.43', $fees->coreFee);
-        $this->assertSame(12.07, $donationAmount - $fees->coreFee + $giftAidAmount);
+
+        // @phpstan-ignore method.alreadyNarrowedType
+        $this->assertSame(12.07, (float)$donationAmount - (float)$fees->coreFee + $giftAidAmount);
     }
 
     /**
@@ -163,6 +167,8 @@ class CalculatorTest extends TestCase
         );
 
         $this->assertSame('0.52', $fees->coreFee);
-        $this->assertSame(9.48, $donationAmount - $fees->coreFee);
+
+        // @phpstan-ignore method.alreadyNarrowedType
+        $this->assertSame(9.48, (float)$donationAmount - (float)$fees->coreFee);
     }
 }

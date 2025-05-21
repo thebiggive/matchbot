@@ -10,8 +10,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
-use MatchBot\Domain\CardBrand;
-use MatchBot\Domain\Country;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationFundsNotifier;
@@ -27,19 +25,11 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Ramsey\Uuid\Uuid;
-use Stripe\Card;
 use Stripe\Charge;
 use Stripe\Dispute;
 use Stripe\Event;
 use Stripe\PaymentIntent;
-use Stripe\StripeClient;
-use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Stamp\DelayStamp;
-use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
-use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
-use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
@@ -69,7 +59,7 @@ class StripePaymentsUpdate extends Stripe
          * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
          * is final and does not implement our custom interface.
          */
-        $chatter = $container->get(StripeChatterInterface::class);
+        $chatter = $container->get(StripeChatterInterface::class); // @phpstan-ignore varTag.type
         $this->chatter = $chatter;
 
         parent::__construct($container, $logger);
@@ -78,6 +68,7 @@ class StripePaymentsUpdate extends Stripe
     /**
      * @return Response
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         $validationErrorResponse = $this->prepareEvent(
@@ -116,7 +107,6 @@ class StripePaymentsUpdate extends Stripe
     private function handleChargeSucceeded(Event $event, Response $response): Response
     {
         /**
-         * @psalm-suppress UndefinedMagicPropertyFetch
          * @var Charge $charge
          */
         $charge = $event->data->object;
@@ -189,7 +179,6 @@ class StripePaymentsUpdate extends Stripe
     private function handleChargeDisputeClosed(Event $event, Response $response): Response
     {
         /**
-         * @psalm-suppress UndefinedMagicPropertyFetch
          * @var Dispute $dispute
          */
         $dispute = $event->data->object;
@@ -267,7 +256,6 @@ class StripePaymentsUpdate extends Stripe
     private function handleChargeRefunded(Event $event, Response $response): Response
     {
         /**
-         * @psalm-suppress UndefinedMagicPropertyFetch
          * @var Charge $charge
          */
         $charge = $event->data->object;
@@ -283,7 +271,7 @@ class StripePaymentsUpdate extends Stripe
 
         $this->entityManager->beginTransaction();
 
-        $donation = $this->donationRepository->findOneBy(['chargeId' => $charge->id]);
+        $donation = $this->donationRepository->findAndLockOneBy(['chargeId' => $charge->id]);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Charge ID %s', $charge->id));
@@ -357,13 +345,12 @@ class StripePaymentsUpdate extends Stripe
         /**
          * https://docs.stripe.com/api/events/types?event_types-invoice.payment_succeeded=#event_types-payment_intent.canceled
          * says "data.object is a payment intent" so:
-         *
-         * @psalm-suppress UndefinedMagicPropertyFetch $paymentIntent
          */
         $paymentIntent = $event->data->object;
         \assert($paymentIntent instanceof PaymentIntent);
 
-        $donation = $this->donationRepository->findOneBy(['transactionId' => $paymentIntent->id]);
+        $this->entityManager->beginTransaction();
+        $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $paymentIntent->id]);
 
         if ($donation === null) {
             if (getenv('APP_ENV') !== 'production') {
@@ -392,6 +379,7 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->entityManager->flush();
+        $this->entityManager->commit();
         $this->queueSalesforceUpdate($donation);
 
         return $this->respond($response, new ActionPayload(200));
@@ -463,8 +451,21 @@ class StripePaymentsUpdate extends Stripe
     {
         Assertion::eq('customer_cash_balance_transaction.created', $event->type);
 
+        /** @var array<string, mixed> $eventAsArray
+         * @psalm-suppress MixedMethodCall
+         * (not sure why Psalm can't tell that this is an array since Upgrade to stripe Library v.17)
+         */
+        $eventAsArray = $event->data->toArray();
+
+        /** @psalm-suppress DocblockTypeContradiction */
+        if (! \is_array($eventAsArray)) {
+            // I don't think this will ever happen but logging an error in case of a change since stripe
+            // SDK upgrade
+            $this->logger->error('Result of $event->data->toArray() not array');
+        }
+
         /** @var array{customer: string, currency: string, net_amount: int, ending_balance: int, type: string} $webhookObject */
-        $webhookObject = $event->data->toArray()['object'];
+        $webhookObject = $eventAsArray['object'];
 
         $stripeAccountId = StripeCustomerId::of($webhookObject['customer']);
 

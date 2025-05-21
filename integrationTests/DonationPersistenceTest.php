@@ -34,6 +34,9 @@ class DonationPersistenceTest extends IntegrationTest
 
     /**
      * Asserts that two DB rows are similar, ignoring things out of our contril like IDs and dates.
+     *
+     * @param array<string, mixed> $expected
+     * @param array<string, mixed> $actual
      */
     private function assertRowsSimilar(array $expected, array $actual, string $message = ''): void
     {

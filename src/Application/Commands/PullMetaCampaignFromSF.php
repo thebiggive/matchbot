@@ -32,19 +32,18 @@ use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 )]
 class PullMetaCampaignFromSF extends LockingCommand
 {
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     public function __construct(
         private CampaignRepository $campaignRepository,
         private FundRepository $fundRepository
     ) {
         parent::__construct();
     }
+    #[\Override]
     public function configure(): void
     {
         $this->addArgument('metaCampaignSlug', InputArgument::REQUIRED);
     }
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $metaCampaginSlug = $input->getArgument('metaCampaignSlug');

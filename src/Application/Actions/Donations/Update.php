@@ -63,11 +63,13 @@ class Update extends Action
     }
 
     /**
+     * @param array<string, mixed> $args
      * @return Response
      * @throws DomainRecordNotFoundException on missing donation
      * @throws ApiErrorException if Stripe Payment Intent confirm() fails, other than because of a
      *                           missing payment method.
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         if (empty($args['donationId']) || ! is_string($args['donationId'])) {
@@ -209,7 +211,7 @@ class Update extends Action
                 ));
 
                 // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
-                $seconds = (0.1 * (2 ** $retryCount));
+                $seconds = (0.1 * (2.0 ** (float)$retryCount));
                 $this->clock->sleep($seconds);
                 $retryCount++;
 
@@ -251,6 +253,9 @@ class Update extends Action
 
     /**
      * Assumes it will be called only after starting a transaction pre-donation-select.
+     *
+     * @param array{donationId: string, ...} $args
+     *
      * @throws InvalidRequestException
      * @throws ApiErrorException if confirm() fails other than because of a missing payment method.
      * @throws \UnexpectedValueException
@@ -274,15 +279,24 @@ class Update extends Action
             );
         }
 
-        foreach (['optInCharityEmail', 'optInTbgEmail'] as $requiredBoolean) {
-            if (!isset($donationData->$requiredBoolean)) {
-                $this->entityManager->rollback();
+        if (!isset($donationData->optInCharityEmail)) {
+            $this->entityManager->rollback();
+            return $this->validationError(
+                $response,
+                "Required boolean field 'optInCharityEmail' not set",
+                null,
+                true
+            );
+        }
 
-                return $this->validationError($response, sprintf(
-                    "Required boolean field '%s' not set",
-                    $requiredBoolean,
-                ), null, true);
-            }
+        if (!isset($donationData->optInTbgEmail)) {
+            $this->entityManager->rollback();
+            return $this->validationError(
+                $response,
+                "Required boolean field 'optInTbgEmail' not set",
+                null,
+                true
+            );
         }
 
         if ($donationData->currencyCode === 'GBP' && !isset($donationData->giftAid)) {
@@ -406,16 +420,12 @@ class Update extends Action
                 $transactionId = $donation->getTransactionId();
                 Assertion::notNull($transactionId);
                 try {
-                    $confirmedIntent = $this->stripe->confirmPaymentIntent($transactionId);
+                    $confirmedIntent = $this->stripe->confirmPaymentIntent(paymentIntentId: $transactionId, params: []);
 
                     /* @var string|null $nextActionType */
                     $nextActionType = null;
                     if ($confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
                         $nextAction = $confirmedIntent->next_action;
-
-                        /** @psalm-suppress UndefinedMagicPropertyFetch - type is not documented on StripeObject but
-                         * appears to work in this context
-                         */
                         $nextActionType = (string) $nextAction?->type;
                     }
 

@@ -17,35 +17,6 @@ use Symfony\Component\Messenger\MessageBusInterface;
 interface DonationRepository
 {
     /**
-     * Create all funding allocations, with `FundingWithdrawal` links to this donation, and safely update the funds'
-     * available amount figures.
-     *
-     * @param Donation $donation
-     * @psalm-return numeric-string Total amount of matching *newly* allocated. Return value is only used in
-     *                              retrospective matching and redistribution commands - Donation::create does not take
-     *                              return value.
-     * @see CampaignFundingRepository::getAvailableFundings() for lock acquisition detail
-     */
-    public function allocateMatchFunds(Donation $donation): string;
-
-    /**
-     *
-     * Internally this method uses Doctrine transactionally to ensure the database updates are
-     * self-consistent. But it also first acquires an exclusive lock on the fund release process
-     * for the specific donation using the Symfony Lock library. If another thread is already
-     * releasing funds for the same donation, we log this fact but consider it safe to return
-     * without releasing any funds.
-     *
-     * Should mostly be thoght of as internal to `releaseMatchFundsInTransaction` - call that rather than calling
-     * this directly.
-     *
-     * @psalm-internal MatchBot\Domain
-     * @param Donation $donation
-     * @throws Matching\TerminalLockException
-     */
-    public function releaseMatchFunds(Donation $donation): void;
-
-    /**
      * Finds incomplete donations created long enough ago to be eligible to have their match-funding removed.
      *
      * Excludes any donations created in relation to a regular giving mandate as those have a slightly different way
@@ -111,15 +82,10 @@ interface DonationRepository
      * Locks row in DB to prevent concurrent updates. See jira MAT-260
      * Requires an open transaction to be managed by the caller.
      * @throws LockWaitTimeoutException
+     * @param array<string, string|null> $criteria
+     * @param array<string, string>|null $orderBy
      */
     public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation;
-
-    /**
-     * Normally called just as part of releaseMatchFunds which also releases the funds in Redis. But
-     * used separately in case of a crash when we would need to release the funds in Redis whether or not
-     * we have any FundingWithdrawals in MySQL.
-     */
-    public function removeAllFundingWithdrawalsForDonation(Donation $donation): void;
 
     /**
      * Re-queues proxy objects to Salesforce en masse.
@@ -129,8 +95,6 @@ interface DonationRepository
      *
      * @return int  Number of objects pushed
      *
-     * @psalm-suppress PossiblyUnusedReturnValue Psalm bug? Value is used in
-     * \MatchBot\Application\Commands\PushDonations::doExecute
      *
      */
     public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus): int;
@@ -175,6 +139,7 @@ interface DonationRepository
     public function findStaleDonationFundsTips(\DateTimeImmutable $atDateTime, \DateInterval $cancelationDelay): array;
 
     /**
+     * @param Salesforce18Id<Campaign> $campaignId
      * @return list<UuidInterface>
      */
     public function findPendingByDonorCampaignAndMethod(string $donorStripeId, Salesforce18Id $campaignId, PaymentMethodType $paymentMethodType,): array;
@@ -190,11 +155,13 @@ interface DonationRepository
     public function find($id);
 
     /**
+     * @param array{uuid: UuidInterface[]} $criteria
      * @return list<Donation>
      */
     public function findBy(array $criteria);
 
     /**
+     * @phpstan-param array<string, mixed> $criteria
      * @return ?Donation
      */
     public function findOneBy(array $criteria);

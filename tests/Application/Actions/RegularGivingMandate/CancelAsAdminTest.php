@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Actions\RegularGivingMandate;
 
 use DI\Container;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DonationRepository;
@@ -18,6 +19,7 @@ use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
+use Psr\Container\ContainerInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\App;
 use Slim\CallableResolver;
@@ -37,11 +39,11 @@ class CancelAsAdminTest extends TestCase
             ->withHeader('x-send-verify-hash', $this->getSalesforceAuthValue(''));
 
         $app = $this->getAppInstance();
-        $this->mockRepositories($app, $mandate);
+        $this->mockRepositories($app, $mandate); // @phpstan-ignore argument.type
 
         $response = $app->handle($request->withAttribute('route', $route));
 
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     public function testAlreadyCancelled(): void
@@ -59,11 +61,11 @@ class CancelAsAdminTest extends TestCase
             ->withHeader('x-send-verify-hash', $this->getSalesforceAuthValue(''));
 
         $app = $this->getAppInstance();
-        $this->mockRepositories($app, $mandate);
+        $this->mockRepositories($app, $mandate); // @phpstan-ignore argument.type
 
         $response = $app->handle($request->withAttribute('route', $route));
 
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame(400, $response->getStatusCode());
 
         $payload = (string) $response->getBody();
         $expectedPayload = new ActionPayload(400, ['error' => [
@@ -72,7 +74,7 @@ class CancelAsAdminTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertSame($expectedSerialised, $payload);
     }
 
     private function getTestMandate(): RegularGivingMandate
@@ -102,6 +104,7 @@ class CancelAsAdminTest extends TestCase
         return hash_hmac('sha256', $body, $salesforceSecretKey);
     }
 
+    /** @return Route<null> */
     private function getRouteWithMandateId(string $mandateUuidString): Route
     {
         $route = new Route(
@@ -136,11 +139,13 @@ class CancelAsAdminTest extends TestCase
         return $prophecy->reveal();
     }
 
+    /** @param App<ContainerInterface|null> $app */
     private function mockRepositories(App $app, RegularGivingMandate $mandate): void
     {
         $container = $app->getContainer();
         \assert($container instanceof Container);
 
+        $container->set(Allocator::class, $this->createStub(Allocator::class));
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
         $container->set(DonationRepository::class, $this->getMockDonationRepository($mandate));
         $container->set(RegularGivingMandateRepository::class, $this->getMockMandateRepository($mandate));

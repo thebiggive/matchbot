@@ -7,15 +7,14 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\Fund;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Domain\DonationService;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\PaymentMethodType;
@@ -27,7 +26,6 @@ use Psr\Log\LoggerInterface;
 use Random\Randomizer;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
@@ -43,6 +41,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
     /** @var ObjectProphecy<RoutableMessageBus> */
     private ObjectProphecy $messageBusProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
@@ -161,7 +160,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $donation->setSalesforceId(substr('006' . $this->randomString(), 0, 18));
         $donation->collectFromStripeCharge(
             chargeId: 'chg' . $randomizer->getBytesFromString('0123456789abcdef', 10),
-            totalPaidFractional: (int)((float)$amount * 100),
+            totalPaidFractional: (int)((float)$amount * 100.0),
             transferId: 'tsf' . $randomizer->getBytesFromString('0123456789abcdef', 10),
             cardBrand: null,
             cardCountry: null,
@@ -228,6 +227,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $output = new BufferedOutput();
         $command = new RedistributeMatchFunds(
             new MatchFundsRedistributor(
+                allocator: $this->getService(Allocator::class),
                 chatter: $this->createStub(ChatterInterface::class),
                 donationRepository: $this->getService(DonationRepository::class),
                 now: new \DateTimeImmutable('now'),

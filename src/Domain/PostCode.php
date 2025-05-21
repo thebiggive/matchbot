@@ -23,7 +23,7 @@ readonly class PostCode
 
     private function __construct(string $value, bool $skipUkSpecificValidation)
     {
-        $value = trim(mb_strtoUpper($value));
+        $value = trim(mb_strtoupper($value));
 
         Assertion::betweenLength($value, 2, 8);
 

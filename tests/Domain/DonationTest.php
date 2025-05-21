@@ -46,7 +46,7 @@ class DonationTest extends TestCase
         ), $this->getMinimalCampaign(), PersonId::nil());
 
         $this->assertFalse($donation->getDonationStatus()->isSuccessful());
-        $this->assertEquals('pending-create', $donation->getSalesforcePushStatus());
+        $this->assertSame('pending-create', $donation->getSalesforcePushStatus());
         $this->assertNull($donation->getSalesforceId());
         $this->assertFalse($donation->hasGiftAid());
         $this->assertNull($donation->getCharityComms());
@@ -70,10 +70,10 @@ class DonationTest extends TestCase
         $donation = $this->getTestDonation('100.00');
         $donation->setTipAmount('1.13');
 
-        $this->assertEquals('100.00', $donation->getAmount());
-        $this->assertEquals('1.13', $donation->getTipAmount());
-        $this->assertEquals(113, $donation->getTipAmountFractional());
-        $this->assertEquals(10_113, $donation->getAmountFractionalIncTip());
+        $this->assertSame('100.00', $donation->getAmount());
+        $this->assertSame('1.13', $donation->getTipAmount());
+        $this->assertSame(113, $donation->getTipAmountFractional());
+        $this->assertSame(10_113, $donation->getAmountFractionalIncTip());
     }
 
     public function testAmountTooLowNotPersisted(): void
@@ -175,7 +175,6 @@ class DonationTest extends TestCase
         $this->expectException(AssertionFailedException::class);
         $this->expectExceptionMessage('Value "paypal" does not equal expected value "stripe".');
 
-        /** @psalm-suppress InvalidArgument */
         Donation::fromApiModel(
             new DonationCreate(
                 currencyCode: 'GBP',
@@ -201,7 +200,7 @@ class DonationTest extends TestCase
         $donation = $this->getTestDonation();
         $donation->setOriginalPspFeeFractional('123');
 
-        $this->assertEquals('1.23', $donation->getOriginalPspFee());
+        $this->assertSame('1.23', $donation->getOriginalPspFee());
     }
 
     public function testtoFrontEndApiModel(): void
@@ -221,14 +220,14 @@ class DonationTest extends TestCase
 
         $donationData = $donation->toFrontEndApiModel();
 
-        $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
-        $this->assertEquals('1.23', $donationData['matchedAmount']);
+        $this->assertSame('john.doe@example.com', $donationData['emailAddress']);
+        $this->assertSame(1.23, $donationData['matchedAmount']);
         $this->assertIsString($donationData['collectedTime']);
         $this->assertArrayNotHasKey('originalPspFee', $donationData);
 
         $donationDataIncludingPrivate = $donation->toSFApiModel();
         \assert($donationDataIncludingPrivate !== null);
-        $this->assertEquals('1.22', $donationDataIncludingPrivate['originalPspFee']);
+        $this->assertSame(1.22, $donationDataIncludingPrivate['originalPspFee']);
     }
 
     public function testToSfAPIModel(): void
@@ -279,7 +278,7 @@ class DonationTest extends TestCase
                 'updatedTime' => $donation->getUpdatedDate()->format('c'),
                 'confirmationByMatchbot' => false,
             ],
-            $donation->toSfAPIModel()
+            $donation->toSFApiModel()
         );
     }
 
@@ -412,19 +411,19 @@ class DonationTest extends TestCase
         $claimBotMessage = $donation->toClaimBotModel();
 
         $nowInYmd = date('Y-m-d');
-        $this->assertEquals(self::DONATION_UUID, $claimBotMessage->id);
-        $this->assertEquals($nowInYmd, $claimBotMessage->donation_date);
-        $this->assertEquals('', $claimBotMessage->title);
-        $this->assertEquals('John', $claimBotMessage->first_name);
-        $this->assertEquals('Doe', $claimBotMessage->last_name);
-        $this->assertEquals('1', $claimBotMessage->house_no);
-        $this->assertEquals('N1 1AA', $claimBotMessage->postcode);
-        $this->assertEquals(123.45, $claimBotMessage->amount);
-        $this->assertEquals('AB12345', $claimBotMessage->org_hmrc_ref);
-        $this->assertEquals('CCEW', $claimBotMessage->org_regulator);
-        $this->assertEquals('12229', $claimBotMessage->org_regulator_number);
-        $this->assertEquals('Test charity', $claimBotMessage->org_name);
-        $this->assertEquals(false, $claimBotMessage->overseas);
+        $this->assertSame(self::DONATION_UUID, $claimBotMessage->id);
+        $this->assertSame($nowInYmd, $claimBotMessage->donation_date);
+        $this->assertSame('', $claimBotMessage->title);
+        $this->assertSame('John', $claimBotMessage->first_name);
+        $this->assertSame('Doe', $claimBotMessage->last_name);
+        $this->assertSame('1', $claimBotMessage->house_no);
+        $this->assertSame('N1 1AA', $claimBotMessage->postcode);
+        $this->assertSame(123.45, $claimBotMessage->amount);
+        $this->assertSame('AB12345', $claimBotMessage->org_hmrc_ref);
+        $this->assertSame('CCEW', $claimBotMessage->org_regulator);
+        $this->assertSame('12229', $claimBotMessage->org_regulator_number);
+        $this->assertSame('Test charity', $claimBotMessage->org_name);
+        $this->assertFalse($claimBotMessage->overseas);
     }
 
     public function testToClaimBotModelOverseas(): void
@@ -440,11 +439,11 @@ class DonationTest extends TestCase
 
         $claimBotMessage = $donation->toClaimBotModel();
 
-        $this->assertEquals('1 Main St, London', $claimBotMessage->house_no);
-        $this->assertEquals('', $claimBotMessage->postcode);
-        $this->assertEquals(true, $claimBotMessage->overseas);
+        $this->assertSame('1 Main St, London', $claimBotMessage->house_no);
+        $this->assertSame('', $claimBotMessage->postcode);
+        $this->assertTrue($claimBotMessage->overseas);
         $this->assertNull($claimBotMessage->org_regulator);
-        $this->assertEquals('12222', $claimBotMessage->org_regulator_number);
+        $this->assertSame('12222', $claimBotMessage->org_regulator_number);
     }
 
     public function testGetStripePIHelpersWithCard(): void
@@ -462,8 +461,8 @@ class DonationTest extends TestCase
             'on_behalf_of' => 'unitTest_stripeAccount_123',
         ];
 
-        $this->assertEquals($expectedPaymentMethodProperties, $donation->getStripeMethodProperties());
-        $this->assertEquals($expectedOnBehalfOfProperties, $donation->getStripeOnBehalfOfProperties());
+        $this->assertSame($expectedPaymentMethodProperties, $donation->getStripeMethodProperties());
+        $this->assertSame($expectedOnBehalfOfProperties, $donation->getStripeOnBehalfOfProperties());
         $this->assertTrue($donation->supportsSavingPaymentMethod());
     }
 
@@ -486,8 +485,8 @@ class DonationTest extends TestCase
             ],
         ];
 
-        $this->assertEquals($expectedPaymentMethodProperties, $donation->getStripeMethodProperties());
-        $this->assertEquals([], $donation->getStripeOnBehalfOfProperties());
+        $this->assertSame($expectedPaymentMethodProperties, $donation->getStripeMethodProperties());
+        $this->assertSame([], $donation->getStripeOnBehalfOfProperties());
         $this->assertFalse($donation->supportsSavingPaymentMethod());
     }
 
@@ -813,7 +812,7 @@ class DonationTest extends TestCase
         );
         $donation->cancel();
 
-        $this->assertEquals(DonationStatus::Cancelled, $donation->getDonationStatus());
+        $this->assertSame(DonationStatus::Cancelled, $donation->getDonationStatus());
     }
 
     public function testCantCancelPaidDonation(): void

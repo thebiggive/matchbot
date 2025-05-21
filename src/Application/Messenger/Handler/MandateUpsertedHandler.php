@@ -11,6 +11,7 @@ use MatchBot\Client\BadResponseException;
 use MatchBot\Client\Mandate as MandateClient;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
@@ -26,9 +27,6 @@ use Symfony\Component\Messenger\Stamp\DelayStamp;
 #[AsMessageHandler]
 readonly class MandateUpsertedHandler
 {
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     public function __construct(
         private LoggerInterface $logger,
         private MandateClient $client,
@@ -73,14 +71,14 @@ readonly class MandateUpsertedHandler
         } catch (BadRequestException | BadResponseException $exception) {
             // no trace needed for these exception types.
             $this->logger->error(sprintf(
-                "MUH: %s on attempt to push donation %s: %s",
+                "MUH: %s on attempt to push mandate %s: %s",
                 get_class($exception),
                 $uuid,
                 $exception->getMessage(),
             ));
         } catch (\Throwable $exception) {
             $this->logger->error(sprintf(
-                "MUH: Exception %s on attempt to push donation %s: %s. Trace: %s",
+                "MUH: Exception %s on attempt to push mandate %s: %s. Trace: %s",
                 get_class($exception),
                 $uuid,
                 $exception->getMessage(),
@@ -92,6 +90,8 @@ readonly class MandateUpsertedHandler
     /**
      * Consider DRYing up duplication with DoctrineDonationRepository::setSalesforceFields before
      * making a third copy
+     *
+     * @param Salesforce18Id<RegularGivingMandate> $salesforceId
      */
     private function setSalesforceFields(string $uuid, ?Salesforce18Id $salesforceId): void
     {

@@ -3,10 +3,11 @@
 namespace MatchBot\Tests\Domain;
 
 use Doctrine\Common\Cache\CacheProvider;
-use Doctrine\DBAL\Driver\PDO\Exception;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\Driver\PDO\Exception as PDOException;
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
@@ -33,6 +34,7 @@ use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
+use MatchBot\Tests\TestLogger;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
@@ -69,6 +71,7 @@ class DonationServiceTest extends TestCase
      */
     private ObjectProphecy $entityManagerProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->donorAccountRepoProphecy = $this->prophesize(DonorAccountRepository::class);
@@ -119,21 +122,11 @@ class DonationServiceTest extends TestCase
 
     public function testInitialPersistRunsOutOfRetries(): void
     {
-        $logger = $this->prophesize(LoggerInterface::class);
-        $logger->info(
-            'Donation Create persist before stripe work error: ' .
-            'An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.'
-        )->shouldBeCalledOnce();
-        $logger->info(Argument::type('string'))->shouldBeCalled();
-        $logger->error(
-            'Donation Create persist before stripe work error: ' .
-            'An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.'
-        )
-            ->shouldBeCalledOnce();
+        $logger = new TestLogger();
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
 
-        $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: true, logger: $logger->reveal(), campaignRepoProphecy: $campaignRepoProphecy);
+        $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: true, logger: $logger, campaignRepoProphecy: $campaignRepoProphecy);
 
         $donationCreate = $this->getDonationCreate();
         $donation = $this->getDonation();
@@ -143,9 +136,20 @@ class DonationServiceTest extends TestCase
         $this->stripeProphecy->createPaymentIntent(Argument::any())
             ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
 
-        $this->expectException(UniqueConstraintViolationException::class);
+        try {
+            $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil());
+            $this->fail('Should have thrown LockWaitTimeoutException');
+        } catch (LockWaitTimeoutException) {
+            // pass – in app context, final exception will be surfaced as an error to Slack etc.
+        }
 
-        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil());
+        $this->assertSame(
+            <<<'EOF'
+            warning: Error creating donation, will retry: An exception occurred in the driver: EXCEPTION_MESSAGE
+
+            EOF,
+            $logger->logString
+        );
     }
 
     public function testRefusesToConfirmPreAuthedDonationForNonActiveMandate(): void
@@ -186,6 +190,7 @@ class DonationServiceTest extends TestCase
     }
 
     /**
+     * @param bool $withAlwaysCrashingEntityManager Whether to simulate EM always throwing a *retryable* exception
      * @param ObjectProphecy<CampaignRepository>|null $campaignRepoProphecy
      * @param ObjectProphecy<FundRepository>|null $fundRepoProphecy
      */
@@ -201,12 +206,15 @@ class DonationServiceTest extends TestCase
              * @psalm-suppress InternalClass Hard to simulate `final` exception otherwise
              */
             $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willThrow(
-                new UniqueConstraintViolationException(new Exception('EXCEPTION_MESSAGE'), null)
+                new LockWaitTimeoutException(new PDOException('EXCEPTION_MESSAGE'), null)
             );
         } else {
             $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willReturn(null);
             $this->entityManagerProphecy->flush()->willReturn(null);
         }
+
+        $this->entityManagerProphecy->beginTransaction()->willReturn(null);
+        $this->entityManagerProphecy->commit()->willReturn(null);
 
         $logger = $logger ?? new NullLogger();
 
@@ -215,6 +223,7 @@ class DonationServiceTest extends TestCase
         $fundRepoProphecy ??= $this->prophesize(FundRepository::class);
 
         return new DonationService(
+            allocator: $this->createStub(Allocator::class),
             donationRepository: $this->donationRepoProphecy->reveal(),
             campaignRepository: $campaignRepoProphecy->reveal(),
             logger: $logger,
@@ -282,7 +291,7 @@ class DonationServiceTest extends TestCase
         // before adding VAT, then round it again after:
         $this->assertSame(
             52.0,
-            round(round(15_00 * 1.5 / 100 + 20) * 1.2)
+            round(round(15_00.0 * 1.5 / 100.0 + 20.0) * 1.2)
         );
 
         $this->stripeProphecy->updatePaymentIntent($paymentIntentId, [
@@ -306,7 +315,7 @@ class DonationServiceTest extends TestCase
         // act
         $this->getDonationService()->confirmOnSessionDonation($donation, $confirmationTokenId);
 
-        $this->assertEquals('0.52', $donation->getCharityFeeGross());
+        $this->assertSame('0.52', $donation->getCharityFeeGross());
     }
 
 
@@ -333,9 +342,9 @@ class DonationServiceTest extends TestCase
         $donation = $this->getDonationService(campaignRepoProphecy: $campaignRepoProphecy)
             ->buildFromAPIRequest($createPayload, PersonId::nil());
 
-        $this->assertEquals('USD', $donation->currency()->isoCode());
-        $this->assertEquals('123', $donation->getAmount());
-        $this->assertEquals(12_300, $donation->getAmountFractionalIncTip());
+        $this->assertSame('USD', $donation->currency()->isoCode());
+        $this->assertSame('123', $donation->getAmount());
+        $this->assertSame(12_300, $donation->getAmountFractionalIncTip());
     }
 
 

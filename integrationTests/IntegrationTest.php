@@ -14,6 +14,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;
@@ -30,7 +31,10 @@ use Slim\App;
 use Slim\Factory\AppFactory;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
+use Stripe\Service\CustomerService;
 use Stripe\Service\CustomerSessionService;
+use Stripe\Service\PaymentIntentService;
+use Stripe\Service\PaymentMethodService;
 use Stripe\StripeClient;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
@@ -43,13 +47,19 @@ abstract class IntegrationTest extends TestCase
     use ProphecyTrait;
 
     public static ?ContainerInterface $integrationTestContainer = null;
+
+    /**
+     * @var App<ContainerInterface|null>|null
+     */
     public static ?App $app = null;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
 
         $noOpMiddleware = new class implements MiddlewareInterface {
+            #[\Override]
             public function process(
                 ServerRequestInterface $request,
                 RequestHandlerInterface $handler,
@@ -59,6 +69,9 @@ abstract class IntegrationTest extends TestCase
         };
 
         $container = require __DIR__ . '/../bootstrap.php';
+
+        /** @psalm-suppress RedundantConditionGivenDocblockType - probably not redundant for PHPStorm */
+        \assert($container instanceof Container);
         IntegrationTest::setContainer($container);
         $container->set(RateLimitMiddleware::class, $noOpMiddleware);
         $container->set(\Psr\Log\LoggerInterface::class, new \Psr\Log\NullLogger());
@@ -80,16 +93,20 @@ abstract class IntegrationTest extends TestCase
         $routes($app);
 
         $prophecy = $this->prophesize(MandateSFClient::class);
-        $prophecy->createOrUpdate(Argument::any())->will(self::someSalesForce18Id(...));
+        $prophecy->createOrUpdate(Argument::any())->will(self::someSalesForce18MandateId(...));
 
         $this->getContainer()->set(MandateSFClient::class, $prophecy->reveal());
 
-        self::setApp($app);
+        // not sure what's wrong with this argument type
+        self::setApp($app); // @phpstan-ignore argument.type
     }
 
-    public static function someSalesForce18Id(): Salesforce18Id
+    /**
+     * @return Salesforce18Id<RegularGivingMandate>
+     */
+    public static function someSalesForce18MandateId(): Salesforce18Id
     {
-        return Salesforce18Id::of(self::randomString());
+        return Salesforce18Id::ofRegularGivingMandate(self::randomString());
     }
 
     /**
@@ -100,14 +117,31 @@ abstract class IntegrationTest extends TestCase
         return Salesforce18Id::ofCampaign(self::randomString());
     }
 
+    #[\Override]
+    public function tearDown(): void
+    {
+        $this->assertFalse(
+            $this->db()->isTransactionActive(),
+            'Transaction should not be left open at end of test, will affect following tests. Please commit or rollback'
+        );
+
+        $this->clearPreviousCampaignsCharitiesAndRelated();
+
+        parent::tearDown();
+    }
+
     public static function setContainer(ContainerInterface $container): void
     {
         self::$integrationTestContainer = $container;
     }
 
+    /**
+     * @param App<ContainerInterface|null> $app
+     */
     public static function setApp(App $app): void
     {
-        self::$app = $app;
+        // not sure what's wrong with the property type
+        self::$app = $app; // @phpstan-ignore assign.propertyType
     }
 
     /**
@@ -115,29 +149,36 @@ abstract class IntegrationTest extends TestCase
      */
     private function fakeApiClientSettingsThatAlwaysThrow(): array
     {
+        /** @var array{timeout: string} $global @phpstan-ignore varTag.nativeType */
+        $global = new /** @implements ArrayAccess<string, never> */ class implements ArrayAccess {
+            #[\Override]
+            public function offsetExists(mixed $offset): bool
+            {
+                return true;
+            }
+
+            #[\Override]
+            public function offsetGet(mixed $offset): never
+            {
+                throw new \Exception("Do not use real API client in tests");
+            }
+
+            #[\Override]
+            public function offsetSet(mixed $offset, mixed $value): never
+            {
+                throw new \Exception("Do not use real API client in tests");
+            }
+
+            #[\Override]
+            public function offsetUnset(mixed $offset): never
+            {
+                throw new \Exception("Do not use real API client in tests");
+            }
+        };
+
         /** @var ApiClient $client */
         $client = [
-            'global' => new /** @implements ArrayAccess<string, never> */ class implements ArrayAccess {
-                public function offsetExists(mixed $offset): bool
-                {
-                    return true;
-                }
-
-                public function offsetGet(mixed $offset): never
-                {
-                    throw new \Exception("Do not use real API client in tests");
-                }
-
-                public function offsetSet(mixed $offset, mixed $value): never
-                {
-                    throw new \Exception("Do not use real API client in tests");
-                }
-
-                public function offsetUnset(mixed $offset): never
-                {
-                    throw new \Exception("Do not use real API client in tests");
-                }
-            },
+            'global' => $global,
             'mailer' => [
                 'baseUri' => 'dummy-mailer-base-uri',
             ],
@@ -163,7 +204,7 @@ abstract class IntegrationTest extends TestCase
     /**
      * @param class-string $name
      */
-    protected function setInContainer(string $name, mixed $value): void
+    protected function setInContainer(string $name, object $value): void
     {
         $container = $this->getContainer();
 
@@ -267,8 +308,6 @@ abstract class IntegrationTest extends TestCase
      * @param string $campaignSfId
      * @return array{charityId: int, campaignId: int, fundId: int, campaignFundingId: int}
      * @throws \Doctrine\DBAL\Exception
-     * @psalm-suppress MoreSpecificReturnType
-     * @psalm-suppress LessSpecificReturnStatement
      */
     public function addFundedCampaignAndCharityToDB(
         string $campaignSfId,
@@ -293,8 +332,6 @@ abstract class IntegrationTest extends TestCase
     /**
      * @param FundType $fundType
      * @return array{fundId: int, campaignFundingId: int}
-     * @psalm-suppress MoreSpecificReturnType
-     * @psalm-suppress LessSpecificReturnStatement
      */
     public function addFunding(
         int $campaignId,
@@ -363,12 +400,17 @@ abstract class IntegrationTest extends TestCase
         return (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
     }
 
+    /**
+     * @return App<ContainerInterface|null>
+     */
     protected function getApp(): App
     {
         if (self::$app === null) {
             throw new \Exception("Test app not set");
         }
-        return self::$app;
+
+        // not sure what's wrong with the return type
+        return self::$app; // @phpstan-ignore return.type
     }
 
     /**
@@ -396,6 +438,13 @@ abstract class IntegrationTest extends TestCase
     /**
      * @psalm-suppress UndefinedPropertyAssignment - StripeClient does declare the properties via docblock, not sure
      * Psalm doesn't see them as defined.
+     *
+     * @param ObjectProphecy<PaymentMethodService> $stripePaymentMethodServiceProphecy
+     * @param ObjectProphecy<CustomerService> $stripeCustomerServiceProphecy
+     * @param ObjectProphecy<PaymentIntentService> $stripePaymentIntents
+     * @param ObjectProphecy<CustomerSessionService> $stripeCustomerSessions
+     *
+     * @return StripeClient
      */
     public function fakeStripeClient(
         ObjectProphecy $stripePaymentMethodServiceProphecy,

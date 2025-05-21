@@ -88,6 +88,7 @@ class RegularGivingServiceTest extends TestCase
     private array $donations;
 
 
+    #[\Override]
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
@@ -148,7 +149,7 @@ class RegularGivingServiceTest extends TestCase
         // arrange
         $this->givenDonorHasRegularGivingPaymentMethod();
 
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+        $regularGivingService = $this->makeSut(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalledOnce();
 
         // act
@@ -186,7 +187,7 @@ class RegularGivingServiceTest extends TestCase
             $this->donations[2]->getPreAuthorizationDate()
         );
 
-        $this->assertEquals(Country::fromEnum(CountryAlpha2::Kiribati)->alpha2->value, $this->donorAccount->getBillingCountryCode());
+        $this->assertSame(Country::fromEnum(CountryAlpha2::Kiribati)->alpha2->value, $this->donorAccount->getBillingCountryCode());
         $this->assertSame('KI0107', $this->donorAccount->getBillingPostcode());
 
         // Pending, and no notification, until Stripe first donation charge succeeded webhook.
@@ -200,7 +201,7 @@ class RegularGivingServiceTest extends TestCase
         $this->givenDonorHasRegularGivingPaymentMethod();
         $this->givenDonorHasHomeAddressAndPostcode();
 
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+        $regularGivingService = $this->makeSut(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalledOnce();
 
         // act
@@ -231,7 +232,7 @@ class RegularGivingServiceTest extends TestCase
         $this->givenDonorHasRegularGivingPaymentMethod();
         $this->givenDonorHasHomeAddressAndPostcode();
 
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+        $regularGivingService = $this->makeSut(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalledOnce();
 
         // act
@@ -261,7 +262,7 @@ class RegularGivingServiceTest extends TestCase
         // arrange
         $this->givenDonorHasRegularGivingPaymentMethod();
 
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+        $regularGivingService = $this->makeSut(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
 
         $this->expectException(HomeAddressRequired::class);
         $this->expectExceptionMessage('Home Address is required when gift aid is selected');
@@ -293,7 +294,7 @@ class RegularGivingServiceTest extends TestCase
         $paymentIntent = new PaymentIntent('pi_id');
         $paymentIntent->latest_charge = $chargeId;
 
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+        $regularGivingService = $this->makeSut(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
 
         $donation = null;
 
@@ -362,7 +363,7 @@ class RegularGivingServiceTest extends TestCase
                 }
             );
 
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+        $regularGivingService = $this->makeSut(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
 
         $this->donationServiceProphecy->cancel(Argument::type(Donation::class))
             ->shouldBeCalledTimes(3);
@@ -393,7 +394,7 @@ class RegularGivingServiceTest extends TestCase
 
     public function testCannotMakeAMandateForNonRegularGivingCampaign(): void
     {
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+        $regularGivingService = $this->makeSut(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $campaign = TestCase::someCampaign();
 
         $this->expectException(WrongCampaignType::class);
@@ -419,7 +420,7 @@ class RegularGivingServiceTest extends TestCase
 
     public function testCannotMakeMandateWithCountryNotMatchingAccountCountry(): void
     {
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+        $regularGivingService = $this->makeSut(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $campaign = TestCase::someCampaign(isRegularGiving: true);
         $this->setDonorDetailsInUK();
 
@@ -477,7 +478,7 @@ class RegularGivingServiceTest extends TestCase
 
     public function testCannotMakeMandateWithCountryNotMatchingAccountBillingPostcodey(): void
     {
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+        $regularGivingService = $this->makeSut(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $campaign = TestCase::someCampaign(isRegularGiving: true);
         $this->setDonorDetailsInUK();
 
@@ -553,7 +554,7 @@ class RegularGivingServiceTest extends TestCase
         $this->donorAccount->setHomePostcode(PostCode::of('SW1A 1AA'));
         $this->donorAccount->setHomeAddressLine1('Existing address');
 
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+        $regularGivingService = $this->makeSut(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class), true, false)->willThrow(CampaignNotOpen::class);
         $this->donationServiceProphecy->cancel(Argument::type(Donation::class))->shouldBeCalled();
 
@@ -593,10 +594,10 @@ class RegularGivingServiceTest extends TestCase
         $this->donationRepositoryProphecy->findPendingAndPreAuthedForMandate($mandate->getUuid())->willReturn([]);
         $sut->cancelMandate($mandate, 'Because I don\'t have any more money to give', MandateCancellationType::DonorRequestedCancellation);
 
-        $this->assertEquals(MandateStatus::Cancelled, $mandate->getStatus());
-        $this->assertEquals('Because I don\'t have any more money to give', $mandate->cancellationReason());
-        $this->assertEquals(MandateCancellationType::DonorRequestedCancellation, $mandate->cancellationType());
-        $this->assertEquals($now, $mandate->cancelledAt());
+        $this->assertSame(MandateStatus::Cancelled, $mandate->getStatus());
+        $this->assertSame('Because I don\'t have any more money to give', $mandate->cancellationReason());
+        $this->assertSame(MandateCancellationType::DonorRequestedCancellation, $mandate->cancellationType());
+        $this->assertSame($now, $mandate->cancelledAt());
     }
 
     public function testCancellingMandateCancelsPendingDonations(): void
@@ -726,7 +727,7 @@ class RegularGivingServiceTest extends TestCase
 
     private function createRegularGivingMandate(string $campaignEndDate, string $currentDate): void
     {
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable($currentDate));
+        $regularGivingService = $this->makeSut(new \DateTimeImmutable($currentDate));
         $this->givenDonorHasRegularGivingPaymentMethod();
 
         $campaign = TestCase::someCampaign(isRegularGiving: true);

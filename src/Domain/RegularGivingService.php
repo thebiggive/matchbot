@@ -31,7 +31,6 @@ use UnexpectedValueException;
 
 readonly class RegularGivingService
 {
-    /** @psalm-suppress PossiblyUnusedMethod - will be used by DI */
     public function __construct(
         private \DateTimeImmutable $now,
         private DonationRepository $donationRepository,
@@ -296,6 +295,9 @@ readonly class RegularGivingService
         return $donation;
     }
 
+    /**
+     * @return list<array<array-key, mixed>> List of mandates as front end api models
+     */
     public function allMandatesForDisplayToDonor(PersonId $donor): array
     {
         $mandatesWithCharities = $this->regularGivingMandateRepository->allMandatesForDisplayToDonor($donor);
@@ -305,7 +307,7 @@ readonly class RegularGivingService
         return array_map(/**
          * @param array{0: RegularGivingMandate, 1: Charity} $tuple
          * @return array
-         */            static fn(array $tuple) => $tuple[0]->toFrontendApiModel($tuple[1], $currentUKTime),
+         */            static fn(array $tuple) => $tuple[0]->toFrontEndApiModel($tuple[1], $currentUKTime),
             $mandatesWithCharities
         );
     }

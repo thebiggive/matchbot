@@ -32,6 +32,7 @@ class Get extends Action
         parent::__construct($logger);
     }
 
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         if (! $this->environment->isFeatureEnabledRegularGiving()) {
@@ -41,12 +42,17 @@ class Get extends Action
         Assertion::keyExists($args, "mandateId");
         $mandateId = $args["mandateId"];
         Assertion::string($mandateId);
+
+        /** @psalm-suppress RiskyTruthyFalsyComparison -- suppressing issue in old code instead of editing */
         if (empty($args['mandateId'])) {
             throw new DomainRecordNotFoundException('Missing mandate ID ' . $mandateId);
         }
 
         $authenticatedUser = $this->securityService->requireAuthenticatedDonorAccountWithPassword($request);
 
+        /** @psalm-suppress RedundantCast - psalm is probably right and this is redundant but I don't want to
+         * change now without testing
+         */
         $uuid = Uuid::fromString((string) $args['mandateId']);
         $mandate = $this->regularGivingMandateRepository->findOneByUuid($uuid);
 

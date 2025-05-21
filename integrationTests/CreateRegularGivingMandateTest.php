@@ -26,6 +26,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     private MessageBusInterface $originalMessageBus;
     private int $pencePerMonth;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
@@ -90,9 +91,12 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $this->ensureDbHasDonorAccount();
     }
 
+    #[\Override]
     public function tearDown(): void
     {
         $this->getContainer()->set(MessageBusInterface::class, $this->originalMessageBus);
+
+        parent::tearDown();
     }
 
     public function testItCreatesRegularGivingMandate(): void
@@ -185,7 +189,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         return $id;
     }
 
-    public function assertDonationDetailsInDB(mixed $mandateId): void
+    public function assertDonationDetailsInDB(int $mandateId): void
     {
         $donationDatabaseRows = $this->db()->executeQuery(
             "SELECT * from Donation where Donation.mandate_id = ? ORDER BY mandateSequenceNumber asc",

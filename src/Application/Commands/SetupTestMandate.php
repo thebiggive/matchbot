@@ -4,6 +4,7 @@ namespace MatchBot\Application\Commands;
 
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -53,7 +54,6 @@ class SetupTestMandate extends LockingCommand
 {
     private \DateTimeImmutable $now;
 
-    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct(
         private Environment $environment,
         private EntityManagerInterface $em,
@@ -66,6 +66,7 @@ class SetupTestMandate extends LockingCommand
         $this->now = $now->setTimezone(new \DateTimeZone('Europe/London'));
     }
 
+    #[\Override]
     public function configure(): void
     {
         $this->addOption('donor-uuid', 'du', InputOption::VALUE_REQUIRED, 'UUID of the donor in identity service');
@@ -83,6 +84,7 @@ class SetupTestMandate extends LockingCommand
         $this->addArgument('day-of-month', InputArgument::OPTIONAL, 'Amount in pounds');
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         if ($this->environment == Environment::Production) {
@@ -91,9 +93,22 @@ class SetupTestMandate extends LockingCommand
 
         $io = new SymfonyStyle($input, $output);
 
-        $donorId = PersonId::of((string) $input->getOption('donor-uuid'));
-        $amount = (int)($input->getArgument('amount') ?? '1');
-        $campaignId = (string) $input->getOption('campaign-id');
+        $personId = $input->getOption('donor-uuid');
+        \assert(\is_string($personId));
+        $amountString = $input->getArgument('amount');
+        \assert(\is_string($amountString) || $amountString === null);
+        $campaignId = $input->getOption('campaign-id');
+        \assert(\is_string($campaignId));
+        $donorpmID = $input->getOption('donor-pmid');
+        \assert(\is_string($donorpmID));
+        $dayOfMonthArg = $input->getArgument('day-of-month');
+        \assert(\is_string($dayOfMonthArg) || $dayOfMonthArg === null);
+        $donorStripeId = $input->getOption('donor-stripeid');
+        \assert(\is_string($donorStripeId));
+
+        $donorId = PersonId::of($personId);
+
+        $amount = (int)($amountString ?? '1');
 
         $criteria = (new Criteria())->where(Criteria::expr()->contains('salesforceId', $campaignId));
         $campaign = $this->campaignRepository->matching($criteria)->first();
@@ -105,7 +120,7 @@ class SetupTestMandate extends LockingCommand
 
         $charity = $campaign->getCharity();
 
-        $dayOfMonth = DayOfMonth::of((int)($input->getArgument('day-of-month') ?? '1'));
+        $dayOfMonth = DayOfMonth::of((int)($dayOfMonthArg ?? '1'));
 
         $mandate = new RegularGivingMandate(
             $donorId,
@@ -117,9 +132,6 @@ class SetupTestMandate extends LockingCommand
         );
         $mandate->activate($this->now);
         $this->em->persist($mandate);
-
-
-        $donorStripeId = (string)$input->getOption('donor-stripeid');
 
         $donor = $this->donorAccountRepository->findByStripeIdOrNull(StripeCustomerId::of($donorStripeId));
         if ($donor === null) {
@@ -135,7 +147,8 @@ class SetupTestMandate extends LockingCommand
             $donor->setHomeAddressLine1('Home line 1');
             $this->em->persist($donor);
         }
-        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of((string) $input->getOption('donor-pmid')));
+
+        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of($donorpmID));
 
 
         $this->makePreAuthedDonations($mandate, $campaign, $donor);

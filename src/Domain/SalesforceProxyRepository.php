@@ -67,7 +67,6 @@ abstract class SalesforceProxyRepository extends EntityRepository
      */
     protected function getClient(): Client\Common
     {
-        /** @psalm-suppress DocblockTypeContradiction */
         if (!$this->client) {
             throw new \LogicException('Set a Client in DI config for this Repository to sync data');
         }

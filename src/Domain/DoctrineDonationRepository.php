@@ -9,7 +9,6 @@ use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Query;
 use GuzzleHttp\Exception\BadResponseException;
-use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
@@ -37,92 +36,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
      */
     private const int EXPIRY_SECONDS = 32 * 60; // 32 minutes: 30 min official timed window plus 2 mins grace.
 
-    private Matching\Adapter $matchingAdapter;
-
-    public function setMatchingAdapter(Matching\Adapter $adapter): void
-    {
-        $this->matchingAdapter = $adapter;
-    }
-
-    public function allocateMatchFunds(Donation $donation): string
-    {
-        // We look up matching withdrawals to allow for the case where retrospective matching was required
-        // and the donation is not new, and *some* (or full) matching already occurred. The collection of withdrawals
-        // is most often empty (for new donations) so this will frequently be 0.00.
-        $amountMatchedAtStart = $donation->getFundingWithdrawalTotal();
-
-        $lockStartTime = 0; // dummy value, should always be overwritten before usage.
-        try {
-            /** @var list<CampaignFunding> $likelyAvailableFunds */
-            $likelyAvailableFunds = $this->getEntityManager()
-                ->getRepository(CampaignFunding::class)
-                ->getAvailableFundings($donation->getCampaign());
-
-            foreach ($likelyAvailableFunds as $funding) {
-                if ($funding->getCurrencyCode() !== $donation->currency()->isoCode()) {
-                    throw new \UnexpectedValueException('Currency mismatch');
-                }
-            }
-
-            $lockStartTime = microtime(true);
-            $newWithdrawals = $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart);
-            $lockEndTime = microtime(true);
-        } catch (Matching\TerminalLockException $exception) {
-            $waitTime = round(microtime(true) - $lockStartTime, 6);
-            $this->logError(
-                "Match allocate error: ID {$donation->getUuid()} got " . get_class($exception) .
-                " after {$waitTime}s: {$exception->getMessage()}"
-            );
-            throw $exception; // Re-throw exception after logging the details if not recoverable
-        }
-
-        // We release the allocation lock prior to inserting the funding withdrawal records, to keep the lock
-        // time short. These are new entities, so except in a system crash the withdrawal totals will almost
-        // immediately match the amount deducted from the fund.
-        $amountNewlyMatched = '0.0';
-
-        foreach ($newWithdrawals as $newWithdrawal) {
-            $this->getEntityManager()->persist($newWithdrawal);
-            $donation->addFundingWithdrawal($newWithdrawal);
-            $newWithdrawalAmount = $newWithdrawal->getAmount();
-
-            $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawalAmount, 2);
-        }
-
-        $this->getEntityManager()->flush(); // Flush `$newWithdrawals` if any.
-
-        $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);
-        $this->logInfo('Allocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
-
-        return $amountNewlyMatched;
-    }
-
-    public function releaseMatchFunds(Donation $donation): void
-    {
-        $startTime = microtime(true);
-        try {
-            $totalAmountReleased = $this->matchingAdapter->releaseAllFundsForDonation($donation);
-            $this->getEntityManager()->flush();
-            $endTime = microtime(true);
-
-            try {
-                $this->removeAllFundingWithdrawalsForDonation($donation);
-            } catch (DBALException $exception) {
-                $this->logError('Doctrine could not remove withdrawals after maximum tries');
-            }
-        } catch (Matching\TerminalLockException $exception) {
-            $waitTime = round(microtime(true) - $startTime, 6);
-            $this->logError(
-                'Match release error: ID ' . $donation->getUuid() . ' got ' . get_class($exception) .
-                " after {$waitTime}s: {$exception->getMessage()}"
-            );
-            throw $exception; // Re-throw exception after logging the details if not recoverable
-        }
-
-        $this->logInfo("Taking from ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
-        $this->logInfo('Deallocation took ' . round($endTime - $startTime, 6) . ' seconds');
-    }
-
+    #[\Override]
     public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
         $cutoff = $now->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
@@ -155,6 +69,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return array_map(static fn(array $row): UuidInterface => $row['uuid'], $rows);
     }
 
+    #[\Override]
     public function findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
         \DateTimeImmutable $campaignsClosedBefore,
         \DateTimeImmutable $donationsCollectedAfter,
@@ -193,6 +108,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return $donations;
     }
 
+    #[\Override]
     public function findReadyToClaimGiftAid(bool $withResends): array
     {
         if ($withResends && getenv('APP_ENV') === 'production') {
@@ -234,6 +150,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return $result;
     }
 
+    #[\Override]
     public function findNotFullyMatchedToCampaignsWhichClosedSince(DateTime $closedSinceDate): array
     {
         $now = (new DateTime('now'));
@@ -268,6 +185,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     /**
      * @psalm-suppress MixedReturnTypeCoercion
      */
+    #[\Override]
     public function findRecentNotFullyMatchedToMatchCampaigns(DateTime $sinceDate): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder()
@@ -297,6 +215,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return $result;
     }
 
+    #[\Override]
     public function findWithTransferIdInArray(array $transferIds): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder()
@@ -311,6 +230,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return $donations;
     }
 
+    #[\Override]
     public function getRecentHighVolumeCompletionRatio(\DateTimeImmutable $nowish): ?float
     {
         $oneMinutePrior = $nowish->sub(new \DateInterval('PT1M'));
@@ -343,9 +263,10 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             return null;
         }
 
-        return (float) $result['completeCount'] / $result['donationCount'];
+        return (float) ($result['completeCount'] / $result['donationCount']);
     }
 
+    #[\Override]
     public function countDonationsCreatedInMinuteTo(\DateTimeImmutable $end): int
     {
         $oneMinutePrior = $end->sub(new \DateInterval('PT1M'));
@@ -362,6 +283,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return (int) $query->getSingleScalarResult();
     }
 
+    #[\Override]
     public function countDonationsCollectedInMinuteTo(\DateTimeImmutable $end): int
     {
         $oneMinutePrior = $end->sub(new \DateInterval('PT1M'));
@@ -378,6 +300,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return (int) $query->getSingleScalarResult();
     }
 
+    #[\Override]
     public function abandonOldCancelled(): int
     {
         $twentyMinsAgo = (new DateTime('now'))
@@ -412,66 +335,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return count($donations);
     }
 
-    /**
-     * Attempt an allocation of funds. For use inside a transaction as a self-contained unit that can be rolled back
-     * and retried.
-     *
-     * @param Donation $donation
-     * @param CampaignFunding[] $fundings   Fundings likely to have funds available. To be re-queried with a
-     *                                      pessimistic write lock before allocation.
-     *
-     * @param numeric-string $amountMatchedAtStart Amount of match funds already allocated to the donation when we
-     *                                              started.
-     * @return FundingWithdrawal[]
-     */
-    private function safelyAllocateFunds(Donation $donation, array $fundings, string $amountMatchedAtStart): array
-    {
-        $amountLeftToMatch = bcsub($donation->getAmount(), $amountMatchedAtStart, 2);
-        $currentFundingIndex = 0;
-        /** @var FundingWithdrawal[] $newWithdrawals Track these to persist outside the lock window, to keep it short */
-        $newWithdrawals = [];
-
-        // Loop as long as there are still campaign funds not allocated and we have allocated less than the donation
-        // amount
-        while ($currentFundingIndex < count($fundings) && bccomp($amountLeftToMatch, '0.00', 2) === 1) {
-            $funding = $fundings[$currentFundingIndex];
-            $startAmountAvailable = $fundings[$currentFundingIndex]->getAmountAvailable();
-
-            if (bccomp($funding->getAmountAvailable(), $amountLeftToMatch, 2) === -1) {
-                $amountToAllocateNow = $startAmountAvailable;
-            } else {
-                $amountToAllocateNow = $amountLeftToMatch;
-            }
-
-            $newTotal = '[new total not defined]';
-            try {
-                $newTotal = $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
-                $amountAllocated = $amountToAllocateNow; // If no exception thrown
-            } catch (Matching\LessThanRequestedAllocatedException $exception) {
-                $amountAllocated = $exception->getAmountAllocated();
-                $this->logInfo(
-                    "Amount available from funding {$funding->getId()} changed: - got $amountAllocated " .
-                    "of requested $amountToAllocateNow"
-                );
-            }
-
-            $amountLeftToMatch = bcsub($amountLeftToMatch, $amountAllocated, 2);
-
-            if (bccomp($amountAllocated, '0.00', 2) === 1) {
-                $withdrawal = new FundingWithdrawal($funding);
-                $withdrawal->setDonation($donation);
-                $withdrawal->setAmount($amountAllocated);
-                $newWithdrawals[] = $withdrawal;
-                $this->logInfo("Successfully withdrew $amountAllocated from funding {$funding->getId()}");
-                $this->logInfo("New fund total for {$funding->getId()}: $newTotal");
-            }
-
-            $currentFundingIndex++;
-        }
-
-        return $newWithdrawals;
-    }
-
+    #[\Override]
     public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation
     {
         // We can't actually lock the row until we know the ID of the donation, so we fetch it first
@@ -487,18 +351,10 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return $donation;
     }
 
-    public function removeAllFundingWithdrawalsForDonation(Donation $donation): void
-    {
-        $this->getEntityManager()->wrapInTransaction(function () use ($donation) {
-            foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                $this->getEntityManager()->remove($fundingWithdrawal);
-            }
-        });
-    }
-
     /**
      * @psalm-suppress PossiblyUnusedReturnValue Psalm bug? Value is used in \MatchBot\Application\Commands\PushDonations::doExecute
      */
+    #[\Override]
     public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus): int
     {
         // We don't want to push donations that were created or modified in the last 5 minutes,
@@ -553,6 +409,9 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return count($proxiesToCreate) + count($proxiesToUpdate);
     }
 
+    /**
+     * @param Salesforce18Id<Donation>|null $salesforceId
+     */
     private function setSalesforceFieldsWithRetry(
         DonationUpserted $changeMessage,
         ?Salesforce18Id $salesforceId
@@ -606,6 +465,8 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
      *  making a third copy
      * /
      *
+     * @param Salesforce18Id<Donation>|null $salesforceId
+     *
      * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock
      */
     private function setSalesforcePushComplete(string $uuid, ?Salesforce18Id $salesforceId): void
@@ -645,6 +506,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $query->execute();
     }
 
+    #[\Override]
     public function push(DonationUpserted $changeMessage): void
     {
         try {
@@ -689,6 +551,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $this->setSalesforceFieldsWithRetry($changeMessage, $salesforceDonationId);
     }
 
+    #[\Override]
     public function findAllCompleteForCustomer(StripeCustomerId $stripeCustomerId): array
     {
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
@@ -711,6 +574,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
      * We only set Payment Intent on the day of the payment due to stripe limitations
      *
      */
+    #[\Override]
     public function findDonationsToSetPaymentIntent(\DateTimeImmutable $atDateTime, int $maxBatchSize): array
     {
         $preAuthorized = DonationStatus::PreAuthorized->value;
@@ -731,6 +595,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return $result;
     }
 
+    #[\Override]
     public function findPreAuthorizedDonationsReadyToConfirm(\DateTimeImmutable $atDateTime, int $limit): array
     {
         $preAuthorized = DonationStatus::PreAuthorized->value;
@@ -752,6 +617,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return $result;
     }
 
+    #[\Override]
     public function maxSequenceNumberForMandate(int $mandateId): ?DonationSequenceNumber
     {
         $query = $this->getEntityManager()->createQuery(<<<DQL
@@ -772,6 +638,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return DonationSequenceNumber::of($number);
     }
 
+    #[\Override]
     public function findStaleDonationFundsTips(\DateTimeImmutable $atDateTime, \DateInterval $cancelationDelay): array
     {
         $pending = DonationStatus::Pending->value;
@@ -794,6 +661,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return array_map(static fn(array $array): UuidInterface => $array['uuid'], $result);
     }
 
+    #[\Override]
     public function findPendingByDonorCampaignAndMethod(
         string $donorStripeId,
         Salesforce18Id $campaignId,
@@ -818,11 +686,13 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return array_map(static fn(array $row) => $row['uuid'], $result);
     }
 
+    #[\Override]
     public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation
     {
         return $this->findAndLockOneBy(['uuid' => $donationId->toString()]);
     }
 
+    #[\Override]
     public function findPendingAndPreAuthedForMandate(UuidInterface $mandateId): array
     {
         $pending = DonationStatus::Pending->value;
@@ -842,6 +712,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return $result;
     }
 
+    #[\Override]
     public function findAllForMandate(UuidInterface $mandateId): array
     {
         $query = $this->getEntityManager()->createQuery(<<<DQL
@@ -857,6 +728,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return $result;
     }
 
+    #[\Override]
     public function findOneByUUID(UuidInterface $donationUUID): ?Donation
     {
         return $this->findOneBy(['uuid' => $donationUUID]);

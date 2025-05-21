@@ -50,6 +50,7 @@ class HandleOutOfSyncFunds extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function configure(): void
     {
         $this->addArgument(
@@ -63,6 +64,7 @@ class HandleOutOfSyncFunds extends LockingCommand
      * @psalm-suppress PossiblyUnusedReturnValue - return value is used by
      * \MatchBot\Application\Commands\Command::execute . Not sure why Psalm thinks its unused.
      */
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $mode = $input->getArgument('mode');
@@ -74,7 +76,7 @@ class HandleOutOfSyncFunds extends LockingCommand
         $excludedFundingIds = [];
         $excludeJson = getenv('KNOWN_OVERMATCHED_FUNDING_IDS');
         if (is_string($excludeJson) && $excludeJson !== '') {
-            /** @var array $excludedFundingIds */
+            /** @var list<int> $excludedFundingIds */
             $excludedFundingIds = json_decode($excludeJson, true, 512, \JSON_THROW_ON_ERROR);
         }
 
@@ -90,11 +92,13 @@ class HandleOutOfSyncFunds extends LockingCommand
                 continue;
             }
 
-            // Amount allocated from the CampaignFunding
+            // Amount allocated from the CampaignFunding according to Redis which is the source
+            // of truth for these balances.
             $fundingAvailable = $this->matchingAdapter->getAmountAvailable($funding);
             $campaignFundingAllocated = bcsub($funding->getAmount(), $fundingAvailable, 2);
 
-            // Get the sum of all FundingWithdrawals for donations, whether complete or active reservations.
+            // Get the sum of all FundingWithdrawals for donations, whether complete or active reservations,
+            // according to the database.
             $fundingWithdrawalTotal = $this->fundingWithdrawalRepository->getWithdrawalsTotal($funding);
 
             $comparison = bccomp($campaignFundingAllocated, $fundingWithdrawalTotal, 2);

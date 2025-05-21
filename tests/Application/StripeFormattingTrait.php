@@ -12,7 +12,10 @@ trait StripeFormattingTrait
 {
     use ProphecyTrait;
 
-    protected function buildAutoIterableCollection(string $json): Collection|ObjectProphecy
+    /**
+     * @return Collection<StripeObject>
+     */
+    protected function buildAutoIterableCollection(string $json): Collection
     {
         /** @var \stdClass $itemsArray */
         $itemsArray = json_decode($json, false);
@@ -24,13 +27,5 @@ trait StripeFormattingTrait
         $iterableCollection->count()->willReturn(count($itemData));
 
         return $iterableCollection->reveal();
-    }
-
-    protected function buildCollectionFromSingleObjectFixture(string $json): Collection|ObjectProphecy
-    {
-        $collectionRaw = new \stdClass();
-        $collectionRaw->data = [json_decode($json, false)];
-
-        return $this->buildAutoIterableCollection(json_encode($collectionRaw, \JSON_THROW_ON_ERROR));
     }
 }

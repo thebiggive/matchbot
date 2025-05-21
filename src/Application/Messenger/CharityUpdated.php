@@ -13,6 +13,9 @@ use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;
  */
 readonly class CharityUpdated implements MessageDeduplicationAwareInterface, MessageGroupAwareInterface
 {
+    /**
+     * @param Salesforce18Id<Charity> $charityAccountId
+     */
     public function __construct(public Salesforce18Id $charityAccountId, private ?string $requestTraceId)
     {
     }
@@ -23,11 +26,13 @@ readonly class CharityUpdated implements MessageDeduplicationAwareInterface, Mes
      *
      * @link https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues-exactly-once-processing.html
      */
+    #[\Override]
     public function getMessageDeduplicationId(): ?string
     {
         return $this->requestTraceId;
     }
 
+    #[\Override]
     public function getMessageGroupId(): ?string
     {
         return 'charity.updated.' . $this->charityAccountId->value;

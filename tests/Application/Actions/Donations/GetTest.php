@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use MatchBot\Application\Auth\DonationToken;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccountRepository;
@@ -24,6 +25,7 @@ class GetTest extends TestCase
     public const string DONATION_UUID = '2c6f3408-b405-11ef-a2fe-6b6ac08448a0';
     private InMemoryDonationRepository $donationRepository;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
@@ -32,6 +34,7 @@ class GetTest extends TestCase
         assert($container instanceof Container);
         $this->donationRepository = new InMemoryDonationRepository();
 
+        $container->set(Allocator::class, $this->createStub(Allocator::class));
         $container->set(DonationRepository::class, $this->donationRepository);
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
         $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
@@ -113,18 +116,18 @@ class GetTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         /** @var array<string, string|numeric|boolean> $payloadArray */
         $payloadArray = json_decode($payload, true);
         $this->assertNotEmpty($payloadArray['createdTime']);
-        $this->assertEquals('N1 1AA', $payloadArray['billingPostalAddress']);
+        $this->assertSame('N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
         $this->assertTrue($payloadArray['optInCharityEmail']);
         $this->assertFalse($payloadArray['optInTbgEmail']);
-        $this->assertEquals(0, $payloadArray['matchedAmount']);
-        $this->assertEquals(1.00, $payloadArray['tipAmount']);
-        $this->assertEquals(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
-        $this->assertEquals(0, $payloadArray['charityFeeVat']);
+        $this->assertSame(0, $payloadArray['matchedAmount']);
+        $this->assertSame(1, $payloadArray['tipAmount']);
+        $this->assertSame(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
+        $this->assertSame(0, $payloadArray['charityFeeVat']);
     }
 }

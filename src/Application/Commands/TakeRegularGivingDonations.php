@@ -45,7 +45,6 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private bool $reportableEventHappened = false;
 
-    /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
     public function __construct(
         private Container $container,
         private RegularGivingMandateRepository $mandateRepository,
@@ -101,6 +100,7 @@ class TakeRegularGivingDonations extends LockingCommand
         }
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $bufferedOutput = new BufferedOutput();

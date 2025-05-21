@@ -7,6 +7,7 @@ namespace MatchBot\Application\Commands;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\FundTotalUpdated;
@@ -46,6 +47,7 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 class RetrospectivelyMatch extends LockingCommand
 {
     public function __construct(
+        private Allocator $allocator,
         private DonationRepository $donationRepository,
         private FundRepository $fundRepository,
         private ChatterInterface $chatter,
@@ -56,6 +58,7 @@ class RetrospectivelyMatch extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function configure(): void
     {
         $this->addArgument(
@@ -65,6 +68,7 @@ class RetrospectivelyMatch extends LockingCommand
         );
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $recentlyClosedMode = !is_numeric($input->getArgument('days-back'));
@@ -77,7 +81,7 @@ class RetrospectivelyMatch extends LockingCommand
                 ->findNotFullyMatchedToCampaignsWhichClosedSince($oneHourBeforeExecStarted);
         } else {
             // Allow + round non-whole day count.
-            $daysBack = round((float) $input->getArgument('days-back'));
+            $daysBack = round((float) $input->getArgument('days-back')); // @phpstan-ignore cast.double
             $output->writeln("Looking at past $daysBack days' donations");
             $sinceDate = (new DateTime('now'))->sub(new \DateInterval("P{$daysBack}D"));
             $toCheckForMatching = $this->donationRepository
@@ -90,7 +94,7 @@ class RetrospectivelyMatch extends LockingCommand
         $totalNewMatching = '0.00';
 
         foreach ($toCheckForMatching as $donation) {
-            $amountAllocated = $this->donationRepository->allocateMatchFunds($donation);
+            $amountAllocated = $this->allocator->allocateMatchFunds($donation);
 
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
                 $this->entityManager->flush();

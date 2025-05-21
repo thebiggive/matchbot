@@ -135,9 +135,7 @@ class RegularGivingNotifierTest extends TestCase
     private function andGivenAnActivatedMandate(PersonId $personId, DonorAccount $donor): array
     {
         $campaign = TestCase::someCampaign(thankYouMessage: 'Thank you for setting up your regular donation to us!');
-        /**
-         * @psalm-suppress PossiblyNullArgument
-         */
+
         $mandate = new RegularGivingMandate(
             donorId: $personId,
             donationAmount: Money::fromPoundsGBP(64),
@@ -199,6 +197,7 @@ class RegularGivingNotifierTest extends TestCase
         $sut->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
     }
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

@@ -29,6 +29,7 @@ class DeletePaymentMethod extends Action
      * @throws ApiErrorException
      * @see PersonWithPasswordAuthMiddleware
      */
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         $customerId = $request->getAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME);

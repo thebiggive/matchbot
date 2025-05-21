@@ -26,6 +26,7 @@ class PushDailyFundTotals extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     public function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $funds = $this->fundRepository->findForCampaignsOpenAt(new \DateTimeImmutable('now'));

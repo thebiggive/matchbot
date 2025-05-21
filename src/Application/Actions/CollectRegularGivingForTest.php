@@ -30,6 +30,7 @@ class CollectRegularGivingForTest extends Action
         parent::__construct($logger);
     }
 
+    #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
         if ($this->environment === Environment::Production) {

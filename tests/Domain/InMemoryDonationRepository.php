@@ -18,15 +18,10 @@ class InMemoryDonationRepository implements DonationRepository
     /** @var array<int, Donation> */
     private $donations = [];
 
-    /**
-     * @var numeric-string
-     */
-    private string $matchFundsReleased = '0';
-
     #[\Override] public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation
     {
         foreach ($this->donations as $donation) {
-            if ($donation->getUUID()->equals($donationId)) {
+            if ($donation->getUuid()->equals($donationId)) {
                 return $donation;
             }
         }
@@ -46,7 +41,7 @@ class InMemoryDonationRepository implements DonationRepository
         $this->donations[$id] = $donation;
     }
 
-    #[\Override] public function findOneBy(array $criteria, ?array $orderBy = null): ?Donation
+    #[\Override] public function findOneBy(array $criteria): ?Donation
     {
         if (array_keys($criteria) === ['transactionId']) {
             foreach ($this->donations as $donation) {
@@ -87,24 +82,6 @@ class InMemoryDonationRepository implements DonationRepository
     public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation
     {
         return $this->findOneBy($criteria);
-    }
-
-    /**
-     * @return numeric-string
-     */
-    public function totalMatchFundsReleased(): string
-    {
-        return $this->matchFundsReleased;
-    }
-
-    #[\Override] public function releaseMatchFunds(Donation $donation): void
-    {
-        $this->matchFundsReleased = bcadd($this->matchFundsReleased, $donation->getAmount());
-    }
-
-    #[\Override] public function allocateMatchFunds(Donation $donation): string
-    {
-        throw new \Exception("Method not implemented in test double");
     }
 
     #[\Override] public function findWithExpiredMatching(\DateTimeImmutable $now): array
@@ -157,11 +134,6 @@ class InMemoryDonationRepository implements DonationRepository
         throw new \Exception("Method not implemented in test double");
     }
 
-    #[\Override] public function removeAllFundingWithdrawalsForDonation(Donation $donation): void
-    {
-        throw new \Exception("Method not implemented in test double");
-    }
-
     #[\Override] public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus): int
     {
         throw new \Exception("Method not implemented in test double");
@@ -207,21 +179,25 @@ class InMemoryDonationRepository implements DonationRepository
         throw new \Exception("Method not implemented in test double");
     }
 
+    #[\Override]
     public function push(DonationUpserted $changeMessage): void
     {
         throw new \Exception("Method not implemented in test double");
     }
 
+    #[\Override]
     public function findPendingAndPreAuthedForMandate(UuidInterface $mandateId): array
     {
         throw new \Exception("Method not implemented in test double");
     }
 
+    #[\Override]
     public function findAllForMandate(UuidInterface $mandateId): array
     {
         throw new \Exception("Method not implemented in test double");
     }
 
+    #[\Override]
     public function findOneByUUID(UuidInterface $donationUUID): ?Donation
     {
         return $this->findOneBy(['uuid' => $donationUUID]);

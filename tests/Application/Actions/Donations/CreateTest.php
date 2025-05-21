@@ -6,9 +6,10 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\UnitOfWork;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Messenger\DonationUpserted;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
@@ -32,6 +33,7 @@ use MatchBot\Tests\TestData\Identity;
 use Override;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\App;
@@ -47,6 +49,8 @@ class CreateTest extends TestCase
 {
     public const string PSPCUSTOMERID = 'cus_aaaaaaaaaaaa11';
     public const string DONATION_UUID = '1822c3b6-b405-11ef-9766-63f04fc63fc3';
+
+    /** @var array<string, mixed> */
     private static array $somePaymentIntentArgs;
     /**
      * @var PaymentIntent Mock result, most properites we don't use omitted.
@@ -63,6 +67,9 @@ class CreateTest extends TestCase
     private \DateTimeImmutable $now;
     private ?Campaign $campaign = null;
 
+    /** @var ObjectProphecy<Allocator> */
+    private ObjectProphecy $allocatorProphecy;
+
     /** @var ObjectProphecy<CampaignRepository> */
     private ObjectProphecy $campaignRepositoryProphecy;
 
@@ -75,6 +82,7 @@ class CreateTest extends TestCase
     /** @var ObjectProphecy<EntityManagerInterface>  */
     private ObjectProphecy $entityManagerProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
@@ -129,8 +137,14 @@ class CreateTest extends TestCase
         $config = $configurationProphecy->reveal();
         $configurationProphecy->getResultCacheImpl()->willReturn($this->createStub(CacheProvider::class));
 
+        $emptyUow = $this->prophesize(UnitOfWork::class);
+        $emptyUow->computeChangeSets()->willReturn(null); // void
+        $emptyUow->hasPendingInsertions()->willReturn(false);
+        $emptyUow->getIdentityMap()->willReturn([]);
+
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $this->entityManagerProphecy->getConfiguration()->willReturn($config);
+        $this->entityManagerProphecy->getUnitOfWork()->willReturn($emptyUow->reveal());
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
 
         $this->diContainer()->set(CampaignRepository::class, $this->campaignRepositoryProphecy->reveal());
@@ -139,10 +153,11 @@ class CreateTest extends TestCase
         $this->donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $this->diContainer()->set(DonationRepository::class, $this->donationRepoProphecy->reveal());
 
+        $this->allocatorProphecy = $this->prophesize(Allocator::class);
+        $this->diContainer()->set(Allocator::class, $this->allocatorProphecy->reveal());
+
         $this->stripeProphecy = $this->prophesize(Stripe::class);
         $this->diContainer()->set(Stripe::class, $this->stripeProphecy->reveal());
-
-
 
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
 
@@ -179,8 +194,8 @@ class CreateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function testCampaignClosed(): void
@@ -200,8 +215,8 @@ class CreateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     /**
@@ -216,7 +231,10 @@ class CreateTest extends TestCase
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
 
         $app = $this->getAppInstance();
-        $this->donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
+
+        $allocatorProphecy = $this->prophesize(Allocator::class);
+        $allocatorProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
+
         $this->donationRepoProphecy->push(Argument::type(DonationUpserted::class));
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
@@ -228,9 +246,12 @@ class CreateTest extends TestCase
         $this->entityManagerProphecy->isOpen()->willReturn(true);
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $this->entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $this->entityManagerProphecy->beginTransaction()->willReturn(null);
+        $this->entityManagerProphecy->commit()->willReturn(null);
 
         $this->stripeProphecy->createPaymentIntent(Argument::any())->shouldNotBeCalled();
 
+        $this->diContainer()->set(Allocator::class, $allocatorProphecy->reveal());
         $this->diContainer()->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
         $this->diContainer()->set(DonationRepository::class, $this->donationRepoProphecy->reveal());
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
@@ -243,13 +264,13 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(500, $response->getStatusCode());
+        $this->assertSame(500, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
         \assert(is_array($payloadArray));
 
-        $this->assertEquals('SERVER_ERROR', $payloadArray['error']['type']);
-        $this->assertEquals('Could not make Stripe Payment Intent (A)', $payloadArray['error']['description']);
+        $this->assertSame('SERVER_ERROR', $payloadArray['error']['type']);
+        $this->assertSame('Could not make Stripe Payment Intent (A)', $payloadArray['error']['description']);
     }
 
     public function testCurrencyMismatch(): void
@@ -277,8 +298,8 @@ class CreateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     /**
@@ -294,11 +315,14 @@ class CreateTest extends TestCase
         $app = $this->getAppInstance();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
+
+        $allocatorProphecy = $this->prophesize(Allocator::class);
+        $allocatorProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $this->entityManagerProphecy->flush()->shouldNotBeCalled();
 
+        $this->diContainer()->set(Allocator::class, $allocatorProphecy->reveal());
         $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
 
@@ -404,7 +428,7 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(201, $response->getStatusCode());
+        $this->assertSame(201, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
 
@@ -412,21 +436,21 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
-        $this->assertEquals(0.38, $payloadArray['donation']['charityFee']);
-        $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
-        $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
-        $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
-        $this->assertEquals(self::DONATION_UUID, $payloadArray['donation']['donationId']);
-        $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
+        $this->assertSame(0.38, $payloadArray['donation']['charityFee']);
+        $this->assertSame(0, $payloadArray['donation']['charityFeeVat']);
+        $this->assertSame('GB', $payloadArray['donation']['countryCode']);
+        $this->assertSame(12, $payloadArray['donation']['donationAmount']);
+        $this->assertSame(self::DONATION_UUID, $payloadArray['donation']['donationId']);
+        $this->assertSame(8, $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
-        $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
-        $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
-        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
-        $this->assertEquals('stripe', $payloadArray['donation']['psp']);
-        $this->assertEquals('pi_dummyIntent456_id', $payloadArray['donation']['transactionId']);
+        $this->assertSame(1.11, $payloadArray['donation']['tipAmount']);
+        $this->assertSame('567CharitySFID', $payloadArray['donation']['charityId']);
+        $this->assertSame('123CampaignId12345', $payloadArray['donation']['projectId']);
+        $this->assertSame(DonationStatus::Pending->value, $payloadArray['donation']['status']);
+        $this->assertSame('stripe', $payloadArray['donation']['psp']);
+        $this->assertSame('pi_dummyIntent456_id', $payloadArray['donation']['transactionId']);
     }
 
     /**
@@ -500,7 +524,7 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(201, $response->getStatusCode());
+        $this->assertSame(201, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
 
@@ -508,21 +532,21 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
-        $this->assertEquals(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
-        $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
-        $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
-        $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
-        $this->assertEquals(self::DONATION_UUID, $payloadArray['donation']['donationId']);
-        $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
+        $this->assertSame(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
+        $this->assertSame(0, $payloadArray['donation']['charityFeeVat']);
+        $this->assertSame('GB', $payloadArray['donation']['countryCode']);
+        $this->assertSame(12, $payloadArray['donation']['donationAmount']);
+        $this->assertSame(self::DONATION_UUID, $payloadArray['donation']['donationId']);
+        $this->assertSame(8, $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
-        $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
-        $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
-        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
-        $this->assertEquals('stripe', $payloadArray['donation']['psp']);
-        $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
+        $this->assertSame(1.11, $payloadArray['donation']['tipAmount']);
+        $this->assertSame('567CharitySFID', $payloadArray['donation']['charityId']);
+        $this->assertSame('123CampaignId12345', $payloadArray['donation']['projectId']);
+        $this->assertSame(DonationStatus::Pending->value, $payloadArray['donation']['status']);
+        $this->assertSame('stripe', $payloadArray['donation']['psp']);
+        $this->assertSame('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
     }
 
     /**
@@ -599,7 +623,7 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(201, $response->getStatusCode());
+        $this->assertSame(201, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
 
@@ -607,21 +631,21 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
-        $this->assertEquals(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
-        $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
-        $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
-        $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
-        $this->assertEquals(self::DONATION_UUID, $payloadArray['donation']['donationId']);
-        $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
+        $this->assertSame(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
+        $this->assertSame(0, $payloadArray['donation']['charityFeeVat']);
+        $this->assertSame('GB', $payloadArray['donation']['countryCode']);
+        $this->assertSame(12, $payloadArray['donation']['donationAmount']);
+        $this->assertSame(self::DONATION_UUID, $payloadArray['donation']['donationId']);
+        $this->assertSame(8, $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
-        $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
-        $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
-        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
-        $this->assertEquals('stripe', $payloadArray['donation']['psp']);
-        $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
+        $this->assertSame(1.11, $payloadArray['donation']['tipAmount']);
+        $this->assertSame('567CharitySFID', $payloadArray['donation']['charityId']);
+        $this->assertSame('123CampaignId12345', $payloadArray['donation']['projectId']);
+        $this->assertSame(DonationStatus::Pending->value, $payloadArray['donation']['status']);
+        $this->assertSame('stripe', $payloadArray['donation']['psp']);
+        $this->assertSame('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
     }
 
     public function testMatchedCampaignButWrongPersonInRoute(): void
@@ -692,8 +716,8 @@ class CreateTest extends TestCase
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     /**
@@ -727,7 +751,7 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(201, $response->getStatusCode());
+        $this->assertSame(201, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
 
@@ -735,25 +759,23 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
-        $this->assertEquals(0.43, $payloadArray['donation']['charityFee']); // 1.9% + 20p.
-        $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
-        $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
-        $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
-        $this->assertEquals(self::DONATION_UUID, $payloadArray['donation']['donationId']);
-        $this->assertEquals('0', $payloadArray['donation']['matchReservedAmount']);
+        $this->assertSame(0.43, $payloadArray['donation']['charityFee']); // 1.9% + 20p.
+        $this->assertSame(0, $payloadArray['donation']['charityFeeVat']);
+        $this->assertSame('GB', $payloadArray['donation']['countryCode']);
+        $this->assertSame(12, $payloadArray['donation']['donationAmount']);
+        $this->assertSame(self::DONATION_UUID, $payloadArray['donation']['donationId']);
+        $this->assertSame(0, $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
-        $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
-        $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
+        $this->assertSame(1.11, $payloadArray['donation']['tipAmount']);
+        $this->assertSame('567CharitySFID', $payloadArray['donation']['charityId']);
+        $this->assertSame('123CampaignId12345', $payloadArray['donation']['projectId']);
     }
 
     /**
      * Use unmatched campaign in previous test but also omit all donor-supplied
      * detail except donation and tip amount, to test new 2-step Create setup.
-     *
-     * @psalm-suppress MixedArrayAccess
      */
     public function testSuccessWithMinimalData(): void
     {
@@ -781,9 +803,9 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(201, $response->getStatusCode());
+        $this->assertSame(201, $response->getStatusCode());
 
-        /** @var array<string, string|numeric|boolean|array> $payloadArray */
+        /** @var array<string, string|numeric|boolean|array<array-key, mixed>> $payloadArray */
         $payloadArray = json_decode($payload, true);
 
         $this->assertIsString($payloadArray['jwt']);
@@ -794,18 +816,21 @@ class CreateTest extends TestCase
         $this->assertNull($payloadArray['donation']['optInCharityEmail']);
         $this->assertNull($payloadArray['donation']['optInChampionEmail']);
         $this->assertNull($payloadArray['donation']['optInTbgEmail']);
-        $this->assertEquals(0.43, $payloadArray['donation']['charityFee']); // 1.9% + 20p.
-        $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
-        $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
-        $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
-        $this->assertEquals(self::DONATION_UUID, $payloadArray['donation']['donationId']);
-        $this->assertEquals('0', $payloadArray['donation']['matchReservedAmount']);
-        $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
-        $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
+        $this->assertSame(0.43, $payloadArray['donation']['charityFee']); // 1.9% + 20p.
+        $this->assertSame(0, $payloadArray['donation']['charityFeeVat']);
+        $this->assertSame('GB', $payloadArray['donation']['countryCode']);
+        $this->assertSame(12, $payloadArray['donation']['donationAmount']);
+        $this->assertSame(self::DONATION_UUID, $payloadArray['donation']['donationId']);
+        $this->assertSame(0, $payloadArray['donation']['matchReservedAmount']);
+        $this->assertSame(1.11, $payloadArray['donation']['tipAmount']);
+        $this->assertSame('567CharitySFID', $payloadArray['donation']['charityId']);
+        $this->assertSame('123CampaignId12345', $payloadArray['donation']['projectId']);
     }
 
-    public function testErrorWhenAllDbPersistCallsFail(): void
+    /**
+     * Persist itself failing with a non-retryable exception should mean we give up immediately.
+     */
+    public function testErrorWhenDbPersistCallFails(): void
     {
         $donation = $this->getTestDonation(true, true, true);
 
@@ -820,7 +845,7 @@ class CreateTest extends TestCase
         $this->entityManagerProphecy->isOpen()->willReturn(true);
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))
             ->willThrow($this->prophesize(DBALServerException::class)->reveal())
-            ->shouldBeCalledTimes(3); // DonationService::MAX_RETRY_COUNT
+            ->shouldBeCalledOnce(); // DonationService::MAX_RETRY_COUNT
         $this->entityManagerProphecy->flush()->shouldNotBeCalled();
 
         $this->diContainer()->set(ClockInterface::class, new MockClock($this->now));
@@ -833,12 +858,12 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(500, $response->getStatusCode());
+        $this->assertSame(500, $response->getStatusCode());
 
-        /** @var array $payloadArray */
+        /** @var array<string, mixed> $payloadArray */
         $payloadArray = json_decode($payload, true);
 
-        $this->assertEquals(['error' => [
+        $this->assertSame(['error' => [
             'type' => 'SERVER_ERROR',
             'description' => 'Could not make Stripe Payment Intent (D)',
         ]], $payloadArray);
@@ -850,6 +875,7 @@ class CreateTest extends TestCase
      *
      * @param bool $skipEmExpectations  Whether to bypass monitoring calls on the entity manager,
      *                                  e.g. because the test will replace it with a more specific one.
+     * @return App<ContainerInterface|null>
      */
     private function getAppWithCommonPersistenceDeps(
         bool $donationPersisted,
@@ -859,6 +885,7 @@ class CreateTest extends TestCase
         bool $skipEmExpectations = false
     ): App {
         $app = $this->getAppInstance();
+        $allocatorProphecy = $this->prophesize(Allocator::class);
         $donationRepoProphecy = $this->donationRepoProphecy;
         $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CampaignId12345'])->willReturn($this->campaign);
 
@@ -876,12 +903,14 @@ class CreateTest extends TestCase
         }
 
         if ($donationMatched) {
-            $donationRepoProphecy->allocateMatchFunds($donation)->shouldBeCalledOnce();
+            $allocatorProphecy->allocateMatchFunds($donation)->shouldBeCalledOnce();
         } else {
-            $donationRepoProphecy->allocateMatchFunds($donation)->shouldNotBeCalled();
+            $allocatorProphecy->allocateMatchFunds($donation)->shouldNotBeCalled();
         }
 
         $this->entityManagerProphecy->isOpen()->willReturn(true);
+        $this->entityManagerProphecy->beginTransaction()->willReturn(null);
+        $this->entityManagerProphecy->commit()->willReturn(null);
 
         if ($donationPersisted) {
             if (!$skipEmExpectations) {
@@ -897,11 +926,12 @@ class CreateTest extends TestCase
             }
         }
 
+        $this->diContainer()->set(Allocator::class, $allocatorProphecy->reveal());
         $this->diContainer()->set(CampaignRepository::class, $this->campaignRepositoryProphecy->reveal());
         $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $this->diContainer()->set(RoutableMessageBus::class, $this->messageBusProphecy->reveal());
 
-        return $app;
+        return $app; // @phpstan-ignore return.type
     }
 
     private function encode(Donation $donation): string

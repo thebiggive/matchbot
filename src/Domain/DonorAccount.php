@@ -185,6 +185,9 @@ class DonorAccount extends Model
             ->verifyNow();
     }
 
+    /**
+     * @return array<string, null|string>
+     */
     public function toFrontEndApiModel(): array
     {
         return [
@@ -207,6 +210,9 @@ class DonorAccount extends Model
         return Country::fromAlpha2OrNull($this->billingCountryCode);
     }
 
+    /**
+     * @return array<string, string|null>
+     */
     public function toSfApiModel(): array
     {
         return [

@@ -7,7 +7,7 @@ use MatchBot\Domain\EmailAddress;
 /**
  * A message to be sent by email, via our Mailer service
  *
- * @psalm-type emailParams array<string,string|null|int|float|bool|array>
+ * @psalm-type emailParams array<string,string|null|int|float|bool|array<array-key, mixed>>
  */
 readonly class EmailMessage
 {

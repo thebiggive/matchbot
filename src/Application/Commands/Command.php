@@ -17,6 +17,7 @@ abstract class Command extends SymfonyCommand
 
     abstract protected function doExecute(InputInterface $input, OutputInterface $output): int;
 
+    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->start($input, $output);

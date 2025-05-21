@@ -11,6 +11,8 @@ use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Settings;
 use MatchBot\Client\Mailer;
+use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -41,6 +43,7 @@ class StripePaymentsUpdateTest extends StripeTest
     /** @var ObjectProphecy<Mailer> */
     private $mailerClientProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
@@ -50,6 +53,8 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
         $container->set(RegularGivingMandateRepository::class, $this->createStub(RegularGivingMandateRepository::class));
         $container->set(FundRepository::class, $this->createStub(FundRepository::class));
+        $container->set(CampaignFundingRepository::class, $this->prophesize(CampaignFundingRepository::class)->reveal());
+
 
         $this->donationRepository = new InMemoryDonationRepository();
         $container->set(DonationRepository::class, $this->donationRepository);
@@ -74,7 +79,7 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $response = $app->handle($request);
 
-        $this->assertEquals(204, $response->getStatusCode());
+        $this->assertSame(204, $response->getStatusCode());
     }
 
     public function testSuccessWithUnrecognisedTransactionId(): void
@@ -96,7 +101,7 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $response = $app->handle($request);
 
-        $this->assertEquals(204, $response->getStatusCode());
+        $this->assertSame(204, $response->getStatusCode());
     }
 
     public function testMissingSignature(): void
@@ -123,8 +128,8 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $payload = (string) $response->getBody();
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function testSuccessfulPayment(): void
@@ -136,7 +141,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $donation = $this->getTestDonation();
         $donation->setTransactionId('pi_externalId_123');
 
-        /** @var array $webhookContent */
+        /** @var array<string, mixed> $webhookContent */
         $webhookContent = json_decode(
             $this->getStripeHookMock('ch_succeeded'),
             associative: true,
@@ -145,7 +150,6 @@ class StripePaymentsUpdateTest extends StripeTest
 
         /**
          * @psalm-suppress MixedArrayAssignment
-         * @psalm-suppress MixedArrayAccess
          */
         $webhookContent['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
         $body = json_encode($webhookContent, \JSON_THROW_ON_ERROR);
@@ -177,11 +181,11 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $response = $app->handle($request);
 
-        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals('tr_id_t987', $donation->getTransferId());
-        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
-        $this->assertEquals('0.37', $donation->getOriginalPspFee());
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame('ch_externalId_123', $donation->getChargeId());
+        $this->assertSame('tr_id_t987', $donation->getTransferId());
+        $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
+        $this->assertSame('0.37', $donation->getOriginalPspFee());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     public function testOriginalStripeFeeInSEK(): void
@@ -192,7 +196,7 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $donation = $this->getTestDonation('6000.00', currencyCode: 'SEK');
         $this->donationRepository->store($donation);
-        /** @var array $webhookContent */
+        /** @var array<string, mixed> $webhookContent */
         $webhookContent = json_decode(
             $this->getStripeHookMock('ch_succeeded_sek'),
             associative: true,
@@ -201,7 +205,6 @@ class StripePaymentsUpdateTest extends StripeTest
 
         /**
          * @psalm-suppress MixedArrayAssignment
-         * @psalm-suppress MixedArrayAccess
          */
         $webhookContent['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
 
@@ -228,11 +231,11 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $response = $app->handle($request);
 
-        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals('tr_id_t988', $donation->getTransferId());
-        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
-        $this->assertEquals('18.72', $donation->getOriginalPspFee());
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame('ch_externalId_123', $donation->getChargeId());
+        $this->assertSame('tr_id_t988', $donation->getTransferId());
+        $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
+        $this->assertSame('18.72', $donation->getOriginalPspFee());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     public function testDisputeLostBehavesLikeRefund(): void
@@ -263,10 +266,10 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $response = $app->handle($request);
 
-        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
-        $this->assertEquals('1.00', $donation->getTipAmount());
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame('ch_externalId_123', $donation->getChargeId());
+        $this->assertSame(DonationStatus::Refunded, $donation->getDonationStatus());
+        $this->assertSame('1.00', $donation->getTipAmount());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     public function testDisputeWonMakesNoSubstantiveChanges(): void
@@ -289,10 +292,6 @@ class StripePaymentsUpdateTest extends StripeTest
             ->findAndLockOneBy(['transactionId' => 'pi_externalId_123'])
             ->shouldNotBeCalled();
 
-        $donationRepoProphecy
-            ->releaseMatchFunds($donation)
-            ->shouldNotBeCalled();
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -304,10 +303,10 @@ class StripePaymentsUpdateTest extends StripeTest
 
         // No change to any donation data. Return 204 for no change. Will log
         // info to help in case of any confusion.
-        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
-        $this->assertEquals('1.00', $donation->getTipAmount());
-        $this->assertEquals(204, $response->getStatusCode());
+        $this->assertSame('ch_externalId_123', $donation->getChargeId());
+        $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
+        $this->assertSame('1.00', $donation->getTipAmount());
+        $this->assertSame(204, $response->getStatusCode());
     }
 
     public function testDisputeLostWithUnrecognisedTransactionId(): void
@@ -329,7 +328,7 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $response = $app->handle($request);
 
-        $this->assertEquals(204, $response->getStatusCode());
+        $this->assertSame(204, $response->getStatusCode());
     }
 
     public function testDisputeLostWithAmountUnexpectedlyHighIsStillProcessedButAlertsSlack(): void
@@ -379,10 +378,10 @@ class StripePaymentsUpdateTest extends StripeTest
         $response = $app->handle($request);
 
         // assert
-        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
-        $this->assertEquals('1.00', $donation->getTipAmount());
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame('ch_externalId_123', $donation->getChargeId());
+        $this->assertSame(DonationStatus::Refunded, $donation->getDonationStatus());
+        $this->assertSame('1.00', $donation->getTipAmount());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     public function testDisputeLostWithAmountTooLowIsSkipped(): void
@@ -409,10 +408,10 @@ class StripePaymentsUpdateTest extends StripeTest
 
         // No change to any donation data. Return 204 for no change. Will also log
         // an error so we can investigate.
-        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
-        $this->assertEquals('1.00', $donation->getTipAmount());
-        $this->assertEquals(204, $response->getStatusCode());
+        $this->assertSame('ch_externalId_123', $donation->getChargeId());
+        $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
+        $this->assertSame('1.00', $donation->getTipAmount());
+        $this->assertSame(204, $response->getStatusCode());
     }
 
     public function testSuccessfulFullRefund(): void
@@ -453,10 +452,10 @@ class StripePaymentsUpdateTest extends StripeTest
         $response = $app->handle($request);
 
         // assert
-        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
-        $this->assertEquals('1.00', $donation->getTipAmount());
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame('ch_externalId_123', $donation->getChargeId());
+        $this->assertSame(DonationStatus::Refunded, $donation->getDonationStatus());
+        $this->assertSame('1.00', $donation->getTipAmount());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     /**
@@ -514,10 +513,10 @@ class StripePaymentsUpdateTest extends StripeTest
         // We expect a Slack notice about the unusual over-refund.
         $chatterProphecy->send($expectedMessage)->shouldBeCalledOnce();
 
-        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
-        $this->assertEquals('1.00', $donation->getTipAmount());
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame('ch_externalId_123', $donation->getChargeId());
+        $this->assertSame(DonationStatus::Refunded, $donation->getDonationStatus());
+        $this->assertSame('1.00', $donation->getTipAmount());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     public function testSuccessfulTipRefund(): void
@@ -534,6 +533,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $time = (string) time();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->getRepository(CampaignFunding::class)->willReturn($this->createStub(CampaignFundingRepository::class));
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
@@ -546,10 +546,10 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $response = $app->handle($request);
 
-        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
-        $this->assertEquals('0.00', $donation->getTipAmount());
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame('ch_externalId_123', $donation->getChargeId());
+        $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
+        $this->assertSame('0.00', $donation->getTipAmount());
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     public function testUnsupportedOriginalChargeStatusIsSkipped(): void
@@ -582,8 +582,8 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $payload = (string) $response->getBody();
 
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame($expectedSerialised, $payload);
+        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function testUnsupportedRefundAmount(): void
@@ -610,11 +610,10 @@ class StripePaymentsUpdateTest extends StripeTest
 
         // No change to any donation data. Return 204 for no change. Will also log
         // an error so we can investigate.
-        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
-        $this->assertEquals('1.00', $donation->getTipAmount());
-        $this->assertEquals(204, $response->getStatusCode());
-        $this->assertEquals('0', $this->donationRepository->totalMatchFundsReleased());
+        $this->assertSame('ch_externalId_123', $donation->getChargeId());
+        $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
+        $this->assertSame('1.00', $donation->getTipAmount());
+        $this->assertSame(204, $response->getStatusCode());
     }
 
     private function getValidWebhookSecret(Container $container): string
@@ -623,6 +622,7 @@ class StripePaymentsUpdateTest extends StripeTest
         return $settings->stripe['accountWebhookSecret'];
     }
 
+    #[\Override]
     public function getContainer(): ContainerInterface
     {
         $container = parent::getContainer();
@@ -636,7 +636,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $donation->collectFromStripeCharge(
             $chargeId,
-            (int) ((float) $donation->getTotalPaidByDonor() * 100),
+            (int) ((float) $donation->getTotalPaidByDonor() * 100.0),
             '-',
             null,
             null,

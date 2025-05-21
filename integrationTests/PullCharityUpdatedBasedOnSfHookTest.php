@@ -15,10 +15,13 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
 {
+    #[\Override]
     public function tearDown(): void
     {
         $this->getContainer()->set(Client\Fund::class, null);
         $this->getContainer()->set(Client\Campaign::class, null);
+
+        parent::tearDown();
     }
 
     public function testItPullsCharityUpdateAfterSalesforceSendsHook(): void
@@ -80,12 +83,15 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
         // assert
         $em->clear();
 
-        $charity = $this->getService(CharityRepository::class)->findOneBySfIDOrThrow(Salesforce18Id::of($sfId));
+        $charity = $this->getService(CharityRepository::class)->findOneBySfIDOrThrow(Salesforce18Id::ofCharity($sfId));
         $this->assertSame('New Charity Name', $charity->getName());
         $this->assertFalse($campaign->isReady());
         $this->assertSame('Preview', $campaign->getStatus());
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function simulatedCampaignFromSFAPI(string $sfId, string $newCharityName, string $stripeAccountId): array
     {
         return [

@@ -8,6 +8,7 @@ use MatchBot\Application\Environment;
 use MatchBot\Application\Messenger\CharityUpdated;
 use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\Charity;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -17,8 +18,10 @@ class CharityUpdatedHandlerTest extends TestCase
 {
     use ProphecyTrait;
 
+    /** @var Salesforce18Id<Charity> */
     private Salesforce18Id $charityId;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->charityId = Salesforce18Id::ofCharity('charity89012345678');

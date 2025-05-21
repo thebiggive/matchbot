@@ -38,8 +38,8 @@ class PushDonationsTest extends TestCase
             'Pushed 1 donations to Salesforce',
             'matchbot:push-donations complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testPushWithOneCancelledAbandonedDonation(): void
@@ -63,8 +63,8 @@ class PushDonationsTest extends TestCase
             'Pushed 1 donations to Salesforce',
             'matchbot:push-donations complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     /**

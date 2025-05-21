@@ -33,9 +33,6 @@ use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 )]
 class CancelStaleDonationFundTips extends LockingCommand
 {
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - called by framework
-     */
     public function __construct(
         private DonationRepository $donationRepository,
         private DonationService $donationService,
@@ -46,6 +43,7 @@ class CancelStaleDonationFundTips extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         // Cancel tips quicker outside prod to allow for easier testing:

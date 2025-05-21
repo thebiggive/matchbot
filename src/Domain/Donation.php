@@ -57,7 +57,7 @@ class Donation extends SalesforceWriteProxy
 
     public const string MAT_400_ENABLE_TIMESTAMP = '2025-03-18T14:30:00+00:00';
 
-    private array $possiblePSPs = ['stripe'];
+    private const array POSSIBLE_PSPS = ['stripe'];
 
     /**
      * The donation ID for PSPs and public APIs. Not the same as the internal auto-increment $id used
@@ -240,15 +240,10 @@ class Donation extends SalesforceWriteProxy
      * (taken at mandate creation time), 2nd, 3rd etc.
      *
      * Null only iff this is a one-off, non regular-giving donation.
-     *
-     * @psalm-suppress PossiblyUnusedProperty - used in DQL
      */
     #[ORM\Column(nullable: true)]
     protected ?int $mandateSequenceNumber = null;
 
-    /**
-     * @psalm-suppress PossiblyUnusedProperty - used in DQL
-     */
     #[ORM\ManyToOne(targetEntity: RegularGivingMandate::class)]
     private ?RegularGivingMandate $mandate = null;
 
@@ -313,7 +308,6 @@ class Donation extends SalesforceWriteProxy
     protected ?bool $tbgShouldProcessGiftAid = null;
 
     /**
-     * @psalm-suppress PossiblyUnusedProperty - used in DB queries
      * @var ?DateTimeImmutable When a queued message that should lead to a Gift Aid claim was sent.
      */
     #[ORM\Column(nullable: true)]
@@ -367,8 +361,6 @@ class Donation extends SalesforceWriteProxy
     /**
      * We only have permission to collect a preAuthorized donation on or after the given date. Intended to be used
      * with regular giving.
-     *
-     * @psalm-suppress UnusedProperty (will use soon)
      *
      * @see DonationStatus::PreAuthorized
      */
@@ -552,8 +544,8 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return array|null A representation of the donation suitable for sending to Salesforce, or null if this donation
-     * cannot be represented in SF in its current state.
+     * @return array<string|mixed>|null A representation of the donation suitable for sending to Salesforce,
+     * or null if this donation cannot be represented in SF in its current state.
      */
     public function toSFApiModel(): null|array
     {
@@ -586,6 +578,9 @@ class Donation extends SalesforceWriteProxy
         return $data;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toFrontEndApiModel(): array
     {
         $totalPaidByDonor = $this->getTotalPaidByDonor();
@@ -972,7 +967,7 @@ class Donation extends SalesforceWriteProxy
      */
     private function setPsp(string $psp): void
     {
-        if (!in_array($psp, $this->possiblePSPs, true)) {
+        if (!in_array($psp, self::POSSIBLE_PSPS, true)) {
             throw new \UnexpectedValueException("Unexpected PSP '$psp'");
         }
 
@@ -1239,6 +1234,8 @@ class Donation extends SalesforceWriteProxy
      * preparing to make a bank transfer. In the latter case we rely on
      * `payment_method_options` to allow the PI to be created even though there aren't
      * yet sufficient funds.
+     *
+     * @return array<string, mixed>
      */
     public function getStripeMethodProperties(): array
     {
@@ -1296,6 +1293,8 @@ class Donation extends SalesforceWriteProxy
      *
      * @link https://stripe.com/docs/payments/connected-accounts
      * @link https://stripe.com/docs/connect/destination-charges#settlement-merchant
+     *
+     * @return array<string, string|null>
      */
     public function getStripeOnBehalfOfProperties(): array
     {
@@ -1655,23 +1654,23 @@ class Donation extends SalesforceWriteProxy
         return DonationSequenceNumber::of($this->mandateSequenceNumber);
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     public function getMandate(): ?RegularGivingMandate
     {
         return $this->mandate;
     }
 
     /**
-     * @return array Representation of this donation suitable for creating a Stripe Payment intent with
-     * @see \MatchBot\Client\Stripe::createPaymentIntent
+     * @psalm-suppress InvalidReturnType - don't want to write a type with every property here, but
+     * psalm doesn't treat array shapes with extra params as subtypes unless explictily declared open,
+     * and Stripe's are not.
+     *
+     * @return array{amount: int, currency: string}
+     *  @see \MatchBot\Client\Stripe::createPaymentIntent
      */
     public function createStripePaymentIntentPayload(): array
     {
         Assertion::same('stripe', $this->psp);
 
-        /** @var array{metadata: array} $payload */
         $payload = [
             ...$this->getStripeMethodProperties(),
             ...$this->getStripeOnBehalfOfProperties(),
@@ -1714,10 +1713,11 @@ class Donation extends SalesforceWriteProxy
         $mandate = $this->getMandate();
         $sequenceNumber = $this->getMandateSequenceNumber();
         if ($mandate !== null && $sequenceNumber !== null) {
-            $payload['metadata']['mandateId'] = $mandate->getId();
-            $payload['metadata']['mandateSequenceNumber'] = $sequenceNumber->number;
+            $payload['metadata']['mandateId'] = $mandate->getId(); // @phpstan-ignore offsetAccess.nonOffsetAccessible
+            $payload['metadata']['mandateSequenceNumber'] = $sequenceNumber->number; // @phpstan-ignore offsetAccess.nonOffsetAccessible
         }
 
+        /** @psalm-suppress InvalidReturnStatement - see note in docblock */
         return $payload;
     }
 
@@ -1793,7 +1793,7 @@ class Donation extends SalesforceWriteProxy
     {
         if (!($this->thisIsInDateRangeToConfirm($now))) {
             throw new RegularGivingDonationToOldToCollect(
-                "Donation #{$this->getid()}} should have been collected at " . "
+                "Donation #{$this->getId()}} should have been collected at " . "
                 {$this->getPreAuthorizationDate()?->format('Y-m-d')}, will not at this time",
             );
         }
@@ -1890,9 +1890,6 @@ class Donation extends SalesforceWriteProxy
         $this->tipGiftAid = false;
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - expected to be useful for sending donor thanks emails.
-     */
     public function getDonorId(): ?PersonId
     {
         return $this->donorUUID ? PersonId::ofUUID($this->donorUUID) : null;

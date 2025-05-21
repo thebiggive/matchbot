@@ -14,6 +14,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
@@ -44,6 +45,7 @@ class DonationRepositoryTest extends TestCase
     /** @var ObjectProphecy<EntityManagerInterface> */
     private ObjectProphecy $entityManagerProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         $connectionWhichUpdatesFine = $this->prophesize(Connection::class);
@@ -123,8 +125,8 @@ class DonationRepositoryTest extends TestCase
         // Amount after fee = £955.85
 
         // Deduct tip + fee.
-        $this->assertEquals(48_16, $donation->getAmountToDeductFractional());
-        $this->assertEquals(949_49, $donation->getAmountForCharityFractional());
+        $this->assertSame(48_16, $donation->getAmountToDeductFractional());
+        $this->assertSame(949_49, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithTipUsingUSCard(): void
@@ -143,8 +145,8 @@ class DonationRepositoryTest extends TestCase
         // Amount after fee = £955.85
 
         // Deduct tip + fee.
-        $this->assertEquals(48_16, $donation->getAmountToDeductFractional());
-        $this->assertEquals(949_49, $donation->getAmountForCharityFractional());
+        $this->assertSame(48_16, $donation->getAmountToDeductFractional());
+        $this->assertSame(949_49, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithTip(): void
@@ -163,8 +165,8 @@ class DonationRepositoryTest extends TestCase
         // Amount after fee = £972.64
 
         // Deduct tip + fee.
-        $this->assertEquals(28_01, $donation->getAmountToDeductFractional());
-        $this->assertEquals(969_64, $donation->getAmountForCharityFractional());
+        $this->assertSame(28_01, $donation->getAmountToDeductFractional());
+        $this->assertSame(969_64, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityAndFeeVatWithTipAndVat(): void
@@ -183,11 +185,11 @@ class DonationRepositoryTest extends TestCase
         // 20% VAT on fee   = £  3.00 (2 d.p)
         // Amount after fee = £969.64
 
-        $this->assertEquals('15.01', $donation->getCharityFee());
-        $this->assertEquals('3.00', $donation->getCharityFeeVat());
+        $this->assertSame('15.01', $donation->getCharityFee());
+        $this->assertSame('3.00', $donation->getCharityFeeVat());
         // Deduct tip + fee inc. VAT.
-        $this->assertEquals(2_801, $donation->getAmountToDeductFractional());
-        $this->assertEquals(96_964, $donation->getAmountForCharityFractional());
+        $this->assertSame(2_801, $donation->getAmountToDeductFractional());
+        $this->assertSame(96_964, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTip(): void
@@ -203,8 +205,8 @@ class DonationRepositoryTest extends TestCase
         // Total fee in vcat = 18.012
         // Amount after fee = £972.64
 
-        $this->assertEquals(18_01, $donation->getAmountToDeductFractional());
-        $this->assertEquals(96_964, $donation->getAmountForCharityFractional());
+        $this->assertSame(18_01, $donation->getAmountToDeductFractional());
+        $this->assertSame(96_964, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTipWhenTbgClaimingGiftAid(): void
@@ -221,8 +223,8 @@ class DonationRepositoryTest extends TestCase
         // Total fee inc vat = £ 26.904
         // Amount after fee = £965.23
 
-        $this->assertEquals(26_90, $donation->getAmountToDeductFractional());
-        $this->assertEquals(96_075, $donation->getAmountForCharityFractional());
+        $this->assertSame(26_90, $donation->getAmountToDeductFractional());
+        $this->assertSame(96_075, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
@@ -236,32 +238,8 @@ class DonationRepositoryTest extends TestCase
         // Total fee    = £ 0.29
         // Total fee inc vat = £ 0.348
         // After fee    = £ 5.96
-        $this->assertEquals(35, $donation->getAmountToDeductFractional());
-        $this->assertEquals(5_90, $donation->getAmountForCharityFractional());
-    }
-
-    public function testReleaseMatchFundsSuccess(): void
-    {
-        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
-        $matchingAdapterProphecy->releaseAllFundsForDonation(Argument::cetera())
-            ->willReturn('0.00')
-            ->shouldBeCalledOnce();
-
-        $this->entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))->will(/**
-         * @param array<\Closure> $args
-         * @return mixed
-         */            fn(array $args) => $args[0]()
-        );
-        $this->entityManagerProphecy->flush()->shouldBeCalledOnce();
-
-        $repo = $this->getRepo(
-            matchingAdapterProphecy: $matchingAdapterProphecy,
-        );
-
-        $donation = $this->getTestDonation();
-
-        /** @psalm-suppress InternalMethod */
-        $repo->releaseMatchFunds($donation);
+        $this->assertSame(35, $donation->getAmountToDeductFractional());
+        $this->assertSame(5_90, $donation->getAmountForCharityFractional());
     }
 
     public function testAbandonOldCancelled(): void
@@ -303,7 +281,7 @@ class DonationRepositoryTest extends TestCase
             new ClassMetadata(Donation::class),
         );
 
-        $this->assertEquals(1, $repo->abandonOldCancelled());
+        $this->assertSame(1, $repo->abandonOldCancelled());
     }
 
     public function testFindReadyToClaimGiftAid(): void
@@ -358,7 +336,7 @@ class DonationRepositoryTest extends TestCase
             new ClassMetadata(Donation::class),
         );
 
-        $this->assertEquals(
+        $this->assertSame(
             [$testDonation],
             $repo->findReadyToClaimGiftAid(false),
         );
@@ -399,7 +377,7 @@ class DonationRepositoryTest extends TestCase
             new ClassMetadata(Donation::class),
         );
 
-        $this->assertEquals(
+        $this->assertSame(
             [$testDonation],
             $repo->findWithTransferIdInArray(['tr_externalId_123']),
         );
@@ -407,12 +385,9 @@ class DonationRepositoryTest extends TestCase
 
     /**
      * @param ObjectProphecy<Client\Donation> $donationClientProphecy
-     * @param ObjectProphecy<Adapter> $matchingAdapterProphecy
      */
-    private function getRepo(
-        ?ObjectProphecy $donationClientProphecy = null,
-        ?ObjectProphecy $matchingAdapterProphecy = null,
-    ): DonationRepository {
+    private function getRepo(?ObjectProphecy $donationClientProphecy = null): DonationRepository
+    {
         if (!$donationClientProphecy) {
             $donationClientProphecy = $this->prophesize(Client\Donation::class);
         }
@@ -425,10 +400,6 @@ class DonationRepositoryTest extends TestCase
         );
         $repo->setClient($donationClientProphecy->reveal());
         $repo->setLogger(new NullLogger());
-
-        if ($matchingAdapterProphecy) {
-            $repo->setMatchingAdapter($matchingAdapterProphecy->reveal());
-        }
 
         return $repo;
     }

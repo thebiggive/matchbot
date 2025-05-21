@@ -38,6 +38,7 @@ use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Application\Settings;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
+use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationNotifier;
@@ -261,6 +262,7 @@ return function (ContainerBuilder $containerBuilder) {
                 public function __construct(private string $commit_id)
                 {
                 }
+                #[\Override]
                 public function __invoke(array $record)
                 {
                     $record['extra']['commit'] = substr($this->commit_id, offset: 0, length: 7);
@@ -516,7 +518,7 @@ return function (ContainerBuilder $containerBuilder) {
         StripeClient::class => static function (ContainerInterface $c): StripeClient {
             // Both hardcoding the version and using library default - see discussion at
             // https://github.com/thebiggive/matchbot/pull/927/files/5fa930f3eee3b0c919bcc1027319dc7ae9d0be05#diff-c4fef49ee08946228bb39de898c8770a1a6a8610fc281627541ec2e49c67b118
-            \assert(ApiVersion::CURRENT === '2024-06-20');
+            \assert(ApiVersion::CURRENT === '2025-04-30.basil'); // @phpstan-ignore identical.alwaysTrue
             return new StripeClient([
                 'api_key' => $c->get(Settings::class)->stripe['apiKey'],
                 'stripe_version' => ApiVersion::CURRENT,
@@ -538,10 +540,6 @@ return function (ContainerBuilder $containerBuilder) {
 
         Auth\SalesforceAuthMiddleware::class =>
             function (ContainerInterface $c) {
-               /**
-                * @psalm-suppress MixedArrayAccess
-                * @psalm-suppress MixedArgument
-                */
                 return new Auth\SalesforceAuthMiddleware(
                     sfApiKey: $c->get(Settings::class)->salesforce['apiKey'],
                     logger: $c->get(LoggerInterface::class)
@@ -570,12 +568,13 @@ return function (ContainerBuilder $containerBuilder) {
              * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
              * is final and does not implement our custom interface.
              */
-                $chatter = $c->get(StripeChatterInterface::class);
+                $chatter = $c->get(StripeChatterInterface::class); // @phpstan-ignore varTag.type
 
                 $rateLimiterFactory = $c->get('donation-creation-rate-limiter-factory');
                 \assert($rateLimiterFactory instanceof RateLimiterFactory);
 
                 return new DonationService(
+                    allocator: $c->get(Matching\Allocator::class),
                     donationRepository: $c->get(DonationRepository::class),
                     campaignRepository: $c->get(CampaignRepository::class),
                     fundRepository: $c->get(FundRepository::class),

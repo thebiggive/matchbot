@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Commands;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
+use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -36,6 +37,7 @@ class RetrospectivelyMatchTest extends TestCase
      */
     private ObjectProphecy $matchFundsRedistributorProphecy;
 
+    #[\Override]
     public function setUp(): void
     {
         $chatterProphecy = $this->prophesize(ChatterInterface::class);
@@ -62,8 +64,8 @@ class RetrospectivelyMatchTest extends TestCase
             'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testNonWholeDaysBackIsRounded(): void
@@ -80,8 +82,8 @@ class RetrospectivelyMatchTest extends TestCase
             'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testWholeDaysBackProceeds(): void
@@ -98,11 +100,27 @@ class RetrospectivelyMatchTest extends TestCase
             'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
-    private function getDonationRepo(bool $matchingIsAllocated): DonationRepository
+    private function getAllocator(bool $matchingIsAllocated): Allocator
+    {
+        $allocatorProphecy = $this->prophesize(Allocator::class);
+
+        if ($matchingIsAllocated) {
+            $allocatorProphecy->allocateMatchFunds(Argument::type(Donation::class))
+                ->shouldBeCalledOnce()
+                ->willReturn('123.45');
+        } else {
+            $allocatorProphecy->allocateMatchFunds(Argument::type(Donation::class))
+                ->shouldNotBeCalled();
+        }
+
+        return $allocatorProphecy->reveal();
+    }
+
+    private function getDonationRepo(): DonationRepository
     {
         $donationRepo = $this->prophesize(DonationRepository::class);
 
@@ -112,22 +130,14 @@ class RetrospectivelyMatchTest extends TestCase
         // Simulate specific day count mode not finding any campaigns to match, for now.
         $donationRepo->findRecentNotFullyMatchedToMatchCampaigns(Argument::type(DateTime::class))->willReturn([]);
 
-        if ($matchingIsAllocated) {
-            $donationRepo->allocateMatchFunds(Argument::type(Donation::class))
-                ->shouldBeCalledOnce()
-                ->willReturn('123.45');
-        } else {
-            $donationRepo->allocateMatchFunds(Argument::type(Donation::class))
-                ->shouldNotBeCalled();
-        }
-
         return $donationRepo->reveal();
     }
 
     private function getCommandTester(bool $matchingIsAllocated): CommandTester
     {
         $command = new RetrospectivelyMatch(
-            donationRepository: $this->getDonationRepo($matchingIsAllocated),
+            allocator: $this->getAllocator($matchingIsAllocated),
+            donationRepository: $this->getDonationRepo(),
             fundRepository: $this->createStub(FundRepository::class),
             chatter: $this->chatter,
             bus: $this->messageBusProphecy->reveal(),

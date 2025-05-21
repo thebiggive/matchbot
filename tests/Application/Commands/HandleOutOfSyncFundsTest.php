@@ -27,6 +27,7 @@ class HandleOutOfSyncFundsTest extends TestCase
     private CampaignFunding $fundingOverMatched;
     private CampaignFunding $fundingUnderMatchedWithNothingAllocated;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->fundingUnderMatched = $this->getFundingUnderMatched();
@@ -51,8 +52,8 @@ class HandleOutOfSyncFundsTest extends TestCase
             'Checked 4 fundings. Found 1 with correct allocations, 1 over-matched and 2 under-matched',
             'matchbot:handle-out-of-sync-funds complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testFix(): void
@@ -76,8 +77,8 @@ class HandleOutOfSyncFundsTest extends TestCase
             'Checked 4 fundings. Found 1 with correct allocations, 1 over-matched and 2 under-matched',
             'matchbot:handle-out-of-sync-funds complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(0, $commandTester->getStatusCode());
     }
 
     public function testWithModeMissing(): void
@@ -105,14 +106,14 @@ class HandleOutOfSyncFundsTest extends TestCase
             'Please set the mode to "check" or "fix"',
             'matchbot:handle-out-of-sync-funds complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(1, $commandTester->getStatusCode());
+        $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(1, $commandTester->getStatusCode());
     }
 
     /**
      * Funding + withdrawal repo propechies are designed to have 1 fund in sync, 1 over-matched and 1 under-matched.
      * @see getFundingWithdrawalRepoProphecy()
-     * @return ObjectProphecy|CampaignFundingRepository
+     * @return ObjectProphecy<CampaignFundingRepository>
      */
     private function getCampaignFundingRepoPropechy()
     {
@@ -136,7 +137,7 @@ class HandleOutOfSyncFundsTest extends TestCase
      * somehow. This is the main scenario the one-off fix case is intended to deal with.
      *
      * @see getCampaignFundingRepoPropechy()
-     * @return ObjectProphecy|FundingWithdrawalRepository
+     * @return ObjectProphecy<FundingWithdrawalRepository>
      */
     private function getFundingWithdrawalRepoProphecy()
     {
@@ -265,12 +266,10 @@ class HandleOutOfSyncFundsTest extends TestCase
         $campaignRepo = $noopAdapter
             ? $this->prophesize(CampaignFundingRepository::class)->reveal()
             : $this->getCampaignFundingRepoPropechy()->reveal();
-        \assert($campaignRepo instanceof CampaignFundingRepository);
 
         $withdrawalRepo = $noopAdapter
             ? $this->prophesize(FundingWithdrawalRepository::class)->reveal()
             : $this->getFundingWithdrawalRepoProphecy()->reveal();
-        \assert($withdrawalRepo instanceof FundingWithdrawalRepository);
 
         $command = new HandleOutOfSyncFunds(
             $campaignRepo,

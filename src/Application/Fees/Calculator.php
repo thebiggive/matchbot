@@ -99,7 +99,6 @@ class Calculator
         self::assertIsGBPOrInUnitTest($currencyCode);
 
         // Currency code has been compulsory for some time.
-        /** @psalm-suppress ImpureMethodCall */
         Assertion::keyExists(self::FEES_FIXED, $currencyCode);
         $feeAmountFixed = self::FEES_FIXED[$currencyCode];
 

@@ -24,9 +24,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class PullIndividualCampaignFromSF extends LockingCommand
 {
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     public function __construct(
         private Environment $environment,
         private CampaignRepository $campaignRepository,
@@ -35,6 +32,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     public function configure(): void
     {
         $this->addArgument(
@@ -43,10 +41,12 @@ class PullIndividualCampaignFromSF extends LockingCommand
             '18 Character Salesforce ID of the campaign, as found in the donate page URI etc',
         );
     }
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         Assertion::notEq($this->environment, Environment::Production);
 
+        // @phpstan-ignore cast.string
         $campaignId = Salesforce18Id::ofCampaign((string) $input->getArgument('CampaignSFID'));
 
         $campaign = $this->campaignRepository->findOneBySalesforceId($campaignId);

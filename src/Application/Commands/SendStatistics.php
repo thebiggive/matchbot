@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Aws\CloudWatch\CloudWatchClient;
+use Doctrine\Common\Collections\Expr\Value;
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
@@ -35,6 +36,7 @@ class SendStatistics extends LockingCommand
         parent::__construct();
     }
 
+    #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $time = $this->clock->now()->getTimestamp();
@@ -77,6 +79,8 @@ class SendStatistics extends LockingCommand
     /**
      * Value in default 'Unit' mode accepts doubles, so we leave this with the default for both float
      * & int values.
+     *
+     * @return array{MetricName: string, Value: float | int | null, Timestamp: \DateTimeImmutable}
      */
     private function makeMetric(string $name, float | int | null $value, \DateTimeImmutable $timestamp): array
     {

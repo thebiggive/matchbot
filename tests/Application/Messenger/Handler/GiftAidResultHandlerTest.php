@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Messenger\Handler;
 
-use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Domain\Donation;
@@ -31,21 +30,17 @@ class GiftAidResultHandlerTest extends TestCase
         $this->getAppInstance();
         $container = $this->diContainer();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-
         $testDonationPassedToProphecy = $this->getTestDonation();
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneByUUID(Uuid::fromString(self::DONATION_UUID))
+            ->findAndLockOneByUUID(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($testDonationPassedToProphecy)
             ->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $this->getEntityManagerExpectingPersist());
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
         // & command that Symfony components' projects already test.
@@ -74,21 +69,17 @@ class GiftAidResultHandlerTest extends TestCase
         $this->getAppInstance();
         $container = $this->diContainer();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-
         $testDonationPassedToProphecy = $this->getTestDonation(uuid: Uuid::fromString(self::DONATION_UUID));
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneByUUID(Uuid::fromString(self::DONATION_UUID))
+            ->findAndLockOneByUUID(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($testDonationPassedToProphecy)
             ->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $this->getEntityManagerExpectingPersist());
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
         // & command that Symfony components' projects already test.
@@ -106,8 +97,8 @@ class GiftAidResultHandlerTest extends TestCase
         $giftAidResultHandler($donationMessage);
 
         $this->assertInstanceOf(\DateTime::class, $testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
-        $this->assertEquals('failingCorrId', $testDonationPassedToProphecy->getTbgGiftAidRequestCorrelationId());
-        $this->assertEquals('Donation error deets', $testDonationPassedToProphecy->getTbgGiftAidResponseDetail());
+        $this->assertSame('failingCorrId', $testDonationPassedToProphecy->getTbgGiftAidRequestCorrelationId());
+        $this->assertSame('Donation error deets', $testDonationPassedToProphecy->getTbgGiftAidResponseDetail());
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestConfirmedCompleteAt());
     }
 
@@ -116,21 +107,17 @@ class GiftAidResultHandlerTest extends TestCase
         $this->getAppInstance();
         $container = $this->diContainer();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-
-        $testDonationPassedToProphecy = $this->getTestDonation(uuid:Uuid::fromString(self::DONATION_UUID));
+        $testDonationPassedToProphecy = $this->getTestDonation(uuid: Uuid::fromString(self::DONATION_UUID));
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneByUUID(Uuid::fromString(self::DONATION_UUID))
+            ->findAndLockOneByUUID(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($testDonationPassedToProphecy)
             ->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $this->getEntityManagerExpectingPersist());
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
         // & command that Symfony components' projects already test.
@@ -151,8 +138,27 @@ class GiftAidResultHandlerTest extends TestCase
             \DateTime::class,
             $testDonationPassedToProphecy->getTbgGiftAidRequestConfirmedCompleteAt(),
         );
-        $this->assertEquals('goodCorrId', $testDonationPassedToProphecy->getTbgGiftAidRequestCorrelationId());
-        $this->assertEquals('Thx for ur submission', $testDonationPassedToProphecy->getTbgGiftAidResponseDetail());
+        $this->assertSame('goodCorrId', $testDonationPassedToProphecy->getTbgGiftAidRequestCorrelationId());
+        $this->assertSame('Thx for ur submission', $testDonationPassedToProphecy->getTbgGiftAidResponseDetail());
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
+    }
+
+    private function getEntityManagerExpectingPersist(): EntityManagerInterface
+    {
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        /**
+         * @psalm-suppress MixedFunctionCall
+         */
+        $entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))
+            ->will(function (array $args): mixed {
+                return $args[0]();
+            })
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+
+        return $entityManagerProphecy->reveal();
     }
 }

@@ -25,21 +25,27 @@ class SlackHandler implements HandlerInterface
     {
     }
 
+    #[\Override]
     public function isHandling(array $record): bool
     {
         return $record['level'] >= Logger::ERROR;
     }
 
     /**
+     * @param array<string, mixed>|\ArrayAccess<string,mixed> $record
      * @psalm-suppress PossiblyUnusedReturnValue - used by Monolog.
      */
+    #[\Override]
     public function handle(array|\ArrayAccess $record): bool
     {
         if ($record['level'] < Logger::ERROR) {
             return false; // allows another handle to handle this.
         }
 
+        /** @var string $message */
         $message = $record['message'];
+
+        /** @var string $levelName */
         $levelName = $record['level_name'];
 
         $lines = explode(PHP_EOL, $message);
@@ -63,6 +69,7 @@ class SlackHandler implements HandlerInterface
         return false; // record will go to other handlers in addition to being sent to slack.
     }
 
+    #[\Override]
     public function handleBatch(array $records): void
     {
         foreach ($records as $record) {
@@ -70,6 +77,7 @@ class SlackHandler implements HandlerInterface
         }
     }
 
+    #[\Override]
     public function close(): void
     {
         // no-op;

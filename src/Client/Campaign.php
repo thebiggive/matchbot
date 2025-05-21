@@ -88,7 +88,6 @@ class Campaign extends Common
      *
      * @psalm-suppress MoreSpecificReturnType
      * @psalm-suppress LessSpecificReturnStatement
-     * @psalm-suppress MixedReturnTypeCoercion
      * @return list<array>
      */
     public function findCampaignsForMetaCampaign(string $metaCampaignSlug, int $limit = 100): array
