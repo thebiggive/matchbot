@@ -1920,6 +1920,9 @@ class Donation extends SalesforceWriteProxy
 
     public function recordPayout(string $payoutId, \DateTimeImmutable $payoutDateTime): void
     {
+        // Donation must be collected by TBG before being paid out to charity.
+        Assertion::eq($this->donationStatus, DonationStatus::Collected);
+
         Assertion::startsWith($payoutId, 'po_');
         $this->stripePayoutId = $payoutId;
         $this->paidOutAt = $payoutDateTime;

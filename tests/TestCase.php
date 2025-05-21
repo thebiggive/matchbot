@@ -20,6 +20,7 @@ use MatchBot\Domain\PostalAddress;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\IntegrationTests\IntegrationTest;
 use MatchBot\Tests\Application\Actions\Donations\CreateTest;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
@@ -323,22 +324,26 @@ class TestCase extends PHPUnitTestCase
         $donation->setUuid($uuid ?? Uuid::uuid4());
 
         if ($collected) {
-            self::collectDonation($donation, $transferId);
+            self::collectDonation(
+                $donation,
+                $transferId,
+                (int) (100.0 * ((float) $amount + (float) $tipAmount))
+            );
         }
 
         return $donation;
     }
 
-    protected static function collectDonation(Donation $donationResponse, ?string $transferId = null): void
+    protected static function collectDonation(Donation $donationResponse, ?string $transferId = null, int $totalPaidFractional = 100): void
     {
         $donationResponse->collectFromStripeCharge(
             chargeId: 'testchargeid_' . self::randomString(),
-            totalPaidFractional: 100, // irrelevant
+            totalPaidFractional: $totalPaidFractional,
             transferId: $transferId ?? 'test_transfer_id',
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',
-            chargeCreationTimestamp: (int)(new \DateTimeImmutable())->format('U'),
+            chargeCreationTimestamp: (int)(new \DateTimeImmutable('1970-01-01'))->format('U'),
         );
     }
 
