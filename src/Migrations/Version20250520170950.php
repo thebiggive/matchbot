@@ -28,7 +28,7 @@ final class Version20250520170950 extends AbstractMigration
     public function down(Schema $schema): void
     {        $this->addSql(<<<'SQL'
             UPDATE Donation 
-            SET matchbot.Donation.tbgShouldProcessGiftAid = 1 -- was 1 in all cases before running up migration
+            SET tbgShouldProcessGiftAid = 1 -- was 1 in all cases before running up migration
             WHERE Donation.campaign_id = 8963 and Donation.donationStatus in ('paid', 'collected')
             LIMIT 500;
             SQL);
