@@ -19,7 +19,7 @@ final class Version20250520170950 extends AbstractMigration
         $this->addSql(<<<'SQL'
             UPDATE Donation 
             SET tbgShouldProcessGiftAid = 0
-            WHERE Donation.campaign_id = 8963 and Donation.donationStatus in ('paid', 'collected')
+            WHERE Donation.campaign_id = 8963 and Donation.donationStatus in ('Paid', 'Collected')
             LIMIT 500; -- this is more than the actual number of donations, not wishing to publish the exact figure.
             SQL
         );
