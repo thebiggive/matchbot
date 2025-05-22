@@ -733,4 +733,10 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     {
         return $this->findOneBy(['uuid' => $donationUUID]);
     }
+
+    #[\Override]
+    public function findAllByPayoutId(string $payoutId): array
+    {
+        return $this->findBy(['payoutId' => $payoutId]);
+    }
 }

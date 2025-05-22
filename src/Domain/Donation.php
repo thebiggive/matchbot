@@ -382,6 +382,10 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(nullable: true)]
     private ?DateTimeImmutable $paidOutAt = null;
 
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $payoutSuccessful = false;
+
     /**
      * @param string|null $billingPostcode
      * @psalm-param numeric-string $amount
@@ -570,6 +574,7 @@ class Donation extends SalesforceWriteProxy
             'tipRefundAmount' => $this->getTipRefundAmount()?->toMajorUnitFloat(),
             'stripePayoutId' => $this->stripePayoutId,
             'paidOutAt' => $this->paidOutAt?->format(DateTimeInterface::ATOM),
+            'payoutSuccessful' => $this->payoutSuccessful,
         ];
 
         // As of mid 2024 only the actual donate frontend gets this value, to avoid
@@ -1918,16 +1923,34 @@ class Donation extends SalesforceWriteProxy
         $this->salesforcePushStatus = SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE;
     }
 
+    /**
+     * See https://docs.stripe.com/api/events/types#payout_object
+     */
     public function recordPayout(string $payoutId, \DateTimeImmutable $payoutDateTime): void
     {
         // Donation must be collected by TBG before being paid out to charity.
         Assertion::eq($this->donationStatus, DonationStatus::Collected);
+        // note we may need to change the above line and call this in case of a second payout for same donation
+        // if first payout failed.
 
         Assertion::startsWith($payoutId, 'po_');
         $this->stripePayoutId = $payoutId;
         $this->paidOutAt = $payoutDateTime;
+        $this->payoutSuccessful = true;
 
         $this->donationStatus = DonationStatus::Paid;
+    }
+
+    /**
+     * Can happen either before or after a successful payout, so the donation status could reasonably
+     * be either Collected or Paid before this is called.
+     *
+     * See https://docs.stripe.com/api/events/types#payout_object
+     */
+    public function recordPayoutFailed(): void
+    {
+        Assertion::inArray($this->donationStatus, [DonationStatus::Collected, DonationStatus::Paid]);
+        $this->payoutSuccessful = false;
     }
 
     public function getStripePayoutId(): ?string
