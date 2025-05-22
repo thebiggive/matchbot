@@ -9,6 +9,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\Campaign;
 use MatchBot\Client\Campaign as SfCampaignClient;
+use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\Salesforce18Id;
@@ -50,7 +51,11 @@ class Get extends Action
             return $this->respondWithData($response, $this->campaignService->renderCampaign($campaignFromMatchbotDB));
         }
 
-        $campaign = $this->salesforceCampaignClient->getById($sfId, false);
+        try {
+            $campaign = $this->salesforceCampaignClient->getById($sfId, false);
+        } catch (NotFoundException) {
+            throw new HttpNotFoundException($request);
+        }
 
         return $this->respondWithData($response, $campaign);
     }
