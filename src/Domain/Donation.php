@@ -15,6 +15,7 @@ use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
+use MatchBot\Application\Environment;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
@@ -23,6 +24,7 @@ use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Stripe\Payout;
 
 use function bccomp;
 use function sprintf;
@@ -368,6 +370,26 @@ class Donation extends SalesforceWriteProxy
     private ?DateTimeImmutable $preAuthorizationDate = null;
 
     /**
+     * Stripe payout used to pay this donation out to recipient charity. Null on
+     *  all donations from before May 2025.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?string $stripePayoutId = null;
+
+    /**
+     * Records when (and if) this donation was paid out from Big Give to the recipient charity. Null on
+     * all donations from before May 2025.
+     *
+     * Based on {@see Payout::$arrival_date}
+     */
+    #[ORM\Column(nullable: true)]
+    private ?DateTimeImmutable $paidOutAt = null;
+
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $payoutSuccessful = false;
+
+    /**
      * @param string|null $billingPostcode
      * @psalm-param numeric-string $amount
      * @psalm-param ?numeric-string $tipAmount
@@ -553,10 +575,9 @@ class Donation extends SalesforceWriteProxy
             ...$this->toFrontEndApiModel(),
             'originalPspFee' => (float) $this->getOriginalPspFee(),
             'tipRefundAmount' => $this->getTipRefundAmount()?->toMajorUnitFloat(),
-
-            // replace with hard-coded true when date is passed.
-            'confirmationByMatchbot' => $this->donationStatus->isSuccessful() &&
-                $this->getCollectedAt() > new \DateTimeImmutable(self::MAT_400_ENABLE_TIMESTAMP),
+            'stripePayoutId' => $this->stripePayoutId,
+            'paidOutAt' => $this->paidOutAt?->format(DateTimeInterface::ATOM),
+            'payoutSuccessful' => $this->payoutSuccessful,
         ];
 
         // As of mid 2024 only the actual donate frontend gets this value, to avoid
@@ -650,10 +671,9 @@ class Donation extends SalesforceWriteProxy
         return $this->donationStatus;
     }
 
-    public function setDonationStatus(DonationStatus $donationStatus): void
+    public function setDonationStatusForTest(DonationStatus $donationStatus): void
     {
-        // todo at some point - remove this method and replace with more specific command method(s). The only non-test
-        // caller now is passing DonationStatus::Paid.
+        Assertion::eq(Environment::current(), Environment::Test);
 
         /** @psalm-suppress DeprecatedConstant */
         $this->donationStatus = match ($donationStatus) {
@@ -663,11 +683,11 @@ class Donation extends SalesforceWriteProxy
                 throw new \Exception('Donation::cancelled must be used to cancel'),
             DonationStatus::Collected =>
                 throw new \Exception('Donation::collectFromStripe must be used to collect'),
+            DonationStatus::Paid =>
+                throw new \Exception('Donation::recordPayout must be used for paid status'),
             DonationStatus::Chargedback =>
                 throw new \Exception('DonationStatus::Chargedback is deprecated'),
-
             DonationStatus::Failed,
-            DonationStatus::Paid,
             DonationStatus::Pending,
             DonationStatus::PreAuthorized
             => $donationStatus,
@@ -1903,5 +1923,45 @@ class Donation extends SalesforceWriteProxy
     public function setSalesforceUpdatePending(): void
     {
         $this->salesforcePushStatus = SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE;
+    }
+
+    /**
+     * See https://docs.stripe.com/api/events/types#payout_object
+     */
+    public function recordPayout(string $payoutId, \DateTimeImmutable $payoutDateTime): void
+    {
+        // Donation must be collected by TBG before being paid out to charity.
+        Assertion::eq($this->donationStatus, DonationStatus::Collected);
+        // note we may need to change the above line and call this in case of a second payout for same donation
+        // if first payout failed.
+
+        Assertion::startsWith($payoutId, 'po_');
+        $this->stripePayoutId = $payoutId;
+        $this->paidOutAt = $payoutDateTime;
+        $this->payoutSuccessful = true;
+
+        $this->donationStatus = DonationStatus::Paid;
+    }
+
+    /**
+     * Can happen either before or after a successful payout, so the donation status could reasonably
+     * be either Collected or Paid before this is called.
+     *
+     * See https://docs.stripe.com/api/events/types#payout_object
+     */
+    public function recordPayoutFailed(): void
+    {
+        Assertion::inArray($this->donationStatus, [DonationStatus::Collected, DonationStatus::Paid]);
+        $this->payoutSuccessful = false;
+    }
+
+    public function getStripePayoutId(): ?string
+    {
+        return $this->stripePayoutId;
+    }
+
+    public function getPaidOutAt(): ?DateTimeImmutable
+    {
+        return $this->paidOutAt;
     }
 }

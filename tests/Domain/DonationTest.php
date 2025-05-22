@@ -232,7 +232,9 @@ class DonationTest extends TestCase
 
     public function testToSfAPIModel(): void
     {
-        $donation = self::someDonation(amount: '10', tipAmount: '1');
+        $donation = self::someDonation(amount: '10', tipAmount: '1', collected: true);
+
+        $donation->recordPayout('po_some_payout_id', new \DateTimeImmutable('2025-05-21T02:17:46+01:00'));
 
         $this->assertEquals(
             [
@@ -244,7 +246,7 @@ class DonationTest extends TestCase
                 'charityFeeVat' => 0.0,
                 'charityId' => $donation->getCampaign()->getCharity()->getSalesforceId(),
                 'charityName' => 'Charity Name',
-                'collectedTime' => null,
+                'collectedTime' => '1970-01-01T00:00:00+00:00',
                 'countryCode' => null,
                 'createdTime' => $donation->getCreatedDate()->format('c'),
                 'currencyCode' => 'GBP',
@@ -268,15 +270,17 @@ class DonationTest extends TestCase
                 'pspCustomerId' => null,
                 'pspMethodType' => 'card',
                 'refundedTime' => null,
-                'status' => DonationStatus::Pending,
+                'status' => DonationStatus::Paid,
                 'tbgGiftAidRequestConfirmedCompleteAt' => null,
                 'tipAmount' => 1.0,
                 'tipGiftAid' => null,
                 'tipRefundAmount' => null,
-                'totalPaid' => null,
+                'totalPaid' => 11.0,
                 'transactionId' => null,
                 'updatedTime' => $donation->getUpdatedDate()->format('c'),
-                'confirmationByMatchbot' => false,
+                'stripePayoutId' => 'po_some_payout_id',
+                'paidOutAt' => '2025-05-21T02:17:46+01:00',
+                'payoutSuccessful' => true,
             ],
             $donation->toSFApiModel()
         );
@@ -823,7 +827,13 @@ class DonationTest extends TestCase
             'projectid012345678',
             'stripe',
         ), $this->getMinimalCampaign(), PersonId::nil());
-        $donation->setDonationStatus(DonationStatus::Paid);
+
+        $this->collect($donation);
+
+        $donation->recordPayout(
+            'po_payout_id_and_date_not_relevant',
+            new \DateTimeImmutable('1970-01-01')
+        );
 
         $this->expectExceptionMessage('Cannot cancel Paid donation');
         $donation->cancel();
@@ -1179,5 +1189,10 @@ class DonationTest extends TestCase
         $donation->removeGiftAid(new \DateTimeImmutable());
 
         $this->assertFalse($donation->hasGiftAid());
+    }
+
+    public function collect(Donation $donation): void
+    {
+        $donation->collectFromStripeCharge('charge_id', 100, 'transfer_id', null, null, '0', 0);
     }
 }

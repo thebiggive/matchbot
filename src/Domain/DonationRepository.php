@@ -167,4 +167,9 @@ interface DonationRepository
     public function findOneBy(array $criteria);
 
     public function findOneByUUID(UuidInterface $donationUUID): ?Donation;
+
+    /**
+     * @return list<Donation>
+     */
+    public function findAllByPayoutId(string $payoutId): array;
 }

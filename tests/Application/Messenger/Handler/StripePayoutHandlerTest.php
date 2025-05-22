@@ -26,6 +26,10 @@ use Stripe\Service\ChargeService;
 use Stripe\Service\PayoutService;
 use Stripe\StripeClient;
 
+/**
+ * Note testSuccessfulUpdateFromFirstPayout method has moved to integration test class
+ * {@see \MatchBot\IntegrationTests\StripePayoutHandlerTest}. Consider moving other tests for lower fragility.
+ */
 class StripePayoutHandlerTest extends TestCase
 {
     use DonationTestDataTrait;
@@ -123,7 +127,7 @@ class StripePayoutHandlerTest extends TestCase
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
         $donation = $this->getTestDonation();
 
-        $donation->setDonationStatus(DonationStatus::Failed);
+        $donation->setDonationStatusForTest(DonationStatus::Failed);
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -168,48 +172,6 @@ class StripePayoutHandlerTest extends TestCase
 
         // Nothing to push to SF.
         $this->assertSame(SalesforceWriteProxy::PUSH_STATUS_COMPLETE, $donation->getSalesforcePushStatus());
-    }
-
-    public function testSuccessfulUpdateFromFirstPayout(): void
-    {
-        $this->getAppInstance();
-        $container = $this->diContainer();
-
-        $donation = $this->getTestDonation();
-        $balanceTxnsResponse = $this->getStripeHookMock('ApiResponse/bt_list_success');
-        $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
-
-        $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        $stripeBalanceTransactionProphecy->all(
-            [
-                'limit' => 100,
-                'payout' => self::DEFAULT_PAYOUT_ID,
-            ],
-            ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
-        )
-            ->shouldBeCalledOnce()
-            ->willReturn($this->buildAutoIterableCollection($balanceTxnsResponse));
-
-        $donationRepository = $this->getReconcileMatchDonationRepo($donation);
-
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->getRepository(Donation::class)->willReturn($donationRepository);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
-
-        $stripeClientProphecy = $this->getStripeClient(withRetriedPayout: false);
-        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
-        @$stripeClientProphecy->charges = $this->getStripeChargeList($chargeResponse);
-
-        $container->set(DonationRepository::class, $donationRepository);
-        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
-
-        $this->invokePayoutHandler($container, new NullLogger());
-
-        $this->assertSame(DonationStatus::Paid, $donation->getDonationStatus());
-        $this->assertSame(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $donation->getSalesforcePushStatus());
     }
 
     /**

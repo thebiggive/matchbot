@@ -119,7 +119,7 @@ class StripePayoutHandler
             if ($donation->getDonationStatus() === DonationStatus::Collected) {
                 // We're confident to set donation status to paid because this
                 // method is called only when Stripe event `payout.paid` is received.
-                $donation->setDonationStatus(DonationStatus::Paid);
+                $donation->recordPayout($payoutId, $payoutInfo['arrivalDate']);
 
                 $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
 
@@ -161,7 +161,7 @@ class StripePayoutHandler
      * Logs a warning and returns no charges if payout is in fact not successful. This is expected short-term while
      * we run temporary scripts, and should not happen later when only webhooks lead to `StripePayoutHandler` messages.
      *
-     * @return array{created: \DateTimeImmutable, chargeIds: array<string>}
+     * @return array{created: \DateTimeImmutable, arrivalDate: \DateTimeImmutable, chargeIds: array<string>, ...}
      * @throws ApiErrorException if balance transaction listing fails.
      */
     private function processSuccessfulPayout(string $payoutId, string $connectAccountId): array
@@ -177,7 +177,7 @@ class StripePayoutHandler
             ));
 
             return [
-                'created' => $payoutInfo['created'],
+                ...$payoutInfo,
                 'chargeIds' => [],
             ];
         }
@@ -219,6 +219,7 @@ class StripePayoutHandler
         );
 
         return [
+            'arrivalDate' => $payoutInfo['arrivalDate'],
             'created' => $payoutInfo['created'],
             'chargeIds' => $paidChargeIds,
         ];
@@ -230,7 +231,11 @@ class StripePayoutHandler
      * previous ones that make up part of its total value. The `$payoutId` to this method is the earlier one so we
      * do not check its status, which is likely "failed".
      *
-     * @return array{created: \DateTimeImmutable, chargeIds: array<string>}
+     * @return array{
+     *
+     *     created: \DateTimeImmutable,
+     *     chargeIds: array<string>
+     *         }
      * @throws ApiErrorException if balance transaction listing fails.
      */
     private function processChargesFromPreviousPayout(
@@ -298,7 +303,11 @@ class StripePayoutHandler
     }
 
     /**
-     * @return array{created: \DateTimeImmutable, status: string}
+     * @return array{
+     *     arrivalDate: \DateTimeImmutable,
+     *     created: \DateTimeImmutable,
+     *     status: string
+     * }
      */
     private function getPayoutInfo(string $payoutId, string $connectAccountId): array
     {
@@ -308,12 +317,14 @@ class StripePayoutHandler
             ['stripe_account' => $connectAccountId],
         );
 
+        $payoutArrivalDate = \DateTimeImmutable::createFromFormat('U', (string) $stripePayout->arrival_date);
         $payoutCreated = \DateTimeImmutable::createFromFormat('U', (string) $stripePayout->created);
-        if (! $payoutCreated) {
+        if (! $payoutCreated || !$payoutArrivalDate) {
             throw new \Exception('Bad date format from stripe');
         }
 
         return [
+            'arrivalDate' => $payoutArrivalDate,
             'created' => $payoutCreated,
             'status' => $stripePayout->status,
         ];

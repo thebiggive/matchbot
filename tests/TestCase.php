@@ -20,6 +20,7 @@ use MatchBot\Domain\PostalAddress;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\IntegrationTests\IntegrationTest;
 use MatchBot\Tests\Application\Actions\Donations\CreateTest;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
@@ -62,6 +63,11 @@ class TestCase extends PHPUnitTestCase
             false,
             DayOfMonth::of(1),
         );
+    }
+
+    public static function randomString(): string
+    {
+        return (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
     }
 
     public function getContainer(): ContainerInterface
@@ -290,6 +296,7 @@ class TestCase extends PHPUnitTestCase
         ?EmailAddress $emailAddress = null,
         ?DonorName $donorName = null,
         bool $collected = false,
+        ?string $transferId = null,
     ): Donation {
         $donation = new Donation(
             amount: $amount,
@@ -317,22 +324,26 @@ class TestCase extends PHPUnitTestCase
         $donation->setUuid($uuid ?? Uuid::uuid4());
 
         if ($collected) {
-            self::collectDonation($donation);
+            self::collectDonation(
+                $donation,
+                $transferId,
+                (int) (100.0 * ((float) $amount + (float) $tipAmount))
+            );
         }
 
         return $donation;
     }
 
-    protected static function collectDonation(Donation $donationResponse): void
+    protected static function collectDonation(Donation $donationResponse, ?string $transferId = null, int $totalPaidFractional = 100): void
     {
         $donationResponse->collectFromStripeCharge(
-            chargeId: 'testchargeid',
-            totalPaidFractional: 100, // irrelevant
-            transferId: 'test_transfer_id',
+            chargeId: 'testchargeid_' . self::randomString(),
+            totalPaidFractional: $totalPaidFractional,
+            transferId: $transferId ?? 'test_transfer_id',
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',
-            chargeCreationTimestamp: (int)(new \DateTimeImmutable())->format('U'),
+            chargeCreationTimestamp: (int)(new \DateTimeImmutable('1970-01-01'))->format('U'),
         );
     }
 

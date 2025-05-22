@@ -99,7 +99,10 @@ class DonationRepositoryTest extends IntegrationTest
             chargeCreationTimestamp: (new \DateTimeImmutable())->sub(new \DateInterval('P14D'))->getTimestamp()
         );
 
-        $donation->setDonationStatus(DonationStatus::Paid);
+        $donation->recordPayout(
+            payoutId: 'po_payout_details_id_not_relevant',
+            payoutDateTime: new \DateTimeImmutable('1970-01-01'),
+        );
 
         $em->persist($donation);
         $em->flush(); // Cascade persists campaign and charity.
@@ -211,7 +214,7 @@ class DonationRepositoryTest extends IntegrationTest
         if ($donationStatus === DonationStatus::Cancelled) {
             $oldPendingDonation->cancel();
         } else {
-            $oldPendingDonation->setDonationStatus($donationStatus);
+            $oldPendingDonation->setDonationStatusForTest($donationStatus);
         }
 
         $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::Pledge);
