@@ -16,20 +16,7 @@ final class Version20250520210732 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql(<<<'SQL'
-                create definer = root@`%` view `donation-summary-no-orm` as
-        select `Donation`.`id`             AS `id`,
-               `Donation`.`salesforceId`   AS `salesforceId`,
-               `Donation`.`createdAt`      AS `createdAt`,
-               `Donation`.`amount`         AS `amount`,
-               `Donation`.`donationStatus` AS `donationStatus`,
-               `Charity`.`name`            AS `CharityName`,
-               `Campaign`.`name`           AS `CampaignName`
-        from ((`Donation` join `Campaign`
-               on ((`Campaign`.`id` = `Donation`.`campaign_id`))) join `Charity`
-              on ((`Charity`.`id` = `Campaign`.`charity_id`)));
-        SQL
-        );
+        // no-op - previously this was creating a view but that failed in one environment due to permissions issue.
     }
 
     public function down(Schema $schema): void
