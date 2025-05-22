@@ -204,8 +204,8 @@ class InMemoryDonationRepository implements DonationRepository
     }
 
     #[\Override]
-    public function findAllByPayoutId(string $payoutId): array
+    public function findAllByPayoutId(string $payoutId): never
     {
-        return $this->findOneBy(['payoutId' => $payoutId]); // throws for now
+        throw new \Exception("Method not implemented in test double");
     }
 }
