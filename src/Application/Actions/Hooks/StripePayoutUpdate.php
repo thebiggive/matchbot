@@ -165,17 +165,19 @@ class StripePayoutUpdate extends Stripe
 
         if ($donationCount === 0) {
             $failureMessage = sprintf(
-                'payout.failed for ID %s, account %s (%s). No donations; if recent, suggests payout.paid never happened',
+                'payout.failed for ID %s, account %s. No donations; if recent, suggests payout.paid never happened',
                 $payoutId,
                 $connectedAccountId,
-                $charityNames[0],
             );
         } else {
+            $charityName = $charityNames[0];
+
             $failureMessage = sprintf(
-                'payout.failed for ID %s, account %s. Ran for %d donations',
+                'payout.failed for ID %s, account %s (%s). Ran for %d donations',
                 $payoutId,
                 $connectedAccountId,
-                $donationCount,
+                $charityName,
+                $donationCount
             );
         }
 

@@ -280,6 +280,7 @@ class DonationTest extends TestCase
                 'updatedTime' => $donation->getUpdatedDate()->format('c'),
                 'stripePayoutId' => 'po_some_payout_id',
                 'paidOutAt' => '2025-05-21T02:17:46+01:00',
+                'payoutSuccessful' => true,
             ],
             $donation->toSFApiModel()
         );
