@@ -24,6 +24,7 @@ use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Stripe\Payout;
 
 use function bccomp;
 use function sprintf;
@@ -378,6 +379,8 @@ class Donation extends SalesforceWriteProxy
     /**
      * Records when (and if) this donation was paid out from Big Give to the recipient charity. Null on
      * all donations from before May 2025.
+     *
+     * Based on {@see Payout::$arrival_date}
      */
     #[ORM\Column(nullable: true)]
     private ?DateTimeImmutable $paidOutAt = null;
