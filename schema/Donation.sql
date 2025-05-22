@@ -56,6 +56,7 @@ CREATE TABLE `Donation` (
   `donorUUID` char(36) DEFAULT NULL COMMENT '(DC2Type:uuid)',
   `stripePayoutId` varchar(255) DEFAULT NULL,
   `paidOutAt` datetime DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)',
+  `payoutSuccessful` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_C893E3F6D17F50A6` (`uuid`),
   UNIQUE KEY `UNIQ_C893E3F6C2F43114` (`transactionId`),

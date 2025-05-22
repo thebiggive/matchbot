@@ -737,6 +737,6 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     #[\Override]
     public function findAllByPayoutId(string $payoutId): array
     {
-        return $this->findBy(['payoutId' => $payoutId]);
+        return $this->findBy(['stripePayoutId' => $payoutId]);
     }
 }
