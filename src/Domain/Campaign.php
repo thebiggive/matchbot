@@ -425,4 +425,9 @@ class Campaign extends SalesforceReadProxy
     {
         return $this->ready && $this->startDate <= $at && $effectiveEndDate > $at;
     }
+
+    public function getStartDate(): \DateTimeImmutable
+    {
+        return \DateTimeImmutable::createFromInterface($this->startDate);
+    }
 }
