@@ -202,4 +202,10 @@ class InMemoryDonationRepository implements DonationRepository
     {
         return $this->findOneBy(['uuid' => $donationUUID]);
     }
+
+    #[\Override]
+    public function findAllByPayoutId(string $payoutId): never
+    {
+        throw new \Exception("Method not implemented in test double");
+    }
 }
