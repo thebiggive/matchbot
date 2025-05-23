@@ -57,6 +57,10 @@ use MatchBot\Application\Assertion;
  *     bannerUri: ?string,
  *     amountRaised: float,
  *     summary: string,
+ *     countries: list<string>,
+ *     categories: list<string>,
+ *     budgetDetails: list<array{amount: float, description: string}>,
+ *     beneficiaries: list<string>,
  *     }
  */
 
