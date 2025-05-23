@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use DateTime;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -161,6 +160,35 @@ class Campaign extends SalesforceReadProxy
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             thankYouMessage: $thankYouMessage,
             sfData: $rawData,
+        );
+    }
+
+    /**
+     * @param SFCampaignApiResponse $campaignData
+     * @param Salesforce18Id<Campaign> $salesforceId
+     * @param Charity $charity
+     * @return Campaign
+     * @throws \DateMalformedStringException
+     */
+    public static function fromSfCampaignData(array $campaignData, Salesforce18Id $salesforceId, Charity $charity): self
+    {
+        $regularGivingCollectionEnd = $campaignData['regularGivingCollectionEnd'] ?? null;
+        $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
+            null : new \DateTimeImmutable($regularGivingCollectionEnd);
+
+        return new self(
+            sfId: $salesforceId,
+            charity: $charity,
+            startDate: new \DateTimeImmutable($campaignData['startDate']),
+            endDate: new \DateTimeImmutable($campaignData['endDate']),
+            isMatched: $campaignData['isMatched'],
+            ready: $campaignData['ready'],
+            status: $campaignData['status'],
+            name: $campaignData['title'],
+            currencyCode: $campaignData['currencyCode'],
+            isRegularGiving: $campaignData['isRegularGiving'] ?? false,
+            regularGivingCollectionEnd: $regularGivingCollectionObject,
+            rawData: $campaignData
         );
     }
 
