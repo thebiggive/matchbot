@@ -78,7 +78,7 @@ readonly class Campaign
          * null on regular giving campaigns means the mandate has no definite end date,
          * on all other non-regular-giving campaigns default to null
          */
-        public /* \DateTimeImmutable */ string $regularGivingCollectionEnd,
+        public /* \DateTimeImmutable */ ?string $regularGivingCollectionEnd,
         public string $summary,
         public string $surplusDonationInfo, // Set on the master campaign level and should house info about awards $etc,
         public float $target,

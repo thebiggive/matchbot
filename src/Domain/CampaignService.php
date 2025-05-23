@@ -67,7 +67,7 @@ class CampaignService
             countries: [],
             currencyCode: $campaign->getCurrencyCode() ?? '',
             donationCount: 0,
-            endDate: \DateTimeImmutable::createFromInterface($campaign->getEndDate())->format(\DATE_ATOM),
+            endDate: $this->formatDate($campaign->getEndDate()),
             hidden: false,
             impactReporting: '',
             impactSummary: '',
@@ -85,10 +85,10 @@ class CampaignService
             quotes: [],
             ready: $campaign->isReady(),
             solution: '',
-            startDate: $campaign->getStartDate()->format(\DATE_ATOM),
+            startDate: $this->formatDate($campaign->getStartDate()),
             status: $campaignStatus,
             isRegularGiving: $campaign->isRegularGiving(),
-            regularGivingCollectionEnd: ($campaign->getRegularGivingCollectionEnd() ?? new \DateTimeImmutable('1970'))->format(\DATE_ATOM),
+            regularGivingCollectionEnd: $this->formatDate($campaign->getRegularGivingCollectionEnd()),
             summary: '',
             surplusDonationInfo: '',
             target: 0,
@@ -127,5 +127,26 @@ class CampaignService
         }
 
         return $campaignHttpModelArray;
+    }
+
+    /**
+     * Formats a date exactly as our SF API would, to allow easy checking for compatibility, returns e.g.
+     * "2025-08-01T15:33:00.000Z"
+     *
+     * @psalm-param null|\DateTimeInterface $dateTime
+     * @psalm-return ($dateTime is \DateTimeInterface ? string : null|string)
+     */
+    private function formatDate(?\DateTimeInterface $dateTime): ?string
+    {
+        if ($dateTime === null) {
+            return null;
+        }
+
+        /** e.g. 2025-08-01T15:33:00Z */
+        $formatted = $dateTime->format('Y-m-d\TH:i:sp');
+
+        // I'm assuming the milliseconds part of all times served from our SF API is zero, since it seems to be
+        // in tests and I can't imagine we ever need sub-second precision.
+        return \str_replace('Z', '.000Z', $formatted);
     }
 }
