@@ -188,6 +188,7 @@ class Campaign extends SalesforceReadProxy
             currencyCode: $campaignData['currencyCode'],
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
+            thankYouMessage: $campaignData['thankYouMessage'],
             rawData: $campaignData
         );
     }
