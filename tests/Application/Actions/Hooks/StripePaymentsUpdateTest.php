@@ -26,6 +26,7 @@ use MatchBot\Tests\Domain\InMemoryDonationRepository;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Container\ContainerInterface;
+use Psr\Http\Message\ResponseInterface;
 use Ramsey\Uuid\Uuid;
 use Stripe\BalanceTransaction;
 use Stripe\Service\BalanceTransactionService;
@@ -134,27 +135,12 @@ class StripePaymentsUpdateTest extends StripeTest
 
     public function testSuccessfulPayment(): void
     {
-        $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $this->getContainer();
 
-        $donation = $this->getTestDonation();
+        // Amounts set to match Stripe mocks' current values
+        $donation = $this->getTestDonation(amount: '6.00', tipAmount: '0.00', collected: false);
         $donation->setTransactionId('pi_externalId_123');
-
-        /** @var array<string, mixed> $webhookContent */
-        $webhookContent = json_decode(
-            $this->getStripeHookMock('ch_succeeded'),
-            associative: true,
-            flags: \JSON_THROW_ON_ERROR
-        );
-
-        /**
-         * @psalm-suppress MixedArrayAssignment
-         */
-        $webhookContent['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
-        $body = json_encode($webhookContent, \JSON_THROW_ON_ERROR);
-        $webhookSecret = $this->getValidWebhookSecret($container);
-        $time = (string) time();
         $this->donationRepository->store($donation);
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -162,7 +148,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $balanceTxnResponse = $this->getStripeHookMock('ApiResponse/bt_success');
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->retrieve('txn_00000000000000')
-            ->shouldBeCalledOnce()
+            ->shouldBeCalledTimes(2)
             ->willReturn(BalanceTransaction::constructFrom((array) json_decode($balanceTxnResponse, associative: true)));
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
@@ -176,16 +162,21 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
         $container->set(Mailer::class, $this->mailerClientProphecy->reveal());
 
-        $request = self::createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
+        $chargeSucceededData = $this->getWebhookData('ch_succeeded');
+        /** @psalm-suppress MixedArrayAssignment */
+        $chargeSucceededData['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
 
-        $response = $app->handle($request);
+        $chargeUpdatedData = $this->getWebhookData('ch_updated');
 
+        $succeededResponse = $this->sendWebhook($chargeSucceededData);
+        $updatedResponse = $this->sendWebhook($chargeUpdatedData);
+
+        $this->assertSame(200, $succeededResponse->getStatusCode());
         $this->assertSame('ch_externalId_123', $donation->getChargeId());
         $this->assertSame('tr_id_from_test_donation', $donation->getTransferId());
         $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
         $this->assertSame('0.37', $donation->getOriginalPspFee());
-        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(200, $updatedResponse->getStatusCode());
     }
 
     public function testOriginalStripeFeeInSEK(): void
@@ -555,7 +546,6 @@ class StripePaymentsUpdateTest extends StripeTest
     public function testUnsupportedOriginalChargeStatusIsSkipped(): void
     {
         // arrange
-        $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $this->getContainer();
 
@@ -564,14 +554,10 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $time = (string) time();
-        $webhookSecret = $this->getValidWebhookSecret($container);
-
         // act
-        $request = $this->createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
-
-        $response = $app->handle($request);
+        $bodyArray = json_decode($body, true, 512, \JSON_THROW_ON_ERROR);
+        \assert(is_array($bodyArray));
+        $response = $this->sendWebhook($bodyArray);
 
         // assert
         $expectedPayload = new ActionPayload(400, ['error' => [
@@ -643,5 +629,34 @@ class StripePaymentsUpdateTest extends StripeTest
             '0',
             0,
         );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function getWebhookData(string $mockName): array
+    {
+        /** @var array<string, mixed> $mock */
+        $mock = json_decode(
+            $this->getStripeHookMock($mockName),
+            associative: true,
+            flags: \JSON_THROW_ON_ERROR
+        );
+
+        return $mock;
+    }
+
+    private function sendWebhook(array $data): ResponseInterface
+    {
+        $app = $this->getAppInstance();
+        $container = $this->getContainer();
+        \assert($container instanceof Container);
+        $webhookSecret = $this->getValidWebhookSecret($container);
+        $time = (string) time();
+
+        $request = self::createRequest('POST', '/hooks/stripe', $body = json_encode($data, \JSON_THROW_ON_ERROR))
+            ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
+
+        return $app->handle($request);
     }
 }
