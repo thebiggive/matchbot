@@ -63,7 +63,6 @@ class Campaign extends SalesforceReadProxy
      * Full data about this campaign as received from Salesforce. Not for use as-is in Matchbot domain logic but
      * may be used in ad-hoc queries, migrations, and perhaps for outputting to FE to provide compatibility with the SF
      * API. Charity data is ommitted here to avoid duplication with {@see Charity::$salesforceData}.
-     * @psalm-suppress UnusedProperty
      * @var array<string, mixed>
      */
     #[ORM\Column(type: "json", nullable: false)]
@@ -429,5 +428,11 @@ class Campaign extends SalesforceReadProxy
     public function getStartDate(): \DateTimeImmutable
     {
         return \DateTimeImmutable::createFromInterface($this->startDate);
+    }
+
+    /** @return array<string, mixed> */
+    public function getSalesforceData(): array
+    {
+        return $this->salesforceData;
     }
 }
