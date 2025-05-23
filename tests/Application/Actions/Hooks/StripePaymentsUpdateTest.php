@@ -555,8 +555,9 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         // act
+        /** @var array<string, mixed> $bodyArray */
         $bodyArray = json_decode($body, true, 512, \JSON_THROW_ON_ERROR);
-        \assert(is_array($bodyArray));
+
         $response = $this->sendWebhook($bodyArray);
 
         // assert
@@ -646,6 +647,9 @@ class StripePaymentsUpdateTest extends StripeTest
         return $mock;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function sendWebhook(array $data): ResponseInterface
     {
         $app = $this->getAppInstance();
