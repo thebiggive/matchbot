@@ -128,7 +128,7 @@ class CampaignService
             CampaignRenderCompatibilityChecker::checkCampaignHttpModelMatchesModelFromSF($campaignHttpModelArray, $sfCampaignData);
         } catch (LazyAssertionException $exception) {
             $errorMessages = \array_map(
-                fn(InvalidArgumentException $e) => ["{$e->getPropertyPath()}: {$e->getMessage()}"],
+                fn(InvalidArgumentException $e) => "{$e->getPropertyPath()}: {$e->getMessage()}",
                 $exception->getErrorExceptions()
             );
 

@@ -8,6 +8,7 @@ use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\Campaign;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\Salesforce18Id;
 use PHPUnit\Framework\Assert;
@@ -37,7 +38,8 @@ class CreateFictionalData extends Command
     public function __construct(
         private EntityManagerInterface $em,
         private CharityRepository $charityRepository,
-        private CampaignRepository $campaignRepository
+        private CampaignRepository $campaignRepository,
+        private CampaignService $campaignService,
     ) {
         parent::__construct(null);
     }
@@ -82,6 +84,16 @@ class CreateFictionalData extends Command
         $io->writeln("Donate at http://localhost:4200/donate/{$campaign->getSalesforceId()}");
 
         $this->em->flush();
+
+        $renderedCampaign = $this->campaignService->renderCampaign($campaign);
+
+        $errors = $renderedCampaign['errors'] ?? [];
+        \assert(\is_array($errors));
+
+        if ($errors !== []) {
+            $io->error("Campaign has errors - may not match expecations of frontend:");
+            $io->listing($errors);
+        }
 
         return 0;
     }
