@@ -49,7 +49,14 @@ use MatchBot\Application\Assertion;
 *      currencyCode: string,
  *     isRegularGiving?: boolean,
  *     regularGivingCollectionEnd?: ?string,
- *     thankYouMessage: ?string
+ *     thankYouMessage: ?string,
+ *     aims: list<string>,
+ *     target: float,
+ *     problem: ?string,
+ *     solution: ?string,
+ *     bannerUri: ?string,
+ *     amountRaised: float,
+ *     summary: string,
  *     }
  */
 

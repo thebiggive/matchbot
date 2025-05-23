@@ -82,4 +82,24 @@ readonly class PostalAddress
     {
         return new self(line1: null, line2: null, city: null, postalCode: null, country: null);
     }
+
+    /**
+     * @return array{
+     *      line1: ?string,
+     *      line2: ?string,
+     *      city: ?string,
+     *      postalCode: ?string,
+     *      country: ?string
+     *  } $postalAddress
+     */
+    public function toArray(): array
+    {
+        return [
+            'country' => $this->country,
+            'postalCode' => $this->postalCode,
+            'city' => $this->city,
+            'line2' => $this->line2,
+            'line1' => $this->line1,
+        ];
+    }
 }
