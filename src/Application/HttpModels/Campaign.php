@@ -30,7 +30,7 @@ readonly class Campaign
      * @param list<string> $categories
      * @param list<string> $countries
      * @param list<array{person: string, quote: string}> $quotes
-     * @param list<array{content: string, modifiedDate: \DateTimeImmutable}> $updates
+     * @param list<array{content: string, modifiedDate: string}> $updates
      * @param ?array{provider: string, key: string} $video
      * */
     public function __construct(
@@ -42,8 +42,8 @@ readonly class Campaign
         public ?string $bannerUri,
         public array $beneficiaries,
         public array $budgetDetails,
-        /** Approved participating campaign count, for Master campaigns */
-        public int $campaignCount,
+        /** Approved participating campaign count, for Meta-campaigns  (@todo mat-405 move to separate meta-campaign model)*/
+        public ?int $campaignCount,
         public array $categories,
         public ?string $championName,
         public ?string $championOptInStatement,
@@ -64,7 +64,7 @@ readonly class Campaign
         public ?float $parentAmountRaised,
         public ?int $parentDonationCount,
         public ?float $parentMatchFundsRemaining,
-        public string $parentRef, // Parent master campaign slug (if set), or ID, or null if $no paren,
+        public ?string $parentRef, // Parent meta campaign slug (if set), or ID, or null if $no paren,
         public ?float $parentTarget,
         public ?bool $parentUsesSharedFunds,
         public ?string $problem,
@@ -80,7 +80,7 @@ readonly class Campaign
          */
         public /* \DateTimeImmutable */ ?string $regularGivingCollectionEnd,
         public string $summary,
-        public string $surplusDonationInfo, // Set on the master campaign level and should house info about awards $etc,
+        public ?string $surplusDonationInfo, // Set on the meta campaign level and should house info about awards $etc,
         public float $target,
         public string $thankYouMessage,
         public string $title,

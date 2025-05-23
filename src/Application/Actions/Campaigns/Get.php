@@ -46,7 +46,6 @@ class Get extends Action
         $sfId = $args['salesforceId'] ?? throw new HttpNotFoundException($request);
 
         $campaignFromMatchbotDB = $this->campaignRepository->findOneBySalesforceId(Salesforce18Id::ofCampaign($sfId));
-
         if ($campaignFromMatchbotDB) {
             return $this->respondWithData($response, $this->campaignService->renderCampaign($campaignFromMatchbotDB));
         }
