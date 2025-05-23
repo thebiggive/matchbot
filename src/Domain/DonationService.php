@@ -750,6 +750,8 @@ class DonationService
     {
         $this->logger->info('updating donation from charge: ' . $charge->toJSON());
 
+        $donationWasPreviouslyCollected = $donation->getDonationStatus() === DonationStatus::Collected;
+
         /**
          * @psalm-suppress MixedMethodCall
          * @var array<string, mixed>|Card|null $card
@@ -788,12 +790,7 @@ class DonationService
             chargeCreationTimestamp: $charge->created,
         );
 
-        $dateTimeImmutable = $donation->getCollectedAt();
-
-        if (
-            ! $donation->isRegularGiving() &&
-            ($dateTimeImmutable > new \DateTimeImmutable(Donation::MAT_400_ENABLE_TIMESTAMP))
-        ) {
+        if (!$donation->isRegularGiving() && !$donationWasPreviouslyCollected) {
             // Regular giving donors get an email confirming the setup of the mandate, but not an email for
             // each individual donation.
             $this->donationNotifier->notifyDonorOfDonationSuccess(

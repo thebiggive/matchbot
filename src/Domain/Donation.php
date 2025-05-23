@@ -57,8 +57,6 @@ class Donation extends SalesforceWriteProxy
      */
     public const string OVERSEAS = 'OVERSEAS';
 
-    public const string MAT_400_ENABLE_TIMESTAMP = '2025-03-18T14:30:00+00:00';
-
     private const array POSSIBLE_PSPS = ['stripe'];
 
     /**
