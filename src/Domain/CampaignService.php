@@ -49,13 +49,25 @@ class CampaignService
         Assertion::inArray($campaignStatus, ['Active','Expired','Preview']);
         /** @var 'Active'|'Expired'|'Preview' $campaignStatus */
 
+        // the next two vars are the data as originally served to matchbot by Salesforce. For now we
+        // repeat them verbatim, but its likely we may want to replace several keys with things either
+        // computed inside matchbot or saved to specific fields in our own object model soon.
+
+        $sfCampaignData = $campaign->getSalesforceData();
+
+        /*
+         * @todo MAT-405: consider replacing this with a more up to date figure based on donations in
+         * matchbot db.
+         */
+        $amountRaised = $sfCampaignData['amountRaised'];
+
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
-            amountRaised: 0, // MAT-411-todo-before merge - replace this and similar placeholder values
+            amountRaised: $amountRaised,
             additionalImageUris: [],
-            aims: [],
+            aims: $sfCampaignData['aims'],
             alternativeFundUse: '',
-            bannerUri: '',
+            bannerUri: $sfCampaignData['bannerUri'],
             beneficiaries: [],
             budgetDetails: [],
             campaignCount: 0,
@@ -81,17 +93,17 @@ class CampaignService
             parentRef: '',
             parentTarget: 0,
             parentUsesSharedFunds: false,
-            problem: '',
+            problem: $sfCampaignData['problem'],
             quotes: [],
             ready: $campaign->isReady(),
-            solution: '',
+            solution: $sfCampaignData['solution'],
             startDate: $this->formatDate($campaign->getStartDate()),
             status: $campaignStatus,
             isRegularGiving: $campaign->isRegularGiving(),
             regularGivingCollectionEnd: $this->formatDate($campaign->getRegularGivingCollectionEnd()),
-            summary: '',
+            summary: $sfCampaignData['summary'],
             surplusDonationInfo: '',
-            target: 0,
+            target: $sfCampaignData['target'],
             thankYouMessage: $campaign->getThankYouMessage() ?? '',
             title: $campaign->getCampaignName(),
             updates: [],
@@ -107,14 +119,13 @@ class CampaignService
             flags: JSON_THROW_ON_ERROR
         );
 
-        // We could just return $modelGeneratedFromSF to FE and not need to generate anything else with matchbot
+        // We could just return $sfCampaignData to FE and not need to generate anything else with matchbot
         // logic, but that would keep FE indirectly coupled to the SF service. By making sure matchbot is able to
         // semi-independently regenerate the same thing we should be able to break the dependency and then later evolve
         // the mathbot<->frontend interface without needing to change SF.
-        $modelGeneratedFromSF = $campaign->getSalesforceData() + ['charity' => $campaign->getCharity()->getSalesforceData()];
 
         try {
-            CampaignRenderCompatibilityChecker::checkCampaignHttpModelMatchesModelFromSF($campaignHttpModelArray, $modelGeneratedFromSF);
+            CampaignRenderCompatibilityChecker::checkCampaignHttpModelMatchesModelFromSF($campaignHttpModelArray, $sfCampaignData);
         } catch (LazyAssertionException $exception) {
             $errorMessages = \array_map(
                 fn(InvalidArgumentException $e) => ["{$e->getPropertyPath()}: {$e->getMessage()}"],

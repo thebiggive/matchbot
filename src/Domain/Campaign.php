@@ -13,7 +13,11 @@ use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\WrongCampaignType;
+use MatchBot\Client\Campaign as CampaignClient;
 
+/**
+ * @psalm-import-type SFCampaignApiResponse from CampaignClient
+ */
 #[ORM\Table]
 #[ORM\Index(name: 'end_date_and_is_matched', columns: ['endDate', 'isMatched'])]
 #[ORM\Entity(repositoryClass: CampaignRepository::class)]
@@ -430,9 +434,17 @@ class Campaign extends SalesforceReadProxy
         return \DateTimeImmutable::createFromInterface($this->startDate);
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @return SFCampaignApiResponse
+     *
+     * Note suppressions - technically the type returned here is what SF returned in the past when the DB entry was
+     * generated, which may be before this code was written. Use returned value cautiously.
+     *
+     * @psalm-suppress MoreSpecificReturnType
+     * @psalm-suppress LessSpecificReturnStatement
+     */
     public function getSalesforceData(): array
     {
-        return $this->salesforceData;
+        return $this->salesforceData + ['charity' => $this->charity->getSalesforceData()];
     }
 }
