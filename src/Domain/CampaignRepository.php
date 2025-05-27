@@ -118,16 +118,30 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /**
      * @param Salesforce18Id<Campaign> $salesforceId
      */
-    public function findOneBySalesforceId(Salesforce18Id $salesforceId): ?Campaign
+    public function findOneBySalesforceId(Salesforce18Id $salesforceId, \DateTimeImmutable $mustBeUpdatedSince = null): ?Campaign
     {
-        if (\str_starts_with($salesforceId->value, 'XXX')) {
+        $sfIdString = $salesforceId->value;
+
+        if (\str_starts_with($sfIdString, 'XXX')) {
             // SF ID was intentionally mangled for MAT-405 testing to simulate SF being down but
             // the matchbot DB being up. We know that all our campaign IDs start with a05 so we fix it to query our DB.
-            $realId = 'a05' . \substr($salesforceId->value, 3);
-            return $this->findOneBy(['salesforceId' => $realId]);
+            $sfIdString = 'a05' . \substr($sfIdString, 3);
         }
 
-        return $this->findOneBy(['salesforceId' => $salesforceId->value]);
+        $campaign = $this->findOneBy(['salesforceId' => $sfIdString]);
+
+        $campaignUpdatedAt = $campaign?->getSalesforceLastPull();
+
+        if ($mustBeUpdatedSince && $campaignUpdatedAt < $mustBeUpdatedSince) {
+
+            $this->logError(
+                "Not returning stale campaign {$sfIdString}, last updated {$campaignUpdatedAt?->format('c')}, should have been since {$mustBeUpdatedSince->format('c')}"
+            );
+
+            return null;
+        }
+
+        return $campaign;
     }
 
     /**

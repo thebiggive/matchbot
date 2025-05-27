@@ -33,6 +33,7 @@ class Get extends Action
         private SfCampaignClient $salesforceCampaignClient,
         private CampaignRepository $campaignRepository,
         private CampaignService $campaignService,
+        private \DateTimeImmutable $now,
     ) {
         parent::__construct($logger);
     }
@@ -51,8 +52,11 @@ class Get extends Action
             $campaign = $this->salesforceCampaignClient->getById($sfId, false);
             return $this->respondWithData($response, $campaign);
         } catch (NotFoundException | RequestException $e) {
-            // 86400
-            $campaignFromMatchbotDB = $this->campaignRepository->findOneBySalesforceId(Salesforce18Id::ofCampaign($sfId));
+            $campaignFromMatchbotDB = $this->campaignRepository->findOneBySalesforceId(
+                Salesforce18Id::ofCampaign($sfId),
+                mustBeUpdatedSince: $this->now->modify('-1 day')
+            );
+
             if ($campaignFromMatchbotDB) {
                 $this->logger->error("Failed to load campaign ID {$sfId} from SF, serving from Matchbot DB instead: {$e->__toString()}");
 

@@ -27,4 +27,13 @@ abstract class SalesforceReadProxy extends SalesforceProxy
     {
         $this->salesforceLastPull = $salesforceLastPull;
     }
+
+    public function getSalesforceLastPull(): ?\DateTimeImmutable
+    {
+        if ($this->salesforceLastPull === null) {
+            return null;
+        }
+
+        return \DateTimeImmutable::createFromInterface($this->salesforceLastPull ?? new \DateTimeImmutable('1970-01-01'));
+    }
 }
