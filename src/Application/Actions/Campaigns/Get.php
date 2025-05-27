@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Campaigns;
 
+use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
@@ -45,17 +46,19 @@ class Get extends Action
 
         $sfId = $args['salesforceId'] ?? throw new HttpNotFoundException($request);
 
-        $campaignFromMatchbotDB = $this->campaignRepository->findOneBySalesforceId(Salesforce18Id::ofCampaign($sfId));
-        if ($campaignFromMatchbotDB) {
-            return $this->respondWithData($response, $this->campaignService->renderCampaign($campaignFromMatchbotDB));
-        }
 
         try {
             $campaign = $this->salesforceCampaignClient->getById($sfId, false);
-        } catch (NotFoundException) {
+            return $this->respondWithData($response, $campaign);
+        } catch (NotFoundException | RequestException $e) {
+            // 86400
+            $campaignFromMatchbotDB = $this->campaignRepository->findOneBySalesforceId(Salesforce18Id::ofCampaign($sfId));
+            if ($campaignFromMatchbotDB) {
+                $this->logger->error("Failed to load campaign ID {$sfId} from SF, serving from Matchbot DB instead: {$e->__toString()}");
+
+                return $this->respondWithData($response, $this->campaignService->renderCampaign($campaignFromMatchbotDB));
+            }
             throw new HttpNotFoundException($request);
         }
-
-        return $this->respondWithData($response, $campaign);
     }
 }
