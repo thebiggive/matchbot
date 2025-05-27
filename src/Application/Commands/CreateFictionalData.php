@@ -13,6 +13,8 @@ use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\Salesforce18Id;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\ExpectationFailedException;
+use Random\Randomizer;
+use Stripe\StripeClient;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -40,6 +42,7 @@ class CreateFictionalData extends Command
         private CharityRepository $charityRepository,
         private CampaignRepository $campaignRepository,
         private CampaignService $campaignService,
+        private StripeClient $stripeClient,
     ) {
         parent::__construct(null);
     }
@@ -58,7 +61,7 @@ class CreateFictionalData extends Command
         if (!$charity) {
             /** @psalm-suppress ArgumentTypeCoercion */
             $charity = $this->campaignRepository->newCharityFromCampaignData(
-                ['charity' => $this->getFictionalCharityData()] // @phpstan-ignore argument.type
+                ['charity' => $this->getFictionalCharityData($io)] // @phpstan-ignore argument.type
             );
 
             $io->writeln("Created fictional charity {$charity->getName()}, {$charity->getSalesforceId()}");
@@ -74,6 +77,8 @@ class CreateFictionalData extends Command
                 Salesforce18Id::ofCampaign(self::SF_ID_ZERO),
                 $charity
             );
+
+            $campaign->setSalesforceLastPull(new \DateTime());
 
             $io->writeln("Created fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
             $this->em->persist($campaign);
@@ -91,8 +96,9 @@ class CreateFictionalData extends Command
         \assert(\is_array($errors));
 
         if ($errors !== []) {
-            $io->error("Campaign has errors - may not match expecations of frontend:");
+            $io->error("Campaign has errors - may not match expectations of frontend:");
             $io->listing($errors);
+            return 1;
         }
 
         return 0;
@@ -166,8 +172,10 @@ class CreateFictionalData extends Command
     /**
      * @return array<string,mixed>
      */
-    private function getFictionalCharityData(): array
+    private function getFictionalCharityData(SymfonyStyle $io): array
     {
+        $stripeAccountId = $this->createStripeAccount($io);
+
         return [
             'id' => self::SF_ID_ZERO,
             'name' => 'Society for the advancement of bots and matches',
@@ -189,9 +197,35 @@ class CreateFictionalData extends Command
             'optInStatement' => null,
             'regulatorNumber' => '1000000',
             'regulatorRegion' => 'England and Wales',
-            'stripeAccountId' => 'acct_0000000000000000',
+            'stripeAccountId' => $stripeAccountId,
             'hmrcReferenceNumber' => null,
             'giftAidOnboardingStatus' => 'Invited to Onboard',
         ];
+    }
+
+    private function createStripeAccount(SymfonyStyle $io): string
+    {
+        try {
+            $account = $this->stripeClient->accounts->create([
+                    'country' => 'GB',
+                    'email' => 'dev-test-stripe-account@biggive.org',
+                    'capabilities' => [
+                        'transfers' => ['requested' => true],
+                        'card_payments' => ['requested' => true],
+                    ],
+                ]);
+
+            $id = $account->id;
+
+            $io->writeln("Created test stripe account: $id");
+
+            return $id;
+        } catch (\Exception) {
+            $id = "acct_0000000000" . (new Randomizer())->getBytesFromString('0123456789', 6);
+
+            $io->writeln("Could not create stripe account, using placeholder account ID $id");
+
+            return $id;
+        }
     }
 }

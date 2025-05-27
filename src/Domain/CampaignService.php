@@ -2,14 +2,31 @@
 
 namespace MatchBot\Domain;
 
+use Assert\AssertionFailedException;
 use Assert\InvalidArgumentException;
 use Assert\LazyAssertionException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\Campaign as CampaignHttpModel;
+use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\Campaign as CampaignDomainModel;
+use Psr\Log\LoggerInterface;
 
+/**
+ * @psalm-import-type SFCampaignApiResponse from CampaignClient
+ */
 class CampaignService
 {
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - used by DI,
+     * will need to also be used in tests soon though.
+     */
+    public function __construct(
+        private CampaignRepository $campaignRepository,
+        private LoggerInterface $log
+    ) {
+    }
+
     /**
      * Converts an instance matchbot's internal campaign model to an HTTP model for use in front end.
      *
@@ -171,5 +188,53 @@ class CampaignService
             'CCNI' => 'Northern Ireland',
             null => 'Exempt', // have to assume the charity is exempt if not using any of the above regulators.
         };
+    }
+
+    /**
+     * @param Salesforce18Id<Campaign> $sfId
+     * @param SFCampaignApiResponse $campaignData
+     * @return void
+     *
+     * Checks that the matchbot domain model and renderer would be able to correctly handle the given campaign
+     * - i.e. that if and when SF goes down and we have to serve from the matchbot DB, or we switch the system
+     * over to always serving from the matchbot DB the output will be compatible with this input.
+     *
+     * If the check fails in prod just logs an error, in other environments throws an exception which should not
+     * be handled.
+     */
+    public function checkCampaignCanBeHandledByMatchbotDB(array $campaignData, Salesforce18Id $sfId): void
+    {
+        /** Im-memory only matchbot domain model of charity and campaign, used just to check that our rendering matches
+         * what SF would do.
+         */
+        $mbDomainCharity = $this->campaignRepository->newCharityFromCampaignData($campaignData);
+        $mbDomainCampaign = Campaign::fromSfCampaignData(
+            campaignData: $campaignData,
+            salesforceId: $sfId,
+            charity: $mbDomainCharity
+        );
+
+        $renderedCampaign = $this->renderCampaign($mbDomainCampaign);
+
+        /** @var list<string> $errors */
+        $errors = $renderedCampaign['errors'] ?? [];
+
+        if (($errors) !== []) {
+            $errorList = \implode(',', $errors);
+
+            $errorMessage = "Campaign {$mbDomainCampaign->getCampaignName()} {$mbDomainCampaign->getSalesforceId()} not compatible: {$errorList}";
+
+            if (Environment::current() === Environment::Production) {
+                $this->log->error(
+                    $errorMessage
+                );
+            } else {
+                throw new \Exception($errorMessage);
+            }
+        }
+
+        // these models are only in memory, never persisted.
+        Assertion::null($mbDomainCampaign->getId());
+        Assertion::null($mbDomainCharity->getId());
     }
 }

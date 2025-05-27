@@ -12,6 +12,9 @@ use MatchBot\Client;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
+use function is_string;
+use function trim;
+
 /**
  * @psalm-import-type SFCampaignApiResponse from Client\Campaign
  * @template-extends SalesforceReadProxyRepository<Campaign, Client\Campaign>
@@ -118,9 +121,29 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /**
      * @param Salesforce18Id<Campaign> $salesforceId
      */
-    public function findOneBySalesforceId(Salesforce18Id $salesforceId): ?Campaign
+    public function findOneBySalesforceId(Salesforce18Id $salesforceId, \DateTimeImmutable $mustBeUpdatedSince = null): ?Campaign
     {
-        return $this->findOneBy(['salesforceId' => $salesforceId->value]);
+        $sfIdString = $salesforceId->value;
+
+        if (\str_starts_with($sfIdString, 'XXX')) {
+            // SF ID was intentionally mangled for MAT-405 testing to simulate SF being down but
+            // the matchbot DB being up. We know that all our campaign IDs start with a05 so we fix it to query our DB.
+            $sfIdString = 'a05' . \substr($sfIdString, 3);
+        }
+
+        $campaign = $this->findOneBy(['salesforceId' => $sfIdString]);
+
+        $campaignUpdatedAt = $campaign?->getSalesforceLastPull();
+
+        if ($mustBeUpdatedSince && $campaignUpdatedAt < $mustBeUpdatedSince) {
+            $this->logError(
+                "Not returning stale campaign {$sfIdString}, last updated {$campaignUpdatedAt?->format('c')}, should have been since {$mustBeUpdatedSince->format('c')}"
+            );
+
+            return null;
+        }
+
+        return $campaign;
     }
 
     /**
