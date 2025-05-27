@@ -12,6 +12,9 @@ use MatchBot\Client;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
+use function is_string;
+use function trim;
+
 /**
  * @psalm-import-type SFCampaignApiResponse from Client\Campaign
  * @template-extends SalesforceReadProxyRepository<Campaign, Client\Campaign>
@@ -133,7 +136,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaignUpdatedAt = $campaign?->getSalesforceLastPull();
 
         if ($mustBeUpdatedSince && $campaignUpdatedAt < $mustBeUpdatedSince) {
-
             $this->logError(
                 "Not returning stale campaign {$sfIdString}, last updated {$campaignUpdatedAt?->format('c')}, should have been since {$mustBeUpdatedSince->format('c')}"
             );

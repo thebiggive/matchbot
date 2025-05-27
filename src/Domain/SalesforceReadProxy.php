@@ -14,9 +14,6 @@ use Doctrine\ORM\Mapping as ORM;
  */
 abstract class SalesforceReadProxy extends SalesforceProxy
 {
-    /**
-     * @psalm-suppress PossiblyUnusedProperty - used in DB queries
-     */
     #[ORM\Column(nullable: true)]
     protected ?DateTime $salesforceLastPull = null;
 
@@ -34,6 +31,6 @@ abstract class SalesforceReadProxy extends SalesforceProxy
             return null;
         }
 
-        return \DateTimeImmutable::createFromInterface($this->salesforceLastPull ?? new \DateTimeImmutable('1970-01-01'));
+        return \DateTimeImmutable::createFromInterface($this->salesforceLastPull);
     }
 }

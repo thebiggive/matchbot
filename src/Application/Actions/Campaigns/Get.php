@@ -6,9 +6,7 @@ namespace MatchBot\Application\Actions\Campaigns;
 
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
-use MatchBot\Application\HttpModels\Campaign;
 use MatchBot\Client\Campaign as SfCampaignClient;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\CampaignRepository;
@@ -45,15 +43,18 @@ class Get extends Action
             throw new HttpNotFoundException($request);
         }
 
-        $sfId = $args['salesforceId'] ?? throw new HttpNotFoundException($request);
+        $sfId = Salesforce18Id::ofCampaign(
+            $args['salesforceId'] ?? throw new HttpNotFoundException($request)
+        );
 
 
         try {
-            $campaign = $this->salesforceCampaignClient->getById($sfId, false);
+            $campaign = $this->salesforceCampaignClient->getById($sfId->value, false);
+            $this->campaignService->checkCampaignCanBeHandledByMatchbotDB($campaign, $sfId);
             return $this->respondWithData($response, $campaign);
         } catch (NotFoundException | RequestException $e) {
             $campaignFromMatchbotDB = $this->campaignRepository->findOneBySalesforceId(
-                Salesforce18Id::ofCampaign($sfId),
+                $sfId,
                 mustBeUpdatedSince: $this->now->modify('-1 day')
             );
 
