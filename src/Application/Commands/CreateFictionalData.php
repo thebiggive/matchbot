@@ -119,7 +119,7 @@ class CreateFictionalData extends Command
             'hidden' => false,
             'quotes' => [],
             'status' => 'Active',
-            'target' => 50.0,
+            'target' => 100.0,
             'endDate' => '2095-08-01T00:00:00.000Z',
             'logoUri' => null,
             'problem' => 'Matchbot is threatened!',
