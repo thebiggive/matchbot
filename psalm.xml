@@ -53,6 +53,15 @@
                 <directory name="src/Migrations/" />
             </errorLevel>
         </MissingOverrideAttribute>
+        <UnevaluatedCode>
+            <errorLevel type="info">
+                <!--
+                    This happens any time we have code after \PHPUnit\Framework\Assert::markTestSkipped
+                    -->
+                <directory name="tests"/>
+                <directory name="integrationTests"/>
+            </errorLevel>
+        </UnevaluatedCode>
     </issueHandlers>
     <plugins>
         <pluginClass class="Psalm\PhpUnitPlugin\Plugin"/>

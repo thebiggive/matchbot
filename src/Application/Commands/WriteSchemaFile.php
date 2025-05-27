@@ -77,8 +77,8 @@ class WriteSchemaFile extends Command
                 $hasError = true;
             }
 
-            $description = $connection->executeQuery("SHOW CREATE TABLE $table")->fetchAllAssociative();
-            $createTableStatement = $description[0]['Create Table'];
+            $description = $connection->executeQuery("SHOW CREATE TABLE `$table`")->fetchAllAssociative();
+            $createTableStatement = $description[0]['Create Table'] ?? $description[0]['Create View'];
             \assert(is_string($createTableStatement));
 
             /* AUTO_INCREMENT varies depending on data (not metadata) in db, not suitable to commit) */

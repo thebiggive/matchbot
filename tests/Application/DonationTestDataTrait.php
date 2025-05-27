@@ -19,7 +19,10 @@ use Ramsey\Uuid\UuidInterface;
 
 trait DonationTestDataTrait
 {
-    protected function getStripeHookMock(string $path): string
+    /**
+     * @param array<string, mixed> $dataOverrides - partial array of data to override ach data item within a list
+     */
+    protected function getStripeHookMock(string $path, array $dataOverrides = []): string
     {
         $fullPath = sprintf(
             '%s/TestData/StripeWebhook/%s.json',
@@ -31,7 +34,19 @@ trait DonationTestDataTrait
 
         \assert(is_string($contents));
 
-        return $contents;
+        $contentsAsArray = \json_decode($contents, associative: true, flags: \JSON_THROW_ON_ERROR);
+        \assert(\is_array($contentsAsArray));
+
+        if (\array_key_exists('data', $contentsAsArray) && $dataOverrides !== []) {
+            $data = $contentsAsArray['data'];
+            \assert(\is_array($data) && \array_is_list($data));
+            $contentsAsArray['data'] = \array_map(
+                static fn(array $datum) => \array_merge($datum, $dataOverrides),
+                $data
+            );
+        }
+
+        return \json_encode($contentsAsArray, flags: \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR);
     }
 
     /**
@@ -111,7 +126,7 @@ trait DonationTestDataTrait
             $donation->collectFromStripeCharge(
                 chargeId: 'ch_externalId_123',
                 totalPaidFractional: (int)(((float)$amount + (float)$tipAmount) * 100.0),
-                transferId: 'tr_externalId_123',
+                transferId: 'tr_id_from_test_donation',
                 cardBrand: null,
                 cardCountry: null,
                 originalFeeFractional: '122', // £1.22
@@ -158,7 +173,7 @@ trait DonationTestDataTrait
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);
-        $donation->setDonationStatus(DonationStatus::Pending);
+        $donation->setDonationStatusForTest(DonationStatus::Pending);
         $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setTipAmount('2.00');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ac'));

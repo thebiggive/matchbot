@@ -121,7 +121,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $donation = TestCase::someDonation(amount: '1');
         $donation->createdNow();
-        $donation->setDonationStatus(DonationStatus::Pending);
+        $donation->setDonationStatusForTest(DonationStatus::Pending);
         $donation->setCampaign($campaign);
         $donation->setUuid(Uuid::uuid4());
         $donation->setDonorName(DonorName::of('Donor first name', 'Donor last name'));
@@ -165,7 +165,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     ): void {
         $this->donationRepositoryProphecy->findAndLockOneByUUID(Uuid::fromString($donationId))
             ->will(function () use ($donation) {
-                $donation->setDonationStatus(DonationStatus::Pending); // simulate loading pending donation from DB.
+                $donation->setDonationStatusForTest(DonationStatus::Pending); // simulate loading pending donation from DB.
 
                 return $donation;
             });

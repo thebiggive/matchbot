@@ -56,6 +56,12 @@ return function (App $app) {
             Donations\RemoveGiftAidDeclaration::class
         )->add(SalesforceAuthMiddleware::class);
 
+
+        $versionGroup->get(
+            '/campaigns/{salesforceId:[a-zA-Z0-9]{18}}',
+            \MatchBot\Application\Actions\Campaigns\Get::class
+        );
+
         /**
          * Cancel *all* pending donations for the current Donor with the specified query param criteria,
          * currently taking one campaign ID and most useful for Donation Funds tips.

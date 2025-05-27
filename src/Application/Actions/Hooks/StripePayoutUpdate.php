@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Hooks;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Notifier\StripeChatterInterface;
+use MatchBot\Domain\DonationRepository;
 use Psr\Container\ContainerInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -32,6 +35,8 @@ class StripePayoutUpdate extends Stripe
 
     public function __construct(
         ContainerInterface $container,
+        private DonationRepository $donationRepository,
+        private EntityManagerInterface $entityManager,
         LoggerInterface $logger,
         private RoutableMessageBus $bus,
     ) {
@@ -79,27 +84,7 @@ class StripePayoutUpdate extends Stripe
             case Event::PAYOUT_PAID:
                 return $this->handlePayoutPaid($request, $event, $response);
             case Event::PAYOUT_FAILED:
-                /**
-                 * @var string $id
-                 */
-                $id = $event->data->object->id;
-                $failureMessage = sprintf(
-                    'payout.failed for ID %s, account %s',
-                    $id,
-                    $connectedAccountId,
-                );
-
-                $this->logger->warning($failureMessage);
-                /** @var string $env */
-                $env = getenv('APP_ENV');
-                $failureMessageWithContext = sprintf(
-                    '[%s] %s',
-                    $env,
-                    $failureMessage,
-                );
-                $this->chatter->send(new ChatMessage($failureMessageWithContext));
-
-                return $this->respond($response, new ActionPayload(200));
+                return $this->handlePayoutFailed($event, $response, $connectedAccountId);
             default:
                 $this->logger->warning(sprintf('Unsupported event type "%s"', $event->type));
                 return $this->respond($response, new ActionPayload(204));
@@ -145,5 +130,67 @@ class StripePayoutUpdate extends Stripe
         }
 
         return $this->respondWithData($response, $object);
+    }
+
+    private function handlePayoutFailed(Event $event, Response $response, string $connectedAccountId): ResponseInterface
+    {
+        /**
+         * @var string $payoutId
+         */
+        $payoutId = $event->data->object->id;
+
+        // We still expect Stripe to pay these out later so leave donation status as-is; but want to see that the last
+        // known payout status is failure.
+        $donations = $this->donationRepository->findAllByPayoutId($payoutId);
+        foreach ($donations as $donation) {
+            $donation->recordPayoutFailed();
+        }
+
+        $charityNames = array_unique(array_map(
+            static fn($donation) => $donation->getCampaign()->getCharity()->getName(),
+            $donations,
+        ));
+        Assertion::between(
+            count($charityNames),
+            0,
+            1,
+            'Payout was unexpectedly for multiple charities: ' . implode(', ', $charityNames),
+        );
+
+        $this->entityManager->flush();
+
+        // If the count is 0 then either payout.failed before we got payout.paid (we think possibly this can't happen),
+        // or the payout dates to before May 2025 when we started saving payout IDs on donations.
+        $donationCount = count($donations);
+
+        if ($donationCount === 0) {
+            $failureMessage = sprintf(
+                'payout.failed for ID %s, account %s. No donations; if recent, suggests payout.paid never happened',
+                $payoutId,
+                $connectedAccountId,
+            );
+        } else {
+            $charityName = $charityNames[0];
+
+            $failureMessage = sprintf(
+                'payout.failed for ID %s, account %s (%s). Ran for %d donations',
+                $payoutId,
+                $connectedAccountId,
+                $charityName,
+                $donationCount
+            );
+        }
+
+        $this->logger->warning($failureMessage);
+        /** @var string $env */
+        $env = getenv('APP_ENV');
+        $failureMessageWithContext = sprintf(
+            '[%s] %s',
+            $env,
+            $failureMessage,
+        );
+        $this->chatter->send(new ChatMessage($failureMessageWithContext));
+
+        return $this->respond($response, new ActionPayload(200));
     }
 }

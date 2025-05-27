@@ -10,6 +10,7 @@ use MatchBot\Application\Messenger\Transports;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use MatchBot\Application\Settings;
 use Symfony\Component\Messenger\Envelope;
@@ -124,7 +125,7 @@ class StripePayoutUpdateTest extends StripeTest
         $this->assertCount(1, $transport->getSent());
     }
 
-    public function testPayoutFailed(): void
+    public function testPayoutFailedWithNoPaidDonationsFound(): void
     {
         $app = $this->getAppInstance();
         $container = $this->diContainer();
@@ -134,6 +135,7 @@ class StripePayoutUpdateTest extends StripeTest
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy->findAllByPayoutId('po_externalId_123')->willReturn([]);
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
         $settings = $container->get(Settings::class);
@@ -148,7 +150,49 @@ class StripePayoutUpdateTest extends StripeTest
             );
 
         $chatterProphecy->send(
-            new ChatMessage('[test] payout.failed for ID po_externalId_123, account acct_unitTest543')
+            new ChatMessage(
+                '[test] payout.failed for ID po_externalId_123, account acct_unitTest543. No donations; if recent, suggests payout.paid never happened'
+            )
+        )
+            ->shouldBeCalledOnce();
+        $response = $app->handle($request);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertCount(0, $transport->getSent());
+    }
+
+    public function testPayoutFailedAfterSomeDonationsArePaid(): void
+    {
+        $app = $this->getAppInstance();
+        $container = $this->diContainer();
+        $transport = new InMemoryTransport();
+        $container->set(Transports::TRANSPORT_HIGH_PRIORITY, $transport);
+        $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
+        $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+
+        $donation = TestCase::someDonation(collected: true);
+
+        $donationRepoProphecy->findAllByPayoutId('po_externalId_123')->willReturn([$donation]);
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $settings = $container->get(Settings::class);
+
+        $webhookSecret = $settings->stripe['connectAppWebhookSecret'];
+        $time = (string) time();
+
+        $request = $this->createRequest('POST', '/hooks/stripe-connect', $this->getStripeHookMock('po_failed'))
+            ->withHeader(
+                'Stripe-Signature',
+                $this->generateSignature($time, $this->getStripeHookMock('po_failed'), $webhookSecret),
+            );
+
+        $chatterProphecy->send(
+            new ChatMessage(
+                '[test] payout.failed for ID po_externalId_123, account acct_unitTest543 (Charity Name). Ran for 1 donations'
+            )
         )
             ->shouldBeCalledOnce();
         $response = $app->handle($request);

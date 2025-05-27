@@ -87,21 +87,27 @@ class StripePaymentsUpdate extends Stripe
         $type = $event->type;
         $this->logger->info(sprintf('Received Stripe account event type "%s"', $type));
 
-        switch ($type) {
-            case Event::CHARGE_DISPUTE_CLOSED:
-                return $this->handleChargeDisputeClosed($event, $response);
-            case Event::CHARGE_REFUNDED:
-                return $this->handleChargeRefunded($event, $response);
-            case Event::CHARGE_SUCCEEDED:
-                return $this->handleChargeSucceeded($event, $response);
-            case Event::PAYMENT_INTENT_CANCELED:
-                return $this->handlePaymentIntentCancelled($event, $response);
-            case Event::CUSTOMER_CASH_BALANCE_TRANSACTION_CREATED:
-                return $this->handleCashBalanceUpdate($event, $response);
-            default:
+        return match ($type) {
+            Event::CHARGE_DISPUTE_CLOSED =>
+                 $this->handleChargeDisputeClosed($event, $response),
+            Event::CHARGE_REFUNDED =>
+                 $this->handleChargeRefunded($event, $response),
+                // we have to listen for both CHARGE_SUCCEEDED and CHARGE_UPDATED - succeded comes much quicker and
+               // we need to thank the donor for their donation quickly so they know it worked. Updated comes later and
+            // gives us further information that we'll need for charity payouts, e.g. transfer ID.
+            Event::CHARGE_SUCCEEDED =>
+                 $this->handleChargeSucceeded($event, $response),
+            Event::CHARGE_UPDATED =>
+                 $this->handleChargeUpdated($event, $response),
+            Event::PAYMENT_INTENT_CANCELED =>
+                 $this->handlePaymentIntentCancelled($event, $response),
+            Event::CUSTOMER_CASH_BALANCE_TRANSACTION_CREATED =>
+                 $this->handleCashBalanceUpdate($event, $response),
+            default => (function () use ($type, $response) {
                 $this->logger->warning(sprintf('Unsupported event type "%s"', $type));
                 return $this->respond($response, new ActionPayload(204));
-        }
+            })()
+        };
     }
 
     private function handleChargeSucceeded(Event $event, Response $response): Response
@@ -161,6 +167,61 @@ class StripePaymentsUpdate extends Stripe
 
             return $this->validationError($response, sprintf('Unsupported Status "%s"', $charge->status));
         }
+
+        $this->entityManager->persist($donation);
+        $this->entityManager->commit();
+        $this->entityManager->flush();
+        $this->queueSalesforceUpdate($donation);
+
+        return $this->respondWithData($response, $charge);
+    }
+
+    private function handleChargeUpdated(Event $event, Response $response): Response
+    {
+        /**
+         * @var Charge $charge
+         */
+        $charge = $event->data->object;
+        if ($charge->status !== Charge::STATUS_SUCCEEDED) {
+            // we're only interested in updates for successful charges.
+            return $this->respond($response, new ActionPayload(204));
+        }
+
+        $intentId = $charge->payment_intent;
+
+        $this->entityManager->beginTransaction();
+
+        if (is_string($intentId)) {
+            $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+        } else {
+            $donation = null;
+        }
+
+        if (!$donation) {
+            $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId ?? 'null'));
+            $this->entityManager->rollback();
+
+            return $this->respond($response, new ActionPayload(204));
+        }
+
+        $donationService = $this->donationService;
+        $donationService->updateDonationStatusFromSuccessfulCharge($charge, $donation);
+
+        $payment_method = $charge->payment_method;
+
+        // given that this is a successful charge it must have been paid by some method.
+        assert($payment_method !== null);
+
+        $this->regularGivingService->updatePossibleMandateFromSuccessfulCharge(
+            $donation,
+            StripePaymentMethodId::of($payment_method)
+        );
+
+        $this->logger->info(sprintf(
+            'Set donation %s Collected based on hook for charge ID %s',
+            $donation->getUuid(),
+            $charge->id,
+        ));
 
         $this->entityManager->persist($donation);
         $this->entityManager->commit();
