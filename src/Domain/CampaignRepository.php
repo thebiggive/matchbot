@@ -120,6 +120,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function findOneBySalesforceId(Salesforce18Id $salesforceId): ?Campaign
     {
+        if (\str_starts_with($salesforceId->value, 'XXX')) {
+            // SF ID was intentionally mangled for MAT-405 testing to simulate SF being down but
+            // the matchbot DB being up. We know that all our campaign IDs start with a05 so we fix it to query our DB.
+            $realId = 'a05' . \substr($salesforceId->value, 3);
+            return $this->findOneBy(['salesforceId' => $realId]);
+        }
+
         return $this->findOneBy(['salesforceId' => $salesforceId->value]);
     }
 
