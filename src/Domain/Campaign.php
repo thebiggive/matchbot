@@ -13,7 +13,11 @@ use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\WrongCampaignType;
+use MatchBot\Client\Campaign as CampaignClient;
 
+/**
+ * @psalm-import-type SFCampaignApiResponse from CampaignClient
+ */
 #[ORM\Table]
 #[ORM\Index(name: 'end_date_and_is_matched', columns: ['endDate', 'isMatched'])]
 #[ORM\Entity(repositoryClass: CampaignRepository::class)]
@@ -63,7 +67,6 @@ class Campaign extends SalesforceReadProxy
      * Full data about this campaign as received from Salesforce. Not for use as-is in Matchbot domain logic but
      * may be used in ad-hoc queries, migrations, and perhaps for outputting to FE to provide compatibility with the SF
      * API. Charity data is ommitted here to avoid duplication with {@see Charity::$salesforceData}.
-     * @psalm-suppress UnusedProperty
      * @var array<string, mixed>
      */
     #[ORM\Column(type: "json", nullable: false)]
@@ -424,5 +427,24 @@ class Campaign extends SalesforceReadProxy
     private function isOpenWithEffectiveEndDate(\DateTimeImmutable $at, \DateTimeImmutable $effectiveEndDate): bool
     {
         return $this->ready && $this->startDate <= $at && $effectiveEndDate > $at;
+    }
+
+    public function getStartDate(): \DateTimeImmutable
+    {
+        return \DateTimeImmutable::createFromInterface($this->startDate);
+    }
+
+    /**
+     * @return SFCampaignApiResponse
+     *
+     * Note suppressions - technically the type returned here is what SF returned in the past when the DB entry was
+     * generated, which may be before this code was written. Use returned value cautiously.
+     *
+     * @psalm-suppress MoreSpecificReturnType
+     * @psalm-suppress LessSpecificReturnStatement
+     */
+    public function getSalesforceData(): array
+    {
+        return $this->salesforceData + ['charity' => $this->charity->getSalesforceData()];
     }
 }

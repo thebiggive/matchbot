@@ -53,7 +53,6 @@ class Charity extends SalesforceReadProxy
      * Full data about this charity as received from Salesforce. Not for use as-is in Matchbot domain logic but
      * may be used in ad-hoc queries, migrations, and perhaps for outputting to FE to provide compatibility with the SF
      * API.
-     * @psalm-suppress UnusedProperty
      * @var array<string, mixed>
      */
     #[ORM\Column(type: "json", nullable: false)]
@@ -422,5 +421,11 @@ class Charity extends SalesforceReadProxy
         }
 
         return EmailAddress::of($this->emailAddress);
+    }
+
+    /** @return array<string, mixed> */
+    public function getSalesforceData(): array
+    {
+        return $this->salesforceData;
     }
 }

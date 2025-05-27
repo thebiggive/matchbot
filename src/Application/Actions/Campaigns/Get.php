@@ -7,7 +7,12 @@ namespace MatchBot\Application\Actions\Campaigns;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
+use MatchBot\Application\HttpModels\Campaign;
 use MatchBot\Client\Campaign as SfCampaignClient;
+use MatchBot\Client\NotFoundException;
+use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
+use MatchBot\Domain\Salesforce18Id;
 use Psr\Log\LoggerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -25,6 +30,8 @@ class Get extends Action
     public function __construct(
         LoggerInterface $logger,
         private SfCampaignClient $salesforceCampaignClient,
+        private CampaignRepository $campaignRepository,
+        private CampaignService $campaignService,
     ) {
         parent::__construct($logger);
     }
@@ -38,7 +45,17 @@ class Get extends Action
 
         $sfId = $args['salesforceId'] ?? throw new HttpNotFoundException($request);
 
-        $campaign = $this->salesforceCampaignClient->getById($sfId, false);
+        $campaignFromMatchbotDB = $this->campaignRepository->findOneBySalesforceId(Salesforce18Id::ofCampaign($sfId));
+
+        if ($campaignFromMatchbotDB) {
+            return $this->respondWithData($response, $this->campaignService->renderCampaign($campaignFromMatchbotDB));
+        }
+
+        try {
+            $campaign = $this->salesforceCampaignClient->getById($sfId, false);
+        } catch (NotFoundException) {
+            throw new HttpNotFoundException($request);
+        }
 
         return $this->respondWithData($response, $campaign);
     }
