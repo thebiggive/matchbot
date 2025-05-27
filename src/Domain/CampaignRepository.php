@@ -103,24 +103,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $charity = $this->pullCharity($campaignData);
 
-        $regularGivingCollectionEnd = $campaignData['regularGivingCollectionEnd'] ?? null;
-        $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
-            null : new \DateTimeImmutable($regularGivingCollectionEnd);
+        $campaign = Campaign::fromSfCampaignData($campaignData, $salesforceId, $charity);
 
-        $campaign = new Campaign(
-            sfId: $salesforceId,
-            charity: $charity,
-            startDate: new \DateTimeImmutable($campaignData['startDate']),
-            endDate: new \DateTimeImmutable($campaignData['endDate']),
-            isMatched: $campaignData['isMatched'],
-            ready: $campaignData['ready'],
-            status: $campaignData['status'],
-            name: $campaignData['title'],
-            currencyCode: $campaignData['currencyCode'],
-            isRegularGiving: $campaignData['isRegularGiving'] ?? false,
-            regularGivingCollectionEnd: $regularGivingCollectionObject,
-            rawData: $campaignData
-        );
         $campaign->setSalesforceLastPull(new \DateTime());
 
         $this->getEntityManager()->persist($campaign);

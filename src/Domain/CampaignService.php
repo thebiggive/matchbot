@@ -24,77 +24,75 @@ class CampaignService
     {
         $charity = $campaign->getCharity();
 
-        $charityHttpModel = new \MatchBot\Application\HttpModels\Charity(
-            id: $charity->getSalesforceId(),
-            name: $charity->getName(),
-            optInStatement: '',
-            facebook: '',
-            giftAidOnboardingStatus: '',
-            hmrcReferenceNumber: $charity->getHmrcReferenceNumber() ?? '',
-            instagram: '',
-            linkedin: '',
-            twitter: '',
-            website: '',
-            phoneNumber: '',
-            emailAddress: '',
-            postalAddress: $charity->getPostalAddress()->toArray(),
-            regulatorNumber: $charity->getRegulatorNumber(),
-            regulatorRegion: $charity->getRegulator(),
-            logoUri: $charity->getLogoUri()?->__toString(),
-            stripeAccountId: $charity->getStripeAccountId(),
-        );
-
         $campaignStatus = $campaign->getStatus();
 
         Assertion::inArray($campaignStatus, ['Active','Expired','Preview']);
         /** @var 'Active'|'Expired'|'Preview' $campaignStatus */
 
         // the next two vars are the data as originally served to matchbot by Salesforce. For now we
-        // repeat them verbatim, but its likely we may want to replace several keys with things either
-        // computed inside matchbot or saved to specific fields in our own object model soon.
+        // repeat many parts of them verbatim, but its likely we may want to replace several fields with things
+        // either computed inside matchbot or saved to specific fields in our own object model soon, so that we can
+        // show more up-to-date results and also ensure that what we're presenting matches with data used for
+        // matchbot business logic.
 
         $sfCampaignData = $campaign->getSalesforceData();
+        $sfCharityData = $sfCampaignData['charity'];
 
-        /*
-         * @todo MAT-405: consider replacing this with a more up to date figure based on donations in
-         * matchbot db.
-         */
-        $amountRaised = $sfCampaignData['amountRaised'];
+        $charityHttpModel = new \MatchBot\Application\HttpModels\Charity(
+            id: $charity->getSalesforceId(),
+            name: $charity->getName(),
+            optInStatement: $sfCharityData['optInStatement'],
+            facebook: $sfCharityData['facebook'],
+            giftAidOnboardingStatus: $sfCharityData['giftAidOnboardingStatus'],
+            hmrcReferenceNumber: $charity->getHmrcReferenceNumber(),
+            instagram: $sfCharityData['instagram'],
+            linkedin: $sfCharityData['linkedin'],
+            twitter: $sfCharityData['twitter'],
+            website: $charity->getWebsiteUri()?->__toString(),
+            phoneNumber: $charity->getPhoneNumber(),
+            emailAddress: $charity->getEmailAddress()?->email,
+            postalAddress: $charity->getPostalAddress()->toArray(),
+            regulatorNumber: $charity->getRegulatorNumber(),
+            regulatorRegion: $this->getRegionForRegulator($charity->getRegulator()),
+            logoUri: $charity->getLogoUri()?->__toString(),
+            stripeAccountId: $charity->getStripeAccountId(),
+        );
 
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
-            amountRaised: $amountRaised,
-            additionalImageUris: [],
+            amountRaised: $sfCampaignData['amountRaised'],
+            additionalImageUris: $sfCampaignData['additionalImageUris'],
             aims: $sfCampaignData['aims'],
-            alternativeFundUse: '',
+            alternativeFundUse: $sfCampaignData['alternativeFundUse'],
             bannerUri: $sfCampaignData['bannerUri'],
-            beneficiaries: [],
-            budgetDetails: [],
-            campaignCount: 0,
-            categories: [],
-            championName: '',
-            championOptInStatement: '',
-            championRef: null,
+            beneficiaries: $sfCampaignData['beneficiaries'],
+            budgetDetails: $sfCampaignData['budgetDetails'],
+            /* @mat-405-todo - remove this and any other properties that make sense only for meta-campaigns. Will require separating model in FE also */
+            campaignCount: $sfCampaignData['campaignCount'],
+            categories: $sfCampaignData['categories'],
+            championName: $sfCampaignData['championName'],
+            championOptInStatement: $sfCampaignData['championOptInStatement'],
+            championRef: $sfCampaignData['championRef'],
             charity: $charityHttpModel,
-            countries: [],
+            countries: $sfCampaignData['countries'],
             currencyCode: $campaign->getCurrencyCode() ?? '',
-            donationCount: 0,
+            donationCount: $sfCampaignData['donationCount'],
             endDate: $this->formatDate($campaign->getEndDate()),
-            hidden: false,
-            impactReporting: '',
-            impactSummary: '',
+            hidden: $sfCampaignData['hidden'],
+            impactReporting: $sfCampaignData['impactReporting'],
+            impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
-            logoUri: '',
-            matchFundsRemaining: 0,
-            matchFundsTotal: 0,
-            parentAmountRaised: 0,
-            parentDonationCount: 0,
-            parentMatchFundsRemaining: null,
-            parentRef: '',
-            parentTarget: 0,
-            parentUsesSharedFunds: false,
+            logoUri: $sfCampaignData['logoUri'],
+            matchFundsRemaining: $sfCampaignData['matchFundsRemaining'],
+            matchFundsTotal: $sfCampaignData['matchFundsTotal'],
+            parentAmountRaised: $sfCampaignData['parentAmountRaised'],
+            parentDonationCount: $sfCampaignData['parentDonationCount'],
+            parentMatchFundsRemaining: $sfCampaignData['parentMatchFundsRemaining'],
+            parentRef: $sfCampaignData['parentRef'],
+            parentTarget: $sfCampaignData['parentTarget'],
+            parentUsesSharedFunds: $sfCampaignData['parentUsesSharedFunds'],
             problem: $sfCampaignData['problem'],
-            quotes: [],
+            quotes: $sfCampaignData['quotes'],
             ready: $campaign->isReady(),
             solution: $sfCampaignData['solution'],
             startDate: $this->formatDate($campaign->getStartDate()),
@@ -102,13 +100,13 @@ class CampaignService
             isRegularGiving: $campaign->isRegularGiving(),
             regularGivingCollectionEnd: $this->formatDate($campaign->getRegularGivingCollectionEnd()),
             summary: $sfCampaignData['summary'],
-            surplusDonationInfo: '',
+            surplusDonationInfo: $sfCampaignData['surplusDonationInfo'],
             target: $sfCampaignData['target'],
             thankYouMessage: $campaign->getThankYouMessage() ?? '',
             title: $campaign->getCampaignName(),
-            updates: [],
-            usesSharedFunds: false,
-            video: null,
+            updates: $sfCampaignData['updates'],
+            usesSharedFunds: $sfCampaignData['usesSharedFunds'],
+            video: $sfCampaignData['video'],
         );
 
         /** @var array<string, mixed> $campaignHttpModelArray */
@@ -128,7 +126,7 @@ class CampaignService
             CampaignRenderCompatibilityChecker::checkCampaignHttpModelMatchesModelFromSF($campaignHttpModelArray, $sfCampaignData);
         } catch (LazyAssertionException $exception) {
             $errorMessages = \array_map(
-                fn(InvalidArgumentException $e) => ["{$e->getPropertyPath()}: {$e->getMessage()}"],
+                fn(InvalidArgumentException $e) => "{$e->getPropertyPath()}: {$e->getMessage()}",
                 $exception->getErrorExceptions()
             );
 
@@ -159,5 +157,19 @@ class CampaignService
         // I'm assuming the milliseconds part of all times served from our SF API is zero, since it seems to be
         // in tests and I can't imagine we ever need sub-second precision.
         return \str_replace('Z', '.000Z', $formatted);
+    }
+
+    /**
+     * @psalm-param key-of<CampaignDomainModel::REGULATORS> |null $regulator
+     * @phpstan-param 'CCEW'|'OSCR'|'CCNI'|null $regulator
+     */
+    private function getRegionForRegulator(?string $regulator): string
+    {
+        return match ($regulator) {
+            'CCEW' => 'England and Wales',
+            'OSCR' => 'Scotland',
+            'CCNI' => 'Northern Ireland',
+            null => 'Exempt', // have to assume the charity is exempt if not using any of the above regulators.
+        };
     }
 }

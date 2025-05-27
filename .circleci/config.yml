@@ -73,6 +73,8 @@ jobs:
 
       - run: ./matchbot matchbot:write-schema-files --check
 
+      - run: ./matchbot matchbot:create-fictional-data
+
       - run: composer run integration-test
 
       - store_test_results:
