@@ -6,7 +6,6 @@ namespace MatchBot\Application\Actions\Campaigns;
 
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\Environment;
 use MatchBot\Client\Campaign as SfCampaignClient;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\CampaignRepository;
@@ -39,10 +38,6 @@ class Get extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        if (Environment::current()->isProduction()) {
-            throw new HttpNotFoundException($request);
-        }
-
         $sfId = Salesforce18Id::ofCampaign(
             $args['salesforceId'] ?? throw new HttpNotFoundException($request)
         );
