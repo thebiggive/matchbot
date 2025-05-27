@@ -46,6 +46,11 @@ class CampaignRenderCompatibilityChecker
     ): void {
         /** @var mixed $expectedValue */
         foreach ($expected as $key => $expectedValue) {
+            if (is_string($key) && \str_starts_with(haystack: $key, needle: 'x_')) {
+                // field is intended for use within matchbot only, does not need to be emitted to FE
+                continue;
+            }
+
             /** @var mixed $value */
 
             $value = \array_key_exists($key, $actual) ?
