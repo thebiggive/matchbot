@@ -79,7 +79,7 @@ readonly class Campaign
          * on all other non-regular-giving campaigns default to null
          */
         public /* \DateTimeImmutable */ ?string $regularGivingCollectionEnd,
-        public string $summary,
+        public ?string $summary,
         public ?string $surplusDonationInfo, // Set on the meta campaign level and should house info about awards $etc,
         public float $target,
         public string $thankYouMessage,
