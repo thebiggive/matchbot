@@ -2,8 +2,6 @@
 
 namespace MatchBot\Application\HttpModels;
 
-use phpDocumentor\Reflection\DocBlock\Description;
-
 /**
  * Representation of a charity campaign to serialise and send to FE. Should be assignable to TS campaign model
  * (which we may want to introduce automatic checks for in future) and match the campaign as served from SF.
