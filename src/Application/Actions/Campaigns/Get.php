@@ -47,7 +47,6 @@ class Get extends Action
             $args['salesforceId'] ?? throw new HttpNotFoundException($request)
         );
 
-
         try {
             $campaign = $this->salesforceCampaignClient->getById($sfId->value, false);
             $this->campaignService->checkCampaignCanBeHandledByMatchbotDB($campaign, $sfId);
