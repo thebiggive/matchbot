@@ -58,7 +58,10 @@ class Get extends Action
             );
 
             if ($campaignFromMatchbotDB) {
-                $this->logger->error("Failed to load campaign ID {$sfId} from SF, serving from Matchbot DB instead: {$e->__toString()}");
+                if (! \str_starts_with($sfId->value, 'XXX')) {
+                    // XXX means this was a deliberate test, no need for alarm.
+                    $this->logger->error("Failed to load campaign ID {$sfId} from SF, serving from Matchbot DB instead: {$e->__toString()}");
+                }
 
                 return $this->respondWithData($response, $this->campaignService->renderCampaign($campaignFromMatchbotDB));
             }
