@@ -20,7 +20,7 @@ namespace MatchBot\Application\HttpModels;
 readonly class Campaign
 {
     /**
-     * @param 'Active'|'Expired'|'Preview' $status
+     * @param 'Active'|'Expired'|'Preview'|null $status
      * @param list<array{uri: string, order: int}> $additionalImageUris
      * @param list<string> $aims
      * @param list<string> $beneficiaries

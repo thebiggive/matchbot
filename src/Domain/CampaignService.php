@@ -43,8 +43,7 @@ class CampaignService
 
         $campaignStatus = $campaign->getStatus();
 
-        Assertion::inArray($campaignStatus, ['Active','Expired','Preview']);
-        /** @var 'Active'|'Expired'|'Preview' $campaignStatus */
+        Assertion::inArray($campaignStatus, ['Active','Expired','Preview', null]);
 
         // the next two vars are the data as originally served to matchbot by Salesforce. For now we
         // repeat many parts of them verbatim, but its likely we may want to replace several fields with things

@@ -44,7 +44,7 @@ use MatchBot\Application\Assertion;
  *     isMatched: bool,
  *     ready: bool,
  *     startDate: string,
- *     status: string|null,
+ *     status: 'Active'|'Expired'|'Preview'|null,
  *     title: string,
 *      currencyCode: string,
  *     isRegularGiving?: boolean,
