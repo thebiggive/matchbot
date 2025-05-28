@@ -27,7 +27,7 @@ class CampaignRepositoryTest extends IntegrationTest
             endDate: new \DateTimeImmutable(-29 * 9 . 'days'), // less than the 9 month limit
             isMatched: true,
             ready: true,
-            status: 'status',
+            status: null,
             name: 'Campaign Name',
             currencyCode: 'GBP',
             isRegularGiving: false,
@@ -71,7 +71,7 @@ class CampaignRepositoryTest extends IntegrationTest
             endDate: new \DateTimeImmutable('-10 months'),
             isMatched: true,
             ready: true,
-            status: 'status',
+            status: null,
             name: 'Campaign Name',
             currencyCode: 'GBP',
             isRegularGiving: false,

@@ -271,7 +271,7 @@ class TestCase extends PHPUnitTestCase
             endDate: new \DateTimeImmutable('3000-01-01'),
             isMatched: false,
             ready: true,
-            status: 'status',
+            status: 'Active',
             name: 'someCampaign',
             currencyCode: 'GBP',
             isRegularGiving: $isRegularGiving,

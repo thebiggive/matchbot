@@ -162,7 +162,7 @@ trait DonationTestDataTrait
             endDate: new \DateTimeImmutable(),
             isMatched: true,
             ready: true,
-            status: 'status',
+            status: null,
             name: 'Test campaign',
             currencyCode: 'GBP',
             isRegularGiving: false,

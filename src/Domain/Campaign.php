@@ -51,10 +51,12 @@ class Campaign extends SalesforceReadProxy
      *
      * Consider converting to enum or value object before using in any logic.
      *
+     * @var 'Active' | 'Expired' | 'Preview' | null
+     *
      * Default null because campaigns not recently updated in matchbot have not pulled this field from SF.
      */
     #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
-    private ?string $status = null;
+    private ?string $status = null; // @phpstan-ignore doctrine.columnType
 
     /**
      * @var string
@@ -125,6 +127,7 @@ class Campaign extends SalesforceReadProxy
     /**
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
      * @param Salesforce18Id<Campaign> $sfId
+     * @param 'Active'|'Expired'|'Preview'|null $status
      * @param bool $isRegularGiving
      * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
      * */
@@ -342,6 +345,7 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
+     * @param 'Active'|'Expired'|'Preview'|null $status
      * @param array<string,mixed> $sfData
      */
     final public function updateFromSfPull(
@@ -390,6 +394,7 @@ class Campaign extends SalesforceReadProxy
         $this->salesforceData = $sfData;
     }
 
+    /** @return  'Active' | 'Expired' | 'Preview' | null */
     public function getStatus(): ?string
     {
         return $this->status;
