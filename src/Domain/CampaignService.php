@@ -72,7 +72,7 @@ class CampaignService
 
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
-            amountRaised: $sfCampaignData['amountRaised'], // here will be the amount raised
+            amountRaised: $this->amountRaised($campaign->getSalesforce18Id())->toMajorUnitFloat(),
             additionalImageUris: $sfCampaignData['additionalImageUris'],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
