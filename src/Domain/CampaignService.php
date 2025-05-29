@@ -214,7 +214,8 @@ class CampaignService
             $mbDomainCampaign = Campaign::fromSfCampaignData(
                 campaignData: $campaignData,
                 salesforceId: $sfId,
-                charity: $mbDomainCharity
+                charity: $mbDomainCharity,
+                fillInDefaultValues: true,
             );
             $campaignName = $mbDomainCampaign->getCampaignName();
             $campaignStatus = $mbDomainCampaign->getStatus() ?? 'NULL';
