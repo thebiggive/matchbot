@@ -56,6 +56,18 @@ class CampaignRenderCompatibilityChecker
             $value = \array_key_exists($key, $actual) ?
                 $actual[$key] : '<UNDEFINED>';
 
+
+            if (
+                \is_null($expectedValue) &&
+                is_string($value) &&
+                \str_starts_with(haystack: $value, needle: '1970-01-01')
+            ) {
+                // in some cases (e.g. early campaign previews) SF sends null values for date time. The Matchbot
+                // domain model doesn't allow easily replicating that, so we send 1970 which is what FE would treat
+                // null as anyway.
+                continue;
+            }
+
             if (\is_array($expectedValue) && \is_array($value)) {
                 self::recursiveCompare($value, $expectedValue, $lazyAssert, "{$key}.");
             } else {
