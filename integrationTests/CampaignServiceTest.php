@@ -22,7 +22,7 @@ class CampaignServiceTest extends IntegrationTest
     public function setUp(): void
     {
         parent::setUp();
-        $this->SUT = new CampaignService($this->getService(CampaignRepository::class), $this->getService(LoggerInterface::class));
+        $this->SUT = $this->getService(CampaignService::class);
     }
     public function testACampaignWithNoDonationsRaisedNoMoney(): void
     {

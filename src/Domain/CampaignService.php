@@ -11,15 +11,23 @@ use MatchBot\Application\HttpModels\Campaign as CampaignHttpModel;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\Campaign as CampaignDomainModel;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 /**
  * @psalm-import-type SFCampaignApiResponse from CampaignClient
  */
 class CampaignService
 {
+    private const string CAMPAIGN_AMOUNT_RAISED_CACHE_PREFIX = 'campaign_amount_raised.';
+
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - called by DI container
+     */
     public function __construct(
         private CampaignRepository $campaignRepository,
-        private LoggerInterface $log
+        private LoggerInterface $log,
+        private CacheInterface $cache,
     ) {
     }
 
@@ -246,13 +254,39 @@ class CampaignService
     }
 
     /**
-     * Gets the amount raised for a given charity campaign, based on donations in the Matchbot DB
+     * Gets the *cached* amount raised for a given charity campaign, based on donations in the Matchbot DB
+     *
+     * As this returns a cached value, do not rely on it for critical business logic.
      *
      * @param Salesforce18Id<Campaign> $campaignId
      * @return Money
      */
     public function amountRaised(Salesforce18Id $campaignId): Money
     {
-        return $this->campaignRepository->totalAmountRaised($campaignId);
+        // beta 1.0 below matches library default, controls probablistic early expiration to prevent stampedes. Likely to
+        // be important especially important just after launching big meta campaigns. Stampedes for indivdual charity
+        // campaigns will be controlled by the built-in symfony cache per key locking, so while one request is causing a
+        // recompute of amount raised other requests will block if cache is expired.
+        //
+        // In very near future I may change this to caching a more complex object with multiple statistics about the
+        // campaign, not just the amount raised.
+        //
+        // Values are for now only for public display, not for our own logic, so caching for 2 minutes is OK. Ideally
+        // we would cache for longer when there are no donations, but we very much do not want to clear the cache
+        // when we receive a new donation, since recalculating every time would be too expensive. We could consider
+        // having a double layer cache with different expiration times, and clearing only one layer when a donation
+        // is confirmed or refunded.
+
+        $cachedAmountArray = $this->cache->get(
+            key: self::CAMPAIGN_AMOUNT_RAISED_CACHE_PREFIX . $campaignId->value,
+            callback: function (ItemInterface $item) use ($campaignId): array {
+                $item->expiresAfter(120); // two minutes
+
+                return $this->campaignRepository->totalAmountRaised($campaignId)->jsonSerialize();
+            },
+            beta: 1.0,
+        );
+
+        return Money::fromSerialized($cachedAmountArray);
     }
 }
