@@ -184,7 +184,7 @@ class DonationRepositoryTest extends IntegrationTest
             endDate: new \DateTimeImmutable('now'),
             isMatched: true,
             ready: true,
-            status: 'status',
+            status: 'Active',
             name: 'Campaign Name',
             currencyCode: 'GBP',
             isRegularGiving: false,

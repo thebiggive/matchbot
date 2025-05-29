@@ -2,8 +2,6 @@
 
 namespace MatchBot\Application\HttpModels;
 
-use phpDocumentor\Reflection\DocBlock\Description;
-
 /**
  * Representation of a charity campaign to serialise and send to FE. Should be assignable to TS campaign model
  * (which we may want to introduce automatic checks for in future) and match the campaign as served from SF.
@@ -22,7 +20,7 @@ use phpDocumentor\Reflection\DocBlock\Description;
 readonly class Campaign
 {
     /**
-     * @param 'Active'|'Expired'|'Preview' $status
+     * @param 'Active'|'Expired'|'Preview'|null $status
      * @param list<array{uri: string, order: int}> $additionalImageUris
      * @param list<string> $aims
      * @param list<string> $beneficiaries
@@ -30,7 +28,7 @@ readonly class Campaign
      * @param list<string> $categories
      * @param list<string> $countries
      * @param list<array{person: string, quote: string}> $quotes
-     * @param list<array{content: string, modifiedDate: \DateTimeImmutable}> $updates
+     * @param list<array{content: string, modifiedDate: string}> $updates
      * @param ?array{provider: string, key: string} $video
      * */
     public function __construct(
@@ -42,8 +40,8 @@ readonly class Campaign
         public ?string $bannerUri,
         public array $beneficiaries,
         public array $budgetDetails,
-        /** Approved participating campaign count, for Master campaigns */
-        public int $campaignCount,
+        /** Approved participating campaign count, for Meta-campaigns  (@todo mat-405 move to separate meta-campaign model)*/
+        public ?int $campaignCount,
         public array $categories,
         public ?string $championName,
         public ?string $championOptInStatement,
@@ -64,7 +62,7 @@ readonly class Campaign
         public ?float $parentAmountRaised,
         public ?int $parentDonationCount,
         public ?float $parentMatchFundsRemaining,
-        public string $parentRef, // Parent master campaign slug (if set), or ID, or null if $no paren,
+        public ?string $parentRef, // Parent meta campaign slug (if set), or ID, or null if $no paren,
         public ?float $parentTarget,
         public ?bool $parentUsesSharedFunds,
         public ?string $problem,
@@ -79,8 +77,8 @@ readonly class Campaign
          * on all other non-regular-giving campaigns default to null
          */
         public /* \DateTimeImmutable */ ?string $regularGivingCollectionEnd,
-        public string $summary,
-        public string $surplusDonationInfo, // Set on the master campaign level and should house info about awards $etc,
+        public ?string $summary,
+        public ?string $surplusDonationInfo, // Set on the meta campaign level and should house info about awards $etc,
         public float $target,
         public string $thankYouMessage,
         public string $title,

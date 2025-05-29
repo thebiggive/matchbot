@@ -19,7 +19,7 @@ final class Version20250520161231 extends AbstractMigration
     {
         $this->addSql(
             <<<SQL
-            DELETE FROM DonorAccount WHERE matchbot.DonorAccount.uuid = '1ed6fdf0-71d6-6ab0-98a0-11455be3c07b' LIMIT 1
+            DELETE FROM DonorAccount WHERE DonorAccount.uuid = '1ed6fdf0-71d6-6ab0-98a0-11455be3c07b' LIMIT 1
             SQL
 
         );

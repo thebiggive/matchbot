@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use DateTime;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -52,10 +51,12 @@ class Campaign extends SalesforceReadProxy
      *
      * Consider converting to enum or value object before using in any logic.
      *
+     * @var 'Active' | 'Expired' | 'Preview' | null
+     *
      * Default null because campaigns not recently updated in matchbot have not pulled this field from SF.
      */
     #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
-    private ?string $status = null;
+    private ?string $status = null; // @phpstan-ignore doctrine.columnType
 
     /**
      * @var string
@@ -126,6 +127,7 @@ class Campaign extends SalesforceReadProxy
     /**
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
      * @param Salesforce18Id<Campaign> $sfId
+     * @param 'Active'|'Expired'|'Preview'|null $status
      * @param bool $isRegularGiving
      * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
      * */
@@ -161,6 +163,36 @@ class Campaign extends SalesforceReadProxy
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             thankYouMessage: $thankYouMessage,
             sfData: $rawData,
+        );
+    }
+
+    /**
+     * @param SFCampaignApiResponse $campaignData
+     * @param Salesforce18Id<Campaign> $salesforceId
+     * @param Charity $charity
+     * @return Campaign
+     * @throws \DateMalformedStringException
+     */
+    public static function fromSfCampaignData(array $campaignData, Salesforce18Id $salesforceId, Charity $charity): self
+    {
+        $regularGivingCollectionEnd = $campaignData['regularGivingCollectionEnd'] ?? null;
+        $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
+            null : new \DateTimeImmutable($regularGivingCollectionEnd);
+
+        return new self(
+            sfId: $salesforceId,
+            charity: $charity,
+            startDate: new \DateTimeImmutable($campaignData['startDate']),
+            endDate: new \DateTimeImmutable($campaignData['endDate']),
+            isMatched: $campaignData['isMatched'],
+            ready: $campaignData['ready'],
+            status: $campaignData['status'],
+            name: $campaignData['title'],
+            currencyCode: $campaignData['currencyCode'],
+            isRegularGiving: $campaignData['isRegularGiving'] ?? false,
+            regularGivingCollectionEnd: $regularGivingCollectionObject,
+            thankYouMessage: $campaignData['thankYouMessage'],
+            rawData: $campaignData
         );
     }
 
@@ -313,6 +345,7 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
+     * @param 'Active'|'Expired'|'Preview'|null $status
      * @param array<string,mixed> $sfData
      */
     final public function updateFromSfPull(
@@ -361,6 +394,7 @@ class Campaign extends SalesforceReadProxy
         $this->salesforceData = $sfData;
     }
 
+    /** @return  'Active' | 'Expired' | 'Preview' | null */
     public function getStatus(): ?string
     {
         return $this->status;

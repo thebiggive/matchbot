@@ -225,6 +225,7 @@ class Charity extends SalesforceReadProxy
         $this->hmrcReferenceNumber = $hmrcReferenceNumber;
     }
 
+    /** @return key-of<self::REGULATORS> | null */
     public function getRegulator(): ?string
     {
         return $this->regulator;
