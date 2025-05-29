@@ -607,11 +607,9 @@ class Donation extends SalesforceWriteProxy
         $fundingWithdrawalsByType = $this->getWithdrawalTotalByFundType();
 
         $data = [
-            // want total of all three fundingwithdrawls +
             'amountMatchedByChampionFunds' => (float) $fundingWithdrawalsByType['amountMatchedByChampionFunds'],
             'amountMatchedByPledges' => (float) $fundingWithdrawalsByType['amountMatchedByPledges'],
             'amountPreauthorizedFromChampionFunds' => (float) $fundingWithdrawalsByType['amountPreauthorizedFromChampionFunds'],
-
             'billingPostalAddress' => $this->donorBillingPostcode,
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
