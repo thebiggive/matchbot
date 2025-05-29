@@ -203,25 +203,36 @@ class CampaignService
      */
     public function checkCampaignCanBeHandledByMatchbotDB(array $campaignData, Salesforce18Id $sfId): void
     {
-        /** Im-memory only matchbot domain model of charity and campaign, used just to check that our rendering matches
-         * what SF would do.
-         */
-        $mbDomainCharity = $this->campaignRepository->newCharityFromCampaignData($campaignData);
-        $mbDomainCampaign = Campaign::fromSfCampaignData(
-            campaignData: $campaignData,
-            salesforceId: $sfId,
-            charity: $mbDomainCharity
-        );
+        $mbDomainCharity = null;
+        $mbDomainCampaign = null;
 
-        $renderedCampaign = $this->renderCampaign($mbDomainCampaign);
+        try {
+            /** Im-memory only matchbot domain model of charity and campaign, used just to check that our rendering matches
+             * what SF would do.
+             */
+            $mbDomainCharity = $this->campaignRepository->newCharityFromCampaignData($campaignData);
+            $mbDomainCampaign = Campaign::fromSfCampaignData(
+                campaignData: $campaignData,
+                salesforceId: $sfId,
+                charity: $mbDomainCharity
+            );
+            $campaignName = $mbDomainCampaign->getCampaignName();
+            $campaignStatus = $mbDomainCampaign->getStatus() ?? 'NULL';
 
-        /** @var list<string> $errors */
-        $errors = $renderedCampaign['errors'] ?? [];
+            $renderedCampaign = $this->renderCampaign($mbDomainCampaign);
+
+            /** @var list<string> $errors */
+            $errors = $renderedCampaign['errors'] ?? [];
+        } catch (\Throwable $t) {
+            $campaignName = $campaignData['title'] ?? 'no-title';
+            $campaignStatus = $campaignData['status'] ?? 'NULL';
+            $errors = [$t->__toString()];
+        }
 
         if (($errors) !== []) {
             $errorList = \implode(',', $errors);
 
-            $errorMessage = "Campaign {$mbDomainCampaign->getCampaignName()} {$mbDomainCampaign->getSalesforceId()} not compatible: {$errorList}";
+            $errorMessage = "(MAT-405 NOT emergency) Campaign {$campaignName} {$sfId->value} status {$campaignStatus} not compatible: {$errorList}";
 
             if (Environment::current() === Environment::Production) {
                 $this->log->error(
@@ -233,7 +244,7 @@ class CampaignService
         }
 
         // these models are only in memory, never persisted.
-        Assertion::null($mbDomainCampaign->getId());
-        Assertion::null($mbDomainCharity->getId());
+        Assertion::null($mbDomainCampaign?->getId());
+        Assertion::null($mbDomainCharity?->getId());
     }
 }

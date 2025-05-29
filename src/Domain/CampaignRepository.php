@@ -136,7 +136,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaignUpdatedAt = $campaign?->getSalesforceLastPull();
 
         if ($mustBeUpdatedSince && $campaignUpdatedAt < $mustBeUpdatedSince) {
-            $this->logError(
+            $this->logWarning(
                 "Not returning stale campaign {$sfIdString}, last updated {$campaignUpdatedAt?->format('c')}, should have been since {$mustBeUpdatedSince->format('c')}"
             );
 
