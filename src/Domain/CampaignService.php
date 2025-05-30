@@ -70,9 +70,11 @@ class CampaignService
             stripeAccountId: $charity->getStripeAccountId(),
         );
 
+        /** Non-null for any *launched* campaign; if it's null we know £0 has been raised. */
+        $campaignId = $campaign->getId();
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
-            amountRaised: $this->amountRaised($campaign->getId())->toMajorUnitFloat(),
+            amountRaised: $campaignId === null ? 0 : $this->amountRaised($campaignId)->toMajorUnitFloat(),
             additionalImageUris: $sfCampaignData['additionalImageUris'],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],

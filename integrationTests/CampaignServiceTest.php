@@ -31,8 +31,11 @@ class CampaignServiceTest extends IntegrationTest
         $em->persist($campaign);
         $em->flush();
 
+        $campaignId = $campaign->getId();
+        \assert($campaignId !== null);
+
         $this->assertEquals(
-            $this->SUT->amountRaised($campaign->getId()),
+            $this->SUT->amountRaised($campaignId),
             Money::zero(),
         );
     }
@@ -64,8 +67,11 @@ class CampaignServiceTest extends IntegrationTest
 
         $em->flush();
 
+        $campaignId = $campaign->getId();
+        \assert($campaignId !== null);
+
         $this->assertEquals(
-            $this->SUT->amountRaised($campaign->getId()),
+            $this->SUT->amountRaised($campaignId),
             Money::fromPoundsGBP(4),
         );
     }
@@ -82,8 +88,11 @@ class CampaignServiceTest extends IntegrationTest
 
         $em->flush();
 
+        $campaignId = $campaign->getId();
+        \assert($campaignId !== null);
+
         $this->assertEquals(
-            $this->SUT->amountRaised($campaign->getId()),
+            $this->SUT->amountRaised($campaignId),
             Money::fromPoundsGBP(2),
         );
     }
