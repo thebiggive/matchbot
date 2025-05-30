@@ -133,6 +133,18 @@ class CampaignService
             flags: JSON_THROW_ON_ERROR
         );
 
+        // In SF a few expired campaigns have null start and end date. Matchbot data model doesn't allow that
+        // so using 1970 as placeholder for null, and then switching it back to null for display.
+        // FE will display e.g. "Closed null" but that's existing behaviour that we don't need to fix right now.
+
+        if (is_string($campaignHttpModelArray['startDate']) && \str_starts_with($campaignHttpModelArray['startDate'], '1970-01-01')) {
+            $campaignHttpModelArray['startDate'] = null;
+        }
+
+        if (is_string($campaignHttpModelArray['endDate']) && \str_starts_with($campaignHttpModelArray['endDate'], '1970-01-01')) {
+            $campaignHttpModelArray['endDate'] = null;
+        }
+
         // We could just return $sfCampaignData to FE and not need to generate anything else with matchbot
         // logic, but that would keep FE indirectly coupled to the SF service. By making sure matchbot is able to
         // semi-independently regenerate the same thing we should be able to break the dependency and then later evolve
