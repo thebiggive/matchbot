@@ -72,7 +72,7 @@ class CampaignService
 
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
-            amountRaised: $this->amountRaised($campaign->getSalesforce18Id())->toMajorUnitFloat(),
+            amountRaised: $this->amountRaised($campaign->getId())->toMajorUnitFloat(),
             additionalImageUris: $sfCampaignData['additionalImageUris'],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
@@ -249,10 +249,9 @@ class CampaignService
     /**
      * Gets the amount raised for a given charity campaign, based on donations in the Matchbot DB
      *
-     * @param Salesforce18Id<Campaign> $campaignId
      * @return Money
      */
-    public function amountRaised(Salesforce18Id $campaignId): Money
+    public function amountRaised(int $campaignId): Money
     {
         return $this->campaignRepository->totalAmountRaised($campaignId);
     }

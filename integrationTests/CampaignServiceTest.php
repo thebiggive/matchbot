@@ -26,8 +26,13 @@ class CampaignServiceTest extends IntegrationTest
     }
     public function testACampaignWithNoDonationsRaisedNoMoney(): void
     {
+        $campaign = TestCase::someCampaign();
+        $em = $this->getService(EntityManagerInterface::class);
+        $em->persist($campaign);
+        $em->flush();
+
         $this->assertEquals(
-            $this->SUT->amountRaised(TestCase::someCampaign()->getSalesforce18Id()),
+            $this->SUT->amountRaised($campaign->getId()),
             Money::zero(),
         );
     }
@@ -60,7 +65,7 @@ class CampaignServiceTest extends IntegrationTest
         $em->flush();
 
         $this->assertEquals(
-            $this->SUT->amountRaised($campaign->getSalesforce18Id()),
+            $this->SUT->amountRaised($campaign->getId()),
             Money::fromPoundsGBP(4),
         );
     }
@@ -78,7 +83,7 @@ class CampaignServiceTest extends IntegrationTest
         $em->flush();
 
         $this->assertEquals(
-            $this->SUT->amountRaised($campaign->getSalesforce18Id()),
+            $this->SUT->amountRaised($campaign->getId()),
             Money::fromPoundsGBP(2),
         );
     }
