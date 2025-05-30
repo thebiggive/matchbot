@@ -4,6 +4,7 @@ namespace MatchBot\Tests\Domain;
 
 use DateTime;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationSequenceNumber;
@@ -207,5 +208,13 @@ class InMemoryDonationRepository implements DonationRepository
     public function findAllByPayoutId(string $payoutId): never
     {
         throw new \Exception("Method not implemented in test double");
+    }
+
+    #[\Override] public function countCompleteDonationsToCampaign(Campaign $campaign): int
+    {
+        return count(\array_filter(
+            $this->donations,
+            fn(Donation $d) => $d->getCampaign() === $campaign
+        ));
     }
 }
