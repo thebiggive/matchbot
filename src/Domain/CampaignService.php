@@ -236,7 +236,8 @@ class CampaignService
             $errorMessage = "(MAT-405 NOT emergency) Campaign {$campaignName} {$sfId->value} status {$campaignStatus} not compatible: {$errorList}";
 
             if (Environment::current() === Environment::Production) {
-                $this->log->error(
+                // @todo MAT-405: Fix the errors we've seen so far then change this from warning back to error
+                $this->log->warning(
                     $errorMessage
                 );
             } else {
