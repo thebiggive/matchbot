@@ -192,8 +192,8 @@ class Campaign extends SalesforceReadProxy
             $startDate ??= '1970-01-01T00:00:00.000Z';
             $endDate ??= '1970-01-01T00:00:00.000Z';
         } else {
-            Assertion::notNull($startDate);
-            Assertion::notNull($endDate);
+            Assertion::notNull($startDate, 'Start date should not be null');
+            Assertion::notNull($endDate, 'End date should not be null');
         }
 
         return new self(

@@ -96,7 +96,7 @@ trait DonationTestDataTrait
         $charity->setName('Test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
-        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('234567890ProjectId'), charity: $charity);
+        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('234567890pROjecTID'), charity: $charity);
         $campaign->setIsMatched(true);
         // This name ensures that if an auto-confirm Update specifically hits the display_bank_transfer_instructions
         // next action, we don't cancel the pending donation.
@@ -156,7 +156,7 @@ trait DonationTestDataTrait
     protected function getAnonymousPendingTestDonation(): Donation
     {
         $campaign = new Campaign(
-            Salesforce18Id::ofCampaign('234567890ProjectId'),
+            Salesforce18Id::ofCampaign('234567890pROjecTID'),
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable(),
             endDate: new \DateTimeImmutable(),

@@ -11,15 +11,6 @@ namespace MatchBot\Application\HttpModels;
  */
 readonly class Charity
 {
-    /**
-     * @param array{
-     *     line1: ?string,
-     *     line2: ?string,
-     *     city: ?string,
-     *     postalCode: ?string,
-     *     country: ?string
-     * } $postalAddress
-     */
     public function __construct(
         public string $id,
         public ?string $name,

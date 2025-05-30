@@ -75,6 +75,15 @@ class CampaignRenderCompatibilityChecker
                 $expectedValue = "<UNDEFINED>";
             }
 
+            if ($key === 'website' && \is_string($expectedValue) && \is_string($value)) {
+                // \Laminas\Diactoros\Uri always converts the hostname to lowercase since thats how websites are
+                // registered. Although uppercase can be useful for making longer hostnames more readable or
+                // stylish its probably not essential for us to reproduce the exact casing as typed, so
+                // we do a case-insensitive check here.
+                $value = \strtolower($value);
+                $expectedValue = \strtolower($expectedValue);
+            }
+
             if (\is_array($expectedValue) && \is_array($value)) {
                 self::recursiveCompare($value, $expectedValue, $lazyAssert, "{$key}.");
             } else {
