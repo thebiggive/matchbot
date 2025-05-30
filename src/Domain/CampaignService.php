@@ -23,6 +23,7 @@ class CampaignService
      */
     public function __construct(
         private CampaignRepository $campaignRepository,
+        private DonationRepository $donationRepository,
         private LoggerInterface $log
     ) {
     }
@@ -91,7 +92,7 @@ class CampaignService
             charity: $charityHttpModel,
             countries: $sfCampaignData['countries'],
             currencyCode: $campaign->getCurrencyCode() ?? '',
-            donationCount: $sfCampaignData['donationCount'],
+            donationCount: $this->donationRepository->countCompleteDonationsToCampaign($campaign),
             endDate: $this->formatDate($campaign->getEndDate()),
             hidden: $sfCampaignData['hidden'],
             impactReporting: $sfCampaignData['impactReporting'],
