@@ -69,7 +69,7 @@ class CampaignRenderCompatibilityChecker
             }
 
             if ($key === 'postalAddress') {
-                // postalAddress is required by FE, so not output by matchbot.
+                // postalAddress is not required by FE, so not output by matchbot.
                 // We can't output a postalAddress that would match what SF sends in all cases as MB does nullifies
                 // address if first line is missing.
                 $expectedValue = "<UNDEFINED>";
