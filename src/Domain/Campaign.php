@@ -173,20 +173,36 @@ class Campaign extends SalesforceReadProxy
      * @return Campaign
      * @throws \DateMalformedStringException
      */
-    public static function fromSfCampaignData(array $campaignData, Salesforce18Id $salesforceId, Charity $charity): self
+    public static function fromSfCampaignData(array $campaignData, Salesforce18Id $salesforceId, Charity $charity, bool $fillInDefaultValues = false): self
     {
         $regularGivingCollectionEnd = $campaignData['regularGivingCollectionEnd'] ?? null;
         $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
             null : new \DateTimeImmutable($regularGivingCollectionEnd);
 
+        $status = $campaignData['status'];
+        $ready = $campaignData['ready'] ?? false;
+
+        $startDate = $campaignData['startDate'];
+        $endDate = $campaignData['endDate'];
+
+        if ($status === null && !$ready && $fillInDefaultValues) {
+            // this campaign is not yet ready for public viewing so fill in some placeholder values to make it usable.
+            // 1970 placeholder is what FE would have done up to now when calling the JS Date constructor on a null value.
+            $startDate ??= '1970-01-01T00:00:00.000Z';
+            $endDate ??= '1970-01-01T00:00:00.000Z';
+        } else {
+            Assertion::notNull($startDate);
+            Assertion::notNull($endDate);
+        }
+
         return new self(
             sfId: $salesforceId,
             charity: $charity,
-            startDate: new \DateTimeImmutable($campaignData['startDate']),
-            endDate: new \DateTimeImmutable($campaignData['endDate']),
+            startDate: new \DateTimeImmutable($startDate),
+            endDate: new \DateTimeImmutable($endDate),
             isMatched: $campaignData['isMatched'],
-            ready: $campaignData['ready'],
-            status: $campaignData['status'],
+            ready: $ready,
+            status: $status,
             name: $campaignData['title'],
             currencyCode: $campaignData['currencyCode'],
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,

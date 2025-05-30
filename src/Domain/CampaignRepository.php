@@ -136,7 +136,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaignUpdatedAt = $campaign?->getSalesforceLastPull();
 
         if ($mustBeUpdatedSince && $campaignUpdatedAt < $mustBeUpdatedSince) {
-            $this->logError(
+            $this->logWarning(
                 "Not returning stale campaign {$sfIdString}, last updated {$campaignUpdatedAt?->format('c')}, should have been since {$mustBeUpdatedSince->format('c')}"
             );
 
@@ -305,6 +305,14 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $client = $this->getClient();
         $campaignData = $client->getById($campaign->getSalesforceId(), $withCache);
 
+        $startDateString = $campaignData['startDate'];
+        $endDateString = $campaignData['endDate'];
+
+        // dates may be null for a non-launched early stage preview campaign, but not for a campaign that we're pulling
+        // into the matchbot DB via an update.
+        Assertion::notNull($startDateString, "Null start date supplied when attempting to update campaign {$proxy->getSalesforceId()}");
+        Assertion::notNull($endDateString, "Null end date supplied when attempting to update campaign {$proxy->getSalesforceId()}");
+
         $this->updateCharityFromCampaignData($proxy->getCharity(), $campaignData);
 
         if ($campaign->hasBeenPersisted() && $campaign->getCurrencyCode() !== $campaignData['currencyCode']) {
@@ -328,14 +336,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
             null : new \DateTimeImmutable($regularGivingCollectionEnd);
 
-
         $campaign->updateFromSfPull(
             currencyCode: $campaignData['currencyCode'],
             status: $campaignData['status'],
-            endDate: new DateTime($campaignData['endDate']),
+            endDate: new DateTime($endDateString),
             isMatched: $campaignData['isMatched'],
             name: $campaignData['title'],
-            startDate: new DateTime($campaignData['startDate']),
+            startDate: new DateTime($startDateString),
             ready: $campaignData['ready'],
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
@@ -380,6 +387,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
         // Salesforce addresses for now. For example, a charity may fill in just a country in the
         // portal and save that as their own address. We're better off omitting it from donor emails
         // if that happens.
+        //
+        // Happening more now that this runs for early preview campaigns where the charity may not have finished
+        // filling in all fields.
         if (is_null($postalAddress['line1'])) {
             try {
                 Assertion::allNull($postalAddress);
@@ -387,7 +397,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 // If this happens more than a couple of times in late April 2025, probaby reduce to warning
                 // level. If it happens a lot more, build stronger Salesforce validation to stop it at
                 // source.
-                $this->logError('Postal address from Salesforce is missing line1 but had other parts; treating as all-null');
+                $this->logWarning('Postal address from Salesforce is missing line1 but had other parts; treating as all-null');
             }
 
             return PostalAddress::null();
