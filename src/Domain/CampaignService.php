@@ -17,6 +17,10 @@ use Psr\Log\LoggerInterface;
  */
 class CampaignService
 {
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - used by DI,
+     * will need to also be used in tests soon though.
+     */
     public function __construct(
         private CampaignRepository $campaignRepository,
         private LoggerInterface $log
@@ -72,7 +76,7 @@ class CampaignService
 
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
-            amountRaised: $this->amountRaised($campaign->getSalesforce18Id())->toMajorUnitFloat(),
+            amountRaised: $sfCampaignData['amountRaised'],
             additionalImageUris: $sfCampaignData['additionalImageUris'],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
@@ -243,16 +247,5 @@ class CampaignService
         // these models are only in memory, never persisted.
         Assertion::null($mbDomainCampaign?->getId());
         Assertion::null($mbDomainCharity?->getId());
-    }
-
-    /**
-     * Gets the amount raised for a given charity campaign, based on donations in the Matchbot DB
-     *
-     * @param Salesforce18Id<Campaign> $campaignId
-     * @return Money
-     */
-    public function amountRaised(Salesforce18Id $campaignId): Money
-    {
-        return $this->campaignRepository->totalAmountRaised($campaignId);
     }
 }
