@@ -125,7 +125,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     {
         $sfIdString = $salesforceId->value;
 
-        if (\str_starts_with($sfIdString, 'XXX')) {
+        if (\str_starts_with(\strtolower($sfIdString), 'xxx')) {
             // SF ID was intentionally mangled for MAT-405 testing to simulate SF being down but
             // the matchbot DB being up. We know that all our campaign IDs start with a05 so we fix it to query our DB.
             $sfIdString = 'a05' . \substr($sfIdString, 3);
