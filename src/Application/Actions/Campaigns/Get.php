@@ -55,8 +55,8 @@ class Get extends Action
             );
 
             if ($campaignFromMatchbotDB) {
-                if (! \str_starts_with($sfId->value, 'XXX')) {
-                    // XXX means this was a deliberate test, no need for alarm.
+                if (! \str_starts_with(\strtolower($sfId->value), 'xxx')) {
+                    // xxx means this was a deliberate test, no need for alarm.
                     $this->logger->error("Failed to load campaign ID {$sfId} from SF, serving from Matchbot DB instead: {$e->__toString()}");
                 }
 
