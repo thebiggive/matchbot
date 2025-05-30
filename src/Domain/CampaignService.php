@@ -26,8 +26,9 @@ class CampaignService
      */
     public function __construct(
         private CampaignRepository $campaignRepository,
-        private LoggerInterface $log,
         private CacheInterface $cache,
+        private DonationRepository $donationRepository,
+        private LoggerInterface $log
     ) {
     }
 
@@ -71,16 +72,17 @@ class CampaignService
             website: $charity->getWebsiteUri()?->__toString(),
             phoneNumber: $charity->getPhoneNumber(),
             emailAddress: $charity->getEmailAddress()?->email,
-            postalAddress: $charity->getPostalAddress()->toArray(),
             regulatorNumber: $charity->getRegulatorNumber(),
             regulatorRegion: $this->getRegionForRegulator($charity->getRegulator()),
             logoUri: $charity->getLogoUri()?->__toString(),
             stripeAccountId: $charity->getStripeAccountId(),
         );
 
+        /** Non-null for any *launched* campaign; if it's null we know £0 has been raised. */
+        $campaignId = $campaign->getId();
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
-            amountRaised: $this->amountRaised($campaign->getSalesforce18Id())->toMajorUnitFloat(),
+            amountRaised: $campaignId === null ? 0 : $this->amountRaised($campaignId)->toMajorUnitFloat(),
             additionalImageUris: $sfCampaignData['additionalImageUris'],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
@@ -96,7 +98,7 @@ class CampaignService
             charity: $charityHttpModel,
             countries: $sfCampaignData['countries'],
             currencyCode: $campaign->getCurrencyCode() ?? '',
-            donationCount: $sfCampaignData['donationCount'],
+            donationCount: $this->donationRepository->countCompleteDonationsToCampaign($campaign),
             endDate: $this->formatDate($campaign->getEndDate()),
             hidden: $sfCampaignData['hidden'],
             impactReporting: $sfCampaignData['impactReporting'],
@@ -136,6 +138,18 @@ class CampaignService
             depth: 512,
             flags: JSON_THROW_ON_ERROR
         );
+
+        // In SF a few expired campaigns have null start and end date. Matchbot data model doesn't allow that
+        // so using 1970 as placeholder for null, and then switching it back to null for display.
+        // FE will display e.g. "Closed null" but that's existing behaviour that we don't need to fix right now.
+
+        if (is_string($campaignHttpModelArray['startDate']) && \str_starts_with($campaignHttpModelArray['startDate'], '1970-01-01')) {
+            $campaignHttpModelArray['startDate'] = null;
+        }
+
+        if (is_string($campaignHttpModelArray['endDate']) && \str_starts_with($campaignHttpModelArray['endDate'], '1970-01-01')) {
+            $campaignHttpModelArray['endDate'] = null;
+        }
 
         // We could just return $sfCampaignData to FE and not need to generate anything else with matchbot
         // logic, but that would keep FE indirectly coupled to the SF service. By making sure matchbot is able to
@@ -240,7 +254,8 @@ class CampaignService
             $errorMessage = "(MAT-405 NOT emergency) Campaign {$campaignName} {$sfId->value} status {$campaignStatus} not compatible: {$errorList}";
 
             if (Environment::current() === Environment::Production) {
-                $this->log->error(
+                // @todo MAT-405: Fix the errors we've seen so far then change this from warning back to error
+                $this->log->warning(
                     $errorMessage
                 );
             } else {
@@ -258,10 +273,9 @@ class CampaignService
      *
      * As this returns a cached value, do not rely on it for critical business logic.
      *
-     * @param Salesforce18Id<Campaign> $campaignId
      * @return Money
      */
-    public function amountRaised(Salesforce18Id $campaignId): Money
+    public function amountRaised(int $campaignId): Money
     {
         // beta 1.0 below matches library default, controls probablistic early expiration to prevent stampedes. Likely to
         // be important especially important just after launching big meta campaigns. Stampedes for indivdual charity
@@ -278,7 +292,7 @@ class CampaignService
         // is confirmed or refunded.
 
         $cachedAmountArray = $this->cache->get(
-            key: self::CAMPAIGN_AMOUNT_RAISED_CACHE_PREFIX . $campaignId->value,
+            key: self::CAMPAIGN_AMOUNT_RAISED_CACHE_PREFIX . $campaignId,
             callback: function (ItemInterface $item) use ($campaignId): array {
                 $item->expiresAfter(120); // two minutes
 

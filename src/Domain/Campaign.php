@@ -185,15 +185,23 @@ class Campaign extends SalesforceReadProxy
         $startDate = $campaignData['startDate'];
         $endDate = $campaignData['endDate'];
 
-        if ($status === null && !$ready && $fillInDefaultValues) {
+        if (($status === null || $status === 'Expired') && !$ready && $fillInDefaultValues) {
             // this campaign is not yet ready for public viewing so fill in some placeholder values to make it usable.
-            // 1970 placeholder is what FE would have done up to now when calling the JS Date constructor on a null value.
+            // 1970 is effectively another form of null that's harder to insert by accident that actual null would be
+            // if we allowed it  - we convert back to real null when rendering the campaign to an array.
             $startDate ??= '1970-01-01T00:00:00.000Z';
             $endDate ??= '1970-01-01T00:00:00.000Z';
         } else {
-            Assertion::notNull($startDate);
-            Assertion::notNull($endDate);
+            Assertion::notNull($startDate, 'Start date should not be null');
+            Assertion::notNull($endDate, 'End date should not be null');
         }
+
+        // null coalesce below because x_isMetaCampaign was only recently added to SF API, and we might be using
+        // saved data.
+        Assertion::false(
+            $campaignData['x_isMetaCampaign'] ?? false,
+            'Cannot create Charity Campaign using meta campaign data'
+        );
 
         return new self(
             sfId: $salesforceId,
@@ -424,14 +432,6 @@ class Campaign extends SalesforceReadProxy
         Assertion::string($salesforceId);
 
         return $salesforceId;
-    }
-
-    /**
-     * @return Salesforce18Id<self>
-     */
-    public function getSalesforce18Id(): Salesforce18Id
-    {
-        return Salesforce18Id::ofCampaign($this->getSalesforceId());
     }
 
     public function regularGivingCollectionIsEndedAt(\DateTimeImmutable $date): bool

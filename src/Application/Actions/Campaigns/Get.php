@@ -6,6 +6,7 @@ namespace MatchBot\Application\Actions\Campaigns;
 
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Environment;
 use MatchBot\Client\Campaign as SfCampaignClient;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\CampaignRepository;
@@ -47,9 +48,10 @@ class Get extends Action
             $this->campaignService->checkCampaignCanBeHandledByMatchbotDB($campaign, $sfId);
             return $this->respondWithData($response, $campaign);
         } catch (NotFoundException | RequestException $e) {
+            $campaignMustHaveBeenUpdatedSince = Environment::current()->isLocal() ? '-10000 day' : '-1 day';
             $campaignFromMatchbotDB = $this->campaignRepository->findOneBySalesforceId(
                 $sfId,
-                mustBeUpdatedSince: $this->now->modify('-1 day')
+                mustBeUpdatedSince: $this->now->modify($campaignMustHaveBeenUpdatedSince)
             );
 
             if ($campaignFromMatchbotDB) {

@@ -289,17 +289,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $this->fundRepository = $fundRepository;
     }
 
-    /**
-     * @param Salesforce18Id<Campaign> $campaignId
-     */
-    public function totalAmountRaised(Salesforce18Id $campaignId): Money
+    public function totalAmountRaised(int $campaignId): Money
     {
         $donationQuery = $this->getEntityManager()->createQuery(
             <<<'DQL'
-            SELECT donation.currencyCode, COALESCE(SUM(donation.amount), 0) as sum FROM MatchBot\Domain\Donation donation
-            JOIN MatchBot\Domain\Campaign campaign
-            WHERE campaign.salesforceId = :campaignId
-            AND donation.donationStatus IN (:succcessStatus)
+            SELECT donation.currencyCode, COALESCE(SUM(donation.amount), 0) as sum
+            FROM MatchBot\Domain\Donation donation
+            WHERE donation.campaign = :campaignId AND donation.donationStatus IN (:succcessStatus)
             GROUP BY donation.currencyCode
         DQL
         );
@@ -328,11 +324,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $matchedFundQuery = $this->getEntityManager()->createQuery(
             <<<'DQL'
-            SELECT COALESCE(SUM(fw.amount), 0) as sum FROM MatchBot\Domain\FundingWithdrawal fw
-            JOIN MatchBot\Domain\Donation donation
-            JOIN MatchBot\Domain\Campaign campaign
-            WHERE campaign.salesforceId = :campaignId
-            AND donation.donationStatus IN (:succcessStatus)
+            SELECT COALESCE(SUM(fw.amount), 0) as sum
+            FROM MatchBot\Domain\FundingWithdrawal fw
+            JOIN fw.donation donation
+            WHERE donation.campaign = :campaignId AND donation.donationStatus IN (:succcessStatus)
         DQL
         );
 
