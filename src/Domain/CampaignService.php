@@ -18,8 +18,7 @@ use Psr\Log\LoggerInterface;
 class CampaignService
 {
     /**
-     * @psalm-suppress PossiblyUnusedMethod - used by DI,
-     * will need to also be used in tests soon though.
+     * @psalm-suppress PossiblyUnusedMethod - used by DI container
      */
     public function __construct(
         private CampaignRepository $campaignRepository,
@@ -74,9 +73,11 @@ class CampaignService
             stripeAccountId: $charity->getStripeAccountId(),
         );
 
+        /** Non-null for any *launched* campaign; if it's null we know £0 has been raised. */
+        $campaignId = $campaign->getId();
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
-            amountRaised: $sfCampaignData['amountRaised'],
+            amountRaised: $campaignId === null ? 0 : $this->amountRaised($campaignId)->toMajorUnitFloat(),
             additionalImageUris: $sfCampaignData['additionalImageUris'],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
@@ -260,5 +261,15 @@ class CampaignService
         // these models are only in memory, never persisted.
         Assertion::null($mbDomainCampaign?->getId());
         Assertion::null($mbDomainCharity?->getId());
+    }
+
+    /**
+     * Gets the amount raised for a given charity campaign, based on donations in the Matchbot DB
+     *
+     * @return Money
+     */
+    public function amountRaised(int $campaignId): Money
+    {
+        return $this->campaignRepository->totalAmountRaised($campaignId);
     }
 }

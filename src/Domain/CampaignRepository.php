@@ -289,6 +289,63 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $this->fundRepository = $fundRepository;
     }
 
+    public function totalAmountRaised(int $campaignId): Money
+    {
+        $donationQuery = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            SELECT donation.currencyCode, COALESCE(SUM(donation.amount), 0) as sum
+            FROM MatchBot\Domain\Donation donation
+            WHERE donation.campaign = :campaignId AND donation.donationStatus IN (:succcessStatus)
+            GROUP BY donation.currencyCode
+        DQL
+        );
+
+        $donationQuery->setParameters([
+            'campaignId' => $campaignId,
+            'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
+        ]);
+
+        /** @var list<array{currencyCode: string, sum: numeric-string}> $donationResult */
+        $donationResult =  $donationQuery->getResult();
+
+        if ($donationResult === []) {
+            return Money::zero(Currency::GBP);
+        }
+
+        Assertion::count(
+            $donationResult,
+            1,
+            "multiple currency donations found for same campaign, can't calculate sum"
+        );
+
+        $donationSum = $donationResult[0]['sum'];
+
+        Assertion::numeric($donationSum);
+
+        $matchedFundQuery = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            SELECT COALESCE(SUM(fw.amount), 0) as sum
+            FROM MatchBot\Domain\FundingWithdrawal fw
+            JOIN fw.donation donation
+            WHERE donation.campaign = :campaignId AND donation.donationStatus IN (:succcessStatus)
+        DQL
+        );
+
+        $matchedFundQuery->setParameters([
+            'campaignId' => $campaignId,
+            'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
+        ]);
+
+        $matchedFundResult =  $matchedFundQuery->getSingleScalarResult();
+        Assertion::numeric($matchedFundResult);
+
+        $total = \bcadd($donationSum, (string) $matchedFundResult, 2);
+
+        $currency = Currency::fromIsoCode($donationResult[0]['currencyCode']);
+
+        return Money::fromNumericString($total, $currency);
+    }
+
     /**
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid

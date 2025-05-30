@@ -18,6 +18,7 @@ use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase as TestCaseAlias;
 use MatchBot\Tests\TestData;
+use MatchBot\Tests\TestLogger;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -27,6 +28,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
 use Random\Randomizer;
 use Slim\App;
 use Slim\Factory\AppFactory;
@@ -54,10 +56,13 @@ abstract class IntegrationTest extends TestCase
      */
     public static ?App $app = null;
 
+    protected TestLogger $logger;
+
     #[\Override]
     public function setUp(): void
     {
         parent::setUp();
+        $this->logger = new TestLogger();
 
         $noOpMiddleware = new class implements MiddlewareInterface {
             #[\Override]
@@ -75,7 +80,7 @@ abstract class IntegrationTest extends TestCase
         \assert($container instanceof Container);
         IntegrationTest::setContainer($container);
         $container->set(RateLimitMiddleware::class, $noOpMiddleware);
-        $container->set(\Psr\Log\LoggerInterface::class, new \Psr\Log\NullLogger());
+        $container->set(\Psr\Log\LoggerInterface::class, $this->logger);
 
         $settings = $container->get(Settings::class);
         $settings = $settings->withApiClient($this->fakeApiClientSettingsThatAlwaysThrow());

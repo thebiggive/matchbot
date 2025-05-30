@@ -51,6 +51,11 @@ class CampaignRenderCompatibilityChecker
                 continue;
             }
 
+            if ($key === 'amountRaised') {
+                // don't need to check amount raised as it is being handled by matchbot and Salesforce data might not be identical
+                continue;
+            }
+
             /** @var mixed $value */
 
             $value = \array_key_exists($key, $actual) ?
