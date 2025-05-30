@@ -67,7 +67,6 @@ class CampaignService
             website: $charity->getWebsiteUri()?->__toString(),
             phoneNumber: $charity->getPhoneNumber(),
             emailAddress: $charity->getEmailAddress()?->email,
-            postalAddress: $charity->getPostalAddress()->toArray(),
             regulatorNumber: $charity->getRegulatorNumber(),
             regulatorRegion: $this->getRegionForRegulator($charity->getRegulator()),
             logoUri: $charity->getLogoUri()?->__toString(),

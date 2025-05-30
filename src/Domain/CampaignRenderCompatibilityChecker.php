@@ -68,6 +68,13 @@ class CampaignRenderCompatibilityChecker
                 continue;
             }
 
+            if ($key === 'postalAddress') {
+                // postalAddress is required by FE, so not output by matchbot.
+                // We can't output a postalAddress that would match what SF sends in all cases as MB does nullifies
+                // address if first line is missing.
+                $expectedValue = "<UNDEFINED>";
+            }
+
             if (\is_array($expectedValue) && \is_array($value)) {
                 self::recursiveCompare($value, $expectedValue, $lazyAssert, "{$key}.");
             } else {

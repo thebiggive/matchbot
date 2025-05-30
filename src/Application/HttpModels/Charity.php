@@ -33,7 +33,6 @@ readonly class Charity
         public ?string $website,
         public ?string $phoneNumber,
         public ?string $emailAddress,
-        public ?array $postalAddress,
         public ?string $regulatorNumber,
         public ?string $regulatorRegion,
         public ?string $logoUri,
