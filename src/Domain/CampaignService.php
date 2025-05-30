@@ -17,6 +17,9 @@ use Psr\Log\LoggerInterface;
  */
 class CampaignService
 {
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - used by DI container
+     */
     public function __construct(
         private CampaignRepository $campaignRepository,
         private DonationRepository $donationRepository,
