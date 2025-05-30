@@ -85,6 +85,7 @@ use MatchBot\Application\Assertion;
  *     campaignCount: ?int,
  *     alternativeFundUse: ?string,
  *     additionalImageUris: list<array{order: int, uri: string}>,
+ *     x_isMetaCampaign: ?bool
  *     }
  */
 
