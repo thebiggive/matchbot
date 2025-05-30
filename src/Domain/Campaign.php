@@ -196,6 +196,13 @@ class Campaign extends SalesforceReadProxy
             Assertion::notNull($endDate, 'End date should not be null');
         }
 
+        // null coalesce below because x_isMetaCampaign was only recently added to SF API, and we might be using
+        // saved data.
+        Assertion::false(
+            $campaignData['x_isMetaCampaign'] ?? false,
+            'Cannot create Charity Campaign using meta campaign data'
+        );
+
         return new self(
             sfId: $salesforceId,
             charity: $charity,
