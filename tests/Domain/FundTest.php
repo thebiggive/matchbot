@@ -19,7 +19,7 @@ class FundTest extends TestCase
         $fund = new Fund(
             'GBP',
             'testGetAmounts fund',
-            Salesforce18Id::ofFund('sfFundId4567890abc'),
+            Salesforce18Id::ofFund('sffunDid4567890ABC'),
             fundType: FundType::ChampionFund
         );
         $fund->addCampaignFunding(new CampaignFunding(
@@ -38,7 +38,7 @@ class FundTest extends TestCase
 
     public function testToAmountUsedUpdateModel(): void
     {
-        $fund = new Fund('GBP', 'Testfund', Salesforce18Id::ofFund('sfFundId4567890abc'), fundType: FundType::ChampionFund);
+        $fund = new Fund('GBP', 'Testfund', Salesforce18Id::ofFund('sffunDid4567890ABC'), fundType: FundType::ChampionFund);
         $fund->addCampaignFunding(new CampaignFunding(
             fund: $fund,
             amount: '123.45',
@@ -49,7 +49,7 @@ class FundTest extends TestCase
             'currencyCode' => 'GBP',
             'fundId' => null, // Not actually persisting it.
             'fundType' => 'championFund',
-            'salesforceFundId' => 'sfFundId4567890abc',
+            'salesforceFundId' => 'sffunDid4567890ABC',
             'totalAmount' => 123.45,
             'usedAmount' => 23.45,
         ];

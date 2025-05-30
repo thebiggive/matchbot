@@ -53,4 +53,9 @@ enum Environment
     {
         return ! $this->isProduction();
     }
+
+    public function isLocal(): bool
+    {
+        return $this === self::Local;
+    }
 }

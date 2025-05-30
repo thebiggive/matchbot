@@ -100,7 +100,7 @@ class CreateTest extends TestCase
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
             'capture_method' => 'automatic_async',
             'metadata' => [
-                'campaignId' => '123CampaignId12345',
+                'campaignId' => '123CAmPAIGNID12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
@@ -131,7 +131,7 @@ class CreateTest extends TestCase
 
         $this->campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
         $testCase = $this;
-        $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CampaignId12345'])->will(fn() => $testCase->campaign);
+        $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CAmPAIGNID12345'])->will(fn() => $testCase->campaign);
 
         $configurationProphecy = $this->prophesize(\Doctrine\ORM\Configuration::class);
         $config = $configurationProphecy->reveal();
@@ -211,7 +211,7 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
         $expectedPayload = new ActionPayload(400, ['error' => [
             'type' => 'BAD_REQUEST',
-            'description' => 'Campaign 123CampaignId12345 is not open',
+            'description' => 'Campaign 123CAmPAIGNID12345 is not open',
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
@@ -241,7 +241,7 @@ class CreateTest extends TestCase
         // No change – campaign still has a charity without a Stripe Account ID.
         $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
             ->shouldBeCalledOnce();
-        $campaignRepoProphecy->findOneBy(['salesforceId' => '123CampaignId12345'])->willReturn($donation->getCampaign());
+        $campaignRepoProphecy->findOneBy(['salesforceId' => '123CAmPAIGNID12345'])->willReturn($donation->getCampaign());
 
         $this->entityManagerProphecy->isOpen()->willReturn(true);
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
@@ -382,7 +382,7 @@ class CreateTest extends TestCase
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
             'capture_method' => 'automatic_async',
             'metadata' => [
-                'campaignId' => '123CampaignId12345',
+                'campaignId' => '123CAmPAIGNID12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
@@ -447,7 +447,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertSame(1.11, $payloadArray['donation']['tipAmount']);
         $this->assertSame('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertSame('123CampaignId12345', $payloadArray['donation']['projectId']);
+        $this->assertSame('123CAmPAIGNID12345', $payloadArray['donation']['projectId']);
         $this->assertSame(DonationStatus::Pending->value, $payloadArray['donation']['status']);
         $this->assertSame('stripe', $payloadArray['donation']['psp']);
         $this->assertSame('pi_dummyIntent456_id', $payloadArray['donation']['transactionId']);
@@ -489,7 +489,7 @@ class CreateTest extends TestCase
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
             'capture_method' => 'automatic_async',
             'metadata' => [
-                'campaignId' => '123CampaignId12345',
+                'campaignId' => '123CAmPAIGNID12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
@@ -543,7 +543,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertSame(1.11, $payloadArray['donation']['tipAmount']);
         $this->assertSame('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertSame('123CampaignId12345', $payloadArray['donation']['projectId']);
+        $this->assertSame('123CAmPAIGNID12345', $payloadArray['donation']['projectId']);
         $this->assertSame(DonationStatus::Pending->value, $payloadArray['donation']['status']);
         $this->assertSame('stripe', $payloadArray['donation']['psp']);
         $this->assertSame('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
@@ -586,7 +586,7 @@ class CreateTest extends TestCase
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
             'capture_method' => 'automatic_async',
             'metadata' => [
-                'campaignId' => '123CampaignId12345',
+                'campaignId' => '123CAmPAIGNID12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
@@ -642,7 +642,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertSame(1.11, $payloadArray['donation']['tipAmount']);
         $this->assertSame('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertSame('123CampaignId12345', $payloadArray['donation']['projectId']);
+        $this->assertSame('123CAmPAIGNID12345', $payloadArray['donation']['projectId']);
         $this->assertSame(DonationStatus::Pending->value, $payloadArray['donation']['status']);
         $this->assertSame('stripe', $payloadArray['donation']['psp']);
         $this->assertSame('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
@@ -770,7 +770,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertSame(1.11, $payloadArray['donation']['tipAmount']);
         $this->assertSame('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertSame('123CampaignId12345', $payloadArray['donation']['projectId']);
+        $this->assertSame('123CAmPAIGNID12345', $payloadArray['donation']['projectId']);
     }
 
     /**
@@ -824,7 +824,7 @@ class CreateTest extends TestCase
         $this->assertSame(0, $payloadArray['donation']['matchReservedAmount']);
         $this->assertSame(1.11, $payloadArray['donation']['tipAmount']);
         $this->assertSame('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertSame('123CampaignId12345', $payloadArray['donation']['projectId']);
+        $this->assertSame('123CAmPAIGNID12345', $payloadArray['donation']['projectId']);
     }
 
     /**
@@ -887,7 +887,7 @@ class CreateTest extends TestCase
         $app = $this->getAppInstance();
         $allocatorProphecy = $this->prophesize(Allocator::class);
         $donationRepoProphecy = $this->donationRepoProphecy;
-        $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CampaignId12345'])->willReturn($this->campaign);
+        $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CAmPAIGNID12345'])->willReturn($this->campaign);
 
         /**
          * @see \MatchBot\IntegrationTests\DonationRepositoryTest for more granular checks of what's
@@ -962,7 +962,7 @@ class CreateTest extends TestCase
         $charity->setName('Create test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
-        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('123CampaignId12345'), charity: $charity);
+        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('123CAmPAIGNID12345'), charity: $charity);
         $campaign->setName('123CampaignName');
         $campaign->setIsMatched($campaignMatched);
         $campaign->setStartDate($this->now->sub(new \DateInterval('P2D')));

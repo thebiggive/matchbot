@@ -51,7 +51,7 @@ use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 class DonationServiceTest extends TestCase
 {
     private const string CUSTOMER_ID = 'cus_CUSTOMERID';
-    public const string CAMPAIGN_ID = 'projectIDxxxxxxxxx';
+    public const string CAMPAIGN_ID = 'PROjECTIdXXXXxXXXX';
     private DonationService $sut;
 
     /** @var ObjectProphecy<Stripe> */

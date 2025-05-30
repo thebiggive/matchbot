@@ -10,6 +10,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Client\Mailer;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestData;
 use Prophecy\Argument;
 use Psr\Http\Message\ResponseInterface;
@@ -128,7 +129,8 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     protected function createRegularGivingMandate(
         bool $useMatchFunds
     ): ResponseInterface {
-        $campaignId = $this->randomString();
+        // Salesforce18Id constructor fixes the casing to be acceptable as an SF ID
+        $campaignId = Salesforce18Id::ofCampaign($this->randomString())->value;
 
         $this->addFundedCampaignAndCharityToDB($campaignId, isRegularGiving: true, fundType: FundType::ChampionFund);
 

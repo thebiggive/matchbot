@@ -172,4 +172,10 @@ interface DonationRepository
      * @return list<Donation>
      */
     public function findAllByPayoutId(string $payoutId): array;
+
+    /**
+     * @param Campaign $campaign
+     * @return non-negative-int
+     */
+    public function countCompleteDonationsToCampaign(Campaign $campaign): int;
 }
