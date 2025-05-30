@@ -95,7 +95,7 @@ class CampaignService
             currencyCode: $campaign->getCurrencyCode() ?? '',
             donationCount: $this->donationRepository->countCompleteDonationsToCampaign($campaign),
             endDate: $this->formatDate($campaign->getEndDate()),
-            hidden: $sfCampaignData['hidden'],
+            hidden: $campaign->isHidden(),
             impactReporting: $sfCampaignData['impactReporting'],
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
