@@ -22,7 +22,7 @@ use Psr\Log\NullLogger;
 
 class FundRepositoryTest extends TestCase
 {
-    public const string CAMPAIGN_SF_ID = 'sfFakeId987xxxxxxx';
+    public const string CAMPAIGN_SF_ID = 'SFFaKEID987XXxXXXX';
 
     public function testPull(): void
     {
@@ -106,7 +106,7 @@ class FundRepositoryTest extends TestCase
 
         $fund = $campaignFunding->getFund();
         $this->assertSame(FundType::ChampionFund, $fund->getFundType());
-        $this->assertSame('sfFundId4567890abc', $fund->getSalesforceId());
+        $this->assertSame('sffunDid4567890ABC', $fund->getSalesforceId());
         $this->assertSame('GBP', $fund->getCurrencyCode());
     }
 
@@ -171,7 +171,7 @@ class FundRepositoryTest extends TestCase
         $campaignFundingRepoProphecy
             ->getFundingForCampaign(
                 Argument::which('getSalesforceId', self::CAMPAIGN_SF_ID),
-                Argument::which('getSalesforceId', 'sfFundId1234567890')
+                Argument::which('getSalesforceId', 'sffundid1234567890')
             )
             ->willReturn($this->getExistingCampaignFunding(false))
             ->shouldBeCalledOnce();
@@ -179,7 +179,7 @@ class FundRepositoryTest extends TestCase
         // For a shared fund, we expect to call `getFunding()` to determine
         // whether there's an existing funding, linked to *any* campaign.
         $campaignFundingRepoProphecy
-            ->getFunding(Argument::which('getSalesforceId', 'sfFundId4567890abc'))
+            ->getFunding(Argument::which('getSalesforceId', 'sffunDid4567890ABC'))
             ->willReturn($this->getExistingCampaignFunding(true))
             ->shouldBeCalledOnce();
 
@@ -227,12 +227,12 @@ class FundRepositoryTest extends TestCase
         $campaignFundingRepoProphecy
             ->getFundingForCampaign(
                 Argument::which('getSalesforceId', 'sfFakeId987'),
-                Argument::which('getSalesforceId', 'sfFundId1234567890')
+                Argument::which('getSalesforceId', 'sffundid1234567890')
             )
             ->shouldNotBeCalled();
 
         $campaignFundingRepoProphecy
-            ->getFunding(Argument::which('getSalesforceId', 'sfFundId4567890abc'))
+            ->getFunding(Argument::which('getSalesforceId', 'sffunDid4567890ABC'))
             ->willReturn($this->getExistingCampaignFunding(true))
             ->shouldNotBeCalled();
 
@@ -260,7 +260,7 @@ class FundRepositoryTest extends TestCase
         $existingFund = new Fund(
             currencyCode: 'GBP',
             name: $shared ? 'Test Shared Champion Fund 456' : 'Test Champion Fund 123',
-            salesforceId: Salesforce18Id::ofFund($shared ? 'sfFundId4567890abc' : 'sfFundId1234567890'),
+            salesforceId: Salesforce18Id::ofFund($shared ? 'sffunDid4567890ABC' : 'sffundid1234567890'),
             fundType: FundType::ChampionFund
         );
         $existingFund->setId($shared ? 456456 : 123123);
@@ -289,7 +289,7 @@ class FundRepositoryTest extends TestCase
         $fundClientProphecy = $this->prophesize(Client\Fund::class);
         $fundClientProphecy->getForCampaign(self::CAMPAIGN_SF_ID)->willReturn([
             [
-                'id' => 'sfFundId1234567890',
+                'id' => 'sffundid1234567890',
                 'type' => 'championFund',
                 'name' => 'Test Champion Fund 123',
                 'currencyCode' => $currencyCode,
@@ -300,7 +300,7 @@ class FundRepositoryTest extends TestCase
                 'isShared' => false,
             ],
             [
-                'id' => 'sfFundId4567890abc',
+                'id' => 'sffunDid4567890ABC',
                 'type' => 'championFund',
                 'name' => 'Test Shared Champion Fund 456',
                 'currencyCode' => $currencyCode,
@@ -346,8 +346,8 @@ class FundRepositoryTest extends TestCase
         $repo->expects($this->exactly($successfulPersistCase ? 2 : 1))
             ->method('findOneBy')
             ->willReturnCallback(fn(array $constraint) => match ($constraint) {
-                ['salesforceId' => 'sfFundId1234567890'] => $existingFundNonShared,
-                ['salesforceId' => 'sfFundId4567890abc'] => $existingFundShared,
+                ['salesforceId' => 'sffundid1234567890'] => $existingFundNonShared,
+                ['salesforceId' => 'sffunDid4567890ABC'] => $existingFundShared,
             });
 
         $repo->setCampaignFundingRepository($campaignFundingRepo);

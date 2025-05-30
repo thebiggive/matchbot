@@ -271,7 +271,7 @@ abstract class IntegrationTest extends TestCase
         bool $isRegularGiving = false
     ): array {
         $charityId = random_int(1000, 100000);
-        $charitySfId ??= $this->randomString();
+        $charitySfId ??= Salesforce18Id::ofCharity($this->randomString())->value;
         $charityStripeId = $this->randomString();
         $isRegularGivingInt = $isRegularGiving ? 1 : 0;
         $db = $this->db();
@@ -340,7 +340,7 @@ abstract class IntegrationTest extends TestCase
         FundType $fundType,
     ): array {
         $db = $this->db();
-        $fundSfID = $this->randomString();
+        $fundSfID = Salesforce18Id::ofFund($this->randomString())->value;
         $nyd = '2023-01-01'; // specific date doesn't matter.
 
         $db->executeStatement(<<<SQL
