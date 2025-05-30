@@ -426,6 +426,14 @@ class Campaign extends SalesforceReadProxy
         return $salesforceId;
     }
 
+    /**
+     * @return Salesforce18Id<self>
+     */
+    public function getSalesforce18Id(): Salesforce18Id
+    {
+        return Salesforce18Id::ofCampaign($this->getSalesforceId());
+    }
+
     public function regularGivingCollectionIsEndedAt(\DateTimeImmutable $date): bool
     {
         return $this->regularGivingCollectionEnd !== null && $this->regularGivingCollectionEnd <= $date;
