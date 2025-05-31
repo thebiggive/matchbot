@@ -23,6 +23,7 @@ CREATE TABLE `Campaign` (
   `regularGivingCollectionEnd` datetime DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)',
   `thankYouMessage` varchar(500) DEFAULT NULL,
   `salesforceData` json NOT NULL,
+  `hidden` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_E663708BD8961D21` (`salesforceId`),
   KEY `IDX_E663708BF5C97E37` (`charity_id`),

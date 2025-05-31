@@ -404,6 +404,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
             thankYouMessage: $campaignData['thankYouMessage'],
+            hidden: $campaignData['hidden'] ?? false,
             sfData: $campaignData,
         );
         $this->getEntityManager()->flush();
