@@ -28,6 +28,7 @@ class CampaignService
         private CampaignRepository $campaignRepository,
         private CacheInterface $cache,
         private DonationRepository $donationRepository,
+        private MatchFundsRemainingService $matchFundsRemainingService,
         private LoggerInterface $log
     ) {
     }
@@ -105,7 +106,7 @@ class CampaignService
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
             logoUri: $sfCampaignData['logoUri'],
-            matchFundsRemaining: $sfCampaignData['matchFundsRemaining'],
+            matchFundsRemaining: $this->matchFundsRemainingService->getFundsRemaining($campaign),
             matchFundsTotal: $sfCampaignData['matchFundsTotal'],
             parentAmountRaised: $sfCampaignData['parentAmountRaised'],
             parentDonationCount: $sfCampaignData['parentDonationCount'],
