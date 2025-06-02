@@ -51,6 +51,11 @@ class CampaignRenderCompatibilityChecker
                 continue;
             }
 
+            if ($key === 'amountRaised') {
+                // don't need to check amount raised as it is being handled by matchbot and Salesforce data might not be identical
+                continue;
+            }
+
             /** @var mixed $value */
 
             $value = \array_key_exists($key, $actual) ?
@@ -66,6 +71,28 @@ class CampaignRenderCompatibilityChecker
                 // domain model doesn't allow easily replicating that, so we send 1970 which is what FE would treat
                 // null as anyway.
                 continue;
+            }
+
+            if ($key === 'postalAddress') {
+                // postalAddress is not required by FE, so not output by matchbot.
+                // We can't output a postalAddress that would match what SF sends in all cases as MB does nullifies
+                // address if first line is missing.
+                $expectedValue = "<UNDEFINED>";
+            }
+
+            if ($key === 'donationCount') {
+                // may differ from SF - on dev env will be completly unrelated, in other envs donations will appear
+                // in matchbot count before SF knows them.
+                continue;
+            }
+
+            if ($key === 'website' && \is_string($expectedValue) && \is_string($value)) {
+                // \Laminas\Diactoros\Uri always converts the hostname to lowercase since thats how websites are
+                // registered. Although uppercase can be useful for making longer hostnames more readable or
+                // stylish its probably not essential for us to reproduce the exact casing as typed, so
+                // we do a case-insensitive check here.
+                $value = \strtolower($value);
+                $expectedValue = \strtolower($expectedValue);
             }
 
             if (\is_array($expectedValue) && \is_array($value)) {

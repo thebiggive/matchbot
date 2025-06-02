@@ -159,8 +159,8 @@ class ListRegularGivingMandatesTest extends IntegrationTest
      */
     public function createCampagaign(): array
     {
-        $campaignSfId = $this->randomString();
-        $charitySfId = $this->randomString();
+        $campaignSfId = Salesforce18Id::ofCampaign($this->randomString())->value;
+        $charitySfId = Salesforce18Id::ofCharity($this->randomString())->value;
 
         $charityName = "Charity Name " . $this->randomString();
 

@@ -24,7 +24,7 @@ class UpdateCampaignsTest extends TestCase
 {
     public function testSingleUpdateSuccess(): void
     {
-        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'));
+        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('SOMeCAMPaIGNIdXXXX'));
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findCampaignsThatNeedToBeUpToDate()
             ->willReturn([$campaign])
@@ -48,7 +48,7 @@ class UpdateCampaignsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:update-campaigns starting!',
-            'Updated campaign someCampaignIdxxxx',
+            'Updated campaign SOMeCAMPaIGNIdXXXX',
             'matchbot:update-campaigns complete!',
         ];
         $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -60,7 +60,7 @@ class UpdateCampaignsTest extends TestCase
         // This case should be skipped over without crashing, in non-production envs.
 
         $campaign = TestCase::someCampaign(
-            sfId: Salesforce18Id::ofCampaign('missingOnSfIDxxxxx'),
+            sfId: Salesforce18Id::ofCampaign('MISsINGOnSFIDxXXXX'),
         );
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findCampaignsThatNeedToBeUpToDate()
@@ -85,7 +85,7 @@ class UpdateCampaignsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:update-campaigns starting!',
-            'Skipping unknown sandbox campaign missingOnSfIDxxxxx',
+            'Skipping unknown sandbox campaign MISsINGOnSFIDxXXXX',
             'matchbot:update-campaigns complete!',
         ];
         $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -101,7 +101,7 @@ class UpdateCampaignsTest extends TestCase
         );
 
         $campaign = TestCase::someCampaign(
-            sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'),
+            sfId: Salesforce18Id::ofCampaign('SOMeCAMPaIGNIdXXXX'),
         )
         ;
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
@@ -129,7 +129,7 @@ class UpdateCampaignsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:update-campaigns starting!',
-            'Skipping campaign someCampaignIdxxxx due to 2nd transfer error "dummy exc message"',
+            'Skipping campaign SOMeCAMPaIGNIdXXXX due to 2nd transfer error "dummy exc message"',
             'matchbot:update-campaigns complete!',
         ];
         $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -149,7 +149,7 @@ class UpdateCampaignsTest extends TestCase
         );
 
         $campaign = TestCase::someCampaign(
-            sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'),
+            sfId: Salesforce18Id::ofCampaign('SOMeCAMPaIGNIdXXXX'),
         );
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -187,7 +187,7 @@ class UpdateCampaignsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:update-campaigns starting!',
-            'Updated campaign someCampaignIdxxxx',
+            'Updated campaign SOMeCAMPaIGNIdXXXX',
             'matchbot:update-campaigns complete!',
         ];
         $this->assertSame(
@@ -200,7 +200,7 @@ class UpdateCampaignsTest extends TestCase
     public function testSingleUpdateSuccessWithAllOption(): void
     {
         $campaign = TestCase::someCampaign(
-            sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'),
+            sfId: Salesforce18Id::ofCampaign('SOMeCAMPaIGNIdXXXX'),
         );
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findAll()
@@ -225,7 +225,7 @@ class UpdateCampaignsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:update-campaigns starting!',
-            'Updated campaign someCampaignIdxxxx',
+            'Updated campaign SOMeCAMPaIGNIdXXXX',
             'matchbot:update-campaigns complete!',
         ];
         $this->assertSame(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());

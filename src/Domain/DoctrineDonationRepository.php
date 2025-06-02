@@ -9,6 +9,7 @@ use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Query;
 use GuzzleHttp\Exception\BadResponseException;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
@@ -738,5 +739,33 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     public function findAllByPayoutId(string $payoutId): array
     {
         return $this->findBy(['stripePayoutId' => $payoutId]);
+    }
+
+    #[\Override]
+    public function countCompleteDonationsToCampaign(Campaign $campaign): int
+    {
+        $campaignId = $campaign->getId();
+
+        if ($campaignId === null) {
+            return 0;
+        }
+
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT COUNT(d.id)
+            FROM MatchBot\Domain\Donation d
+            WHERE d.campaign = :campaign_id
+            AND d.donationStatus IN (:collectedStatuses)
+        DQL
+        );
+
+        $query->setParameter('campaign_id', $campaignId);
+
+        $query->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES);
+
+        $count = (int)$query->getSingleScalarResult();
+
+        \assert($count >= 0);
+
+        return $count;
     }
 }

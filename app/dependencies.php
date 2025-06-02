@@ -54,14 +54,15 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\MemoryPeakUsageProcessor;
 use Monolog\Processor\UidProcessor;
+use Psr\Cache\CacheItemPoolInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Psr\SimpleCache\CacheInterface;
+use Psr\SimpleCache\CacheInterface as PSR16CacheInterface;
 use Slim\Psr7\Factory\ResponseFactory;
 use Stripe\StripeClient;
 use Stripe\Util\ApiVersion;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
-use Symfony\Component\Cache\Adapter\RedisAdapter;
+use Symfony\Component\Cache\Adapter\RedisAdapter as RedisCacheAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\NativeClock;
@@ -90,6 +91,7 @@ use Symfony\Component\Serializer\Normalizer\BackedEnumNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\Cache\CacheInterface as SymfonyCacheInterface;
 
 return function (ContainerBuilder $containerBuilder) {
     // When writing closures within this function do not use `use` or implicit binding of arrow functions to bring in
@@ -106,16 +108,22 @@ return function (ContainerBuilder $containerBuilder) {
                 return new Auth\DonationPublicAuthMiddleware($c->get(LoggerInterface::class));
             },
 
-        CacheInterface::class => function (ContainerInterface $c): CacheInterface {
-            return new Psr16Cache(
-                new Symfony\Component\Cache\Adapter\RedisAdapter(
-                    $c->get(Redis::class),
-                    // Distinguish e.g. rate limit data from matching if we ever need to debug
-                    // or clear Redis contents.
-                    'matchbot-cache',
-                    3600, // Allow Auto-clearing cache/rate limit data after an hour.
-                ),
+        RedisCacheAdapter::class => function (ContainerInterface $c): RedisCacheAdapter {
+            return new Symfony\Component\Cache\Adapter\RedisAdapter(
+                $c->get(Redis::class),
+                // Distinguish e.g. rate limit data from matching if we ever need to debug
+                // or clear Redis contents.
+                'matchbot-cache',
+                3600, // Allow Auto-clearing cache/rate limit data after an hour.
             );
+        },
+
+        SymfonyCacheInterface::class => function (ContainerInterface $c): SymfonyCacheInterface {
+            return $c->get(RedisCacheAdapter::class);
+        },
+
+        PSR16CacheInterface::class => function (ContainerInterface $c): PSR16CacheInterface {
+            return new Psr16Cache($c->get(RedisCacheAdapter::class));
         },
 
         ChatterInterface::class => static function (ContainerInterface $c): ChatterInterface {
@@ -307,7 +315,7 @@ return function (ContainerBuilder $containerBuilder) {
                     // how often they can create new donations once the initial allowance is used up.
                     'rate' => ['interval' => '30 seconds'],
                 ],
-                storage: new CacheStorage(new RedisAdapter($c->get(Redis::class)))
+                storage: new CacheStorage(new RedisCacheAdapter($c->get(Redis::class)))
             );
         },
 
@@ -391,7 +399,7 @@ return function (ContainerBuilder $containerBuilder) {
             $redis = new Redis();
             try {
                 $redis->connect($settings->redis['host']);
-                $cacheAdapter = new RedisAdapter(
+                $cacheAdapter = new RedisCacheAdapter(
                     redis: $redis,
                     namespace: "matchbot-{$settings->appEnv}-{$commitId}"
                 );
@@ -436,7 +444,7 @@ return function (ContainerBuilder $containerBuilder) {
 
         RateLimitMiddleware::class => static function (ContainerInterface $c): RateLimitMiddleware {
             return new RateLimitMiddleware(
-                $c->get(CacheInterface::class),
+                $c->get(PSR16CacheInterface::class),
                 $c->get(ProblemDetailsResponseFactory::class),
                 new RateLimitOptions($c->get(Settings::class)->los_rate_limit),
             );

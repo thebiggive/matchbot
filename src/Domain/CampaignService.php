@@ -11,18 +11,23 @@ use MatchBot\Application\HttpModels\Campaign as CampaignHttpModel;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\Campaign as CampaignDomainModel;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 /**
  * @psalm-import-type SFCampaignApiResponse from CampaignClient
  */
 class CampaignService
 {
+    private const string CAMPAIGN_AMOUNT_RAISED_CACHE_PREFIX = 'campaign_amount_raised.';
+
     /**
-     * @psalm-suppress PossiblyUnusedMethod - used by DI,
-     * will need to also be used in tests soon though.
+     * @psalm-suppress PossiblyUnusedMethod - called by DI container
      */
     public function __construct(
         private CampaignRepository $campaignRepository,
+        private CacheInterface $cache,
+        private DonationRepository $donationRepository,
         private LoggerInterface $log
     ) {
     }
@@ -67,16 +72,17 @@ class CampaignService
             website: $charity->getWebsiteUri()?->__toString(),
             phoneNumber: $charity->getPhoneNumber(),
             emailAddress: $charity->getEmailAddress()?->email,
-            postalAddress: $charity->getPostalAddress()->toArray(),
             regulatorNumber: $charity->getRegulatorNumber(),
             regulatorRegion: $this->getRegionForRegulator($charity->getRegulator()),
             logoUri: $charity->getLogoUri()?->__toString(),
             stripeAccountId: $charity->getStripeAccountId(),
         );
 
+        /** Non-null for any *launched* campaign; if it's null we know £0 has been raised. */
+        $campaignId = $campaign->getId();
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
-            amountRaised: $sfCampaignData['amountRaised'],
+            amountRaised: $campaignId === null ? 0 : $this->amountRaised($campaignId)->toMajorUnitFloat(),
             additionalImageUris: $sfCampaignData['additionalImageUris'],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
@@ -92,7 +98,7 @@ class CampaignService
             charity: $charityHttpModel,
             countries: $sfCampaignData['countries'],
             currencyCode: $campaign->getCurrencyCode() ?? '',
-            donationCount: $sfCampaignData['donationCount'],
+            donationCount: $this->donationRepository->countCompleteDonationsToCampaign($campaign),
             endDate: $this->formatDate($campaign->getEndDate()),
             hidden: $sfCampaignData['hidden'],
             impactReporting: $sfCampaignData['impactReporting'],
@@ -132,6 +138,18 @@ class CampaignService
             depth: 512,
             flags: JSON_THROW_ON_ERROR
         );
+
+        // In SF a few expired campaigns have null start and end date. Matchbot data model doesn't allow that
+        // so using 1970 as placeholder for null, and then switching it back to null for display.
+        // FE will display e.g. "Closed null" but that's existing behaviour that we don't need to fix right now.
+
+        if (is_string($campaignHttpModelArray['startDate']) && \str_starts_with($campaignHttpModelArray['startDate'], '1970-01-01')) {
+            $campaignHttpModelArray['startDate'] = null;
+        }
+
+        if (is_string($campaignHttpModelArray['endDate']) && \str_starts_with($campaignHttpModelArray['endDate'], '1970-01-01')) {
+            $campaignHttpModelArray['endDate'] = null;
+        }
 
         // We could just return $sfCampaignData to FE and not need to generate anything else with matchbot
         // logic, but that would keep FE indirectly coupled to the SF service. By making sure matchbot is able to
@@ -248,5 +266,41 @@ class CampaignService
         // these models are only in memory, never persisted.
         Assertion::null($mbDomainCampaign?->getId());
         Assertion::null($mbDomainCharity?->getId());
+    }
+
+    /**
+     * Gets the *cached* amount raised for a given charity campaign, based on donations in the Matchbot DB
+     *
+     * As this returns a cached value, do not rely on it for critical business logic.
+     *
+     * @return Money
+     */
+    public function amountRaised(int $campaignId): Money
+    {
+        // beta 1.0 below matches library default, controls probablistic early expiration to prevent stampedes. Likely to
+        // be important especially important just after launching big meta campaigns. Stampedes for indivdual charity
+        // campaigns will be controlled by the built-in symfony cache per key locking, so while one request is causing a
+        // recompute of amount raised other requests will block if cache is expired.
+        //
+        // In very near future I may change this to caching a more complex object with multiple statistics about the
+        // campaign, not just the amount raised.
+        //
+        // Values are for now only for public display, not for our own logic, so caching for 2 minutes is OK. Ideally
+        // we would cache for longer when there are no donations, but we very much do not want to clear the cache
+        // when we receive a new donation, since recalculating every time would be too expensive. We could consider
+        // having a double layer cache with different expiration times, and clearing only one layer when a donation
+        // is confirmed or refunded.
+
+        $cachedAmountArray = $this->cache->get(
+            key: self::CAMPAIGN_AMOUNT_RAISED_CACHE_PREFIX . $campaignId,
+            callback: function (ItemInterface $item) use ($campaignId): array {
+                $item->expiresAfter(120); // two minutes
+
+                return $this->campaignRepository->totalAmountRaised($campaignId)->jsonSerialize();
+            },
+            beta: 1.0,
+        );
+
+        return Money::fromSerialized($cachedAmountArray);
     }
 }
