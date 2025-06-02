@@ -147,12 +147,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @param string $metaCampaginSlug
      * @return array{newFetchCount: int, updatedCount: int, campaigns: list<Campaign>}
  *@throws NotFoundException
      *
      */
-    public function fetchAllForMetaCampaign(string $metaCampaginSlug): array
+    public function fetchAllForMetaCampaign(MetaCampaignSlug $metaCampaginSlug): array
     {
         /** @var list<array{id: string}> $campaignList */
         $campaignList = $this->getClient()->findCampaignsForMetaCampaign($metaCampaginSlug, limit: 10_000);

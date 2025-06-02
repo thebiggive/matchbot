@@ -75,6 +75,14 @@ class Salesforce18Id implements JsonSerializable
     }
 
     /**
+     * @return self<MetaCampaign>
+     */
+    public static function ofMetaCampaign(string $id): self
+    {
+        return new self($id, MetaCampaign::class);
+    }
+
+    /**
      * @return self<RegularGivingMandate>
      */
     public static function ofRegularGivingMandate(string $id)
