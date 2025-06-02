@@ -23,7 +23,7 @@ class MatchFundsRemainingService
      *
      * But we can't really get even that without having the meta campaign because we need to look at the meta campaign
      * to see whether it `Is_Emergency_IMF__c`. We might be able to get away without having master campaigns in matchbot
-     * db by using `parentUsesSharedFunds` but I think that's a normalisation that probably makes things more
+     * db by using `parentUsesSharedFunds` but I think that's a denormalisation that probably makes things more
      * confusing and I'd rather avoid.
      *
      * So it looks like we're not ready to create an implementation better than the below just yet.
