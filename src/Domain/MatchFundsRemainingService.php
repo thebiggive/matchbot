@@ -2,10 +2,17 @@
 
 namespace MatchBot\Domain;
 
+use MatchBot\Application\Assertion;
 use MatchBot\Domain\Campaign as CampaignDomainModel;
 
 class MatchFundsRemainingService
 {
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function __construct(private CampaignFundingRepository $campaignFundingRepository,)
+    {
+    }
     /**
      * should match SF Current_Match_Funds_Available__c
      *
@@ -28,12 +35,20 @@ class MatchFundsRemainingService
      *
      * So it looks like we're not ready to create an implementation better than the below just yet.
      */
-    public function getFundsRemaining(CampaignDomainModel $campaign): float
+    public function getFundsRemaining(CampaignDomainModel $campaign): Money
     {
-        $matchFundsRemaining = $campaign->getSalesforceData()['matchFundsRemaining'];
+        $currencyCode = $campaign->getCurrencyCode();
+        Assertion::notNull($currencyCode, 'cannot get funds remaining for campaign with null currency');
 
-        \assert(\is_float($matchFundsRemaining));
+        $funds = $this->campaignFundingRepository->getAvailableFundings($campaign);
 
-        return $matchFundsRemaining;
+        $runningTotal = '0.00';
+        foreach ($funds as $fund) {
+            $amount = $fund->getAmountAvailable();
+            Assertion::same($currencyCode, $fund->getCurrencyCode(), 'fund currency code must equal campaign currency code');
+            $runningTotal = \bcadd($runningTotal, $amount, 2);
+        }
+
+        return Money::fromNumericString($runningTotal, Currency::fromIsoCode($currencyCode));
     }
 }

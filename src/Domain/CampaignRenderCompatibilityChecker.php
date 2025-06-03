@@ -5,6 +5,7 @@ namespace MatchBot\Domain;
 use Assert\Assert;
 use Assert\LazyAssertion;
 use Assert\LazyAssertionException;
+use MatchBot\Application\Environment;
 
 /**
  * Checks that a campaign as rendered to an array by new matchbot code is compatible with how it was
@@ -44,6 +45,8 @@ class CampaignRenderCompatibilityChecker
         LazyAssertion $lazyAssert,
         string $path = '',
     ): void {
+        $environment = Environment::current();
+
         /** @var mixed $expectedValue */
         foreach ($expected as $key => $expectedValue) {
             if (is_string($key) && \str_starts_with(haystack: $key, needle: 'x_')) {
@@ -102,6 +105,22 @@ class CampaignRenderCompatibilityChecker
 
             if ($key === 'website' && \is_string($expectedValue) && is_null($value)) {
                 // presumably our value is null because the value from SF is a malformed URL.
+                continue;
+            }
+
+            if ($key === 'matchFundsRemaining' && $environment === Environment::Local) {
+                // in local no reason to expect matchFundsRemaining calculated in matchbot to resemble matchFundsRemaining from SF
+                continue;
+            }
+
+            if ($key === 'matchFundsRemaining') {
+                \assert(\is_float($expectedValue));
+                $lazyAssert->that($value)->between(
+                    $expectedValue - 500.0,
+                    $expectedValue + 500.0,
+                    'matchFundsRemaining should almost always be within £500 of what SF thinks it is'
+                );
+
                 continue;
             }
 

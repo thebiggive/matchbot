@@ -113,7 +113,7 @@ class CampaignService
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
             logoUri: $sfCampaignData['logoUri'],
-            matchFundsRemaining: $this->matchFundsRemainingService->getFundsRemaining($campaign),
+            matchFundsRemaining: $this->matchFundsRemainingService->getFundsRemaining($campaign)->toMajorUnitFloat(),
             matchFundsTotal: $sfCampaignData['matchFundsTotal'],
             parentAmountRaised: $sfCampaignData['parentAmountRaised'],
             parentDonationCount: $sfCampaignData['parentDonationCount'],
