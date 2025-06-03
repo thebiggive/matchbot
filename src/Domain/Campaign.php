@@ -185,7 +185,7 @@ class Campaign extends SalesforceReadProxy
         $startDate = $campaignData['startDate'];
         $endDate = $campaignData['endDate'];
 
-        if (($status === null || $status === 'Expired') && !$ready && $fillInDefaultValues) {
+        if (($status === null || $status === 'Expired') && $fillInDefaultValues) {
             // this campaign is not yet ready for public viewing so fill in some placeholder values to make it usable.
             // 1970 is effectively another form of null that's harder to insert by accident that actual null would be
             // if we allowed it  - we convert back to real null when rendering the campaign to an array.
