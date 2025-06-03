@@ -387,11 +387,20 @@ class Charity extends SalesforceReadProxy
         $this->phoneNumber = $phoneNumber;
     }
 
+    /**
+     * Could throw in theory InvalidArgumentException as with {@see self::getWebsiteUri()} if we have a malformed
+     * logoUri stored but not reason to think our systems would allow that to happen
+     */
     public function getLogoUri(): ?UriInterface
     {
         return is_null($this->logoUri) ? null : new Uri($this->logoUri);
     }
 
+    /**
+     * Can throw because we don't validate the URI on input or when saving the charity.
+     *
+     * @throws \Laminas\Diactoros\Exception\InvalidArgumentException
+     */
     public function getWebsiteUri(): ?UriInterface
     {
         return is_null($this->websiteUri) ? null : new Uri($this->websiteUri);

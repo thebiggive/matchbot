@@ -100,6 +100,11 @@ class CampaignRenderCompatibilityChecker
                 $expectedValue = \strtolower($expectedValue);
             }
 
+            if ($key === 'website' && \is_string($expectedValue) && is_null($value)) {
+                // presumably our value is null because the value from SF is a malformed URL.
+                continue;
+            }
+
             if (\is_array($expectedValue) && \is_array($value)) {
                 self::recursiveCompare($value, $expectedValue, $lazyAssert, "{$key}.");
             } else {
