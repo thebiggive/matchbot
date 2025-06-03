@@ -5,26 +5,17 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Assertion;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\DonationRepository;
-use MatchBot\Domain\DonationService;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\MetaCampaignSlug;
-use Safe\DateTimeImmutable;
+use \DateTimeImmutable;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\MessageBusInterface;
-use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Stamp\BusNameStamp;
-use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 
 /**
  *
