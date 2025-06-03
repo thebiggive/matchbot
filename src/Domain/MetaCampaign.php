@@ -75,13 +75,26 @@ class MetaCampaign extends SalesforceReadProxy
     private \DateTimeImmutable $endDate;
 
     /**
+     * All associated charity campaigns must match this, accepting either regular or ad-hoc
+     * donations, not a mixture.
+     *
+     * If true also implies that the charity campaigns will share funds - see doc for
+     * {@see self::$isEmergencyIMF}
+     *
      * @psalm-suppress UnusedProperty - will be used soon
      */
     #[ORM\Column()]
     private bool $isRegularGiving;
 
     /**
-     * @psalm-suppress UnusedProperty - will be used soon
+     * Is this an emergency campaign with shared, un-ringfenced champion funds?
+     *
+     * This is needed alongside isRegularGiving for calculating match funds available for
+     * associated charity campaigns, as well as to render `usesSharedFunds` and
+     * `parentUsesSharedFunds` when we render metacampaigns and charity campaigns
+     * respectively to FE.
+     *
+     * {@see self::$isRegularGiving}
      */
     #[ORM\Column()]
     private bool $isEmergencyIMF;
