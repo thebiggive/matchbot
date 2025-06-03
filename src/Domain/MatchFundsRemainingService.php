@@ -27,33 +27,9 @@ class MatchFundsRemainingService
      * confusing and I'd rather avoid.
      *
      * So it looks like we're not ready to create an implementation better than the below just yet.
-     *
-     * @todo change return from float to numeric-numeric string for precision and to match how we deal with money
-     * across matchbot.
      */
-    public function getFundsRemaining(CampaignDomainModel $campaign, ?MetaCampaign $metaCampaign): float
+    public function getFundsRemaining(CampaignDomainModel $campaign): float
     {
-        if (
-            $campaign->getType() == CampaignType::ApplicationCampaign &&
-            $metaCampaign !== null &&
-            $metaCampaign->isEmergenceyIMf() &&
-            $campaign->getAmountPledged() > 0 && // consider if getAmountPledged should be on campaign - maybe not and we be suming pledge funds here instead
-            $campaign->getPledgeTarget() > 0
-        ) {
-            /* Hybrid model - see BG2-2099 for explanation; preauth / Regular Giving unsupported */
-            return $metaCampaign->totalFundingAllocation() +
-                $campaign->totalPledgeRemainingConfirmed() -
-                $metaCampaign->totalMatchChampionFundsConfirmed();
-        } else {
-            if ($metaCampaign->isEmergenceyIMf()) {
-                /* A normal emergency IMF campaign; preauth / Regular Giving unsupported */
-                return $metaCampaign->totalFundingAllocation - $metaCampaign->totalMatchedChampionFundsConfirmed();
-            } else {
-                /* Neither a Hybrid model nor a normal emergency IMF campaign */
-                return $campaign->totalMatchedFundsAvailable - $campaign->matchedConfirmedAmount - $campaign->totalMatchedChampionFundsPreauth;
-            }
-        }
-
         $matchFundsRemaining = $campaign->getSalesforceData()['matchFundsRemaining'];
 
         \assert(\is_float($matchFundsRemaining));
