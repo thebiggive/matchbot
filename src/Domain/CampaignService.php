@@ -21,6 +21,8 @@ class CampaignService
 {
     private const string CAMPAIGN_AMOUNT_RAISED_CACHE_PREFIX = 'campaign_amount_raised.';
 
+    private const string CAMPAIGN_MATCH_AMOUNT_AVAILABLE_PREFIX = 'campaign_match_amount_available.';
+
     /**
      * @psalm-suppress PossiblyUnusedMethod - called by DI container
      */
@@ -113,7 +115,7 @@ class CampaignService
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
             logoUri: $sfCampaignData['logoUri'],
-            matchFundsRemaining: $this->matchFundsRemainingService->getFundsRemaining($campaign)->toMajorUnitFloat(),
+            matchFundsRemaining: $this->matchFundsRemaining($campaign)->toMajorUnitFloat(),
             matchFundsTotal: $sfCampaignData['matchFundsTotal'],
             parentAmountRaised: $sfCampaignData['parentAmountRaised'],
             parentDonationCount: $sfCampaignData['parentDonationCount'],
@@ -307,6 +309,24 @@ class CampaignService
                 return $this->campaignRepository->totalAmountRaised($campaignId)->jsonSerialize();
             },
             beta: 1.0,
+        );
+
+        return Money::fromSerialized($cachedAmountArray);
+    }
+
+    private function matchFundsRemaining(Campaign $campaign): Money
+    {
+        $id = $campaign->getId();
+        if ($id === null) {
+            return Money::zero(Currency::GBP);
+        }
+
+        $cachedAmountArray = $this->cache->get(
+            key: self::CAMPAIGN_MATCH_AMOUNT_AVAILABLE_PREFIX . (string)$id,
+            callback: function (ItemInterface $item) use ($campaign): array {
+                $item->expiresAfter(120); // two minutes
+                return $this->matchFundsRemainingService->getFundsRemaining($campaign)->jsonSerialize();
+            }
         );
 
         return Money::fromSerialized($cachedAmountArray);

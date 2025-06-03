@@ -5,7 +5,6 @@ namespace MatchBot\Domain;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
-use Psalm\Issue\ArgumentIssue;
 
 class MatchFundsRemainingServiceTest extends TestCase
 {
