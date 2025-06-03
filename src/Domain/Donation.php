@@ -1656,7 +1656,11 @@ class Donation extends SalesforceWriteProxy
         $totalString = bcdiv((string)$total, '100', 2);
 
         if ($this->totalPaidByDonor !== null) {
-            Assertion::eq($this->totalPaidByDonor, $totalString);
+            Assertion::eq(
+                $this->totalPaidByDonor,
+                $totalString,
+                'Total paid by donor does not match for UUID ' . $this->uuid->toString(),
+            );
             // We need these to be equal to justify the fact that outside this if block we're returning $totalString
             // based on today's calculation and assuming it's equal to what we charged the donor at the time it was
             // confirmed.
