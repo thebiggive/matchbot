@@ -6,10 +6,15 @@ namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\MetaCampaign;
+use MatchBot\Domain\MetaCampaignRepository;
+use MatchBot\Domain\MetaCampaignSlug;
+use Safe\DateTimeImmutable;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -34,7 +39,11 @@ class PullMetaCampaignFromSF extends LockingCommand
 {
     public function __construct(
         private CampaignRepository $campaignRepository,
-        private FundRepository $fundRepository
+        private MetaCampaignRepository $metaCampaignRepository,
+        private FundRepository $fundRepository,
+        private EntityManagerInterface $entityManager,
+        private CampaignClient $campaignClient,
+        private DateTimeImmutable $now,
     ) {
         parent::__construct();
     }
@@ -43,14 +52,9 @@ class PullMetaCampaignFromSF extends LockingCommand
     {
         $this->addArgument('metaCampaignSlug', InputArgument::REQUIRED);
     }
-    #[\Override]
-    protected function doExecute(InputInterface $input, OutputInterface $output): int
-    {
-        $metaCampaginSlug = $input->getArgument('metaCampaignSlug');
-        \assert(is_string($metaCampaginSlug));
-        Assertion::betweenLength($metaCampaginSlug, minLength: 5, maxLength: 50);
-        Assertion::regex($metaCampaginSlug, '/^[A-Za-z0-9-]+$/');
 
+    public function pullCharityCampaigns(MetaCampaignSlug $metaCampaginSlug, OutputInterface $output): void
+    {
         ['newFetchCount' => $newFetchCount, 'updatedCount' => $updatedCount, 'campaigns' => $campaigns] =
             $this->campaignRepository->fetchAllForMetaCampaign($metaCampaginSlug);
 
@@ -63,8 +67,32 @@ class PullMetaCampaignFromSF extends LockingCommand
             $this->fundRepository->pullForCampaign($campaign);
         }
 
-        $output->writeln("Fetched $total campaigns total from Salesforce for '$metaCampaginSlug'");
+        $output->writeln("Fetched $total campaigns total from Salesforce for '$metaCampaginSlug->slug'");
         $output->writeln("$newFetchCount new campaigns added to DB, $updatedCount campaigns updated");
+    }
+
+    #[\Override]
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
+    {
+        $slug = $input->getArgument('metaCampaignSlug');
+        \assert(is_string($slug));
+        $slug = MetaCampaignSlug::of($slug);
+
+        $existingMetaCampaignInDB = $this->metaCampaignRepository->getBySlug($slug);
+        $data = $this->campaignClient->getBySlug($slug);
+
+        if (\is_null($existingMetaCampaignInDB)) {
+            $metaCampaign = MetaCampaign::fromSfCampaignData($slug, $data);
+            $metaCampaign->setSalesforceLastPull(\DateTime::createFromInterface($this->now));
+            // create new one from SF data
+            $this->entityManager->persist($metaCampaign);
+        } else {
+            // todo update existing from SF data
+        }
+
+        $this->entityManager->flush();
+
+        $this->pullCharityCampaigns($slug, $output);
 
         return 0;
     }

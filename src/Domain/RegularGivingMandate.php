@@ -12,9 +12,6 @@ use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use UnexpectedValueException;
 
-/**
- * @psalm-suppress UnusedProperty - properties being brought into use now
- */
 #[ORM\Table]
 #[ORM\Index(name: 'uuid', columns: ['uuid'])]
 #[ORM\Index(name: 'donationsCreatedUpTo', columns: ['donationsCreatedUpTo'])]
@@ -84,6 +81,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $activeFrom = null;
 
+    /**
+     * @psalm-suppress UnusedProperty - used in DQL
+     */
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $donationsCreatedUpTo = null;
 

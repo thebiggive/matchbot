@@ -21,6 +21,7 @@ use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -94,5 +95,9 @@ return static function (ContainerBuilder $containerBuilder) {
             static fn(ContainerInterface $c): RegularGivingMandateRepository => new RegularGivingMandateRepository(
                 $c->get(EntityManagerInterface::class)
             ),
+
+        MetaCampaignRepository::class => static fn(ContainerInterface $c): MetaCampaignRepository => new MetaCampaignRepository(
+            $c->get(EntityManagerInterface::class)
+        ),
     ]);
 };
