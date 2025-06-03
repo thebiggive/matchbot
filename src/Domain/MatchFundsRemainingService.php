@@ -7,9 +7,6 @@ use MatchBot\Domain\Campaign as CampaignDomainModel;
 
 class MatchFundsRemainingService
 {
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     public function __construct(private CampaignFundingRepository $campaignFundingRepository,)
     {
     }
@@ -41,6 +38,9 @@ class MatchFundsRemainingService
         Assertion::notNull($currencyCode, 'cannot get funds remaining for campaign with null currency');
 
         $funds = $this->campaignFundingRepository->getAvailableFundings($campaign);
+
+        // todo - consider optimising by doing the summation in the DB. But I think the number of funds will be low
+        // enough in all or nearly all cases that the performance where will be OK.
 
         $runningTotal = '0.00';
         foreach ($funds as $fund) {
