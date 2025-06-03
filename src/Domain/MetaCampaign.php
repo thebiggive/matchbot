@@ -95,6 +95,8 @@ class MetaCampaign extends SalesforceReadProxy
      * respectively to FE.
      *
      * {@see self::$isRegularGiving}
+     *
+     * @psalm-suppress UnusedProperty - will be used soon
      */
     #[ORM\Column()]
     private bool $isEmergencyIMF;
