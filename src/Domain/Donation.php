@@ -1659,7 +1659,8 @@ class Donation extends SalesforceWriteProxy
             Assertion::eq(
                 $this->totalPaidByDonor,
                 $totalString,
-                'Total paid by donor does not match for UUID ' . $this->uuid->toString(),
+                // eq() does its own stringification and sprintf() on the two dynamic values besides UUID.
+                fn() => 'Total paid by donor %s does not match %s for UUID ' . $this->uuid->toString(),
             );
             // We need these to be equal to justify the fact that outside this if block we're returning $totalString
             // based on today's calculation and assuming it's equal to what we charged the donor at the time it was
