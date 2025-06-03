@@ -60,6 +60,13 @@ class CampaignService
         $sfCampaignData = $campaign->getSalesforceData();
         $sfCharityData = $sfCampaignData['charity'];
 
+        try {
+            $websiteURi = $charity->getWebsiteUri()?->__toString();
+        } catch (\Laminas\Diactoros\Exception\InvalidArgumentException) {
+            $this->log->warning("Bad website URI for charity {$charity->getSalesforceId()} for campaign {$campaign->getSalesforceId()}");
+            $websiteURi = null;
+        }
+
         $charityHttpModel = new \MatchBot\Application\HttpModels\Charity(
             id: $charity->getSalesforceId(),
             name: $charity->getName(),
@@ -70,7 +77,7 @@ class CampaignService
             instagram: $sfCharityData['instagram'],
             linkedin: $sfCharityData['linkedin'],
             twitter: $sfCharityData['twitter'],
-            website: $charity->getWebsiteUri()?->__toString(),
+            website: $websiteURi,
             phoneNumber: $charity->getPhoneNumber(),
             emailAddress: $charity->getEmailAddress()?->email,
             regulatorNumber: $charity->getRegulatorNumber(),
