@@ -1,0 +1,44 @@
+// decoded from XML in Current_Match_Funds_Available__c
+
+IF ((Type__c = 'Application Campaign'
+     && Master_Campaign__c <> NULL
+     && Master_Campaign__r.Is_Emergency_IMF__c
+     && Amount_Pledged__c > 0
+     && Pledge_Target__c > 0),
+
+    /* Hybrid model - see BG2-2099 for explanation; preauth / Regular Giving unsupported */
+    Master_Campaign__r.Total_Funding_Allocation__c + Total_Pledge_Remaining_Confirmed__c - Master_Campaign__r.Total_Matched_Champion_Funds_Confirmed__c,
+
+    /* else NOT Hybrid model */
+    IF(Master_Campaign__r.Is_Emergency_IMF__c,
+
+        /* A normal emergency IMF campaign; preauth / Regular Giving unsupported */
+        Master_Campaign__r.Total_Funding_Allocation__c - Master_Campaign__r.Total_Matched_Champion_Funds_Confirmed__c,
+
+        /* Neither a Hybrid model nor a normal emergency IMF campaign */
+        Total_Matched_Funds_Available__c - Matched_Confirmed_Amount__c - Total_Matched_Champion_Funds_Preauth__c
+))
+
+/* NOTES to explain:
+
+The 'Hybrid' model from BG2-2099 is when we have an Emergency IMF campaign where the application
+campaigns also have pledges, which is NOT normal for IMF campaigns. This model is needed
+when we want to ring-fence a certain amount of the match funding for each charity.
+This functionality was introduced for the Cost of Living Crisis 2022, where we had
+about 100k in total match funds for the IMF campaign, but wanted to ring-fence at least
+10k for each application child campaign. For example, 4 application child campaigns
+get 10k each reserved purely for them, but the remaining 60k is up for grabs - it is
+shared between all participating campaigns. The 'pledges' are used first. So, when
+any campaign raises more than £10k through online donations, it begins eating from the
+shared £60k pot, until it is used up.
+
+Emergency IMF campaigns typically share their funds, so we derive this field by taking
+the total funding allocation for the parent (that field is based on a mapping from
+Champion_Funding__c.Campaign__c in this case and *not* from Funding_Allocation__c objects)
+and subtracting the confirmed (used) champion funds also on that parent.
+Please refer to the Master record's 'Current Match Funds Available' field for an accurate
+representation on how much match funds are available in total.
+To get an accurate amount of funds available for IMF children, we will need to be able to
+determine which champion pot a donation has matched with, see BG2-1318.
+
+END NOTES */
