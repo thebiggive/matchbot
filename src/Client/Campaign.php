@@ -46,7 +46,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     ready: bool,
  *     startDate: ?string,
  *     status: 'Active'|'Expired'|'Preview'|null,
- *     title: string,
+ *     title: ?string,
 *      currencyCode: string,
  *     isRegularGiving?: boolean,
  *     regularGivingCollectionEnd?: ?string,
