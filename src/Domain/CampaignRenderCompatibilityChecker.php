@@ -45,8 +45,6 @@ class CampaignRenderCompatibilityChecker
         LazyAssertion $lazyAssert,
         string $path = '',
     ): void {
-        $environment = Environment::current();
-
         /** @var mixed $expectedValue */
         foreach ($expected as $key => $expectedValue) {
             if (is_string($key) && \str_starts_with(haystack: $key, needle: 'x_')) {
