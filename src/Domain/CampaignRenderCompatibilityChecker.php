@@ -23,7 +23,8 @@ class CampaignRenderCompatibilityChecker
         'matchFundsRemaining', // Calculated from updated data in matchbot, not expected match exactly what salesforce
                                // shows at any moment although should be the same when both systems have had a few
                                // minutes to update after the last donation.
-
+        'slug', // new in SF API not needed by FE
+        'campaignFamily', // new in SF API not needed by FE
     ];
 
     /**
