@@ -46,7 +46,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     ready: bool,
  *     startDate: ?string,
  *     status: 'Active'|'Expired'|'Preview'|null,
- *     title: string,
+ *     title: ?string,
 *      currencyCode: string,
  *     isRegularGiving?: boolean,
  *     regularGivingCollectionEnd?: ?string,
@@ -87,7 +87,9 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     alternativeFundUse: ?string,
  *     additionalImageUris: list<array{order: int, uri: string}>,
  *     x_isMetaCampaign: ?bool,
- *     isEmergencyIMF: ?bool
+ *     isEmergencyIMF: ?bool,
+ *     slug: ?string,
+ *     campaignFamily: ?string,
  *     }
  */
 

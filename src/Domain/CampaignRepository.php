@@ -363,11 +363,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $startDateString = $campaignData['startDate'];
         $endDateString = $campaignData['endDate'];
+        $title = $campaignData['title'];
 
         // dates may be null for a non-launched early stage preview campaign, but not for a campaign that we're pulling
         // into the matchbot DB via an update.
         Assertion::notNull($startDateString, "Null start date supplied when attempting to update campaign {$proxy->getSalesforceId()}");
         Assertion::notNull($endDateString, "Null end date supplied when attempting to update campaign {$proxy->getSalesforceId()}");
+        Assertion::notNull($title, "Null title supplied when attempting to updated campaign {$proxy->getSalesforceId()}");
 
         $this->updateCharityFromCampaignData($proxy->getCharity(), $campaignData);
 
@@ -392,12 +394,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
             null : new \DateTimeImmutable($regularGivingCollectionEnd);
 
+
         $campaign->updateFromSfPull(
             currencyCode: $campaignData['currencyCode'],
             status: $campaignData['status'],
             endDate: new DateTime($endDateString),
             isMatched: $campaignData['isMatched'],
-            name: $campaignData['title'],
+            name: $title,
             startDate: new DateTime($startDateString),
             ready: $campaignData['ready'],
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,

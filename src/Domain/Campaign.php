@@ -195,6 +195,7 @@ class Campaign extends SalesforceReadProxy
 
         $startDate = $campaignData['startDate'];
         $endDate = $campaignData['endDate'];
+        $title = $campaignData['title'];
 
         if (($status === null || $status === 'Expired') && $fillInDefaultValues) {
             // this campaign is not yet ready for public viewing so fill in some placeholder values to make it usable.
@@ -202,9 +203,11 @@ class Campaign extends SalesforceReadProxy
             // if we allowed it  - we convert back to real null when rendering the campaign to an array.
             $startDate ??= '1970-01-01T00:00:00.000Z';
             $endDate ??= '1970-01-01T00:00:00.000Z';
+            $title ??= 'Untitled campaign'; // can be null in source data for an expired campaign.
         } else {
             Assertion::notNull($startDate, 'Start date should not be null');
             Assertion::notNull($endDate, 'End date should not be null');
+            Assertion::notNull($title);
         }
 
         Assertion::false(
@@ -220,7 +223,7 @@ class Campaign extends SalesforceReadProxy
             isMatched: $campaignData['isMatched'],
             ready: $ready,
             status: $status,
-            name: $campaignData['title'],
+            name: $title,
             currencyCode: $campaignData['currencyCode'],
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,

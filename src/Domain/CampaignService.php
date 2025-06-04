@@ -62,6 +62,22 @@ class CampaignService
         $sfCampaignData = $campaign->getSalesforceData();
         $sfCharityData = $sfCampaignData['charity'];
 
+        // The variables below currently being taken directly from the stored SF API response, but shouldn't be
+        // because matchbot should be able to calculate more up to date or more authoritative versions of them
+        // itself. We need to go through and implement a function to calculate each of these using our data
+        // about the campaign and related fund(s), meta-campaign, etc.
+
+        $matchFundsTotal = $sfCampaignData['matchFundsTotal'];
+        $parentAmountRaised = $sfCampaignData['parentAmountRaised'];
+        $parentDonationCount = $sfCampaignData['parentDonationCount'];
+        $parentMatchFundsRemaining = $sfCampaignData['parentMatchFundsRemaining'];
+        $parentRef = $sfCampaignData['parentRef'];
+        $parentTarget = $sfCampaignData['parentTarget'];
+        $parentUsesSharedFunds = $sfCampaignData['parentUsesSharedFunds'];
+
+        // end of variables to re-implement above. Other variables can continue being pulled directly from $sfCampaignData
+        // as they are specific to the individual charity campaign and originate from user input in salesforce.
+
         try {
             $websiteUri = $charity->getWebsiteUri()?->__toString();
         } catch (\Laminas\Diactoros\Exception\InvalidArgumentException) {
@@ -116,13 +132,13 @@ class CampaignService
             isMatched: $campaign->isMatched(),
             logoUri: $sfCampaignData['logoUri'],
             matchFundsRemaining: $this->matchFundsRemaining($campaign)->toMajorUnitFloat(),
-            matchFundsTotal: $sfCampaignData['matchFundsTotal'],
-            parentAmountRaised: $sfCampaignData['parentAmountRaised'],
-            parentDonationCount: $sfCampaignData['parentDonationCount'],
-            parentMatchFundsRemaining: $sfCampaignData['parentMatchFundsRemaining'],
-            parentRef: $sfCampaignData['parentRef'],
-            parentTarget: $sfCampaignData['parentTarget'],
-            parentUsesSharedFunds: $sfCampaignData['parentUsesSharedFunds'],
+            matchFundsTotal: $matchFundsTotal,
+            parentAmountRaised: $parentAmountRaised,
+            parentDonationCount: $parentDonationCount,
+            parentMatchFundsRemaining: $parentMatchFundsRemaining,
+            parentRef: $parentRef,
+            parentTarget: $parentTarget,
+            parentUsesSharedFunds: $parentUsesSharedFunds,
             problem: $sfCampaignData['problem'],
             quotes: $sfCampaignData['quotes'],
             ready: $campaign->isReady(),
