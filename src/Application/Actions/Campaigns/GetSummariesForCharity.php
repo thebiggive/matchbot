@@ -27,7 +27,7 @@ class GetSummariesForCharity extends Action
     public function __construct(
         LoggerInterface $logger,
         private CharityRepository $charityRepository,
-         private CampaignRepository $campaignRepository,
+        private CampaignRepository $campaignRepository,
         private CampaignService $campaignService,
     ) {
         parent::__construct($logger);
