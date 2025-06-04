@@ -102,6 +102,15 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $ready;
 
+    /**
+     * If true, FE will show a message that donations are currently unavailable for this campaign and searches
+     * will exclude it. Very rarely set, available in case a campaign needs to be cancelled or paused quickly.
+     *
+     * In future, we may want the matchbot API to return a 404 for hidden campaigns.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $hidden;
+
     #[ORM\Column()]
     private bool $isRegularGiving;
 
@@ -145,6 +154,7 @@ class Campaign extends SalesforceReadProxy
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         ?string $thankYouMessage = null,
         array $rawData = [],
+        bool $hidden = false,
     ) {
         $this->createdNow();
         $this->campaignFundings = new ArrayCollection();
@@ -163,6 +173,7 @@ class Campaign extends SalesforceReadProxy
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             thankYouMessage: $thankYouMessage,
             sfData: $rawData,
+            hidden: $hidden,
         );
     }
 
@@ -185,7 +196,7 @@ class Campaign extends SalesforceReadProxy
         $startDate = $campaignData['startDate'];
         $endDate = $campaignData['endDate'];
 
-        if (($status === null || $status === 'Expired') && !$ready && $fillInDefaultValues) {
+        if (($status === null || $status === 'Expired') && $fillInDefaultValues) {
             // this campaign is not yet ready for public viewing so fill in some placeholder values to make it usable.
             // 1970 is effectively another form of null that's harder to insert by accident that actual null would be
             // if we allowed it  - we convert back to real null when rendering the campaign to an array.
@@ -196,8 +207,6 @@ class Campaign extends SalesforceReadProxy
             Assertion::notNull($endDate, 'End date should not be null');
         }
 
-        // null coalesce below because x_isMetaCampaign was only recently added to SF API, and we might be using
-        // saved data.
         Assertion::false(
             $campaignData['x_isMetaCampaign'] ?? false,
             'Cannot create Charity Campaign using meta campaign data'
@@ -216,7 +225,8 @@ class Campaign extends SalesforceReadProxy
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
             thankYouMessage: $campaignData['thankYouMessage'],
-            rawData: $campaignData
+            rawData: $campaignData,
+            hidden: $campaignData['hidden']
         );
     }
 
@@ -383,6 +393,7 @@ class Campaign extends SalesforceReadProxy
         bool $isRegularGiving,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         ?string $thankYouMessage,
+        bool $hidden,
         array $sfData,
     ): void {
         Assertion::lessOrEqualThan(
@@ -413,6 +424,7 @@ class Campaign extends SalesforceReadProxy
         $this->thankYouMessage = $thankYouMessage;
         $this->isRegularGiving = $isRegularGiving;
         $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
+        $this->hidden = $hidden;
 
         unset($sfData['charity']); // charity stores its own data, we don't need to keep a copy here.
         $this->salesforceData = $sfData;
@@ -504,5 +516,10 @@ class Campaign extends SalesforceReadProxy
     public function getSalesforceData(): array
     {
         return $this->salesforceData + ['charity' => $this->charity->getSalesforceData()];
+    }
+
+    public function isHidden(): bool
+    {
+        return $this->hidden;
     }
 }

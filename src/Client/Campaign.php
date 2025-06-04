@@ -7,6 +7,7 @@ namespace MatchBot\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\MetaCampaignSlug;
 
 /**
  * // Some fields in the following type are marked optional because they do not yet exist in our prod SF org. They
@@ -85,7 +86,8 @@ use MatchBot\Application\Assertion;
  *     campaignCount: ?int,
  *     alternativeFundUse: ?string,
  *     additionalImageUris: list<array{order: int, uri: string}>,
- *     x_isMetaCampaign: ?bool
+ *     x_isMetaCampaign: ?bool,
+ *     isEmergencyIMF: ?bool
  *     }
  */
 
@@ -120,16 +122,43 @@ class Campaign extends Common
     }
 
     /**
+     * @return SFCampaignApiResponse Single Campaign response object as associative array
+     * @throws NotFoundException
+     */
+    public function getBySlug(MetaCampaignSlug $slug): array
+    {
+        $uri = $this->getUri("{$this->baseUri()}/slug/$slug->slug", false);
+        try {
+            $response = $this->getHttpClient()->get($uri);
+        } catch (RequestException $exception) {
+            if ($exception->getResponse()?->getStatusCode() === 404) {
+                // may be safely caught in sandboxes
+                throw new NotFoundException(sprintf('Campaign slug %s not found in SF', $slug->slug));
+            }
+
+            // Otherwise, an unknown error occurred -> re-throw
+            throw $exception;
+        }
+
+        /**
+         * @var SFCampaignApiResponse $campaignResponse
+         */
+        $campaignResponse = json_decode((string)$response->getBody(), true, flags: \JSON_THROW_ON_ERROR);
+
+        return $campaignResponse;
+    }
+
+    /**
      * Returns a list of all campaigns associated with the meta-campagin with the given slug.
      *
      * @psalm-suppress MoreSpecificReturnType
      * @psalm-suppress LessSpecificReturnStatement
      * @return list<array>
      */
-    public function findCampaignsForMetaCampaign(string $metaCampaignSlug, int $limit = 100): array
+    public function findCampaignsForMetaCampaign(MetaCampaignSlug $metaCampaignSlug, int $limit = 100): array
     {
         $campaigns = [];
-        $encodedSlug = urlencode($metaCampaignSlug);
+        $encodedSlug = urlencode($metaCampaignSlug->slug);
 
         $offset = 0;
         $pageSize = 100;

@@ -51,6 +51,11 @@ class CampaignRenderCompatibilityChecker
                 continue;
             }
 
+            if ($key === 'isEmergencyIMF') {
+                // not used by FE,
+                continue;
+            }
+
             if ($key === 'amountRaised') {
                 // don't need to check amount raised as it is being handled by matchbot and Salesforce data might not be identical
                 continue;
@@ -93,6 +98,11 @@ class CampaignRenderCompatibilityChecker
                 // we do a case-insensitive check here.
                 $value = \strtolower($value);
                 $expectedValue = \strtolower($expectedValue);
+            }
+
+            if ($key === 'website' && \is_string($expectedValue) && is_null($value)) {
+                // presumably our value is null because the value from SF is a malformed URL.
+                continue;
             }
 
             if (\is_array($expectedValue) && \is_array($value)) {

@@ -1044,7 +1044,7 @@ class DonationTest extends TestCase
             chargeCreationTimestamp: time()
         );
 
-        $this->expectExceptionMessage('Value "1.00" does not equal expected value "11.00".');
+        $this->expectExceptionMessageMatches('/^Total paid by donor 1\.00 does not match 11\.00 for UUID [a-z0-9-]{36}$/');
         $donation->getTotalPaidByDonor();
     }
 

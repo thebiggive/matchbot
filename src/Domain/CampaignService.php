@@ -28,6 +28,7 @@ class CampaignService
         private CampaignRepository $campaignRepository,
         private CacheInterface $cache,
         private DonationRepository $donationRepository,
+        private MatchFundsRemainingService $matchFundsRemainingService,
         private LoggerInterface $log
     ) {
     }
@@ -59,6 +60,13 @@ class CampaignService
         $sfCampaignData = $campaign->getSalesforceData();
         $sfCharityData = $sfCampaignData['charity'];
 
+        try {
+            $websiteUri = $charity->getWebsiteUri()?->__toString();
+        } catch (\Laminas\Diactoros\Exception\InvalidArgumentException) {
+            $this->log->warning("Bad website URI for charity {$charity->getSalesforceId()} for campaign {$campaign->getSalesforceId()}");
+            $websiteUri = null;
+        }
+
         $charityHttpModel = new \MatchBot\Application\HttpModels\Charity(
             id: $charity->getSalesforceId(),
             name: $charity->getName(),
@@ -69,7 +77,7 @@ class CampaignService
             instagram: $sfCharityData['instagram'],
             linkedin: $sfCharityData['linkedin'],
             twitter: $sfCharityData['twitter'],
-            website: $charity->getWebsiteUri()?->__toString(),
+            website: $websiteUri,
             phoneNumber: $charity->getPhoneNumber(),
             emailAddress: $charity->getEmailAddress()?->email,
             regulatorNumber: $charity->getRegulatorNumber(),
@@ -100,12 +108,12 @@ class CampaignService
             currencyCode: $campaign->getCurrencyCode() ?? '',
             donationCount: $this->donationRepository->countCompleteDonationsToCampaign($campaign),
             endDate: $this->formatDate($campaign->getEndDate()),
-            hidden: $sfCampaignData['hidden'],
+            hidden: $campaign->isHidden(),
             impactReporting: $sfCampaignData['impactReporting'],
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
             logoUri: $sfCampaignData['logoUri'],
-            matchFundsRemaining: $sfCampaignData['matchFundsRemaining'],
+            matchFundsRemaining: $this->matchFundsRemainingService->getFundsRemaining($campaign),
             matchFundsTotal: $sfCampaignData['matchFundsTotal'],
             parentAmountRaised: $sfCampaignData['parentAmountRaised'],
             parentDonationCount: $sfCampaignData['parentDonationCount'],
