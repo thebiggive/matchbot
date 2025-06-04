@@ -108,19 +108,9 @@ class CampaignRenderCompatibilityChecker
                 continue;
             }
 
-            if ($key === 'matchFundsRemaining' && $environment === Environment::Local) {
-                // in local no reason to expect matchFundsRemaining calculated in matchbot to resemble matchFundsRemaining from SF
-                continue;
-            }
-
             if ($key === 'matchFundsRemaining') {
-                \assert(\is_float($expectedValue));
-                $lazyAssert->that($value)->between(
-                    $expectedValue - 500.0,
-                    $expectedValue + 500.0,
-                    'matchFundsRemaining should almost always be within £500 of what SF thinks it is'
-                );
-
+                // Calculated from updated data in matchbot, not expected match exactly what salesforce shows at any moment,
+                // although should be the same when both systems have had a few minutes to update after the last donation.
                 continue;
             }
 
