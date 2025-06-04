@@ -6,7 +6,9 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\Charity;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -25,40 +27,10 @@ class GetSummariesForCharity extends Action
     public function __construct(
         LoggerInterface $logger,
         private CharityRepository $charityRepository,
-        // private CampaignRepository $campaignRepository,
+         private CampaignRepository $campaignRepository,
+        private CampaignService $campaignService,
     ) {
         parent::__construct($logger);
-    }
-
-    /**
-     * @return array<mixed>
-     */
-    public function dummyCampaignSummary(bool $isMatched, string $amountRaised, string $currencyCode, string $name): array
-    {
-        Assertion::false(Environment::current()->isProduction());
-
-        return [
-            'charity' => [
-                'id' => '123456789012345678',
-                'name' => 'charity name',
-            ],
-            'percentRaised' => 3,
-            'isRegularGiving' => false,
-            'id' => '123456789012345678',
-            'amountRaised' => $amountRaised,
-            'beneficiaries' => ['me', 'you', 'him'],
-            'categories' => ['some category'],
-            'championName' => 'Mrs champion',
-            'currencyCode' => $currencyCode,
-            'endDate' => '2070-01-01T00:00:00.000Z',
-            'imageUri' => '',
-            'isMatched' => $isMatched,
-            'matchFundsRemaining' => 3,
-            'startDate' => '2070-01-01T00:00:00.000Z',
-            'status' => 'Active',
-            'target' => 3,
-            'title' => $name,
-        ];
     }
 
     #[\Override] protected function action(Request $request, Response $response, array $args): Response
@@ -69,25 +41,11 @@ class GetSummariesForCharity extends Action
 
         $charity = $this->charityRepository->findOneBySfIDOrThrow($sfId);
 
+        $campaigns = $this->campaignRepository->findCampaignsForCharityPage($charity);
+
         return $this->respondWithData($response, [
             'charityName' => $charity->getName(),
-            // todo - replace following with real list of campaigns
-            'campaigns' => $this->getDummyCampaignSummaryList(),
+            'campaigns' => \array_map($this->campaignService->renderCampaignSummary(...), $campaigns),
         ]);
-    }
-
-    /** @return list<mixed> */
-    private function getDummyCampaignSummaryList(): array
-    {
-        return [
-            $this->dummyCampaignSummary(true, '300', 'GBP', 'Campaign Name'),
-            $this->dummyCampaignSummary(false, '2', 'USD', 'Another campaign'),
-            $this->dummyCampaignSummary(true, '99_99', 'GBP', 'z'),
-
-            $this->dummyCampaignSummary(false, '20', 'GBP', '🤷'),
-            $this->dummyCampaignSummary(true, '5_000_000', 'GBP', '🤷🏽'),
-            $this->dummyCampaignSummary(false, '0', 'GBP', '🤷🏿‍♀️'),
-
-        ];
     }
 }
