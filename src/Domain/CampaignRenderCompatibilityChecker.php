@@ -5,6 +5,7 @@ namespace MatchBot\Domain;
 use Assert\Assert;
 use Assert\LazyAssertion;
 use Assert\LazyAssertionException;
+use MatchBot\Application\Environment;
 
 /**
  * Checks that a campaign as rendered to an array by new matchbot code is compatible with how it was
@@ -102,6 +103,12 @@ class CampaignRenderCompatibilityChecker
 
             if ($key === 'website' && \is_string($expectedValue) && is_null($value)) {
                 // presumably our value is null because the value from SF is a malformed URL.
+                continue;
+            }
+
+            if ($key === 'matchFundsRemaining') {
+                // Calculated from updated data in matchbot, not expected match exactly what salesforce shows at any moment,
+                // although should be the same when both systems have had a few minutes to update after the last donation.
                 continue;
             }
 
