@@ -2,7 +2,6 @@
 
 namespace MatchBot\Domain;
 
-use Assert\AssertionFailedException;
 use Assert\InvalidArgumentException;
 use Assert\LazyAssertionException;
 use MatchBot\Application\Assertion;
@@ -23,11 +22,9 @@ class CampaignService
 
     private const string CAMPAIGN_MATCH_AMOUNT_AVAILABLE_PREFIX = 'campaign_match_amount_available.';
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - called by DI container
-     */
     public function __construct(
         private CampaignRepository $campaignRepository,
+        private MetaCampaignRepository $metaCampaignRepository,
         private CacheInterface $cache,
         private DonationRepository $donationRepository,
         private MatchFundsRemainingService $matchFundsRemainingService,
@@ -83,7 +80,7 @@ class CampaignService
      *
      * @return array<string, mixed> Campaign as associative array ready to render as JSON and send to FE
      */
-    public function renderCampaign(CampaignDomainModel $campaign): array
+    public function renderCampaign(CampaignDomainModel $campaign, ?MetaCampaign $metaCampaign): array
     {
         $charity = $campaign->getCharity();
 
@@ -107,11 +104,8 @@ class CampaignService
 
         $matchFundsTotal = $sfCampaignData['matchFundsTotal'];
         $parentAmountRaised = $sfCampaignData['parentAmountRaised'];
-        $parentDonationCount = $sfCampaignData['parentDonationCount'];
         $parentMatchFundsRemaining = $sfCampaignData['parentMatchFundsRemaining'];
         $parentTarget = $sfCampaignData['parentTarget'];
-        $parentUsesSharedFunds = $sfCampaignData['parentUsesSharedFunds'];
-
         // end of variables to re-implement above. Other variables can continue being pulled directly from $sfCampaignData
         // as they are specific to the individual charity campaign and originate from user input in salesforce.
 
@@ -171,11 +165,11 @@ class CampaignService
             matchFundsRemaining: $this->matchFundsRemaining($campaign)->toMajorUnitFloat(),
             matchFundsTotal: $matchFundsTotal,
             parentAmountRaised: $parentAmountRaised,
-            parentDonationCount: $parentDonationCount,
+            parentDonationCount: $metaCampaign ? $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign) : null,
             parentMatchFundsRemaining: $parentMatchFundsRemaining,
-            parentRef: $campaign->getMetaCampaignSlug(),
+            parentRef: $campaign->getMetaCampaignSlug()?->slug,
             parentTarget: $parentTarget,
-            parentUsesSharedFunds: $parentUsesSharedFunds,
+            parentUsesSharedFunds: $metaCampaign ? $metaCampaign->usesSharedFunds() : false,
             problem: $sfCampaignData['problem'],
             quotes: $sfCampaignData['quotes'],
             ready: $campaign->isReady(),
@@ -301,7 +295,7 @@ class CampaignService
             $campaignName = $mbDomainCampaign->getCampaignName();
             $campaignStatus = $mbDomainCampaign->getStatus() ?? 'NULL';
 
-            $renderedCampaign = $this->renderCampaign($mbDomainCampaign);
+            $renderedCampaign = $this->renderCampaign($mbDomainCampaign, metaCampaign: null);
 
             /** @var list<string> $errors */
             $errors = $renderedCampaign['errors'] ?? [];

@@ -90,7 +90,7 @@ class CreateFictionalData extends Command
 
             $this->em->flush();
 
-            $renderedCampaign = $this->campaignService->renderCampaign($campaign);
+            $renderedCampaign = $this->campaignService->renderCampaign($campaign, metaCampaign: null);
 
             $errors = $renderedCampaign['errors'] ?? [];
             \assert(\is_array($errors));

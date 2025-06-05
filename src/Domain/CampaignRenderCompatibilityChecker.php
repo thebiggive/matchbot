@@ -25,6 +25,12 @@ class CampaignRenderCompatibilityChecker
                                // minutes to update after the last donation.
         'slug', // new in SF API not needed by FE
         'campaignFamily', // new in SF API not needed by FE
+
+        'parentUsesSharedFunds', // parent stuff all requires fetching metacampaign separately, we don't yet have
+        'parentTarget',         // metacampaigns populated in matchbot db.
+        'parentAmountRaised',
+        'parentDonationCount',
+        'parentMatchFundsRemaining',
     ];
 
     /**
