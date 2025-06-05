@@ -5,14 +5,11 @@ namespace MatchBot\Application\Commands;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
-use MatchBot\Application\HttpModels\Campaign;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\Salesforce18Id;
-use PHPUnit\Framework\Assert;
-use PHPUnit\Framework\ExpectationFailedException;
 use Random\Randomizer;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -70,57 +67,76 @@ class CreateFictionalData extends Command
             $io->writeln("Found existing fictional charity {$charity->getName()}, {$charity->getSalesforceId()}");
         }
 
-        $campaign = $this->campaignRepository->findOneBySalesforceId(Salesforce18Id::ofCampaign(self::SF_ID_ZERO));
-        if (!$campaign) {
-            $campaign = \MatchBot\Domain\Campaign::fromSfCampaignData(
-                $this->getFictionalCampaignData(),
-                Salesforce18Id::ofCampaign(self::SF_ID_ZERO),
-                $charity
-            );
+        foreach ($this->getFictionalCampaigns() as $fictionalCampaign) {
+            $campaignId = Salesforce18Id::ofCampaign($fictionalCampaign['id']);
+            $campaign = $this->campaignRepository->findOneBySalesforceId($campaignId);
+            if (!$campaign) {
+                $campaign = \MatchBot\Domain\Campaign::fromSfCampaignData(
+                    $fictionalCampaign,
+                    $campaignId,
+                    $charity
+                );
 
-            $campaign->setSalesforceLastPull(new \DateTime());
+                $campaign->setSalesforceLastPull(new \DateTime());
 
-            $io->writeln("Created fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
-            $this->em->persist($campaign);
-        } else {
-            $io->writeln("Found existing fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
-        }
+                $io->writeln("Created fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
+                $this->em->persist($campaign);
+            } else {
+                $io->writeln("Found existing fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
+            }
 
-        $io->writeln("Donate at http://localhost:4200/donate/{$campaign->getSalesforceId()}");
+            $io->writeln("Donate at http://localhost:4200/donate/{$campaign->getSalesforceId()}");
 
-        $this->em->flush();
 
-        $renderedCampaign = $this->campaignService->renderCampaign($campaign);
+            $this->em->flush();
 
-        $errors = $renderedCampaign['errors'] ?? [];
-        \assert(\is_array($errors));
+            $renderedCampaign = $this->campaignService->renderCampaign($campaign);
 
-        if ($errors !== []) {
-            $io->error("Campaign has errors - may not match expectations of frontend:");
-            $io->listing($errors);
-            return 1;
+            $errors = $renderedCampaign['errors'] ?? [];
+            \assert(\is_array($errors));
+
+            if ($errors !== []) {
+                $io->error("Campaign has errors - may not match expectations of frontend:");
+                $io->listing($errors);
+                return 1;
+            }
         }
 
         return 0;
     }
 
+
+    /**
+     * @return list<SFCampaignApiResponse>
+     */
+    public function getFictionalCampaigns(): array
+    {
+        return [
+            $this->getFictionalCampaignData('000000000000000001', 'Save Matchbot', true, true),
+            $this->getFictionalCampaignData('000000000000000002', 'Save Donate Frontend', true, false),
+            $this->getFictionalCampaignData('000000000000000003', 'Save Salesforce', false, true),
+            $this->getFictionalCampaignData('000000000000000004', 'Save Identity', false, false),
+            $this->getFictionalCampaignData('000000000000000005', 'Save Barney\'s Keyboard', false, true),
+            $this->getFictionalCampaignData('000000000000000006', 'Replace Barney\'s Keyboard with a silent one', false, false),
+            $this->getFictionalCampaignData('000000000000000007', 'Implement generics in PHP', false, true),
+            $this->getFictionalCampaignData('000000000000000008', 'Implement open source Apex compiler', false, false),
+            $this->getFictionalCampaignData('000000000000000009', 'Save Regtest', false, true),
+        ];
+    }
+
     /**
      * @return SFCampaignApiResponse
-     * @psalm-suppress InvalidReturnStatement
      * @psalm-suppress InvalidReturnType
-     *
-     * Structure of data here and in getFictionalCharityData originally based on a real data from our staging
-     * environment, content replaced with fiction
-     *
+     * @psalm-suppress InvalidReturnStatement
      */
-    private function getFictionalCampaignData(): array
+    private function getFictionalCampaignData(string $sfId, string $name, bool $isRegularGiving, bool $isMatched): array
     {
         return [ // @phpstan-ignore return.type
-            'id' => self::SF_ID_ZERO,
+            'id' => $sfId,
             'charity' => [],
             'aims' => [0 => 'First Aim'],
             'ready' => true,
-            'title' => 'Save Matchbot',
+            'title' => $name,
             'video' => null,
             'hidden' => false,
             'quotes' => [],
@@ -129,12 +145,12 @@ class CreateFictionalData extends Command
             'endDate' => '2095-08-01T00:00:00.000Z',
             'logoUri' => null,
             'problem' => 'Matchbot is threatened!',
-            'summary' => 'We can save matchbot',
+            'summary' => "We can $name",
             'updates' => [],
             'solution' => 'do the saving',
             'bannerUri' => null,
             'countries' => [0 => 'United Kingdom',],
-            'isMatched' => true,
+            'isMatched' => $isMatched,
             'parentRef' => null,
             'startDate' => '2015-08-01T00:00:00.000Z',
             'categories' => ['Education/Training/Employment', 'Religious'],
@@ -152,7 +168,7 @@ class CreateFictionalData extends Command
             'donationCount' => 0,
             'impactSummary' => null,
             'impactReporting' => null,
-            'isRegularGiving' => false,
+            'isRegularGiving' => $isRegularGiving,
             'matchFundsTotal' => 50.0,
             'thankYouMessage' => 'Thank you for helping us save matchbot! We will be able to match twice as many bots now!',
             'usesSharedFunds' => false,
