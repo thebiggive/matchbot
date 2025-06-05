@@ -169,7 +169,7 @@ class CampaignService
             parentMatchFundsRemaining: $parentMatchFundsRemaining,
             parentRef: $campaign->getMetaCampaignSlug()?->slug,
             parentTarget: $parentTarget,
-            parentUsesSharedFunds: $metaCampaign ? $metaCampaign->usesSharedFunds() : false,
+            parentUsesSharedFunds: $metaCampaign && $metaCampaign->usesSharedFunds(),
             problem: $sfCampaignData['problem'],
             quotes: $sfCampaignData['quotes'],
             ready: $campaign->isReady(),
