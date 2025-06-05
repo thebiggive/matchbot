@@ -7,7 +7,7 @@
 
 CREATE TABLE `MetaCampaign` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `slug` varchar(255) NOT NULL,
+  `slug` varchar(64) NOT NULL,
   `title` varchar(255) NOT NULL,
   `currency` varchar(255) NOT NULL,
   `status` varchar(255) NOT NULL,
@@ -21,5 +21,10 @@ CREATE TABLE `MetaCampaign` (
   `salesforceLastPull` datetime DEFAULT NULL,
   `salesforceId` varchar(18) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `UNIQ_C36155ECD8961D21` (`salesforceId`)
+  UNIQUE KEY `UNIQ_C36155EC989D9B62` (`slug`),
+  UNIQUE KEY `UNIQ_C36155ECD8961D21` (`salesforceId`),
+  KEY `slug` (`slug`),
+  KEY `title` (`title`),
+  KEY `status` (`status`),
+  KEY `hidden` (`hidden`)
 )
