@@ -36,6 +36,44 @@ class CampaignService
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public function renderCampaignSummary(CampaignDomainModel $campaign): array
+    {
+        $sfCampaignData = $campaign->getSalesforceData();
+
+        $campaignId = $campaign->getId();
+
+        return [
+            'charity' => [
+                'id' => $campaign->getCharity()->getSalesforceId(),
+                'name' => $campaign->getCharity()->getName(),
+            ],
+            'isRegularGiving' => $campaign->isRegularGiving(),
+            'id' => $campaign->getSalesforceId(),
+            'amountRaised' => $campaignId !== null ? $this->amountRaised($campaignId)->toMajorUnitFloat() : 0.0,
+            'currencyCode' => $campaign->getCurrencyCode(),
+            'endDate' => $this->formatDate($campaign->getEndDate()),
+            'isMatched' => $campaign->isMatched(),
+            'matchFundsRemaining' => $this->matchFundsRemaining($campaign)->toMajorUnitFloat(),
+            'startDate' => $this->formatDate($campaign->getStartDate()),
+            'status' => $campaign->getStatus(),
+            'title' => $campaign->getCampaignName(),
+            // fields below are all directly entered through the SF UI and not involved in business logic, so no need to
+            // do anything more than this with them in matchbot for now.
+            'beneficiaries' => $sfCampaignData['beneficiaries'],
+            'categories' => $sfCampaignData['categories'],
+            'championName' => $sfCampaignData['championName'],
+            'imageUri' => $sfCampaignData['bannerUri'],
+            'target' => $sfCampaignData['target'],
+
+            // FE model also currently has a key-optional 'percentRaised' field, but SF never sends it and nothing in FE
+            // runtime touches it - SF is currently doing its own division to calculate percent raised in
+            // percentRaisedOfIndividualCampaign. We don't need to send it here but could start sending it in future.
+        ];
+    }
+
+    /**
      * Converts an instance matchbot's internal campaign model to an HTTP model for use in front end.
      *
      * May need to use some additional data from outside the campaign at least if available. In the short term
