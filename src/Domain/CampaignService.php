@@ -173,7 +173,7 @@ class CampaignService
             parentAmountRaised: $parentAmountRaised,
             parentDonationCount: $parentDonationCount,
             parentMatchFundsRemaining: $parentMatchFundsRemaining,
-            parentRef: $campaign->getMetaCampaignSfId()?->value,
+            parentRef: $campaign->getMetaCampaignSlug(),
             parentTarget: $parentTarget,
             parentUsesSharedFunds: $parentUsesSharedFunds,
             problem: $sfCampaignData['problem'],

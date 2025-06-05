@@ -22,7 +22,7 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $campaign = new Campaign(
             $this->randomCampaignId(),
-            metaCampaignSfId: null,
+            metaCampaignSlug: null,
             charity: $this->getCharityAwaitingGiftAidApproval(),
             startDate: new \DateTimeImmutable('-10 months'), // less than the 9 month limit
             endDate: new \DateTimeImmutable(-29 * 9 . 'days'),
@@ -70,7 +70,7 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $campaign = new Campaign(
             self::someSalesForce18CampaignId(),
-            metaCampaignSfId: null,
+            metaCampaignSlug: null,
             charity: $this->getCharityAwaitingGiftAidApproval(),
             startDate: new \DateTimeImmutable('-11 months'),
             endDate: new \DateTimeImmutable('-10 months'),

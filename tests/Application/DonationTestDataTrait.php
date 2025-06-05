@@ -157,7 +157,7 @@ trait DonationTestDataTrait
     {
         $campaign = new Campaign(
             Salesforce18Id::ofCampaign('234567890pROjecTID'),
-            metaCampaignSfId: null,
+            metaCampaignSlug: null,
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable(),
             endDate: new \DateTimeImmutable(),

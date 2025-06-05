@@ -19,7 +19,7 @@ use MatchBot\Client\Campaign as CampaignClient;
  */
 #[ORM\Table]
 #[ORM\Index(name: 'end_date_and_is_matched', columns: ['endDate', 'isMatched'])]
-#[ORM\Index(name: 'metaCampaignSfId', columns: ['metaCampaignSfId'])]
+#[ORM\Index(name: 'metaCampaignSlug', columns: ['metaCampaignSlug'])]
 #[ORM\Entity(repositoryClass: CampaignRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class Campaign extends SalesforceReadProxy
@@ -67,14 +67,18 @@ class Campaign extends SalesforceReadProxy
 
 
     /**
-     * 18 digit salesforce ID of the related meta-campaign, if any.
+     * Slug of the related metacampaign, if any. Will be output as is, and also used in joins etc.
      *
-     * Might be neater to use our DB numeric ID and possibly a doctrine based join, but that would require having
-     * the metacampaign in the DB before we fetch the campaign from SF. For now using the SfID instead to allow fetching
-     * in either order & filling this in on existing data while we don't yet have metacampaigns in DB.
+     * Would be neater to use either an SF ID or our DB numeric ID and possibly a doctrine based join,
+     * but that would require having the metacampaign in the DB before we fetch the campaign from SF.
+     *
+     * For now using the slug instead to allow fetching in either order & filling this in on existing data while we
+     * don't yet have metacampaigns in DB.
+     *
+     * Consider replacing with some sort of synthetic ID in future.
      */
-    #[ORM\Column(length: 18, unique: false, nullable: true)]
-    private ?string $metaCampaignSfId;
+    #[ORM\Column(length: 64, unique: false, nullable: true)]
+    protected ?string $metaCampaignSlug;
 
     /**
      * Full data about this campaign as received from Salesforce. Not for use as-is in Matchbot domain logic but
@@ -147,7 +151,6 @@ class Campaign extends SalesforceReadProxy
 
     /**
      * @param Salesforce18Id<Campaign> $sfId
-     * @param Salesforce18Id<MetaCampaign>|null $metaCampaignSfId
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
      * @param 'Active'|'Expired'|'Preview'|null $status
      * @param bool $isRegularGiving
@@ -155,7 +158,7 @@ class Campaign extends SalesforceReadProxy
      * */
     public function __construct(
         Salesforce18Id $sfId,
-        ?Salesforce18Id $metaCampaignSfId,
+        ?string $metaCampaignSlug,
         Charity $charity,
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
@@ -181,7 +184,7 @@ class Campaign extends SalesforceReadProxy
             endDate: $endDate,
             isMatched: $isMatched,
             name: $name,
-            metaCampaignSfId: $metaCampaignSfId,
+            metaCampaignSlug: $metaCampaignSlug,
             startDate: $startDate,
             ready: $ready,
             isRegularGiving: $isRegularGiving,
@@ -232,7 +235,7 @@ class Campaign extends SalesforceReadProxy
 
         return new self(
             sfId: $salesforceId,
-            metaCampaignSfId: null,
+            metaCampaignSlug: $campaignData['parentRef'],
             charity: $charity,
             startDate: new \DateTimeImmutable($startDate),
             endDate: new \DateTimeImmutable($endDate),
@@ -399,7 +402,6 @@ class Campaign extends SalesforceReadProxy
 
     /**
      * @param array<string,mixed> $sfData
-     * @param Salesforce18Id<MetaCampaign>|null $metaCampaignSfId
      * @param 'Active'|'Expired'|'Preview'|null $status
      */
     final public function updateFromSfPull(
@@ -408,7 +410,7 @@ class Campaign extends SalesforceReadProxy
         \DateTimeInterface $endDate,
         bool $isMatched,
         string $name,
-        ?Salesforce18Id $metaCampaignSfId,
+        ?string $metaCampaignSlug,
         \DateTimeInterface $startDate,
         bool $ready,
         bool $isRegularGiving,
@@ -427,6 +429,10 @@ class Campaign extends SalesforceReadProxy
         Assertion::nullOrRegex($status, "/^[A-Za-z]{2,30}$/");
         Assertion::betweenLength($name, 2, 255);
         Assertion::nullOrMaxLength($thankYouMessage, 500);
+        Assertion::nullOrBetweenLength($metaCampaignSlug, 1, 64);
+        Assertion::nullOrRegex($metaCampaignSlug, '/^[-a-z50-9]+$/');
+        // needed because SF may send an ID if slug is not filled in - we don't want that in the matchbot DB.
+        Assertion::nullOrNotContains($metaCampaignSlug, 'a05', "$metaCampaignSlug appears to be an SF ID, should be a slug");
 
         if (! $isRegularGiving) {
             Assertion::null(
@@ -439,7 +445,7 @@ class Campaign extends SalesforceReadProxy
         $this->endDate = $endDate;
         $this->isMatched = $isMatched;
         $this->name = $name;
-        $this->metaCampaignSfId = $metaCampaignSfId?->value;
+        $this->metaCampaignSlug = $metaCampaignSlug;
         $this->startDate = $startDate;
         $this->ready = $ready;
         $this->status = $status;
@@ -545,15 +551,8 @@ class Campaign extends SalesforceReadProxy
         return $this->hidden;
     }
 
-    /**
-     * @return Salesforce18Id<MetaCampaign>|null
-     */
-    public function getMetaCampaignSfId(): ?Salesforce18Id
+    public function getMetaCampaignSlug(): ?string
     {
-        if ($this->metaCampaignSfId === null) {
-            return null;
-        }
-
-        return Salesforce18Id::ofMetaCampaign($this->metaCampaignSfId);
+        return $this->metaCampaignSlug;
     }
 }

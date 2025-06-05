@@ -14,7 +14,7 @@ class CampaignTest extends TestCase
     {
         $campaign = new Campaign(
             sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
-            metaCampaignSfId: null,
+            metaCampaignSlug: null,
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
@@ -36,7 +36,7 @@ class CampaignTest extends TestCase
     {
         $campaign = new Campaign(
             sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
-            metaCampaignSfId: null,
+            metaCampaignSlug: null,
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
@@ -59,7 +59,7 @@ class CampaignTest extends TestCase
     {
         $campaign = new Campaign(
             sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
-            metaCampaignSfId: null,
+            metaCampaignSlug: null,
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
@@ -82,7 +82,7 @@ class CampaignTest extends TestCase
     {
         $campaign = new Campaign(
             sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
-            metaCampaignSfId: null,
+            metaCampaignSlug: null,
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),

@@ -266,7 +266,7 @@ class TestCase extends PHPUnitTestCase
 
         return new Campaign(
             $sfId,
-            metaCampaignSfId: null,
+            metaCampaignSlug: null,
             charity: $charity ?? self::someCharity(stripeAccountId: $stripeAccountId),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('3000-01-01'),

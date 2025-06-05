@@ -11,18 +11,18 @@ final class Version20250605112912 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Add column Campaign.metaCampaignSfId';
+        return 'Add column Campaign.metaCampaignSlug';
     }
 
     public function up(Schema $schema): void
     {
-        $this->addSql('ALTER TABLE Campaign ADD metaCampaignSfId VARCHAR(18) DEFAULT NULL');
-        $this->addSql('CREATE INDEX metaCampaignSfId ON Campaign (metaCampaignSfId)');
+        $this->addSql('ALTER TABLE Campaign ADD metaCampaignSlug VARCHAR(64) DEFAULT NULL');
+        $this->addSql('CREATE INDEX metaCampaignSlug ON Campaign (metaCampaignSlug)');
     }
 
     public function down(Schema $schema): void
     {
-        $this->addSql('DROP INDEX metaCampaignSfId ON Campaign');
-        $this->addSql('ALTER TABLE Campaign DROP metaCampaignSfId');
+        $this->addSql('DROP INDEX metaCampaignSlug ON Campaign');
+        $this->addSql('ALTER TABLE Campaign DROP metaCampaignSlug');
     }
 }

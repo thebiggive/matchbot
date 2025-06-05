@@ -102,6 +102,7 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
             'title' => 'Campaign title not relavent',
             'status' => 'Preview',
             'ready' => false,
+            'parentRef' => null,
             'thankYouMessage' => 'Test thank you message',
             'charity' => [
                 'id' => $sfId,

@@ -17,7 +17,7 @@ final class Version20250605113222 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
-            UPDATE Campaign set metaCampaignSfId = salesforceData->'$.parentRef'
+            UPDATE Campaign set metaCampaignSlug = salesforceData->'$.parentRef'
             -- no limit intended, should be quick enough to do ~10k campaigns at once.
             SQL
         );
@@ -27,7 +27,7 @@ final class Version20250605113222 extends AbstractMigration
     {
         {
             $this->addSql(<<<'SQL'
-            UPDATE Campaign set metaCampaignSfId = null
+            UPDATE Campaign set metaCampaignSlug = null
             -- no limit intended
             SQL
             );
