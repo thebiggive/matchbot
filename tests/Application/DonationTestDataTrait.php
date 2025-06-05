@@ -157,6 +157,7 @@ trait DonationTestDataTrait
     {
         $campaign = new Campaign(
             Salesforce18Id::ofCampaign('234567890pROjecTID'),
+            metaCampaignSfId: null,
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable(),
             endDate: new \DateTimeImmutable(),
@@ -167,6 +168,9 @@ trait DonationTestDataTrait
             currencyCode: 'GBP',
             isRegularGiving: false,
             regularGivingCollectionEnd: null,
+            thankYouMessage: null,
+            rawData: [],
+            hidden: false,
         );
 
         $donation = TestCase::someDonation(amount: '124.56');

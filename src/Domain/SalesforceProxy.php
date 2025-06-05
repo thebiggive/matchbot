@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @see SalesforceReadProxy
  * @see SalesforceWriteProxy
  */
+#[ORM\Index(name: 'salesforceId', columns: ['salesforceId'])]
 abstract class SalesforceProxy extends Model
 {
     /**

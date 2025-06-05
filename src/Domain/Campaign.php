@@ -19,6 +19,7 @@ use MatchBot\Client\Campaign as CampaignClient;
  */
 #[ORM\Table]
 #[ORM\Index(name: 'end_date_and_is_matched', columns: ['endDate', 'isMatched'])]
+#[ORM\Index(name: 'metaCampaignSfId', columns: ['metaCampaignSfId'])]
 #[ORM\Entity(repositoryClass: CampaignRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class Campaign extends SalesforceReadProxy
@@ -63,6 +64,17 @@ class Campaign extends SalesforceReadProxy
      */
     #[ORM\Column(type: 'string')]
     protected string $name;
+
+
+    /**
+     * 18 digit salesforce ID of the related meta-campaign, if any.
+     *
+     * Might be neater to use our DB numeric ID and possibly a doctrine based join, but that would require having
+     * the metacampaign in the DB before we fetch the campaign from SF. For now using the SfID instead to allow fetching
+     * in either order & filling this in on existing data while we don't yet have metacampaigns in DB.
+     */
+    #[ORM\Column(length: 18, unique: false, nullable: true)]
+    protected ?string $metaCampaignSfId;
 
     /**
      * Full data about this campaign as received from Salesforce. Not for use as-is in Matchbot domain logic but
@@ -134,14 +146,16 @@ class Campaign extends SalesforceReadProxy
 
 
     /**
-     * @param \DateTimeImmutable|null $regularGivingCollectionEnd
      * @param Salesforce18Id<Campaign> $sfId
+     * @param Salesforce18Id<MetaCampaign>|null $metaCampaignSfId
+     * @param \DateTimeImmutable|null $regularGivingCollectionEnd
      * @param 'Active'|'Expired'|'Preview'|null $status
      * @param bool $isRegularGiving
      * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
      * */
     public function __construct(
         Salesforce18Id $sfId,
+        ?Salesforce18Id $metaCampaignSfId,
         Charity $charity,
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
@@ -167,13 +181,14 @@ class Campaign extends SalesforceReadProxy
             endDate: $endDate,
             isMatched: $isMatched,
             name: $name,
+            metaCampaignSfId: $metaCampaignSfId,
             startDate: $startDate,
             ready: $ready,
             isRegularGiving: $isRegularGiving,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             thankYouMessage: $thankYouMessage,
-            sfData: $rawData,
             hidden: $hidden,
+            sfData: $rawData,
         );
     }
 
@@ -217,6 +232,7 @@ class Campaign extends SalesforceReadProxy
 
         return new self(
             sfId: $salesforceId,
+            metaCampaignSfId: null,
             charity: $charity,
             startDate: new \DateTimeImmutable($startDate),
             endDate: new \DateTimeImmutable($endDate),
@@ -382,8 +398,9 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
-     * @param 'Active'|'Expired'|'Preview'|null $status
      * @param array<string,mixed> $sfData
+     * @param Salesforce18Id<MetaCampaign>|null $metaCampaignSfId
+     * @param 'Active'|'Expired'|'Preview'|null $status
      */
     final public function updateFromSfPull(
         string $currencyCode,
@@ -391,6 +408,7 @@ class Campaign extends SalesforceReadProxy
         \DateTimeInterface $endDate,
         bool $isMatched,
         string $name,
+        ?Salesforce18Id $metaCampaignSfId,
         \DateTimeInterface $startDate,
         bool $ready,
         bool $isRegularGiving,
@@ -421,6 +439,7 @@ class Campaign extends SalesforceReadProxy
         $this->endDate = $endDate;
         $this->isMatched = $isMatched;
         $this->name = $name;
+        $this->metaCampaignSfId = $metaCampaignSfId?->value;
         $this->startDate = $startDate;
         $this->ready = $ready;
         $this->status = $status;
@@ -524,5 +543,17 @@ class Campaign extends SalesforceReadProxy
     public function isHidden(): bool
     {
         return $this->hidden;
+    }
+
+    /**
+     * @return Salesforce18Id<MetaCampaign>|null
+     */
+    public function getMetaCampaignSfId(): ?Salesforce18Id
+    {
+        if ($this->metaCampaignSfId === null) {
+            return null;
+        }
+
+        return Salesforce18Id::ofMetaCampaign($this->metaCampaignSfId);
     }
 }
