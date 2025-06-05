@@ -24,9 +24,11 @@ CREATE TABLE `Campaign` (
   `thankYouMessage` varchar(500) DEFAULT NULL,
   `salesforceData` json NOT NULL,
   `hidden` tinyint(1) NOT NULL DEFAULT '0',
+  `metaCampaignSlug` varchar(64) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_E663708BD8961D21` (`salesforceId`),
   KEY `IDX_E663708BF5C97E37` (`charity_id`),
   KEY `end_date_and_is_matched` (`endDate`,`isMatched`),
+  KEY `metaCampaignSlug` (`metaCampaignSlug`),
   CONSTRAINT `FK_E663708BF5C97E37` FOREIGN KEY (`charity_id`) REFERENCES `Charity` (`id`)
 )

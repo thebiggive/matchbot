@@ -432,6 +432,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             endDate: new DateTime($endDateString),
             isMatched: $campaignData['isMatched'],
             name: $title,
+            metaCampaignSlug: $campaignData['parentRef'],
             startDate: new DateTime($startDateString),
             ready: $campaignData['ready'],
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,

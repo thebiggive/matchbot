@@ -22,9 +22,10 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $campaign = new Campaign(
             $this->randomCampaignId(),
-            $this->getCharityAwaitingGiftAidApproval(),
-            startDate: new \DateTimeImmutable('-10 months'),
-            endDate: new \DateTimeImmutable(-29 * 9 . 'days'), // less than the 9 month limit
+            metaCampaignSlug: null,
+            charity: $this->getCharityAwaitingGiftAidApproval(),
+            startDate: new \DateTimeImmutable('-10 months'), // less than the 9 month limit
+            endDate: new \DateTimeImmutable(-29 * 9 . 'days'),
             isMatched: true,
             ready: true,
             status: null,
@@ -32,6 +33,9 @@ class CampaignRepositoryTest extends IntegrationTest
             currencyCode: 'GBP',
             isRegularGiving: false,
             regularGivingCollectionEnd: null,
+            thankYouMessage: null,
+            rawData: [],
+            hidden: false,
         );
 
 
@@ -66,7 +70,8 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $campaign = new Campaign(
             self::someSalesForce18CampaignId(),
-            $this->getCharityAwaitingGiftAidApproval(),
+            metaCampaignSlug: null,
+            charity: $this->getCharityAwaitingGiftAidApproval(),
             startDate: new \DateTimeImmutable('-11 months'),
             endDate: new \DateTimeImmutable('-10 months'),
             isMatched: true,
@@ -76,6 +81,9 @@ class CampaignRepositoryTest extends IntegrationTest
             currencyCode: 'GBP',
             isRegularGiving: false,
             regularGivingCollectionEnd: null,
+            thankYouMessage: null,
+            rawData: [],
+            hidden: false,
         );
 
         $em = $this->getService(EntityManagerInterface::class);

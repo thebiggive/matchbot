@@ -18,12 +18,16 @@ use Psr\Http\Message\UriInterface;
     repositoryClass: null // we construct our own repository
 )]
 #[ORM\HasLifecycleCallbacks]
+#[ORM\Index(name: 'slug', columns: ['slug'])]
+#[ORM\Index(name: 'title', columns: ['title'])]
+#[ORM\Index(name: 'status', columns: ['status'])]
+#[ORM\Index(name: 'hidden', columns: ['hidden'])]
 class MetaCampaign extends SalesforceReadProxy
 {
     /**
      * @psalm-suppress UnusedProperty - will be used soon
      */
-    #[ORM\Column()]
+    #[ORM\Column(length: 64, unique: true, nullable: false)]
     private string $slug;
 
     /**
