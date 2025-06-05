@@ -44,6 +44,21 @@ class CampaignFundingRepository extends EntityRepository
         return $result;
     }
 
+    /** @return CampaignFunding[] */
+    public function getAllFundingsForCampaign(Campaign $campaign): array
+    {
+        $query = $this->getEntityManager()->createQuery('
+            SELECT cf FROM MatchBot\Domain\CampaignFunding cf JOIN cf.fund fund
+            WHERE :campaign MEMBER OF cf.campaigns
+        ');
+        $query->setParameter('campaign', $campaign->getId());
+
+        /** @var CampaignFunding[] $result */
+        $result = $query->getResult();
+
+        return $result;
+    }
+
     public function getFunding(Fund $fund): ?CampaignFunding
     {
         $query = $this->getEntityManager()->createQuery('

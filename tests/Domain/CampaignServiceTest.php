@@ -6,7 +6,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Domain\MatchFundsRemainingService;
+use MatchBot\Domain\MatchFundsService;
 use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\MetaCampaignSlug;
@@ -31,7 +31,7 @@ class CampaignServiceTest extends TestCase
             metaCampaignRepository: $this->createStub(MetaCampaignRepository::class),
             cache: $this->createStub(CacheInterface::class),
             donationRepository: $this->createStub(DonationRepository::class),
-            matchFundsRemainingService: $this->createStub(MatchFundsRemainingService::class),
+            matchFundsRemainingService: $this->createStub(MatchFundsService::class),
             log: $this->createStub(LoggerInterface::class),
         );
     }

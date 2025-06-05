@@ -5,7 +5,7 @@ namespace MatchBot\Domain;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\Campaign as CampaignDomainModel;
 
-class MatchFundsRemainingService
+class MatchFundsService
 {
     public function __construct(private CampaignFundingRepository $campaignFundingRepository,)
     {
@@ -45,6 +45,26 @@ class MatchFundsRemainingService
         $runningTotal = '0.00';
         foreach ($funds as $fund) {
             $amount = $fund->getAmountAvailable();
+            Assertion::same($currencyCode, $fund->getCurrencyCode(), 'fund currency code must equal campaign currency code');
+            $runningTotal = \bcadd($runningTotal, $amount, 2);
+        }
+
+        return Money::fromNumericString($runningTotal, Currency::fromIsoCode($currencyCode));
+    }
+
+    public function getTotalFunds(CampaignDomainModel $campaign): Money
+    {
+        $currencyCode = $campaign->getCurrencyCode();
+        Assertion::notNull($currencyCode, 'cannot get funds remaining for campaign with null currency');
+
+        $funds = $this->campaignFundingRepository->getAllFundingsForCampaign($campaign);
+
+        // todo - consider optimising by doing the summation in the DB. But I think the number of funds will be low
+        // enough in all or nearly all cases that the performance where will be OK.
+
+        $runningTotal = '0.00';
+        foreach ($funds as $fund) {
+            $amount = $fund->getAmount();
             Assertion::same($currencyCode, $fund->getCurrencyCode(), 'fund currency code must equal campaign currency code');
             $runningTotal = \bcadd($runningTotal, $amount, 2);
         }

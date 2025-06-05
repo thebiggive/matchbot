@@ -21,13 +21,14 @@ class CampaignService
     private const string CAMPAIGN_AMOUNT_RAISED_CACHE_PREFIX = 'campaign_amount_raised.';
 
     private const string CAMPAIGN_MATCH_AMOUNT_AVAILABLE_PREFIX = 'campaign_match_amount_available.';
+    private const string CAMPAIGN_MATCH_AMOUNT_TOTAL_PREFIX = 'campaign_match_amount_total.';
 
     public function __construct(
         private CampaignRepository $campaignRepository,
         private MetaCampaignRepository $metaCampaignRepository,
         private CacheInterface $cache,
         private DonationRepository $donationRepository,
-        private MatchFundsRemainingService $matchFundsRemainingService,
+        private MatchFundsService $matchFundsRemainingService,
         private LoggerInterface $log
     ) {
     }
@@ -101,8 +102,6 @@ class CampaignService
         // because matchbot should be able to calculate more up to date or more authoritative versions of them
         // itself. We need to go through and implement a function to calculate each of these using our data
         // about the campaign and related fund(s), meta-campaign, etc.
-
-        $matchFundsTotal = $sfCampaignData['matchFundsTotal'];
         $parentAmountRaised = $sfCampaignData['parentAmountRaised'];
         $parentMatchFundsRemaining = $sfCampaignData['parentMatchFundsRemaining'];
         $parentTarget = $sfCampaignData['parentTarget'];
@@ -163,7 +162,7 @@ class CampaignService
             isMatched: $campaign->isMatched(),
             logoUri: $sfCampaignData['logoUri'],
             matchFundsRemaining: $this->matchFundsRemaining($campaign)->toMajorUnitFloat(),
-            matchFundsTotal: $matchFundsTotal,
+            matchFundsTotal: $this->totalMatchFundsForCampaign($campaign)->toMajorUnitFloat(),
             parentAmountRaised: $parentAmountRaised,
             parentDonationCount: $metaCampaign ? $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign) : null,
             parentMatchFundsRemaining: $parentMatchFundsRemaining,
@@ -373,6 +372,24 @@ class CampaignService
             callback: function (ItemInterface $item) use ($campaign): array {
                 $item->expiresAfter(120); // two minutes
                 return $this->matchFundsRemainingService->getFundsRemaining($campaign)->jsonSerialize();
+            }
+        );
+
+        return Money::fromSerialized($cachedAmountArray);
+    }
+
+    private function totalMatchFundsForCampaign(Campaign $campaign): Money
+    {
+        $id = $campaign->getId();
+        if ($id === null) {
+            return Money::zero(Currency::GBP);
+        }
+
+        $cachedAmountArray = $this->cache->get(
+            key: self::CAMPAIGN_MATCH_AMOUNT_TOTAL_PREFIX . (string)$id,
+            callback: function (ItemInterface $item) use ($campaign): array {
+                $item->expiresAfter(120); // two minutes
+                return $this->matchFundsRemainingService->getTotalFunds($campaign)->jsonSerialize();
             }
         );
 
