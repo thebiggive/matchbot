@@ -5,6 +5,7 @@ namespace MatchBot\Domain;
 use Assert\Assert;
 use Assert\LazyAssertion;
 use Assert\LazyAssertionException;
+use MatchBot\Application\Environment;
 
 /**
  * Checks that a campaign as rendered to an array by new matchbot code is compatible with how it was
@@ -12,6 +13,20 @@ use Assert\LazyAssertionException;
  */
 class CampaignRenderCompatibilityChecker
 {
+    private const array KEYS_TO_SKIP = [
+        'isEmergencyIMF', // not used by FE,
+        'amountRaised',  // don't need to check amount raised as it is being handled by matchbot and Salesforce data
+                         // might not be identical
+        'donationCount',  // may differ from SF - on dev env will be completly unrelated, in other envs donations
+                         // will appear in matchbot count before SF knows them.
+
+        'matchFundsRemaining', // Calculated from updated data in matchbot, not expected match exactly what salesforce
+                               // shows at any moment although should be the same when both systems have had a few
+                               // minutes to update after the last donation.
+        'slug', // new in SF API not needed by FE
+        'campaignFamily', // new in SF API not needed by FE
+    ];
+
     /**
      * @param array<array-key,mixed> $actual
      * @param array<array-key,mixed> $expected
@@ -50,17 +65,6 @@ class CampaignRenderCompatibilityChecker
                 // field is intended for use within matchbot only, does not need to be emitted to FE
                 continue;
             }
-
-            if ($key === 'isEmergencyIMF') {
-                // not used by FE,
-                continue;
-            }
-
-            if ($key === 'amountRaised') {
-                // don't need to check amount raised as it is being handled by matchbot and Salesforce data might not be identical
-                continue;
-            }
-
             /** @var mixed $value */
 
             $value = \array_key_exists($key, $actual) ?
@@ -85,12 +89,6 @@ class CampaignRenderCompatibilityChecker
                 $expectedValue = "<UNDEFINED>";
             }
 
-            if ($key === 'donationCount') {
-                // may differ from SF - on dev env will be completly unrelated, in other envs donations will appear
-                // in matchbot count before SF knows them.
-                continue;
-            }
-
             if ($key === 'website' && \is_string($expectedValue) && \is_string($value)) {
                 // \Laminas\Diactoros\Uri always converts the hostname to lowercase since thats how websites are
                 // registered. Although uppercase can be useful for making longer hostnames more readable or
@@ -102,6 +100,10 @@ class CampaignRenderCompatibilityChecker
 
             if ($key === 'website' && \is_string($expectedValue) && is_null($value)) {
                 // presumably our value is null because the value from SF is a malformed URL.
+                continue;
+            }
+
+            if (\in_array($key, self::KEYS_TO_SKIP, true)) {
                 continue;
             }
 

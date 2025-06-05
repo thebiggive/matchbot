@@ -153,13 +153,17 @@ class MetaCampaign extends SalesforceReadProxy
 
         $startDate = $data['startDate'];
         $endDate = $data['endDate'];
+        $title = $data['title'];
+
         Assertion::notNull($startDate);
         Assertion::notNull($endDate);
+        Assertion::notNull($title);
+
 
         return new self(
             slug: $slug,
             salesforceId: Salesforce18Id::ofMetaCampaign($data['id']),
-            title: $data['title'],
+            title: $title,
             currency: Currency::fromIsoCode($data['currencyCode']),
             status: $status,
             hidden: $data['hidden'],
