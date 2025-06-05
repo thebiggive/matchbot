@@ -89,6 +89,10 @@ class CampaignRenderCompatibilityChecker
                 $expectedValue = "<UNDEFINED>";
             }
 
+            if ($key === 'title' && $expectedValue === null && $value === "Untitled campaign") {
+                continue;
+            }
+
             if ($key === 'website' && \is_string($expectedValue) && \is_string($value)) {
                 // \Laminas\Diactoros\Uri always converts the hostname to lowercase since thats how websites are
                 // registered. Although uppercase can be useful for making longer hostnames more readable or
