@@ -74,7 +74,7 @@ class Campaign extends SalesforceReadProxy
      * in either order & filling this in on existing data while we don't yet have metacampaigns in DB.
      */
     #[ORM\Column(length: 18, unique: false, nullable: true)]
-    protected ?string $metaCampaignSfId;
+    private ?string $metaCampaignSfId;
 
     /**
      * Full data about this campaign as received from Salesforce. Not for use as-is in Matchbot domain logic but
