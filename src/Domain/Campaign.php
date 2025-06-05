@@ -430,7 +430,7 @@ class Campaign extends SalesforceReadProxy
         Assertion::betweenLength($name, 2, 255);
         Assertion::nullOrMaxLength($thankYouMessage, 500);
         Assertion::nullOrBetweenLength($metaCampaignSlug, 1, 64);
-        Assertion::nullOrRegex($metaCampaignSlug, '/^[-a-z0-9]+$/');
+        Assertion::nullOrRegex($metaCampaignSlug, '/^[-A-Za-z0-9]+$/');
         // needed because SF may send an ID if slug is not filled in - we don't want that in the matchbot DB.
         Assertion::nullOrNotContains($metaCampaignSlug, 'a05', "$metaCampaignSlug appears to be an SF ID, should be a slug");
 
