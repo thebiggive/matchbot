@@ -325,7 +325,10 @@ class CampaignService
                     $errorMessage
                 );
             } else {
-                throw new \Exception($errorMessage);
+                // logging error not rethrowing to make it easier to debug in staging for now.
+                $this->log->error(
+                    $errorMessage
+                );
             }
         }
 

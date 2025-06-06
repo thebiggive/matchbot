@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Campaigns;
 
+use Doctrine\DBAL\Logging\DebugStack;
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Environment;
