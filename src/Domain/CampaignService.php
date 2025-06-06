@@ -379,7 +379,7 @@ class CampaignService
                 $endTime = $this->clock->now();
 
                 $diffSeconds = $startTime->diff($endTime)->f;
-                $this->log->info("Getting getFundsRemaining for campaign {$campaign->getSalesforceId()} took" . (string) $diffSeconds . "s");
+                $this->log->info("Getting getFundsRemaining for campaign {$campaign->getSalesforceId()} took " . (string) $diffSeconds . "s");
 
                 return $returnValue;
             }
