@@ -8,7 +8,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 
 class MatchFundsRemainingServiceTest extends TestCase
 {
-    private MatchFundsService $SUT;
+    private MatchFundsRemainingService $SUT;
 
     /**
      * @var ObjectProphecy<CampaignFundingRepository>
@@ -35,7 +35,7 @@ class MatchFundsRemainingServiceTest extends TestCase
             }
         );
 
-        $this->SUT = new MatchFundsService($this->campaignFundingRepositoryProphecy->reveal());
+        $this->SUT = new MatchFundsRemainingService($this->campaignFundingRepositoryProphecy->reveal());
     }
     public function testItFindNothingAvailableForCampaignWithNoFunds(): void
     {

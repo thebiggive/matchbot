@@ -47,76 +47,6 @@ class TestCase extends PHPUnitTestCase
 {
     use ProphecyTrait;
 
-    protected const array CAMPAIGN_FROM_SALESOFRCE = [
-        'id' => 'a05xxxxxxxxxxxxxxx',
-        'aims' => [0 => 'First Aim'],
-        'ready' => true,
-        'title' => 'Save Matchbot',
-        'video' => null,
-        'hidden' => false,
-        'quotes' => [],
-        'status' => 'Active',
-        'target' => 100.0,
-        'endDate' => '2095-08-01T00:00:00.000Z',
-        'logoUri' => null,
-        'problem' => 'Matchbot is threatened!',
-        'summary' => 'We can save matchbot',
-        'updates' => [],
-        'solution' => 'do the saving',
-        'bannerUri' => null,
-        'countries' => [0 => 'United Kingdom',],
-        'isMatched' => true,
-        'parentRef' => null,
-        'startDate' => '2015-08-01T00:00:00.000Z',
-        'categories' => ['Education/Training/Employment', 'Religious'],
-        'championRef' => null,
-        'amountRaised' => 0.0,
-        'championName' => null,
-        'currencyCode' => 'GBP',
-        'parentTarget' => null,
-        'beneficiaries' => ['Animals'],
-        'budgetDetails' => [
-            ['amount' => 23.0, 'description' => 'Improve the code'],
-            ['amount' => 27.0, 'description' => 'Invent a new programing paradigm'],
-        ],
-        'campaignCount' => null,
-        'donationCount' => 0,
-        'impactSummary' => null,
-        'impactReporting' => null,
-        'isRegularGiving' => false,
-        'matchFundsTotal' => 50.0,
-        'thankYouMessage' => 'Thank you for helping us save matchbot! We will be able to match twice as many bots now!',
-        'usesSharedFunds' => false,
-        'alternativeFundUse' => null,
-        'parentAmountRaised' => null,
-        'additionalImageUris' => [],
-        'matchFundsRemaining' => 50.0,
-        'parentDonationCount' => null,
-        'surplusDonationInfo' => null,
-        'parentUsesSharedFunds' => false,
-        'championOptInStatement' => null,
-        'parentMatchFundsRemaining' => null,
-        'regularGivingCollectionEnd' => null,
-        'charity' => [
-            'id' => 'xxxxxxxxxxxxxxxxxx',
-            'name' => 'Society for the advancement of bots and matches',
-            'logoUri' => null,
-            'twitter' => null,
-            'website' => 'https://society-for-the-advancement-of-bots-and-matches.localhost',
-            'facebook' => 'https://www.facebook.com/botsAndMatches',
-            'linkedin' => 'https://www.linkedin.com/company/botsAndMatches',
-            'instagram' => 'https://www.instagram.com/botsAndMatches',
-            'phoneNumber' => null,
-            'emailAddress' => 'bots-and-matches@example.com',
-            'optInStatement' => null,
-            'regulatorNumber' => '1000000',
-            'regulatorRegion' => 'England and Wales',
-            'stripeAccountId' => 'acc_123456',
-            'hmrcReferenceNumber' => null,
-            'giftAidOnboardingStatus' => 'Invited to Onboard',
-        ]
-    ];
-
     /**
      * @var array<0|1, ?App<ContainerInterface|null>> array of app instances with and without real redis. Each one may be
      *                       initialised up to once per test.
@@ -317,7 +247,6 @@ class TestCase extends PHPUnitTestCase
             phoneNumber: $phoneNumber,
             address: $address,
             emailAddress: $emailAddress,
-            rawData: self::CAMPAIGN_FROM_SALESOFRCE['charity'],
         );
     }
 
@@ -349,7 +278,7 @@ class TestCase extends PHPUnitTestCase
             isRegularGiving: $isRegularGiving,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             thankYouMessage: $thankYouMessage,
-            rawData: self::CAMPAIGN_FROM_SALESOFRCE,
+            rawData: [],
             hidden: false,
         );
     }

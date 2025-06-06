@@ -551,12 +551,8 @@ class Campaign extends SalesforceReadProxy
         return $this->hidden;
     }
 
-    public function getMetaCampaignSlug(): ?MetaCampaignSlug
+    public function getMetaCampaignSlug(): ?string
     {
-        if ($this->metaCampaignSlug === null) {
-            return null;
-        }
-
-        return MetaCampaignSlug::of($this->metaCampaignSlug);
+        return $this->metaCampaignSlug;
     }
 }
