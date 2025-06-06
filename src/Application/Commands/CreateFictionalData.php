@@ -140,6 +140,8 @@ class CreateFictionalData extends Command
      */
     private function getFictionalCampaignData(string $sfId, string $name, bool $isRegularGiving, bool $isMatched): array
     {
+        $randomSeed = \random_int(1, 100);
+
         return [ // @phpstan-ignore return.type
             'id' => $sfId,
             'charity' => [],
@@ -157,7 +159,7 @@ class CreateFictionalData extends Command
             'summary' => "We can $name",
             'updates' => [],
             'solution' => 'do the saving',
-            'bannerUri' => null,
+            'bannerUri' => "https://picsum.photos/seed/$randomSeed/1700/500",
             'countries' => [0 => 'United Kingdom',],
             'isMatched' => $isMatched,
             'parentRef' => null,
@@ -199,12 +201,14 @@ class CreateFictionalData extends Command
      */
     private function getFictionalCharityData(SymfonyStyle $io): array
     {
+        $randomSeed = \random_int(1, 100);
+
         $stripeAccountId = $this->createStripeAccount($io);
 
         return [
             'id' => self::SF_ID_ZERO,
             'name' => 'Society for the advancement of bots and matches',
-            'logoUri' =>  null,
+            'logoUri' =>  "https://picsum.photos/seed/$randomSeed/200/200",
             'twitter' => null,
             'website' => 'https://society-for-the-advancement-of-bots-and-matches.localhost',
             'facebook' => 'https://www.facebook.com/botsAndMatches',
