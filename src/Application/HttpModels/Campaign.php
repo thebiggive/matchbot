@@ -60,13 +60,7 @@ readonly class Campaign
         public ?float $matchFundsRemaining,
         public ?float $matchFundsTotal,
         public ?float $parentAmountRaised,
-        /**
-         * Only provided if $parentUsesSharedFunds, otherwise null.
-         */
         public ?int $parentDonationCount,
-        /**
-         * Only provided if $parentUsesSharedFunds, otherwise null.
-         */
         public ?float $parentMatchFundsRemaining,
         public ?string $parentRef, // Parent meta campaign slug (if set), or ID, or null if $no paren,
         public ?float $parentTarget,
