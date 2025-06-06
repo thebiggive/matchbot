@@ -49,11 +49,11 @@ class CampaignService
             ],
             'isRegularGiving' => $campaign->isRegularGiving(),
             'id' => $campaign->getSalesforceId(),
-            'amountRaised' => $campaignId !== null ? $this->amountRaised($campaignId)->toMajorUnitFloat() : 0.0,
+            'amountRaised' => $campaignId !== null ? $this->cachedAmountRaised($campaignId)->toMajorUnitFloat() : 0.0,
             'currencyCode' => $campaign->getCurrencyCode(),
             'endDate' => $this->formatDate($campaign->getEndDate()),
             'isMatched' => $campaign->isMatched(),
-            'matchFundsRemaining' => $this->matchFundsRemaining($campaign)->toMajorUnitFloat(),
+            'matchFundsRemaining' => $this->cachedMatchFundsRemaining($campaign)->toMajorUnitFloat(),
             'startDate' => $this->formatDate($campaign->getStartDate()),
             'status' => $campaign->getStatus(),
             'title' => $campaign->getCampaignName(),
@@ -138,7 +138,7 @@ class CampaignService
         $campaignId = $campaign->getId();
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
-            amountRaised: $campaignId === null ? 0 : $this->amountRaised($campaignId)->toMajorUnitFloat(),
+            amountRaised: $campaignId === null ? 0 : $this->cachedAmountRaised($campaignId)->toMajorUnitFloat(),
             additionalImageUris: $sfCampaignData['additionalImageUris'],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
@@ -161,8 +161,8 @@ class CampaignService
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
             logoUri: $sfCampaignData['logoUri'],
-            matchFundsRemaining: $this->matchFundsRemaining($campaign)->toMajorUnitFloat(),
-            matchFundsTotal: $this->totalMatchFundsForCampaign($campaign)->toMajorUnitFloat(),
+            matchFundsRemaining: $this->cachedMatchFundsRemaining($campaign)->toMajorUnitFloat(),
+            matchFundsTotal: $this->cachedTotalMatchFundsForCampaign($campaign)->toMajorUnitFloat(),
             parentAmountRaised: $parentAmountRaised,
             parentDonationCount: $metaCampaign ? $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign) : null,
             parentMatchFundsRemaining: $parentMatchFundsRemaining,
@@ -331,7 +331,7 @@ class CampaignService
      *
      * @return Money
      */
-    public function amountRaised(int $campaignId): Money
+    public function cachedAmountRaised(int $campaignId): Money
     {
         // beta 1.0 below matches library default, controls probablistic early expiration to prevent stampedes. Likely to
         // be important especially important just after launching big meta campaigns. Stampedes for indivdual charity
@@ -360,7 +360,7 @@ class CampaignService
         return Money::fromSerialized($cachedAmountArray);
     }
 
-    private function matchFundsRemaining(Campaign $campaign): Money
+    private function cachedMatchFundsRemaining(Campaign $campaign): Money
     {
         $id = $campaign->getId();
         if ($id === null) {
@@ -378,7 +378,7 @@ class CampaignService
         return Money::fromSerialized($cachedAmountArray);
     }
 
-    private function totalMatchFundsForCampaign(Campaign $campaign): Money
+    private function cachedTotalMatchFundsForCampaign(Campaign $campaign): Money
     {
         $id = $campaign->getId();
         if ($id === null) {
