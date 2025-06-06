@@ -139,6 +139,13 @@ class CampaignService
 
         /** Non-null for any *launched* campaign; if it's null we know £0 has been raised. */
         $campaignId = $campaign->getId();
+
+        if ($metaCampaign && $metaCampaign->usesSharedFunds()) {
+            $parentDonationCount = $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign);
+        } else {
+            $parentDonationCount = null;
+        }
+
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
             amountRaised: $campaignId === null ? 0 : $this->cachedAmountRaised($campaignId)->toMajorUnitFloat(),
@@ -167,7 +174,7 @@ class CampaignService
             matchFundsRemaining: $this->cachedMatchFundsRemaining($campaign)->toMajorUnitFloat(),
             matchFundsTotal: $this->cachedTotalMatchFundsForCampaign($campaign)->toMajorUnitFloat(),
             parentAmountRaised: $parentAmountRaised,
-            parentDonationCount: $metaCampaign ? $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign) : null,
+            parentDonationCount: $parentDonationCount,
             parentMatchFundsRemaining: $parentMatchFundsRemaining,
             parentRef: $campaign->getMetaCampaignSlug()?->slug,
             parentTarget: $parentTarget,
