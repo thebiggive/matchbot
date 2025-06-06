@@ -377,32 +377,22 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @throws Client\NotFoundException if Campaign not found on Salesforce
-     * @throws \Exception if start or end dates' formats are invalid
+     * @param Campaign $campaign
+     * @param  SFCampaignApiResponse $campaignData
      */
-    #[\Override]
-    protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
+    public function updateCampaignFromSFData(Campaign $campaign, array $campaignData): void
     {
-        $campaign = $proxy;
-
-        /** @psalm-suppress RedundantConditionGivenDocblockType - redundant for Psalm but useful for PHPStorm
-         **/
-        \assert($campaign instanceof Campaign);
-
-        $client = $this->getClient();
-        $campaignData = $client->getById($campaign->getSalesforceId(), $withCache);
-
         $startDateString = $campaignData['startDate'];
         $endDateString = $campaignData['endDate'];
         $title = $campaignData['title'];
 
         // dates may be null for a non-launched early stage preview campaign, but not for a campaign that we're pulling
         // into the matchbot DB via an update.
-        Assertion::notNull($startDateString, "Null start date supplied when attempting to update campaign {$proxy->getSalesforceId()}");
-        Assertion::notNull($endDateString, "Null end date supplied when attempting to update campaign {$proxy->getSalesforceId()}");
-        Assertion::notNull($title, "Null title supplied when attempting to updated campaign {$proxy->getSalesforceId()}");
+        Assertion::notNull($startDateString, "Null start date supplied when attempting to update campaign {$campaign->getSalesforceId()}");
+        Assertion::notNull($endDateString, "Null end date supplied when attempting to update campaign {$campaign->getSalesforceId()}");
+        Assertion::notNull($title, "Null title supplied when attempting to updated campaign {$campaign->getSalesforceId()}");
 
-        $this->updateCharityFromCampaignData($proxy->getCharity(), $campaignData);
+        $this->updateCharityFromCampaignData($campaign->getCharity(), $campaignData);
 
         if ($campaign->hasBeenPersisted() && $campaign->getCurrencyCode() !== $campaignData['currencyCode']) {
             $this->logWarning(sprintf(
@@ -413,9 +403,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
             throw new DomainCurrencyMustNotChangeException();
         }
-
-        $feePercentage = $campaignData['feePercentage'] ?? null;
-        Assertion::null($feePercentage, "Fee percentages are no-longer supported, should always be null");
 
         if ($campaignData['status'] === null) {
             $this->getLogger()->debug("null status from SF for campaign " . $campaignData['id']);
@@ -441,6 +428,26 @@ class CampaignRepository extends SalesforceReadProxyRepository
             hidden: $campaignData['hidden'] ?? false,
             sfData: $campaignData,
         );
+    }
+
+    /**
+     * @throws Client\NotFoundException if Campaign not found on Salesforce
+     * @throws \Exception if start or end dates' formats are invalid
+     */
+    #[\Override]
+    protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
+    {
+        $campaign = $proxy;
+
+        /** @psalm-suppress RedundantConditionGivenDocblockType - redundant for Psalm but useful for PHPStorm
+         **/
+        \assert($campaign instanceof Campaign);
+
+        $client = $this->getClient();
+        $campaignData = $client->getById($campaign->getSalesforceId(), $withCache);
+
+        $this->updateCampaignFromSFData($campaign, $campaignData);
+
         $this->getEntityManager()->flush();
     }
 

@@ -83,7 +83,7 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
         // assert
         $em->clear();
 
-        $charity = $this->getService(CharityRepository::class)->findOneBySfIDOrThrow(Salesforce18Id::ofCharity($sfId));
+        $charity = $this->getService(CharityRepository::class)->findOneBySalesforceIdOrThrow(Salesforce18Id::ofCharity($sfId));
         $this->assertSame('New Charity Name', $charity->getName());
         $this->assertFalse($campaign->isReady());
         $this->assertSame('Preview', $campaign->getStatus());
