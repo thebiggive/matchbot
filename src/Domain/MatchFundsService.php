@@ -55,17 +55,17 @@ class MatchFundsService
     public function getTotalFunds(CampaignDomainModel $campaign): Money
     {
         $currencyCode = $campaign->getCurrencyCode();
-        Assertion::notNull($currencyCode, 'cannot get funds remaining for campaign with null currency');
+        Assertion::notNull($currencyCode, 'cannot get fundings remaining for campaign with null currency');
 
-        $funds = $this->campaignFundingRepository->getAllFundingsForCampaign($campaign);
+        $fundings = $this->campaignFundingRepository->getAllFundingsForCampaign($campaign);
 
-        // todo - consider optimising by doing the summation in the DB. But I think the number of funds will be low
+        // todo - consider optimising by doing the summation in the DB. But I think the number of fundings will be low
         // enough in all or nearly all cases that the performance where will be OK.
 
         $runningTotal = '0.00';
-        foreach ($funds as $fund) {
-            $amount = $fund->getAmount();
-            Assertion::same($currencyCode, $fund->getCurrencyCode(), 'fund currency code must equal campaign currency code');
+        foreach ($fundings as $funding) {
+            $amount = $funding->getAmount();
+            Assertion::same($currencyCode, $funding->getCurrencyCode(), 'funding currency code must equal campaign currency code');
             $runningTotal = \bcadd($runningTotal, $amount, 2);
         }
 
