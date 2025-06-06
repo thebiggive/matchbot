@@ -8,6 +8,7 @@ use DateTime;
 use Doctrine\ORM\Mapping as ORM;
 use Laminas\Diactoros\Uri;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\AssertionFailedException;
 use Psr\Http\Message\UriInterface;
 
 #[ORM\Table]
@@ -310,7 +311,13 @@ class Charity extends SalesforceReadProxy
         $this->setRegulator($regulator);
         $this->setRegulatorNumber($regulatorNumber);
 
-        $this->setWebsiteUri($websiteUri);
+        try {
+            $this->setWebsiteUri($websiteUri);
+        } catch (AssertionFailedException $e) {
+            // not setting an invalid URL, but the old
+            // one may not be right either so best we can do is set null.
+            $this->setWebsiteUri(null);
+        }
         $this->setLogoUri($logoUri);
         $this->setPhoneNumber($phoneNumber);
 
@@ -363,6 +370,9 @@ class Charity extends SalesforceReadProxy
         return $this->regulatorNumber === null;
     }
 
+    /**
+     * @throws AssertionFailedException if param is an invald URL.
+     */
     private function setWebsiteUri(?string $websiteUri): void
     {
         $websiteUri = $this->replaceBlankWithNull($websiteUri);
