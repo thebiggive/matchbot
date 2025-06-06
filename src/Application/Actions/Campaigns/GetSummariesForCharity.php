@@ -39,7 +39,7 @@ class GetSummariesForCharity extends Action
             $args['charitySalesforceId'] ?? throw new HttpNotFoundException($request)
         );
 
-        $charity = $this->charityRepository->findOneBySfIDOrThrow($sfId);
+        $charity = $this->charityRepository->findOneBySalesforceIdOrThrow($sfId);
 
         $campaigns = $this->campaignRepository->findCampaignsForCharityPage($charity);
 

@@ -13,6 +13,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Slim\Psr7\Response;
+use Slim\Psr7\Stream;
 
 /**
  * This middleware requires that a request is from our own Salesforce instance, based on a shared secret. Salesforce
@@ -36,11 +37,25 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
     #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (!$this->verify($request)) {
+        $givenHash = $request->getHeaderLine('x-send-verify-hash');
+        $content = $request->getBody()->getContents();
+
+        if (!$this->verify($givenHash, $content)) {
             return $this->unauthorised($this->logger);
         }
 
-        return $handler->handle($request);
+        // because we've consumed the body content we now have to put the content back into a new request
+        // body so that the next handler can read it. More awkward than I'd like, but followed method from
+        // https://evertpot.com/222/
+        //
+        // This wasn't an issue up till now because all the requests from SF happened to have empty bodies.
+
+        $stream = fopen('php://memory', 'rb+');
+        \assert(\is_resource($stream));
+        fwrite($stream, $content);
+        rewind($stream);
+
+        return $handler->handle($request->withBody(new Stream($stream)));
     }
 
     protected function unauthorised(LoggerInterface $logger): ResponseInterface
@@ -54,13 +69,11 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    private function verify(ServerRequestInterface $request): bool
+    private function verify(string $givenHash, string $content): bool
     {
-        $givenHash = $request->getHeaderLine('x-send-verify-hash');
-
         $expectedHash = hash_hmac(
             'sha256',
-            trim((string) $request->getBody()),
+            trim($content),
             $this->sfApiKey
         );
 

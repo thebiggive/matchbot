@@ -96,14 +96,6 @@ class CancelAsAdminTest extends TestCase
         return $mandate;
     }
 
-    private function getSalesforceAuthValue(string $body): string
-    {
-        $salesforceSecretKey = getenv('SALESFORCE_SECRET_KEY');
-        \assert(is_string($salesforceSecretKey));
-
-        return hash_hmac('sha256', $body, $salesforceSecretKey);
-    }
-
     /** @return Route<null> */
     private function getRouteWithMandateId(string $mandateUuidString): Route
     {

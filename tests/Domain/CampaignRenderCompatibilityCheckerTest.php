@@ -21,6 +21,7 @@ class CampaignRenderCompatibilityCheckerTest extends TestCase
         $actual = self::CAMPAIGN_FROM_SALESOFRCE;
 
         $actual['amountRaised'] += 1.0; // simulates a donation in MB that hasn't been rolled up in SF yet.
+        unset($actual['charity']['postalAddress']); // We don't send postal address to FE, just used for sending emails
 
         // act
         CampaignRenderCompatibilityChecker::checkCampaignHttpModelMatchesModelFromSF($actual, self::CAMPAIGN_FROM_SALESOFRCE);
