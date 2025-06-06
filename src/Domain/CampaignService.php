@@ -10,6 +10,8 @@ use MatchBot\Application\HttpModels\Campaign as CampaignHttpModel;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\Campaign as CampaignDomainModel;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Clock\Clock;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -21,14 +23,16 @@ class CampaignService
     private const string CAMPAIGN_AMOUNT_RAISED_CACHE_PREFIX = 'campaign_amount_raised.';
 
     private const string CAMPAIGN_MATCH_AMOUNT_AVAILABLE_PREFIX = 'campaign_match_amount_available.';
+    private const string CAMPAIGN_MATCH_AMOUNT_TOTAL_PREFIX = 'campaign_match_amount_total.';
 
     public function __construct(
         private CampaignRepository $campaignRepository,
         private MetaCampaignRepository $metaCampaignRepository,
         private CacheInterface $cache,
         private DonationRepository $donationRepository,
-        private MatchFundsRemainingService $matchFundsRemainingService,
-        private LoggerInterface $log
+        private MatchFundsService $matchFundsRemainingService,
+        private LoggerInterface $log,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -48,11 +52,11 @@ class CampaignService
             ],
             'isRegularGiving' => $campaign->isRegularGiving(),
             'id' => $campaign->getSalesforceId(),
-            'amountRaised' => $campaignId !== null ? $this->amountRaised($campaignId)->toMajorUnitFloat() : 0.0,
+            'amountRaised' => $campaignId !== null ? $this->cachedAmountRaised($campaignId)->toMajorUnitFloat() : 0.0,
             'currencyCode' => $campaign->getCurrencyCode(),
             'endDate' => $this->formatDate($campaign->getEndDate()),
             'isMatched' => $campaign->isMatched(),
-            'matchFundsRemaining' => $this->matchFundsRemaining($campaign)->toMajorUnitFloat(),
+            'matchFundsRemaining' => $this->cachedMatchFundsRemaining($campaign)->toMajorUnitFloat(),
             'startDate' => $this->formatDate($campaign->getStartDate()),
             'status' => $campaign->getStatus(),
             'title' => $campaign->getCampaignName(),
@@ -101,8 +105,6 @@ class CampaignService
         // because matchbot should be able to calculate more up to date or more authoritative versions of them
         // itself. We need to go through and implement a function to calculate each of these using our data
         // about the campaign and related fund(s), meta-campaign, etc.
-
-        $matchFundsTotal = $sfCampaignData['matchFundsTotal'];
         $parentAmountRaised = $sfCampaignData['parentAmountRaised'];
         $parentMatchFundsRemaining = $sfCampaignData['parentMatchFundsRemaining'];
         $parentTarget = $sfCampaignData['parentTarget'];
@@ -139,7 +141,7 @@ class CampaignService
         $campaignId = $campaign->getId();
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
-            amountRaised: $campaignId === null ? 0 : $this->amountRaised($campaignId)->toMajorUnitFloat(),
+            amountRaised: $campaignId === null ? 0 : $this->cachedAmountRaised($campaignId)->toMajorUnitFloat(),
             additionalImageUris: $sfCampaignData['additionalImageUris'],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
@@ -162,8 +164,8 @@ class CampaignService
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
             logoUri: $sfCampaignData['logoUri'],
-            matchFundsRemaining: $this->matchFundsRemaining($campaign)->toMajorUnitFloat(),
-            matchFundsTotal: $matchFundsTotal,
+            matchFundsRemaining: $this->cachedMatchFundsRemaining($campaign)->toMajorUnitFloat(),
+            matchFundsTotal: $this->cachedTotalMatchFundsForCampaign($campaign)->toMajorUnitFloat(),
             parentAmountRaised: $parentAmountRaised,
             parentDonationCount: $metaCampaign ? $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign) : null,
             parentMatchFundsRemaining: $parentMatchFundsRemaining,
@@ -332,7 +334,7 @@ class CampaignService
      *
      * @return Money
      */
-    public function amountRaised(int $campaignId): Money
+    public function cachedAmountRaised(int $campaignId): Money
     {
         // beta 1.0 below matches library default, controls probablistic early expiration to prevent stampedes. Likely to
         // be important especially important just after launching big meta campaigns. Stampedes for indivdual charity
@@ -361,7 +363,7 @@ class CampaignService
         return Money::fromSerialized($cachedAmountArray);
     }
 
-    private function matchFundsRemaining(Campaign $campaign): Money
+    private function cachedMatchFundsRemaining(Campaign $campaign): Money
     {
         $id = $campaign->getId();
         if ($id === null) {
@@ -372,7 +374,32 @@ class CampaignService
             key: self::CAMPAIGN_MATCH_AMOUNT_AVAILABLE_PREFIX . (string)$id,
             callback: function (ItemInterface $item) use ($campaign): array {
                 $item->expiresAfter(120); // two minutes
-                return $this->matchFundsRemainingService->getFundsRemaining($campaign)->jsonSerialize();
+                $startTime = $this->clock->now();
+                $returnValue = $this->matchFundsRemainingService->getFundsRemaining($campaign)->jsonSerialize();
+                $endTime = $this->clock->now();
+
+                $diffSeconds = $startTime->diff($endTime)->f;
+                $this->log->info("Getting getFundsRemaining for campaign {$campaign->getSalesforceId()} took " . (string) $diffSeconds . "s");
+
+                return $returnValue;
+            }
+        );
+
+        return Money::fromSerialized($cachedAmountArray);
+    }
+
+    private function cachedTotalMatchFundsForCampaign(Campaign $campaign): Money
+    {
+        $id = $campaign->getId();
+        if ($id === null) {
+            return Money::zero(Currency::GBP);
+        }
+
+        $cachedAmountArray = $this->cache->get(
+            key: self::CAMPAIGN_MATCH_AMOUNT_TOTAL_PREFIX . (string)$id,
+            callback: function (ItemInterface $item) use ($campaign): array {
+                $item->expiresAfter(120); // two minutes
+                return $this->matchFundsRemainingService->getTotalFunds($campaign)->jsonSerialize();
             }
         );
 
