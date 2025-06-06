@@ -13,6 +13,8 @@ use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Clock\Clock;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Contracts\Cache\CacheInterface;
 
 class CampaignServiceTest extends TestCase
@@ -33,6 +35,7 @@ class CampaignServiceTest extends TestCase
             donationRepository: $this->createStub(DonationRepository::class),
             matchFundsRemainingService: $this->createStub(MatchFundsService::class),
             log: $this->createStub(LoggerInterface::class),
+            clock: new MockClock(new \DateTimeImmutable('1970-01-01')),
         );
     }
 

@@ -10,6 +10,8 @@ use MatchBot\Application\HttpModels\Campaign as CampaignHttpModel;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\Campaign as CampaignDomainModel;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Clock\Clock;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -29,7 +31,8 @@ class CampaignService
         private CacheInterface $cache,
         private DonationRepository $donationRepository,
         private MatchFundsService $matchFundsRemainingService,
-        private LoggerInterface $log
+        private LoggerInterface $log,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -371,7 +374,14 @@ class CampaignService
             key: self::CAMPAIGN_MATCH_AMOUNT_AVAILABLE_PREFIX . (string)$id,
             callback: function (ItemInterface $item) use ($campaign): array {
                 $item->expiresAfter(120); // two minutes
-                return $this->matchFundsRemainingService->getFundsRemaining($campaign)->jsonSerialize();
+                $startTime = $this->clock->now();
+                $returnValue = $this->matchFundsRemainingService->getFundsRemaining($campaign)->jsonSerialize();
+                $endTime = $this->clock->now();
+
+                $diffSeconds = $startTime->diff($endTime)->f;
+                $this->log->info("Getting getFundsRemaining for campaign {$campaign->getSalesforceId()} took" . (string) $diffSeconds . "s");
+
+                return $returnValue;
             }
         );
 
