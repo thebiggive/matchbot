@@ -6,9 +6,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
+use MatchBot\Domain\Currency;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\MetaCampaign;
+use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
@@ -35,7 +38,7 @@ class CampaignServiceTest extends IntegrationTest
         \assert($campaignId !== null);
 
         $this->assertEquals(
-            $this->SUT->amountRaised($campaignId),
+            $this->SUT->cachedAmountRaised($campaignId),
             Money::zero(),
         );
     }
@@ -71,7 +74,7 @@ class CampaignServiceTest extends IntegrationTest
         \assert($campaignId !== null);
 
         $this->assertEquals(
-            $this->SUT->amountRaised($campaignId),
+            $this->SUT->cachedAmountRaised($campaignId),
             Money::fromPoundsGBP(4),
         );
     }
@@ -92,7 +95,7 @@ class CampaignServiceTest extends IntegrationTest
         \assert($campaignId !== null);
 
         $this->assertEquals(
-            $this->SUT->amountRaised($campaignId),
+            $this->SUT->cachedAmountRaised($campaignId),
             Money::fromPoundsGBP(2),
         );
     }
