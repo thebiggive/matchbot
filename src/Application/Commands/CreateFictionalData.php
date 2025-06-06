@@ -6,9 +6,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Client\Campaign as CampaignClient;
+use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\CharityRepository;
+use MatchBot\Domain\Fund;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\Salesforce18Id;
 use Random\Randomizer;
 use Stripe\StripeClient;
@@ -54,6 +57,11 @@ class CreateFictionalData extends Command
         $io->writeln("Creating fictional data for local developer testing");
 
         $charity = $this->charityRepository->findOneBy(['salesforceId' => self::SF_ID_ZERO]);
+        $fund = new Fund('GBP', 'test fund', Salesforce18Id::ofFund('000000000000000001'), FundType::Pledge);
+        $campaignFunding = new CampaignFunding($fund, '50.0', '50.0');
+        $this->em->persist($fund);
+        $this->em->persist($campaignFunding);
+
 
         if (!$charity) {
             /** @psalm-suppress ArgumentTypeCoercion */
@@ -81,6 +89,7 @@ class CreateFictionalData extends Command
 
                 $io->writeln("Created fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
                 $this->em->persist($campaign);
+                $campaignFunding->addCampaign($campaign);
             } else {
                 $io->writeln("Found existing fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
             }
@@ -90,7 +99,7 @@ class CreateFictionalData extends Command
 
             $this->em->flush();
 
-            $renderedCampaign = $this->campaignService->renderCampaign($campaign);
+            $renderedCampaign = $this->campaignService->renderCampaign($campaign, metaCampaign: null);
 
             $errors = $renderedCampaign['errors'] ?? [];
             \assert(\is_array($errors));

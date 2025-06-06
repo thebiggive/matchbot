@@ -109,7 +109,7 @@ class MetaCampaign extends SalesforceReadProxy
     /**
      * @param Salesforce18Id<self> $salesforceId
      */
-    private function __construct(
+    public function __construct(
         MetaCampaignSlug $slug,
         Salesforce18Id $salesforceId,
         string $title,
@@ -163,7 +163,6 @@ class MetaCampaign extends SalesforceReadProxy
         Assertion::notNull($endDate);
         Assertion::notNull($title);
 
-
         return new self(
             slug: $slug,
             salesforceId: Salesforce18Id::ofMetaCampaign($data['id']),
@@ -178,5 +177,19 @@ class MetaCampaign extends SalesforceReadProxy
             isRegularGiving: $isRegularGiving,
             isEmergencyIMF: $data['isEmergencyIMF'] ?? false, // @todo MAT-405 : start sending isEmergencyIMF from SF and remove null coalesce here
         );
+    }
+
+    /**
+     * Returns true if the campaigns within this meta-campaign should have access to a shared match funding pot, rather than
+     * individual pots.
+     */
+    public function usesSharedFunds(): bool
+    {
+        return $this->isRegularGiving || $this->isEmergencyIMF;
+    }
+
+    public function getSlug(): MetaCampaignSlug
+    {
+        return MetaCampaignSlug::of($this->slug);
     }
 }
