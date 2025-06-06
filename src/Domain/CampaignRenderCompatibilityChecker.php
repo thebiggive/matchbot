@@ -31,6 +31,7 @@ class CampaignRenderCompatibilityChecker
         'parentAmountRaised',
         'parentDonationCount',
         'parentMatchFundsRemaining',
+        'matchFundsTotal', // checking this fails because our campaign reconstructed from SF data doesn't have a numeric ID we can't find its funds.
     ];
 
     /**
