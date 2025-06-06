@@ -44,11 +44,18 @@ class CampaignFundingRepository extends EntityRepository
         return $result;
     }
 
-    /** @return CampaignFunding[] */
+    /**
+     * Returns all CampaignFunding associated with campaign, including those that have zero
+     * funds available at this time.
+     *
+     * Result is in an arbitrary order, unlike getAvailableFundings which gives an ordered list.
+     *
+     * @return CampaignFunding[]
+     */
     public function getAllFundingsForCampaign(Campaign $campaign): array
     {
         $query = $this->getEntityManager()->createQuery('
-            SELECT cf FROM MatchBot\Domain\CampaignFunding cf JOIN cf.fund fund
+            SELECT cf FROM MatchBot\Domain\CampaignFunding cf
             WHERE :campaign MEMBER OF cf.campaigns
         ');
         $query->setParameter('campaign', $campaign->getId());
