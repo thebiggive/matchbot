@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use MatchBot\Application\Assertion;
 
 /**
  * @psalm-suppress UnusedProperty - likely to be used soon
@@ -44,5 +45,75 @@ class MetaCampaignRepository
         \assert($count >= 0);
 
         return $count;
+    }
+
+    /**
+     * Returns the total of all the complete donations to this metacampaign, including matching and including gift aid,
+     * and any "offline" donations or adjustments.
+     */
+    public function totalAmountRaised(MetaCampaign $metaCampaign): Money
+    {
+        $donationQuery = $this->em->createQuery(
+            <<<'DQL'
+            SELECT donation.currencyCode, COALESCE(SUM(
+            donation.amount + 
+            if(donation.giftAid, donation.amount * 0.25, 0)
+            ), 0) as sum
+            FROM MatchBot\Domain\Donation donation JOIN d.campaign c
+            WHERE c.metaCampaignSlug = :slug 
+            AND donation.donationStatus IN (:succcessStatus)
+            GROUP BY donation.currencyCode
+        DQL
+        );
+
+        $donationQuery->setParameters([
+            'slug' => $metaCampaign->getSlug()->slug,
+            'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
+        ]);
+
+        /** @var list<array{currencyCode: string, sum: numeric-string}> $donationResult */
+        $donationResult =  $donationQuery->getResult();
+
+        Assertion::maxCount(
+            $donationResult,
+            1,
+            "multiple currency donations found for same campaign, can't calculate sum"
+        );
+
+        if ($donationResult === []) {
+            $donationSum = '0.00';
+        } else {
+            $donationSum = $donationResult[0]['sum'];
+        }
+
+        Assertion::numeric($donationSum);
+
+        $matchedFundQuery = $this->em->createQuery(
+            <<<'DQL'
+            SELECT COALESCE(SUM(fw.amount), 0) as sum
+            FROM MatchBot\Domain\FundingWithdrawal fw
+            JOIN fw.donation donation JOIN d.campaign c
+            WHERE c.metaCampaignSlug = :slug
+            AND donation.donationStatus IN (:succcessStatus)
+        DQL
+        );
+
+        $matchedFundQuery->setParameters([
+            'slug' => $metaCampaign->getSlug()->slug,
+            'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
+        ]);
+
+        $matchedFundResult =  $matchedFundQuery->getSingleScalarResult();
+        Assertion::numeric($matchedFundResult);
+
+        $currency = Currency::fromIsoCode($donationResult[0]['currencyCode']);
+
+        $total = Money::sum(
+            Money::fromNumericString($donationSum, $currency),
+            Money::fromNumericString((string) $matchedFundResult, $currency),
+            $metaCampaign->getTotalAdjustment(),
+        );
+
+        return $total;
     }
 }

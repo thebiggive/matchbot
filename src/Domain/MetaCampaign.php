@@ -79,6 +79,18 @@ class MetaCampaign extends SalesforceReadProxy
     private \DateTimeImmutable $endDate;
 
     /**
+     * CCampaign__c.Total_Adjustment__c from Salesforce - Adjustment amount (positive to add to the displayed grand
+     * total) for a Master Campaign
+     *
+     * Total of any "offline" payments which need to be included in the campaign e.g. Award Payments, Offline Payments,
+     * Gift Aid on Pledge Assumptions.
+     *
+     * @var Money
+     */
+    #[ORM\Embedded(columnPrefix: 'total_adjustment_')]
+    private Money $totalAdjustment;
+
+    /**
      * All associated charity campaigns must match this, accepting either regular or ad-hoc
      * donations, not a mixture.
      *
@@ -107,6 +119,7 @@ class MetaCampaign extends SalesforceReadProxy
 
 
     /**
+     * @param Money $totalAdjustment
      * @param Salesforce18Id<self> $salesforceId
      */
     public function __construct(
@@ -122,7 +135,10 @@ class MetaCampaign extends SalesforceReadProxy
         \DateTimeImmutable $endDate,
         bool $isRegularGiving,
         bool $isEmergencyIMF,
+        Money $totalAdjustment,
     ) {
+        Assertion::same($totalAdjustment->currency, $currency);
+
         $this->slug = $slug->slug;
         $this->setSalesforceId($salesforceId->value);
         $this->title = $title;
@@ -135,6 +151,7 @@ class MetaCampaign extends SalesforceReadProxy
         $this->endDate = $endDate;
         $this->isRegularGiving = $isRegularGiving;
         $this->isEmergencyIMF = $isEmergencyIMF;
+        $this->totalAdjustment = $totalAdjustment;
     }
 
     /**
@@ -163,11 +180,16 @@ class MetaCampaign extends SalesforceReadProxy
         Assertion::notNull($endDate);
         Assertion::notNull($title);
 
+        $currency = Currency::fromIsoCode($data['currencyCode']);
+
+        $totalAdjustment = (string)$data['totalAdjustment'];
+        Assertion::numeric($totalAdjustment);
+
         return new self(
             slug: $slug,
             salesforceId: Salesforce18Id::ofMetaCampaign($data['id']),
             title: $title,
-            currency: Currency::fromIsoCode($data['currencyCode']),
+            currency: $currency,
             status: $status,
             hidden: $data['hidden'],
             summary: $data['summary'],
@@ -176,6 +198,7 @@ class MetaCampaign extends SalesforceReadProxy
             endDate: new \DateTimeImmutable($endDate),
             isRegularGiving: $isRegularGiving,
             isEmergencyIMF: $data['isEmergencyIMF'] ?? false, // @todo MAT-405 : start sending isEmergencyIMF from SF and remove null coalesce here
+            totalAdjustment: Money::fromNumericString($totalAdjustment, $currency)
         );
     }
 
@@ -191,5 +214,10 @@ class MetaCampaign extends SalesforceReadProxy
     public function getSlug(): MetaCampaignSlug
     {
         return MetaCampaignSlug::of($this->slug);
+    }
+
+    public function getTotalAdjustment(): Money
+    {
+        return $this->totalAdjustment;
     }
 }

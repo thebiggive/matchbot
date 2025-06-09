@@ -73,6 +73,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     parentMatchFundsRemaining: ?float,
  *     parentDonationCount: ?int,
  *     parentAmountRaised: ?float,
+ *     totalAdjustment: ?float,
  *     logoUri: ?string,
  *     impactSummary: ?string,
  *     impactReporting: ?string,

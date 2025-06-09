@@ -24,6 +24,7 @@ class CampaignService
 
     private const string CAMPAIGN_MATCH_AMOUNT_AVAILABLE_PREFIX = 'campaign_match_amount_available.';
     private const string CAMPAIGN_MATCH_AMOUNT_TOTAL_PREFIX = 'campaign_match_amount_total.';
+    private const string METACAMPAIGN_MATCH_AMOUNT_TOTAL_PREFIX = 'metacampaign_match_amount_total';
 
     public function __construct(
         private CampaignRepository $campaignRepository,
@@ -105,7 +106,6 @@ class CampaignService
         // because matchbot should be able to calculate more up to date or more authoritative versions of them
         // itself. We need to go through and implement a function to calculate each of these using our data
         // about the campaign and related fund(s), meta-campaign, etc.
-        $parentAmountRaised = $sfCampaignData['parentAmountRaised'];
         $parentMatchFundsRemaining = $sfCampaignData['parentMatchFundsRemaining'];
         $parentTarget = $sfCampaignData['parentTarget'];
         // end of variables to re-implement above. Other variables can continue being pulled directly from $sfCampaignData
@@ -142,9 +142,12 @@ class CampaignService
 
         if ($metaCampaign && $metaCampaign->usesSharedFunds()) {
             $parentDonationCount = $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign);
+            $parentAmountRaised = $this->getAmountRaisedForMetaCampaign($metaCampaign)->toMajorUnitFloat();
         } else {
             $parentDonationCount = null;
+            $parentAmountRaised = null;
         }
+
 
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
@@ -410,6 +413,22 @@ class CampaignService
             callback: function (ItemInterface $item) use ($campaign): array {
                 $item->expiresAfter(120); // two minutes
                 return $this->matchFundsRemainingService->getTotalFunds($campaign)->jsonSerialize();
+            }
+        );
+
+        return Money::fromSerialized($cachedAmountArray);
+    }
+
+    public function getAmountRaisedForMetaCampaign(MetaCampaign $metaCampaign): Money
+    {
+        $id = $metaCampaign->getId();
+        Assertion::notNull($id);
+
+        $cachedAmountArray = $this->cache->get(
+            key: self::METACAMPAIGN_MATCH_AMOUNT_TOTAL_PREFIX . (string)$id,
+            callback: function (ItemInterface $item) use ($metaCampaign): array {
+                $item->expiresAfter(120); // two minutes
+                return $this->metaCampaignRepository->totalAmountRaised($metaCampaign)->jsonSerialize();
             }
         );
 
