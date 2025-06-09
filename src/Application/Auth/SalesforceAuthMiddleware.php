@@ -46,18 +46,10 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
             return $this->unauthorised($this->logger);
         }
 
-        // because we've consumed the body content we now have to put the content back into a new request
-        // body so that the next handler can read it. More awkward than I'd like, but followed method from
-        // https://evertpot.com/222/
-        //
-        // This wasn't an issue up till now because all the requests from SF happened to have empty bodies.
+        // Necessary because getContents() has consumed the stream.
+        $request->getBody()->rewind();
 
-        $stream = fopen('php://memory', 'rb+');
-        \assert(\is_resource($stream));
-        fwrite($stream, $content);
-        rewind($stream);
-
-        return $handler->handle($request->withBody(new Stream($stream)));
+        return $handler->handle($request);
     }
 
     protected function unauthorised(LoggerInterface $logger): ResponseInterface
