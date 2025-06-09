@@ -24,6 +24,8 @@ use Slim\Psr7\Stream;
  */
 readonly class SalesforceAuthMiddleware implements MiddlewareInterface
 {
+    public const string HEADER_NAME = 'x-send-verify-hash';
+
     #[Pure]
     public function __construct(
         /** @var non-empty-string $sfApiKey */
@@ -37,7 +39,7 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
     #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $givenHash = $request->getHeaderLine('x-send-verify-hash');
+        $givenHash = $request->getHeaderLine(self::HEADER_NAME);
         $content = $request->getBody()->getContents();
 
         if (!$this->verify($givenHash, $content)) {

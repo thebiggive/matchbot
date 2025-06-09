@@ -3,6 +3,7 @@
 namespace MatchBot\IntegrationTests;
 
 use GuzzleHttp\Psr7\ServerRequest;
+use MatchBot\Application\Auth\SalesforceAuthMiddleware;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\Actions\Hooks\StripeTest;
@@ -27,7 +28,7 @@ class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\Integratio
             method: 'PUT',
             uri: '/v1/campaigns/' . $campaignSfId->value,
             headers: [
-                'x-send-verify-hash' => TestCase::getSalesforceAuthValue($body),
+                SalesforceAuthMiddleware::HEADER_NAME => TestCase::getSalesforceAuthValue($body),
             ],
             body: $body
         ));
