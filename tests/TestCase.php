@@ -20,8 +20,6 @@ use MatchBot\Domain\PostalAddress;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
-use MatchBot\IntegrationTests\IntegrationTest;
-use MatchBot\Tests\Application\Actions\Donations\CreateTest;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -42,13 +40,18 @@ use Slim\Psr7\Uri;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
+use MatchBot\Client;
 
+/**
+ * @psalm-import-type SFCampaignApiResponse from Client\Campaign
+ */
 class TestCase extends PHPUnitTestCase
 {
     use ProphecyTrait;
 
-    protected const array CAMPAIGN_FROM_SALESOFRCE = [
+    public const array CAMPAIGN_FROM_SALESOFRCE = [
         'id' => 'a05xxxxxxxxxxxxxxx',
+        'x_isMetaCampaign' => false,
         'aims' => [0 => 'First Aim'],
         'ready' => true,
         'title' => 'Save Matchbot',
@@ -71,7 +74,7 @@ class TestCase extends PHPUnitTestCase
         'categories' => ['Education/Training/Employment', 'Religious'],
         'championRef' => null,
         'amountRaised' => 0.0,
-        'championName' => null,
+        'championName' => '',
         'currencyCode' => 'GBP',
         'parentTarget' => null,
         'beneficiaries' => ['Animals'],
@@ -84,6 +87,9 @@ class TestCase extends PHPUnitTestCase
         'impactSummary' => null,
         'impactReporting' => null,
         'isRegularGiving' => false,
+        'isEmergencyIMF' => false,
+        'slug' => null,
+        'campaignFamily' => null,
         'matchFundsTotal' => 50.0,
         'thankYouMessage' => 'Thank you for helping us save matchbot! We will be able to match twice as many bots now!',
         'usesSharedFunds' => false,
@@ -92,9 +98,9 @@ class TestCase extends PHPUnitTestCase
         'additionalImageUris' => [],
         'matchFundsRemaining' => 50.0,
         'parentDonationCount' => null,
-        'surplusDonationInfo' => null,
+        'surplusDonationInfo' => '',
         'parentUsesSharedFunds' => false,
-        'championOptInStatement' => null,
+        'championOptInStatement' => '',
         'parentMatchFundsRemaining' => null,
         'regularGivingCollectionEnd' => null,
         'charity' => [
@@ -114,6 +120,13 @@ class TestCase extends PHPUnitTestCase
             'stripeAccountId' => 'acc_123456',
             'hmrcReferenceNumber' => null,
             'giftAidOnboardingStatus' => 'Invited to Onboard',
+            'postalAddress' => [
+                'line1' => 'example address line 1',
+                'line2' => 'example address line 1',
+                'city' => 'some city',
+                'postalCode' => 'some postalCode',
+                'country' => 'some country',
+            ],
         ]
     ];
 
@@ -449,5 +462,13 @@ class TestCase extends PHPUnitTestCase
         \assert($container instanceof Container);
 
         return $container;
+    }
+
+    public static function getSalesforceAuthValue(string $body): string
+    {
+        $salesforceSecretKey = getenv('SALESFORCE_SECRET_KEY');
+        \assert(is_string($salesforceSecretKey));
+
+        return hash_hmac('sha256', $body, $salesforceSecretKey);
     }
 }

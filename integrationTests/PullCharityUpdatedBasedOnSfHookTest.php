@@ -3,6 +3,7 @@
 namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Auth\SalesforceAuthMiddleware;
 use MatchBot\Application\Messenger\CharityUpdated;
 use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
 use MatchBot\Client;
@@ -83,7 +84,7 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
         // assert
         $em->clear();
 
-        $charity = $this->getService(CharityRepository::class)->findOneBySfIDOrThrow(Salesforce18Id::ofCharity($sfId));
+        $charity = $this->getService(CharityRepository::class)->findOneBySalesforceIdOrThrow(Salesforce18Id::ofCharity($sfId));
         $this->assertSame('New Charity Name', $charity->getName());
         $this->assertFalse($campaign->isReady());
         $this->assertSame('Preview', $campaign->getStatus());
@@ -137,7 +138,7 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
             method: 'POST',
             path: $URI,
             bodyString: $body,
-            headers: ['x-send-verify-hash' => hash_hmac('sha256', $body, $salesforceSecretKey)]
+            headers: [SalesforceAuthMiddleware::HEADER_NAME => hash_hmac('sha256', $body, $salesforceSecretKey)]
         ));
     }
 }

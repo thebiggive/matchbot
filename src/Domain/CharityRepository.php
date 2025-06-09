@@ -20,9 +20,17 @@ class CharityRepository extends EntityRepository
      * @param Salesforce18Id<Charity> $sfId
      * @throws DomainRecordNotFoundException
      */
-    public function findOneBySfIDOrThrow(Salesforce18Id $sfId): Charity
+    public function findOneBySalesforceIdOrThrow(Salesforce18Id $sfId): Charity
     {
-        return $this->findOneBy(['salesforceId' => $sfId->value]) ??
+        return $this->findOneBySalesforceId($sfId) ??
             throw new DomainRecordNotFoundException('Charity not found');
+    }
+
+    /**
+     * @param Salesforce18Id<Charity> $sfId
+     */
+    public function findOneBySalesforceId(Salesforce18Id $sfId): ?Charity
+    {
+        return $this->findOneBy(['salesforceId' => $sfId->value]);
     }
 }

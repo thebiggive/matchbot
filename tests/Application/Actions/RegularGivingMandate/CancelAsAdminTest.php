@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Actions\RegularGivingMandate;
 
 use DI\Container;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Auth\SalesforceAuthMiddleware;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DayOfMonth;
@@ -36,7 +37,7 @@ class CancelAsAdminTest extends TestCase
 
         $route = $this->getRouteWithMandateId($mandateUuidString);
         $request = self::createRequest('POST', "/v1/regular-giving/mandate/$mandateUuidString/cancel")
-            ->withHeader('x-send-verify-hash', $this->getSalesforceAuthValue(''));
+            ->withHeader(SalesforceAuthMiddleware::HEADER_NAME, $this->getSalesforceAuthValue(''));
 
         $app = $this->getAppInstance();
         $this->mockRepositories($app, $mandate); // @phpstan-ignore argument.type
@@ -58,7 +59,7 @@ class CancelAsAdminTest extends TestCase
 
         $route = $this->getRouteWithMandateId($mandateUuidString);
         $request = self::createRequest('POST', "/v1/regular-giving/mandate/$mandateUuidString/cancel")
-            ->withHeader('x-send-verify-hash', $this->getSalesforceAuthValue(''));
+            ->withHeader(SalesforceAuthMiddleware::HEADER_NAME, $this->getSalesforceAuthValue(''));
 
         $app = $this->getAppInstance();
         $this->mockRepositories($app, $mandate); // @phpstan-ignore argument.type
@@ -94,14 +95,6 @@ class CancelAsAdminTest extends TestCase
         $mandate->setId(1);
 
         return $mandate;
-    }
-
-    private function getSalesforceAuthValue(string $body): string
-    {
-        $salesforceSecretKey = getenv('SALESFORCE_SECRET_KEY');
-        \assert(is_string($salesforceSecretKey));
-
-        return hash_hmac('sha256', $body, $salesforceSecretKey);
     }
 
     /** @return Route<null> */
