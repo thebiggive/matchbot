@@ -81,23 +81,4 @@ class CampaignServiceTest extends TestCase
         // Because the parent i.e. metacampaign is regular giving funds will be shared with any other charity campaigns.
         $this->assertFalse($renderedCampaign['parentUsesSharedFunds']);
     }
-
-    public function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF): MetaCampaign
-    {
-        return new MetaCampaign(
-            slug: MetaCampaignSlug::of('not-relevant'),
-            salesforceId: Salesforce18Id::ofMetaCampaign('000000000000000000'),
-            title: 'not relevant',
-            currency: Currency::GBP,
-            status: 'Active',
-            hidden: false,
-            summary: 'not relevant',
-            bannerURI: null,
-            startDate: new \DateTimeImmutable('1970'),
-            endDate: new \DateTimeImmutable('1970'),
-            isRegularGiving: $isRegularGiving,
-            isEmergencyIMF: $isEmergencyIMF,
-            totalAdjustment: Money::zero(),
-        );
-    }
 }

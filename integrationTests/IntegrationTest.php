@@ -4,6 +4,7 @@ namespace MatchBot\IntegrationTests;
 
 use ArrayAccess;
 use DI\Container;
+use Doctrine\ORM\EntityManager;
 use GuzzleHttp\Psr7\ServerRequest;
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
@@ -16,6 +17,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\SalesforceProxy;
 use MatchBot\Tests\TestCase as TestCaseAlias;
 use MatchBot\Tests\TestData;
 use MatchBot\Tests\TestLogger;
@@ -58,8 +60,10 @@ abstract class IntegrationTest extends TestCase
 
     protected TestLogger $logger;
 
+    protected EntityManager $em;
+
     #[\Override]
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->logger = new TestLogger();
@@ -105,6 +109,8 @@ abstract class IntegrationTest extends TestCase
 
         // not sure what's wrong with this argument type
         self::setApp($app); // @phpstan-ignore argument.type
+
+        $this->em = $this->getService(EntityManager::class);
     }
 
     /**
@@ -121,6 +127,20 @@ abstract class IntegrationTest extends TestCase
     public static function someSalesForce18CampaignId(): Salesforce18Id
     {
         return Salesforce18Id::ofCampaign(self::randomString());
+    }
+
+    /**
+     * @template T of SalesforceProxy
+     * @param class-string<T> $identifiedClass
+     * @return Salesforce18Id<T>
+     *
+     * @psalm-suppress PossiblyUnusedParam - used just as a type param
+     */
+    public static function randomSalesForce18Id(string $identifiedClass): Salesforce18Id
+    {
+        /** @var Salesforce18Id<T> $id */
+        $id = Salesforce18Id::of(self::randomString());
+        return $id;
     }
 
     #[\Override]

@@ -50,6 +50,8 @@ class MetaCampaignRepository
     /**
      * Returns the total of all the complete donations to this metacampaign, including matching and including gift aid,
      * and any "offline" donations or adjustments.
+     *
+     * Note that this DOES include gift aid - compare {@see CampaignRepository::totalAmountRaised()} which does not.
      */
     public function totalAmountRaised(MetaCampaign $metaCampaign): Money
     {
@@ -57,9 +59,9 @@ class MetaCampaignRepository
             <<<'DQL'
             SELECT donation.currencyCode, COALESCE(SUM(
             donation.amount + 
-            if(donation.giftAid, donation.amount * :giftAidPercent / 100, 0)
-            ), 0) as sum
-            FROM MatchBot\Domain\Donation donation JOIN d.campaign c
+            (CASE WHEN donation.giftAid = 1 THEN donation.amount * :giftAidPercent / 100 ELSE 0 END)))
+             as sum
+            FROM MatchBot\Domain\Donation donation JOIN donation.campaign c
             WHERE c.metaCampaignSlug = :slug 
             AND donation.donationStatus IN (:succcessStatus)
             GROUP BY donation.currencyCode
@@ -72,7 +74,7 @@ class MetaCampaignRepository
             'giftAidPercent' => Donation::GIFT_AID_PERCENTAGE,
         ]);
 
-        /** @var list<array{currencyCode: string, sum: numeric-string}> $donationResult */
+        /** @var list<array{currencyCode: string, sum: numeric}> $donationResult */
         $donationResult =  $donationQuery->getResult();
 
         Assertion::maxCount(
@@ -93,7 +95,7 @@ class MetaCampaignRepository
             <<<'DQL'
             SELECT COALESCE(SUM(fw.amount), 0) as sum
             FROM MatchBot\Domain\FundingWithdrawal fw
-            JOIN fw.donation donation JOIN d.campaign c
+            JOIN fw.donation donation JOIN donation.campaign c
             WHERE c.metaCampaignSlug = :slug
             AND donation.donationStatus IN (:succcessStatus)
         DQL
@@ -107,10 +109,10 @@ class MetaCampaignRepository
         $matchedFundResult =  $matchedFundQuery->getSingleScalarResult();
         Assertion::numeric($matchedFundResult);
 
-        $currency = Currency::fromIsoCode($donationResult[0]['currencyCode']);
+        $currency = Currency::fromIsoCode($donationResult[0]['currencyCode'] ?? 'GBP');
 
         $total = Money::sum(
-            Money::fromNumericString($donationSum, $currency),
+            Money::fromNumericString((string) $donationSum, $currency),
             Money::fromNumericString((string) $matchedFundResult, $currency),
             $metaCampaign->getTotalAdjustment(),
         );
