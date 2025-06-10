@@ -138,7 +138,7 @@ class TestCase extends PHPUnitTestCase
 
 
     /** @var SFCampaignApiResponse  */
-    public const array META_CAMPAIGN_FROM_SALESOFRCE = [
+    public const array META_CAMPAIGN_FROM_SALESFORCE = [
         'id' => 'a05xxxxxxxxxxxxxxx',
         'x_isMetaCampaign' => true,
         'ready' => true,

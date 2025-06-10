@@ -45,7 +45,7 @@ class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\Integratio
 
     public function testItAcceptsAPushOfANewMetaCampaignFromSf(): void
     {
-        $metaCampaignData = TestCase::META_CAMPAIGN_FROM_SALESOFRCE;
+        $metaCampaignData = TestCase::META_CAMPAIGN_FROM_SALESFORCE;
 
         // randomise ID & slug to prevent duplicate issues
         $metaCampaignSfId = Salesforce18Id::ofCampaign(self::randomString());
