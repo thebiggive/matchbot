@@ -135,10 +135,6 @@ class Put extends Action
             $campaignData['slug'] ?? throw new HttpBadRequestException($request, 'slug required')
         );
 
-        // else we DO NOT update the charity here - for efficiency and clarity a separate action should be used to send
-        // charity updates when they change, instead of updating the charity every time a campaign changes.
-
-
         if (!$metaCampaign) {
             $metaCampaign = MetaCampaign::fromSfCampaignData($slug, $campaignData);
             $this->logger->info("Saving new meta campaign from SF: {$metaCampaign->getTitle()} {$metaCampaign->getSalesforceId()}");
