@@ -431,7 +431,7 @@ class TestCase extends PHPUnitTestCase
         $donationResponse->collectFromStripeCharge(
             chargeId: 'testchargeid_' . self::randomString(),
             totalPaidFractional: $totalPaidFractional,
-            transferId: $transferId ?? 'test_transfer_id',
+            transferId: $transferId ?? 'test_transfer_id_' . self::randomHex(),
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',

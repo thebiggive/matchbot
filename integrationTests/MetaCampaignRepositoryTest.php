@@ -1,6 +1,7 @@
 <?php
 
-use Doctrine\ORM\EntityManager;
+namespace MatchBot\IntegrationTests;
+
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Currency;
@@ -13,7 +14,7 @@ use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 
-class MetaCampaignRepositoryTest extends \MatchBot\IntegrationTests\IntegrationTest
+class MetaCampaignRepositoryTest extends IntegrationTest
 {
     /** @var MetaCampaignRepository  */
     private $sut;
@@ -22,7 +23,7 @@ class MetaCampaignRepositoryTest extends \MatchBot\IntegrationTests\IntegrationT
     private Fund $fund;
     private CampaignFunding $campaignFunding;
 
-    #[Override]
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -51,6 +52,15 @@ class MetaCampaignRepositoryTest extends \MatchBot\IntegrationTests\IntegrationT
         $this->em->persist($this->metaCampaign);
         $this->em->persist($this->fund);
         $this->em->persist($this->campaignFunding);
+
+        // put another campaign and donation in the DB to make sure we correctly ignore it in our calculations
+        $otherMetaCampaign = TestCase::someMetaCampaign(false, false);
+        $otherCampaign = TestCase::someCampaign(metaCampaignSlug: $otherMetaCampaign->getSlug());
+        $donation = TestCase::someDonation(amount: (string) random_int(1, 500), giftAid: false, campaign: $otherCampaign, collected: true);
+
+        $this->em->persist($otherMetaCampaign);
+        $this->em->persist($otherCampaign);
+        $this->em->persist($donation);
 
         $this->em->flush();
     }
