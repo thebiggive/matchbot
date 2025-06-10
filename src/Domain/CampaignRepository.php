@@ -289,7 +289,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * Returns the total of all the complete donations to this metacampaign, including matching but not gift aid.
+     * Returns the total of all the complete donations to this campaign, including matching but not gift aid.
      *
      * Note that this DOES NOT include gift aid - compare {@see MetaCampaignRepository::totalAmountRaised()} which does.
      */

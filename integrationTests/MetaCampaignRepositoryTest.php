@@ -16,8 +16,7 @@ use MatchBot\Tests\TestCase;
 
 class MetaCampaignRepositoryTest extends IntegrationTest
 {
-    /** @var MetaCampaignRepository  */
-    private $sut;
+    private MetaCampaignRepository $sut;
     private MetaCampaign $metaCampaign;
     private Campaign $campaign;
     private Fund $fund;
