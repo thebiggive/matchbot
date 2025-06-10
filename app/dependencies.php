@@ -435,12 +435,6 @@ return function (ContainerBuilder $containerBuilder) {
 
             $config->setMetadataCache($cacheAdapter);
 
-            if (! Environment::current()->isProduction()) {
-                $config->setMiddlewares([
-                    new Doctrine\DBAL\Logging\Middleware($c->get(LoggerInterface::class))
-                ]);
-            }
-
             return $config;
         },
 
@@ -483,7 +477,6 @@ return function (ContainerBuilder $containerBuilder) {
 
         ORM\EntityManager::class =>  static function (ContainerInterface $c): EntityManager {
             $connection = DBALDriverManager::getConnection($c->get(Settings::class)->doctrine['connection']);
-
             $config = $c->get(ORM\Configuration::class);
 
             $em = new ORM\EntityManager(conn: $connection, config: $config);
