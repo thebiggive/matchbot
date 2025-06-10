@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Campaigns;
 
+use Doctrine\DBAL\Logging\DebugStack;
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Environment;
@@ -11,6 +12,7 @@ use MatchBot\Client\Campaign as SfCampaignClient;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
+use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Log\LoggerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -30,6 +32,7 @@ class Get extends Action
         LoggerInterface $logger,
         private SfCampaignClient $salesforceCampaignClient,
         private CampaignRepository $campaignRepository,
+        private MetaCampaignRepository $metaCampaignRepository,
         private CampaignService $campaignService,
         private \DateTimeImmutable $now,
     ) {
@@ -60,7 +63,17 @@ class Get extends Action
                     $this->logger->error("Failed to load campaign ID {$sfId} from SF, serving from Matchbot DB instead: {$e->__toString()}");
                 }
 
-                return $this->respondWithData($response, $this->campaignService->renderCampaign($campaignFromMatchbotDB));
+                $slug = $campaignFromMatchbotDB->getMetaCampaignSlug();
+                if ($slug !== null) {
+                    $metaCampaign = $this->metaCampaignRepository->getBySlug($slug);
+                } else {
+                    $metaCampaign = null;
+                }
+
+                return $this->respondWithData(
+                    $response,
+                    $this->campaignService->renderCampaign(campaign: $campaignFromMatchbotDB, metaCampaign: $metaCampaign)
+                );
             }
             throw new HttpNotFoundException($request);
         }

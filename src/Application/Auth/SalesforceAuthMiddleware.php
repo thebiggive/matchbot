@@ -13,6 +13,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Slim\Psr7\Response;
+use Slim\Psr7\Stream;
 
 /**
  * This middleware requires that a request is from our own Salesforce instance, based on a shared secret. Salesforce
@@ -23,6 +24,8 @@ use Slim\Psr7\Response;
  */
 readonly class SalesforceAuthMiddleware implements MiddlewareInterface
 {
+    public const string HEADER_NAME = 'x-send-verify-hash';
+
     #[Pure]
     public function __construct(
         /** @var non-empty-string $sfApiKey */
@@ -36,9 +39,15 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
     #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (!$this->verify($request)) {
+        $givenHash = $request->getHeaderLine(self::HEADER_NAME);
+        $content = $request->getBody()->getContents();
+
+        if (!$this->verify($givenHash, $content)) {
             return $this->unauthorised($this->logger);
         }
+
+        // Necessary because getContents() has consumed the stream.
+        $request->getBody()->rewind();
 
         return $handler->handle($request);
     }
@@ -54,13 +63,11 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    private function verify(ServerRequestInterface $request): bool
+    private function verify(string $givenHash, string $content): bool
     {
-        $givenHash = $request->getHeaderLine('x-send-verify-hash');
-
         $expectedHash = hash_hmac(
             'sha256',
-            trim((string) $request->getBody()),
+            trim($content),
             $this->sfApiKey
         );
 

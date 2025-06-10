@@ -10,10 +10,13 @@ use Exception;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\MetaCampaign;
+use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PostalAddress;
@@ -21,7 +24,6 @@ use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\IntegrationTests\IntegrationTest;
-use MatchBot\Tests\Application\Actions\Donations\CreateTest;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -42,10 +44,95 @@ use Slim\Psr7\Uri;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
+use MatchBot\Client;
 
+/**
+ * @psalm-import-type SFCampaignApiResponse from Client\Campaign
+ */
 class TestCase extends PHPUnitTestCase
 {
     use ProphecyTrait;
+
+    public const array CAMPAIGN_FROM_SALESOFRCE = [
+        'id' => 'a05xxxxxxxxxxxxxxx',
+        'x_isMetaCampaign' => false,
+        'aims' => [0 => 'First Aim'],
+        'ready' => true,
+        'title' => 'Save Matchbot',
+        'video' => null,
+        'hidden' => false,
+        'quotes' => [],
+        'status' => 'Active',
+        'target' => 100.0,
+        'endDate' => '2095-08-01T00:00:00.000Z',
+        'logoUri' => null,
+        'problem' => 'Matchbot is threatened!',
+        'summary' => 'We can save matchbot',
+        'updates' => [],
+        'solution' => 'do the saving',
+        'bannerUri' => null,
+        'countries' => [0 => 'United Kingdom',],
+        'isMatched' => true,
+        'parentRef' => null,
+        'startDate' => '2015-08-01T00:00:00.000Z',
+        'categories' => ['Education/Training/Employment', 'Religious'],
+        'championRef' => null,
+        'amountRaised' => 0.0,
+        'championName' => '',
+        'currencyCode' => 'GBP',
+        'parentTarget' => null,
+        'beneficiaries' => ['Animals'],
+        'budgetDetails' => [
+            ['amount' => 23.0, 'description' => 'Improve the code'],
+            ['amount' => 27.0, 'description' => 'Invent a new programing paradigm'],
+        ],
+        'campaignCount' => null,
+        'donationCount' => 0,
+        'impactSummary' => null,
+        'impactReporting' => null,
+        'isRegularGiving' => false,
+        'isEmergencyIMF' => false,
+        'slug' => null,
+        'campaignFamily' => null,
+        'matchFundsTotal' => 50.0,
+        'thankYouMessage' => 'Thank you for helping us save matchbot! We will be able to match twice as many bots now!',
+        'usesSharedFunds' => false,
+        'alternativeFundUse' => null,
+        'parentAmountRaised' => null,
+        'additionalImageUris' => [],
+        'matchFundsRemaining' => 50.0,
+        'parentDonationCount' => null,
+        'surplusDonationInfo' => '',
+        'parentUsesSharedFunds' => false,
+        'championOptInStatement' => '',
+        'parentMatchFundsRemaining' => null,
+        'regularGivingCollectionEnd' => null,
+        'charity' => [
+            'id' => 'xxxxxxxxxxxxxxxxxx',
+            'name' => 'Society for the advancement of bots and matches',
+            'logoUri' => null,
+            'twitter' => null,
+            'website' => 'https://society-for-the-advancement-of-bots-and-matches.localhost',
+            'facebook' => 'https://www.facebook.com/botsAndMatches',
+            'linkedin' => 'https://www.linkedin.com/company/botsAndMatches',
+            'instagram' => 'https://www.instagram.com/botsAndMatches',
+            'phoneNumber' => null,
+            'emailAddress' => 'bots-and-matches@example.com',
+            'optInStatement' => null,
+            'regulatorNumber' => '1000000',
+            'regulatorRegion' => 'England and Wales',
+            'stripeAccountId' => 'acc_123456',
+            'hmrcReferenceNumber' => null,
+            'giftAidOnboardingStatus' => 'Invited to Onboard',
+            'postalAddress' => [
+                'line1' => 'example address line 1',
+                'line2' => 'example address line 1',
+                'city' => 'some city',
+                'postalCode' => 'some postalCode',
+                'country' => 'some country',
+            ],
+        ]
+    ];
 
     /**
      * @var array<0|1, ?App<ContainerInterface|null>> array of app instances with and without real redis. Each one may be
@@ -247,6 +334,7 @@ class TestCase extends PHPUnitTestCase
             phoneNumber: $phoneNumber,
             address: $address,
             emailAddress: $emailAddress,
+            rawData: self::CAMPAIGN_FROM_SALESOFRCE['charity'],
         );
     }
 
@@ -260,13 +348,14 @@ class TestCase extends PHPUnitTestCase
         bool $isRegularGiving = false,
         ?\DateTimeImmutable $regularGivingCollectionEnd = null,
         string $thankYouMessage = null,
+        MetaCampaignSlug $metaCampaignSlug = null,
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         $sfId ??= Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
 
         return new Campaign(
             $sfId,
-            metaCampaignSlug: null,
+            metaCampaignSlug: $metaCampaignSlug?->slug,
             charity: $charity ?? self::someCharity(stripeAccountId: $stripeAccountId),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('3000-01-01'),
@@ -278,7 +367,7 @@ class TestCase extends PHPUnitTestCase
             isRegularGiving: $isRegularGiving,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             thankYouMessage: $thankYouMessage,
-            rawData: [],
+            rawData: self::CAMPAIGN_FROM_SALESOFRCE,
             hidden: false,
         );
     }
@@ -342,7 +431,7 @@ class TestCase extends PHPUnitTestCase
         $donationResponse->collectFromStripeCharge(
             chargeId: 'testchargeid_' . self::randomString(),
             totalPaidFractional: $totalPaidFractional,
-            transferId: $transferId ?? 'test_transfer_id',
+            transferId: $transferId ?? 'test_transfer_id_' . self::randomHex(),
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',
@@ -378,5 +467,32 @@ class TestCase extends PHPUnitTestCase
         \assert($container instanceof Container);
 
         return $container;
+    }
+
+    public static function getSalesforceAuthValue(string $body): string
+    {
+        $salesforceSecretKey = getenv('SALESFORCE_SECRET_KEY');
+        \assert(is_string($salesforceSecretKey));
+
+        return hash_hmac('sha256', $body, $salesforceSecretKey);
+    }
+
+    public static function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF): MetaCampaign
+    {
+        return new MetaCampaign(
+            slug: MetaCampaignSlug::of('not-relevant-' . TestCase::randomHex()),
+            salesforceId: IntegrationTest::randomSalesForce18Id(MetaCampaign::class),
+            title: 'not relevant ' . TestCase::randomHex(),
+            currency: Currency::GBP,
+            status: 'Active',
+            hidden: false,
+            summary: 'not relevant',
+            bannerURI: null,
+            startDate: new \DateTimeImmutable('1970'),
+            endDate: new \DateTimeImmutable('1970'),
+            isRegularGiving: $isRegularGiving,
+            isEmergencyIMF: $isEmergencyIMF,
+            totalAdjustment: Money::zero(),
+        );
     }
 }

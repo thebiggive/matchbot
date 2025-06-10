@@ -6,9 +6,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Client\Campaign as CampaignClient;
+use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\CharityRepository;
+use MatchBot\Domain\Fund;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\Salesforce18Id;
 use Random\Randomizer;
 use Stripe\StripeClient;
@@ -54,6 +57,11 @@ class CreateFictionalData extends Command
         $io->writeln("Creating fictional data for local developer testing");
 
         $charity = $this->charityRepository->findOneBy(['salesforceId' => self::SF_ID_ZERO]);
+        $fund = new Fund('GBP', 'test fund', Salesforce18Id::ofFund('000000000000000001'), FundType::Pledge);
+        $campaignFunding = new CampaignFunding($fund, '50.0', '50.0');
+        $this->em->persist($fund);
+        $this->em->persist($campaignFunding);
+
 
         if (!$charity) {
             /** @psalm-suppress ArgumentTypeCoercion */
@@ -81,6 +89,7 @@ class CreateFictionalData extends Command
 
                 $io->writeln("Created fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
                 $this->em->persist($campaign);
+                $campaignFunding->addCampaign($campaign);
             } else {
                 $io->writeln("Found existing fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
             }
@@ -90,7 +99,7 @@ class CreateFictionalData extends Command
 
             $this->em->flush();
 
-            $renderedCampaign = $this->campaignService->renderCampaign($campaign);
+            $renderedCampaign = $this->campaignService->renderCampaign($campaign, metaCampaign: null);
 
             $errors = $renderedCampaign['errors'] ?? [];
             \assert(\is_array($errors));
@@ -131,6 +140,8 @@ class CreateFictionalData extends Command
      */
     private function getFictionalCampaignData(string $sfId, string $name, bool $isRegularGiving, bool $isMatched): array
     {
+        $randomSeed = \random_int(1, 100);
+
         return [ // @phpstan-ignore return.type
             'id' => $sfId,
             'charity' => [],
@@ -148,7 +159,8 @@ class CreateFictionalData extends Command
             'summary' => "We can $name",
             'updates' => [],
             'solution' => 'do the saving',
-            'bannerUri' => null,
+            // in prod bannerUri is available in multiple sizes with a `width` param added by FE. Picsum will always send the image at 1700px wide.
+            'bannerUri' => "https://picsum.photos/seed/$randomSeed/1700/500",
             'countries' => [0 => 'United Kingdom',],
             'isMatched' => $isMatched,
             'parentRef' => null,
@@ -190,12 +202,14 @@ class CreateFictionalData extends Command
      */
     private function getFictionalCharityData(SymfonyStyle $io): array
     {
+        $randomSeed = \random_int(1, 100);
+
         $stripeAccountId = $this->createStripeAccount($io);
 
         return [
             'id' => self::SF_ID_ZERO,
             'name' => 'Society for the advancement of bots and matches',
-            'logoUri' =>  null,
+            'logoUri' =>  "https://picsum.photos/seed/$randomSeed/200/200",
             'twitter' => null,
             'website' => 'https://society-for-the-advancement-of-bots-and-matches.localhost',
             'facebook' => 'https://www.facebook.com/botsAndMatches',

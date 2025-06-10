@@ -55,7 +55,7 @@ class SalesforceAuthMiddlewareTest extends TestCase
 
     private function buildRequest(string $body, ?string $hash = null): ServerRequestInterface
     {
-        $headers = $hash !== null ? ['x-send-verify-hash' => $hash] : [];
+        $headers = $hash !== null ? [SalesforceAuthMiddleware::HEADER_NAME => $hash] : [];
 
 
         return $this->createRequest('GET', 'any-path', $body, $headers);
