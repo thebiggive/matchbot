@@ -141,7 +141,7 @@ class Put extends Action
             $this->entityManager->persist($metaCampaign);
         } else {
             $metaCampaign->updateFromSfData($campaignData);
-            $this->logger->info("updating metacampaign {$metaCampaign->getId()} from SF: {$metaCampaign->getTitle()}");
+            $this->logger->info("updating meta campaign {$metaCampaign->getId()} from SF: {$metaCampaign->getTitle()} {$metaCampaign->getSalesforceId()}");
         }
 
         $this->entityManager->flush();
