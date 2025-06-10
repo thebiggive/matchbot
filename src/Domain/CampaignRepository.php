@@ -288,6 +288,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $this->fundRepository = $fundRepository;
     }
 
+    /**
+     * Returns the total of all the complete donations to this campaign, including matching but not gift aid.
+     *
+     * Note that this DOES NOT include gift aid - compare {@see MetaCampaignRepository::totalAmountRaised()} which does.
+     */
     public function totalAmountRaised(int $campaignId): Money
     {
         $donationQuery = $this->getEntityManager()->createQuery(

@@ -20,7 +20,7 @@ readonly class Money implements \JsonSerializable, \Stringable
     private function __construct(
         #[Column(type: 'integer')]
         public int $amountInPence,
-        #[Column]
+        #[Column(length: 3)]
         public Currency $currency
     ) {
         Assertion::between(

@@ -20,6 +20,8 @@ CREATE TABLE `MetaCampaign` (
   `isEmergencyIMF` tinyint(1) NOT NULL,
   `salesforceLastPull` datetime DEFAULT NULL,
   `salesforceId` varchar(18) DEFAULT NULL,
+  `total_adjustment_amountInPence` int NOT NULL,
+  `total_adjustment_currency` varchar(3) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_C36155EC989D9B62` (`slug`),
   UNIQUE KEY `UNIQ_C36155ECD8961D21` (`salesforceId`),

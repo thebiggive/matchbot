@@ -10,16 +10,20 @@ use Exception;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\MetaCampaign;
+use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PostalAddress;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\IntegrationTests\IntegrationTest;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -344,13 +348,14 @@ class TestCase extends PHPUnitTestCase
         bool $isRegularGiving = false,
         ?\DateTimeImmutable $regularGivingCollectionEnd = null,
         string $thankYouMessage = null,
+        MetaCampaignSlug $metaCampaignSlug = null,
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         $sfId ??= Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
 
         return new Campaign(
             $sfId,
-            metaCampaignSlug: null,
+            metaCampaignSlug: $metaCampaignSlug?->slug,
             charity: $charity ?? self::someCharity(stripeAccountId: $stripeAccountId),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('3000-01-01'),
@@ -426,7 +431,7 @@ class TestCase extends PHPUnitTestCase
         $donationResponse->collectFromStripeCharge(
             chargeId: 'testchargeid_' . self::randomString(),
             totalPaidFractional: $totalPaidFractional,
-            transferId: $transferId ?? 'test_transfer_id',
+            transferId: $transferId ?? 'test_transfer_id_' . self::randomHex(),
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',
@@ -470,5 +475,24 @@ class TestCase extends PHPUnitTestCase
         \assert(is_string($salesforceSecretKey));
 
         return hash_hmac('sha256', $body, $salesforceSecretKey);
+    }
+
+    public static function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF): MetaCampaign
+    {
+        return new MetaCampaign(
+            slug: MetaCampaignSlug::of('not-relevant-' . TestCase::randomHex()),
+            salesforceId: IntegrationTest::randomSalesForce18Id(MetaCampaign::class),
+            title: 'not relevant ' . TestCase::randomHex(),
+            currency: Currency::GBP,
+            status: 'Active',
+            hidden: false,
+            summary: 'not relevant',
+            bannerURI: null,
+            startDate: new \DateTimeImmutable('1970'),
+            endDate: new \DateTimeImmutable('1970'),
+            isRegularGiving: $isRegularGiving,
+            isEmergencyIMF: $isEmergencyIMF,
+            totalAdjustment: Money::zero(),
+        );
     }
 }

@@ -32,6 +32,7 @@ class CampaignRenderCompatibilityChecker
         'parentDonationCount',
         'parentMatchFundsRemaining',
         'matchFundsTotal', // checking this fails because our campaign reconstructed from SF data doesn't have a numeric ID we can't find its funds.
+        'totalAdjustment', // used for calculation in matchbot for metacampaigns, not output to FE by matchbot.
     ];
 
     /**

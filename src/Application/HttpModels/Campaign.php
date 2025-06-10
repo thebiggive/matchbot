@@ -59,6 +59,9 @@ readonly class Campaign
         public ?string $logoUri,
         public ?float $matchFundsRemaining,
         public ?float $matchFundsTotal,
+        /**
+         * Only provided if $parentUsesSharedFunds, otherwise null.
+         */
         public ?float $parentAmountRaised,
         /**
          * Only provided if $parentUsesSharedFunds, otherwise null.
