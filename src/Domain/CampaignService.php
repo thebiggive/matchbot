@@ -101,6 +101,7 @@ class CampaignService
 
         $sfCampaignData = $campaign->getSalesforceData();
         $sfCharityData = $sfCampaignData['charity'];
+        Assertion::notNull($sfCharityData, 'Charity data should not be null for a charity campaign');
 
         // The variables below currently being taken directly from the stored SF API response, but shouldn't be
         // because matchbot should be able to calculate more up to date or more authoritative versions of them

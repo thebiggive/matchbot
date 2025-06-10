@@ -192,9 +192,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function pullCharity(array $campaignData): Charity
     {
+        $charityData = $campaignData['charity'];
+        Assertion::notNull($charityData);
+
         $charity = $this->getEntityManager()
             ->getRepository(Charity::class)
-            ->findOneBy(['salesforceId' => $campaignData['charity']['id']]);
+            ->findOneBy(['salesforceId' => $charityData['id']]);
         if (!$charity) {
             $charity = $this->newCharityFromCampaignData($campaignData);
         } else {
@@ -212,6 +215,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function newCharityFromCampaignData(array $campaignData): Charity
     {
         $charityData = $campaignData['charity'];
+        Assertion::notNull($charityData, 'Charity must not be null for charity campaign');
+
         $address = $this->arrayToPostalAddress($charityData['postalAddress'] ?? null);
         $emailString = $charityData['emailAddress'] ?? null;
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
@@ -240,6 +245,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function updateCharityFromCampaignData(Charity $charity, array $campaignData): void
     {
         $charityData = $campaignData['charity'];
+        Assertion::notNull($charityData, 'Charity date should not be null for charity campaign');
+
         $address = $this->arrayToPostalAddress($charityData['postalAddress'] ?? null);
 
         $emailString = $charityData['emailAddress'] ?? null;
