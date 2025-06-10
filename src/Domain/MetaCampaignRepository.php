@@ -57,7 +57,7 @@ class MetaCampaignRepository
             <<<'DQL'
             SELECT donation.currencyCode, COALESCE(SUM(
             donation.amount + 
-            if(donation.giftAid, donation.amount * 0.25, 0)
+            if(donation.giftAid, donation.amount * :giftAidPercent / 100, 0)
             ), 0) as sum
             FROM MatchBot\Domain\Donation donation JOIN d.campaign c
             WHERE c.metaCampaignSlug = :slug 
@@ -69,6 +69,7 @@ class MetaCampaignRepository
         $donationQuery->setParameters([
             'slug' => $metaCampaign->getSlug()->slug,
             'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
+            'giftAidPercent' => Donation::GIFT_AID_PERCENTAGE,
         ]);
 
         /** @var list<array{currencyCode: string, sum: numeric-string}> $donationResult */
