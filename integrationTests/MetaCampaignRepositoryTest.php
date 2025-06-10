@@ -38,13 +38,6 @@ class MetaCampaignRepositoryTest extends IntegrationTest
         $this->metaCampaign = TestCase::someMetaCampaign(false, false);
         $this->campaign = TestCase::someCampaign(metaCampaignSlug: $this->metaCampaign->getSlug());
 
-        $this->fund = new Fund(
-            currencyCode: 'GBP',
-            name: 'Test Match Fund',
-            salesforceId: Salesforce18Id::ofFund(TestCase::randomString()),
-            fundType: FundType::ChampionFund
-        );
-
         $this->campaignFunding = new CampaignFunding($this->fund, amount: '100.00', amountAvailable: '100.00');
 
         $this->em->persist($this->campaign);
