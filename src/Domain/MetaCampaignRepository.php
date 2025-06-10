@@ -93,7 +93,7 @@ class MetaCampaignRepository
             <<<'DQL'
             SELECT COALESCE(SUM(fw.amount), 0) as sum
             FROM MatchBot\Domain\FundingWithdrawal fw
-            JOIN fw.donation donation JOIN d.campaign c
+            JOIN fw.donation donation JOIN donation.campaign c
             WHERE c.metaCampaignSlug = :slug
             AND donation.donationStatus IN (:succcessStatus)
         DQL
