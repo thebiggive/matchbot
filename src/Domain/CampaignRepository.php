@@ -443,11 +443,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @param string $sortField
      * @param 'asc'|'desc' $sortDirection
      * @return list<Campaign>
      */
-    public function search(string $sortField, string $sortDirection): array
+    public function search(?string $sortField, string $sortDirection): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
