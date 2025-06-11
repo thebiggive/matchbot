@@ -4,8 +4,8 @@ namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Email\EmailMessage;
-use MatchBot\Application\Environment;
 use MatchBot\Client\Mailer;
+use Psr\Log\LoggerInterface;
 
 class DonationNotifier
 {
@@ -14,6 +14,7 @@ class DonationNotifier
         private EmailVerificationTokenRepository $emailVerificationTokenRepository,
         private \DateTimeImmutable $now,
         private string $donateBaseUri,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -123,6 +124,21 @@ class DonationNotifier
                 $emailAddress,
                 $this->now,
             );
+
+            if (!$emailVerificationToken) {
+                $this->logger->info(sprintf(
+                    'No email verification token found for donation %s for email %s using cutoff %s',
+                    $donation->getId() ?? '[unknown]',
+                    $emailAddress->email,
+                    $this->now->format('c'),
+                ));
+            }
+        } else {
+            $this->logger->info(sprintf(
+                'No $sendRegisterUri so not checking for email verification token for donation %s for email %s',
+                $donation->getId() ?? '[unknown]',
+                $emailAddress->email,
+            ));
         }
 
         $emailMessage = self::emailMessageForCollectedDonation($donation, $this->donateBaseUri, $emailVerificationToken);
