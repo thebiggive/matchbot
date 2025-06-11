@@ -443,6 +443,24 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * @return list<Campaign>
+     */
+    public function search(): array
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $query = $qb->select('c')
+            ->from(Campaign::class, 'c')
+            ->where($qb->expr()->eq('c.hidden', '0'))
+            ->orderBy('c.endDate', 'DESC')
+            ->getQuery();
+
+        /** @var list<Campaign> $result */
+        $result = $query->getResult();
+
+        return $result;
+    }
+
+    /**
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
      */
