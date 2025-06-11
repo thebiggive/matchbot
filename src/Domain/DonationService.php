@@ -746,6 +746,11 @@ class DonationService
         $this->updateDonationStatusFromSuccessfulCharge($charge, $donation);
     }
 
+    /**
+     * Sets donation status, if necessary, and also additional metadata after a charge. Expected to be called multiple
+     * times per donation safely, e.g. once with less info immediately upon charge.succeeded and later when there's
+     * additional info about original Stripe fees on charge.updated.
+     */
     public function updateDonationStatusFromSuccessfulCharge(Charge $charge, Donation $donation): void
     {
         $this->logger->info('updating donation from charge: ' . $charge->toJSON());
@@ -878,7 +883,7 @@ class DonationService
     {
         $donorId = $donation->getDonorId();
         if (!$donorId) {
-            // must be an old donation
+            // must be an already persisted donation
             return false;
         }
 

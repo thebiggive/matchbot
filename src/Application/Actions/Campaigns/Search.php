@@ -40,6 +40,8 @@ class Search extends Action
 
         $campaigns = $this->campaignRepository->search(sortField: $sortField, sortDirection: $sortDirection);
 
+        // TODO performant summaries – most notably `amountRaised` and `matchFundsRemaining` should
+        // come from future stats table.
         $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaigns);
 
         return new JsonResponse($campaignSummaries, 200);
