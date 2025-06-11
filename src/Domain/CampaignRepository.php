@@ -452,21 +452,22 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $qb = $this->getEntityManager()->createQueryBuilder();
 
         $safeSortField = match ($sortField) {
+            // @todo this field needs adding (maybe to a new CampaignStats table) for this to work
             'matchFundsRemaining' => 'matchFundsRemaining',
             default => null,
         };
 
-        $query = $qb->select('c')
+        $qb = $qb->select('c')
             ->from(Campaign::class, 'c')
             ->where($qb->expr()->eq('c.hidden', '0'));
 
         if ($safeSortField !== null) {
-            $query->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
+            $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
         }
 
-        $query->addOrderBy('c.endDate', 'DESC')
-            ->getQuery();
+        $qb->addOrderBy('c.endDate', 'DESC');
 
+        $query = $qb->getQuery();
         /** @var list<Campaign> $result */
         $result = $query->getResult();
 
