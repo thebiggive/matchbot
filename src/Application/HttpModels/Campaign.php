@@ -32,67 +32,259 @@ readonly class Campaign
      * @param ?array{provider: string, key: string} $video
      * */
     public function __construct(
-        public string $id,
-        public float $amountRaised,
-        public array $additionalImageUris,
-        public array $aims,
-        public ?string $alternativeFundUse,
-        public ?string $bannerUri,
-        public array $beneficiaries,
-        public array $budgetDetails,
-        /** Approved participating campaign count, for Meta-campaigns  (@todo mat-405 move to separate meta-campaign model)*/
-        public ?int $campaignCount,
-        public array $categories,
-        public ?string $championName,
-        public ?string $championOptInStatement,
-        /** Champion_Funding__c's slug (if set), or ID, or null if no champion fund */
-        public ?string $championRef,
-        public Charity $charity,
-        public array $countries,
-        public string $currencyCode,
-        public ?int $donationCount,
-        public /* \DateTimeImmutable */ string $endDate,
-        public bool $hidden,
-        public ?string $impactReporting,
-        public ?string $impactSummary,
-        public bool $isMatched,
-        public ?string $logoUri,
-        public ?float $matchFundsRemaining,
-        public ?float $matchFundsTotal,
         /**
+         * Salesforce ID of the campaign
+         */
+        public string $id,
+
+        /**
+         * Total amount raised for the campaign in major units (e.g., pounds)
+         */
+        public float $amountRaised,
+
+        /**
+         * Additional images for the campaign with their display order
+         * @var list<array{uri: string, order: int}>
+         */
+        public array $additionalImageUris,
+
+        /**
+         * List of campaign aims
+         * @var list<string>
+         */
+        public array $aims,
+
+        /**
+         * Alternative use of funds if the campaign doesn't reach its target
+         */
+        public ?string $alternativeFundUse,
+
+        /**
+         * URI of the campaign's banner image
+         */
+        public ?string $bannerUri,
+
+        /**
+         * List of campaign beneficiaries
+         * @var list<string>
+         */
+        public array $beneficiaries,
+
+        /**
+         * Breakdown of how funds will be used
+         * @var list<array{amount: float, description: string}>
+         */
+        public array $budgetDetails,
+
+        /** 
+         * Approved participating campaign count, for Meta-campaigns
+         * @todo mat-405 move to separate meta-campaign model
+         */
+        public ?int $campaignCount,
+
+        /**
+         * List of campaign categories
+         * @var list<string>
+         */
+        public array $categories,
+
+        /**
+         * Name of the champion supporting the campaign
+         */
+        public ?string $championName,
+
+        /**
+         * Opt-in statement for the champion
+         */
+        public ?string $championOptInStatement,
+
+        /** 
+         * Champion_Funding__c's slug (if set), or ID, or null if no champion fund 
+         */
+        public ?string $championRef,
+
+        /**
+         * Charity associated with the campaign
+         */
+        public Charity $charity,
+
+        /**
+         * List of countries where the campaign operates
+         * @var list<string>
+         */
+        public array $countries,
+
+        /**
+         * ISO 4217 code for the currency in which donations can be accepted and matching is organized
+         */
+        public string $currencyCode,
+
+        /**
+         * Number of donations made to the campaign
+         */
+        public ?int $donationCount,
+
+        /**
+         * The last moment when donors should be able to make an ad-hoc donation or create a new regular giving mandate
+         * @var string ISO 8601 formatted date string
+         */
+        public /* \DateTimeImmutable */ string $endDate,
+
+        /**
+         * If true, FE will show a message that donations are currently unavailable for this campaign
+         * and searches will exclude it. Very rarely set, available in case a campaign needs to be cancelled or paused quickly.
+         */
+        public bool $hidden,
+
+        /**
+         * Information about how the campaign's impact will be reported
+         */
+        public ?string $impactReporting,
+
+        /**
+         * Summary of the campaign's expected impact
+         */
+        public ?string $impactSummary,
+
+        /**
+         * Whether the campaign has any match funds
+         */
+        public bool $isMatched,
+
+        /**
+         * URI of the campaign's logo
+         */
+        public ?string $logoUri,
+
+        /**
+         * Amount of match funds remaining for the campaign in major units (e.g., pounds)
+         */
+        public ?float $matchFundsRemaining,
+
+        /**
+         * Total amount of match funds allocated to the campaign in major units (e.g., pounds)
+         */
+        public ?float $matchFundsTotal,
+
+        /**
+         * Total amount raised for the parent meta-campaign in major units (e.g., pounds)
          * Only provided if $parentUsesSharedFunds, otherwise null.
          */
         public ?float $parentAmountRaised,
+
         /**
+         * Number of donations made to the parent meta-campaign
          * Only provided if $parentUsesSharedFunds, otherwise null.
          */
         public ?int $parentDonationCount,
+
         /**
+         * Amount of match funds remaining for the parent meta-campaign in major units (e.g., pounds)
          * Only provided if $parentUsesSharedFunds, otherwise null.
          */
         public ?float $parentMatchFundsRemaining,
-        public ?string $parentRef, // Parent meta campaign slug (if set), or ID, or null if $no paren,
-        public ?float $parentTarget,
-        public ?bool $parentUsesSharedFunds,
-        public ?string $problem,
-        public array $quotes,
-        public ?bool $ready, // Dictates whether or not campaign is ready. If not, lock donation journey in front-$end,
-        public ?string $solution,
-        public /* \DateTimeImmutable */  string $startDate,
-        public ?string $status,
-        public bool $isRegularGiving,
+
         /**
+         * Parent meta-campaign slug (if set), or ID, or null if no parent
+         */
+        public ?string $parentRef,
+
+        /**
+         * Target amount for the parent meta-campaign in major units (e.g., pounds)
+         */
+        public ?float $parentTarget,
+
+        /**
+         * Whether the parent meta-campaign uses shared funds across all its child campaigns
+         */
+        public ?bool $parentUsesSharedFunds,
+
+        /**
+         * Description of the problem the campaign aims to address
+         */
+        public ?string $problem,
+
+        /**
+         * Testimonial quotes about the campaign
+         * @var list<array{person: string, quote: string}>
+         */
+        public array $quotes,
+
+        /**
+         * Dictates whether campaign is/will be ready to accept donations
+         * If not ready, the donation journey should be locked in the front-end
+         */
+        public ?bool $ready,
+
+        /**
+         * Description of the solution the campaign proposes
+         */
+        public ?string $solution,
+
+        /**
+         * The first moment when donors should be able to make a donation or a regular giving mandate
+         * @var string ISO 8601 formatted date string
+         */
+        public /* \DateTimeImmutable */  string $startDate,
+
+        public ?string $status,
+
+        /**
+         * Whether the campaign accepts regular giving (recurring donations)
+         * If false, the campaign only accepts one-off donations
+         */
+        public bool $isRegularGiving,
+
+        /**
+         * Date at which we want to stop collecting payments for this regular giving campaign
          * null on regular giving campaigns means the mandate has no definite end date,
          * on all other non-regular-giving campaigns default to null
+         * @var string|null ISO 8601 formatted date string or null
          */
         public /* \DateTimeImmutable */ ?string $regularGivingCollectionEnd,
+
+        /**
+         * Brief summary of the campaign
+         */
         public ?string $summary,
-        public ?string $surplusDonationInfo, // Set on the meta campaign level and should house info about awards $etc,
+
+        /**
+         * Information about what happens to surplus donations
+         * Set on the meta-campaign level and should house info about awards etc.
+         */
+        public ?string $surplusDonationInfo,
+
+        /**
+         * Target amount for the campaign in major units (e.g., pounds)
+         */
         public ?float $target,
+
+        /**
+         * Custom message from the charity to donors thanking them for donating
+         * Used for regular giving confirmation emails and ad-hoc giving thanks pages and emails
+         */
         public string $thankYouMessage,
+
+        /**
+         * Title/name of the campaign
+         */
         public string $title,
+
+        /**
+         * Campaign updates with modification dates
+         * @var list<array{content: string, modifiedDate: string}>
+         */
         public array $updates,
+
+        /**
+         * Whether the campaign uses shared funds with other campaigns
+         */
         public bool $usesSharedFunds,
+
+        /**
+         * Video information if available
+         * @var ?array{provider: string, key: string}
+         */
         public ?array $video,
     ) {
     }

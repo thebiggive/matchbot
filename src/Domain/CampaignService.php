@@ -178,7 +178,7 @@ class CampaignService
             matchFundsTotal: $this->cachedTotalMatchFundsForCampaign($campaign)->toMajorUnitFloat(),
             parentAmountRaised: $parentAmountRaised,
             parentDonationCount: $parentDonationCount,
-            parentMatchFundsRemaining: $this->cachedMetaCampaignMatchFundsRemaining(),
+            parentMatchFundsRemaining: $this->cachedMetaCampaignMatchFundsRemaining($metaCampaign), // only call this if using shared funds I think.
             parentRef: $campaign->getMetaCampaignSlug()?->slug,
             parentTarget: $parentTarget,
             parentUsesSharedFunds: $metaCampaign && $metaCampaign->usesSharedFunds(),
