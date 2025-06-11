@@ -29,10 +29,10 @@ class Search extends Action
         Assertion::notSame(Environment::current(), Environment::Production);
 
         $params = $request->getQueryParams();
-        $sortField = $params['sortField'] ?? null;
+        $sortField = $params['sortField'] ?? '';
         $sortDirection = $params['sortDirection'] ?? 'desc';
         Assertion::string($sortDirection);
-        Assertion::nullOrString($sortField);
+        Assertion::string($sortField);
 
         if (!\in_array($sortDirection, ['asc', 'desc'], true)) {
             throw new HttpBadRequestException($request, 'Unrecognised sort direction');
