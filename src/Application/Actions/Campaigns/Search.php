@@ -26,7 +26,11 @@ class Search extends Action {
         // @todo Possibly not safe to expose yet.
         Assertion::notSame(Environment::current(), Environment::Production);
 
-        $campaigns = $this->campaignRepository->search();
+        $params = $request->getQueryParams();
+        $sortField = $params['sortField'] ?? 'matchFundsRemaining';
+        $sortDirection = $params['sortDirection'] ?? 'desc';
+
+        $campaigns = $this->campaignRepository->search(sortField: $sortField, sortDirection: $sortDirection);
 
         $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaigns);
 

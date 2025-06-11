@@ -443,15 +443,28 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * @param string $sortField
+     * @param string 'asc'|'desc' $sortDirection
      * @return list<Campaign>
      */
-    public function search(): array
+    public function search(string $sortField, string $sortDirection): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
+
+        $safeSortField = match ($sortField) {
+            'matchFundsRemaining' => 'matchFundsRemaining',
+            default => null,
+        };
+
         $query = $qb->select('c')
             ->from(Campaign::class, 'c')
-            ->where($qb->expr()->eq('c.hidden', '0'))
-            ->orderBy('c.endDate', 'DESC')
+            ->where($qb->expr()->eq('c.hidden', '0'));
+
+        if ($safeSortField !== null) {
+            $query->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
+        }
+
+        $query->addOrderBy('c.endDate', 'DESC')
             ->getQuery();
 
         /** @var list<Campaign> $result */
