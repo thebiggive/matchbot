@@ -443,6 +443,38 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * @param string $sortField
+     * @param string 'asc'|'desc' $sortDirection
+     * @return list<Campaign>
+     */
+    public function search(string $sortField, string $sortDirection): array
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+
+        $safeSortField = match ($sortField) {
+            // @todo this field needs adding (maybe to a new CampaignStats table) for this to work
+            'matchFundsRemaining' => 'matchFundsRemaining',
+            default => null,
+        };
+
+        $qb = $qb->select('c')
+            ->from(Campaign::class, 'c')
+            ->where($qb->expr()->eq('c.hidden', '0'));
+
+        if ($safeSortField !== null) {
+            $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
+        }
+
+        $qb->addOrderBy('c.endDate', 'DESC');
+
+        $query = $qb->getQuery();
+        /** @var list<Campaign> $result */
+        $result = $query->getResult();
+
+        return $result;
+    }
+
+    /**
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
      */

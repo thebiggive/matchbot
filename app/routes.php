@@ -72,6 +72,8 @@ return function (App $app) {
             \MatchBot\Application\Actions\Campaigns\GetSummariesForCharity::class
         );
 
+        $versionGroup->get('/campaigns', \MatchBot\Application\Actions\Campaigns\Search::class);
+
         /**
          * Cancel *all* pending donations for the current Donor with the specified query param criteria,
          * currently taking one campaign ID and most useful for Donation Funds tips.
