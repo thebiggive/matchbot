@@ -88,12 +88,9 @@ class CampaignTest extends TestCase
             video: ['provider' => 'youtube', 'key' => 'videoId123'],
         );
 
-        // Verify that the campaign was created successfully
-        $this->assertInstanceOf(Campaign::class, $campaign);
-
         // Verify that a few key properties were set correctly
-        $this->assertEquals('campaignId123', $campaign->id);
-        $this->assertEquals(1000.50, $campaign->amountRaised);
-        $this->assertInstanceOf(Charity::class, $campaign->charity);
+        $this->assertSame('campaignId123', $campaign->id);
+        $this->assertSame(1000.50, $campaign->amountRaised);
+        $this->assertSame('Test Charity', $campaign->charity->name);
     }
 }
