@@ -444,7 +444,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * @param string $sortField
-     * @param string 'asc'|'desc' $sortDirection
+     * @param 'asc'|'desc' $sortDirection
      * @return list<Campaign>
      */
     public function search(string $sortField, string $sortDirection): array

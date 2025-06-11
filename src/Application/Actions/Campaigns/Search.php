@@ -11,6 +11,7 @@ use MatchBot\Domain\CampaignService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Slim\Exception\HttpBadRequestException;
 
 class Search extends Action
 {
@@ -30,6 +31,12 @@ class Search extends Action
         $params = $request->getQueryParams();
         $sortField = $params['sortField'] ?? 'matchFundsRemaining';
         $sortDirection = $params['sortDirection'] ?? 'desc';
+        Assertion::string($sortDirection);
+        Assertion::string($sortField);
+
+        if (!\in_array($sortDirection, ['asc', 'desc'], true)) {
+            throw new HttpBadRequestException($request, 'Unrecognised sort direction');
+        }
 
         $campaigns = $this->campaignRepository->search(sortField: $sortField, sortDirection: $sortDirection);
 
