@@ -451,9 +451,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
+        /** @var ?string $safeSortField */
         $safeSortField = match ($sortField) {
-            // @todo this field needs adding (maybe to a new CampaignStats table) for this to work
-            'matchFundsRemaining' => 'matchFundsRemaining',
+            // @todo this field needs adding (maybe to a new CampaignStats table) for this to work.
+            // @todo when sorting by matchFundsRemaining works make it the default here. Add other allowable sort-by
+            //       fields to this match.
+            'matchFundsRemaining' => throw new \Exception('Sorting by matchFundsRemaining not yet implemented'),
             default => null,
         };
 
