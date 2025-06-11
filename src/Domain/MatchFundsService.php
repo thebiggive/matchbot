@@ -71,4 +71,16 @@ class MatchFundsService
 
         return Money::fromNumericString($runningTotal, Currency::fromIsoCode($currencyCode));
     }
+
+    public function getFundsRemainingForMetaCampaign(MetaCampaign $metaCampaign): void
+    {
+        // to implement, should be doable as a copy and paste of `getFundsRemaining`, assuming
+        // we want the logic to the same for a metacampaign as it is for a charity campaign,
+        //  but with the query
+        // in \MatchBot\Domain\CampaignFundingRepository::getAvailableFundings adjusted to join
+        // to campaign and use the metacampaign slug.
+        //
+        // Maybe some opportunities to DRY up but I'm not sure if we need to take them during MAT-405 implementation.
+
+    }
 }
