@@ -71,4 +71,24 @@ class MatchFundsService
 
         return Money::fromNumericString($runningTotal, Currency::fromIsoCode($currencyCode));
     }
+
+    public function getFundsRemainingForMetaCampaign(MetaCampaign $metaCampaign): Money
+    {
+        $currencyCode = $metaCampaign->getCurrency()->isoCode();
+
+        $funds = $this->campaignFundingRepository->getAvailableFundingsForMetaCampaign($metaCampaign);
+
+        // todo - consider optimising by doing the summation in the DB. For the equivilent function for an individual
+        // charity campaign the performance may not be too bad as there will be not so may funds. For this it
+        // will probably be quite a bit worse so will likely need optimising.
+
+        $runningTotal = '0.00';
+        foreach ($funds as $fund) {
+            $amount = $fund->getAmountAvailable();
+            Assertion::same($currencyCode, $fund->getCurrencyCode(), 'fund currency code must equal campaign currency code');
+            $runningTotal = \bcadd($runningTotal, $amount, 2);
+        }
+
+        return Money::fromNumericString($runningTotal, Currency::fromIsoCode($currencyCode));
+    }
 }

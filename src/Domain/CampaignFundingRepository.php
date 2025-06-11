@@ -66,6 +66,32 @@ class CampaignFundingRepository extends EntityRepository
         return $result;
     }
 
+    /**
+     * Returns all CampaignFunding associated with meta campaign, including those that have zero
+     * funds available at this time.
+     *
+     * Result is in an arbitrary order, unlike getAvailableFundings which gives an ordered list.
+     *
+     * @return CampaignFunding[]
+     */
+    public function getAvailableFundingsForMetaCampaign(MetaCampaign $metaCampaign): array
+    {
+        $query = $this->getEntityManager()->createQuery(dql: <<<'DQL'
+            SELECT cf FROM MatchBot\Domain\CampaignFunding cf
+            JOIN cf.campaigns campaign
+            WHERE cf.amountAvailable > 0
+            AND campaign.metaCampaignSlug = :slug
+        DQL
+        );
+
+        $query->setParameter('slug', $metaCampaign->getSlug()->slug);
+
+        /** @var CampaignFunding[] $result */
+        $result = $query->getResult();
+
+        return $result;
+    }
+
     public function getFunding(Fund $fund): ?CampaignFunding
     {
         $query = $this->getEntityManager()->createQuery('

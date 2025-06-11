@@ -253,4 +253,9 @@ class MetaCampaign extends SalesforceReadProxy
     {
         return $this->title;
     }
+
+    public function getCurrency(): Currency
+    {
+        return $this->currency;
+    }
 }
