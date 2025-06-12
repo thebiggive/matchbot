@@ -883,7 +883,7 @@ class DonationService
     {
         $donorId = $donation->getDonorId();
         if (!$donorId) {
-            // must be an already persisted donation
+            // must be an old donation
             return false;
         }
 
