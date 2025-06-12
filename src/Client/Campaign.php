@@ -20,11 +20,11 @@ use MatchBot\Domain\MetaCampaignSlug;
      * phoneNumber: ?string,
      * emailAddress: ?string,
      * postalAddress: ?array{
-     * city: ?string,
-     * line1: ?string,
-     * line2: ?string,
-     * country: ?string,
-     * postalCode: ?string
+     *   city: ?string,
+     *   line1: ?string,
+     *   line2: ?string,
+     *   country: ?string,
+     *   postalCode: ?string
      * },
      * twitter: ?string,
      * website: ?string,
