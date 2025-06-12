@@ -66,6 +66,32 @@ class CampaignFundingRepository extends EntityRepository
         return $result;
     }
 
+    /**
+     */
+    public function getAmountAvailableForMetaCampaign(MetaCampaign $metaCampaign): Money
+    {
+        $query = $this->getEntityManager()->createQuery(dql: <<<'DQL'
+            SELECT COALESCE(SUM(cf.amountAvailable), 0) as sum, cf.currencyCode FROM MatchBot\Domain\CampaignFunding cf
+            JOIN cf.campaigns campaign
+            WHERE campaign.metaCampaignSlug = :slug
+            GROUP BY cf.currencyCode
+        DQL
+        );
+
+        $query->setParameter('slug', $metaCampaign->getSlug()->slug);
+
+        /** @var list<array{sum: numeric-string, currencyCode: string}> $result */
+        $result = $query->getResult();
+
+        Assertion::maxCount($result, 1, 'Campaign Fundings in multiple currencies found for same metacampaign');
+
+        if ($result === []) {
+            return Money::zero();
+        }
+
+        return Money::fromNumericString($result[0]['sum'], Currency::fromIsoCode($result[0]['currencyCode']));
+    }
+
     public function getFunding(Fund $fund): ?CampaignFunding
     {
         $query = $this->getEntityManager()->createQuery('
