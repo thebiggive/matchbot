@@ -36,7 +36,7 @@ use MatchBot\Domain\MetaCampaignSlug;
      * hmrcReferenceNumber: string|null,
      * giftAidOnboardingStatus: string,
      * regulatorRegion: string,
-     * regulatorNumber: string,
+     * regulatorNumber: string|null,
  * }
  *
  * @psalm-type SFCampaignApiResponse = array{
