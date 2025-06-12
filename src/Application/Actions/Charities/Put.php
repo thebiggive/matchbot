@@ -10,6 +10,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\EmailAddress;
@@ -20,9 +21,10 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
+use Symfony\Component\Clock\Clock;
 
 /**
- * @psalm-import-type SFCampaignApiResponse from \MatchBot\Client\Campaign
+ * @psalm-import-type SFCharityApiResponse from \MatchBot\Client\Campaign
  */
 class Put extends Action
 {
@@ -31,6 +33,7 @@ class Put extends Action
         LoggerInterface $logger,
         private CharityRepository $charityRepository,
         private EntityManager $entityManager,
+        private Clock $clock,
     ) {
         parent::__construct($logger);
     }
@@ -62,12 +65,8 @@ class Put extends Action
             throw new HttpBadRequestException($request, 'Missing or invalid charity data');
         }
 
-        /** @var array<string, mixed> $charityData */
+        /** @var SFCharityApiResponse $charityData */
         $charityData = $requestBody['charity'];
-
-        if (!isset($charityData['id']) || !is_string($charityData['id'])) {
-            throw new HttpNotFoundException($request, 'Missing or invalid charity ID');
-        }
 
         /** @var Salesforce18Id<Charity> $charitySfId */
         $charitySfId = Salesforce18Id::of($charityData['id']);
@@ -82,30 +81,16 @@ class Put extends Action
     }
 
     /**
-     * @param array<string, mixed> $charityData
+     * @param SFCharityApiResponse $charityData
      * @param Salesforce18Id<Charity> $charitySfId
      */
     public function upsertCharity(array $charityData, Salesforce18Id $charitySfId): JsonResponse
     {
-        $charity = $this->charityRepository->findOneBySalesforceId($charitySfId);
-
-        // Validate required fields
-        Assertion::keyExists($charityData, 'name', 'Charity name is required');
-        Assertion::keyExists($charityData, 'stripeAccountId', 'Stripe account ID is required');
-        Assertion::keyExists($charityData, 'regulatorRegion', 'Regulator region is required');
-        Assertion::keyExists($charityData, 'regulatorNumber', 'Regulator number is required');
-
-        // Validate types for required fields
-        Assertion::string($charityData['name'], 'Charity name must be a string');
-        Assertion::string($charityData['stripeAccountId'], 'Stripe account ID must be a string');
-        Assertion::string($charityData['regulatorRegion'], 'Regulator region must be a string');
-        Assertion::string($charityData['regulatorNumber'], 'Regulator number must be a string');
-
         // Extract data
         $name = $charityData['name'];
         $stripeAccountId = $charityData['stripeAccountId'];
         $regulatorRegion = $charityData['regulatorRegion'];
-        $regulatorNumber = $charityData['regulatorNumber'];
+        $regulatorNumber = self::nullOrStringValue($charityData, 'regulatorNumber');
 
         // Optional fields
         $hmrcReferenceNumber = self::nullOrStringValue($charityData, 'hmrcReferenceNumber');
@@ -115,24 +100,24 @@ class Put extends Action
         $phoneNumber = self::nullOrStringValue($charityData, 'phoneNumber');
 
         // Get postal address data
-        $address = $this->arrayToPostalAddress($charityData['postalAddress'] ?? null);
+        $address = CampaignRepository::arrayToPostalAddress($charityData['postalAddress'] ?? null, $this->logger);
 
-        // Get email address
-        /** @var mixed $emailRaw */
         $emailRaw = $charityData['emailAddress'] ?? null;
         $emailString = is_string($emailRaw) ? $emailRaw : null;
         $emailAddress = $emailString !== null && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
 
-        if (!$charity) {
+        $charity = $this->charityRepository->findOneBySalesforceId($charitySfId);
+
+        if (! $charity) {
             $charity = new Charity(
                 salesforceId: $charitySfId->value,
                 charityName: $name,
                 stripeAccountId: $stripeAccountId,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
                 giftAidOnboardingStatus: $giftAidOnboardingStatus,
-                regulator: $this->getRegulatorHMRCIdentifier($regulatorRegion),
+                regulator: CampaignRepository::getRegulatorHMRCIdentifier($regulatorRegion),
                 regulatorNumber: $regulatorNumber,
-                time: new \DateTime('now'),
+                time: \DateTime::createFromInterface($this->clock->now()),
                 rawData: $charityData,
                 websiteUri: $website,
                 logoUri: $logoUri,
@@ -151,7 +136,7 @@ class Put extends Action
                 stripeAccountId: $stripeAccountId,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
                 giftAidOnboardingStatus: $giftAidOnboardingStatus,
-                regulator: $this->getRegulatorHMRCIdentifier($regulatorRegion),
+                regulator: CampaignRepository::getRegulatorHMRCIdentifier($regulatorRegion),
                 regulatorNumber: $regulatorNumber,
                 rawData: $charityData,
                 time: new \DateTime('now'),
@@ -165,16 +150,6 @@ class Put extends Action
         $this->entityManager->flush();
 
         return new JsonResponse([], 200);
-    }
-
-    protected function getRegulatorHMRCIdentifier(string $regulatorName): ?string
-    {
-        return match ($regulatorName) {
-            'England and Wales' => 'CCEW',
-            'Northern Ireland' => 'CCNI',
-            'Scotland' => 'OSCR',
-            default => null,
-        };
     }
 
     /**
@@ -192,55 +167,5 @@ class Put extends Action
 
         Assertion::nullOrString($data[$key], "$key must be a string or null");
         return is_string($data[$key]) ? $data[$key] : null;
-    }
-
-
-    /**
-     * Converts an array to a PostalAddress object.
-     *
-     * @param mixed $postalAddress The postal address data
-     */
-    private function arrayToPostalAddress(mixed $postalAddress): PostalAddress
-    {
-        if (!is_array($postalAddress)) {
-            return PostalAddress::null();
-        }
-
-        // Convert empty strings to null and ensure all keys exist
-        $keys = ['line1', 'line2', 'city', 'country', 'postalCode'];
-        $cleanedAddress = [];
-
-        foreach ($keys as $key) {
-            /** @var mixed $rawValue */
-            $rawValue = $postalAddress[$key] ?? null;
-            $value = is_string($rawValue) ? $rawValue : null;
-            $cleanedAddress[$key] = ($value !== null && trim($value) !== '') ? $value : null;
-        }
-
-        // Treat whole address as null if there's no `line1`
-        if (is_null($cleanedAddress['line1'])) {
-            // Check if any other fields are non-null
-            $hasOtherFields = false;
-            foreach ($keys as $key) {
-                if ($key !== 'line1' && $cleanedAddress[$key] !== null) {
-                    $hasOtherFields = true;
-                    break;
-                }
-            }
-
-            if ($hasOtherFields) {
-                $this->logger->warning('Postal address from Salesforce is missing line1 but had other parts; treating as all-null');
-            }
-
-            return PostalAddress::null();
-        }
-
-        return PostalAddress::of(
-            line1: $cleanedAddress['line1'],
-            line2: $cleanedAddress['line2'],
-            city: $cleanedAddress['city'],
-            postalCode: $cleanedAddress['postalCode'],
-            country: $cleanedAddress['country'],
-        );
     }
 }
