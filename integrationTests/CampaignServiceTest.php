@@ -4,18 +4,13 @@ namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
-use MatchBot\Domain\Currency;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
-use MatchBot\Domain\MetaCampaign;
-use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
-use Psr\Log\LoggerInterface;
 
 class CampaignServiceTest extends IntegrationTest
 {
@@ -27,6 +22,7 @@ class CampaignServiceTest extends IntegrationTest
         parent::setUp();
         $this->SUT = $this->getService(CampaignService::class);
     }
+
     public function testACampaignWithNoDonationsRaisedNoMoney(): void
     {
         $campaign = TestCase::someCampaign();
