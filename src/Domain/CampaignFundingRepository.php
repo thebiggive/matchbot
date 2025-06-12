@@ -86,7 +86,7 @@ class CampaignFundingRepository extends EntityRepository
         Assertion::maxCount($result, 1, 'Campaign Fundings in multiple currencies found for same metacampaign');
 
         if ($result === []) {
-            return Money::zero();
+            return Money::zero(currency: $metaCampaign->getCurrency());
         }
 
         return Money::fromNumericString($result[0]['sum'], Currency::fromIsoCode($result[0]['currencyCode']));
