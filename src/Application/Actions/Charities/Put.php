@@ -68,10 +68,6 @@ class Put extends Action
         /** @var Salesforce18Id<Charity> $charitySfId */
         $charitySfId = Salesforce18Id::of($charityData['id']);
 
-        if (!isset($args['salesforceId']) || !is_string($args['salesforceId'])) {
-            throw new HttpBadRequestException($request, 'Missing or invalid salesforceId in URL');
-        }
-
         Assertion::eq($charityData['id'], $args['salesforceId']);
 
         return $this->upsertCharity($charityData, $charitySfId);
