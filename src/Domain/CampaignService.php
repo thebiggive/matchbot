@@ -321,9 +321,19 @@ class CampaignService
         if (($errors) !== []) {
             $errorList = \implode(',', $errors);
 
-            $this->log->error(
-                "(MAT-405 NOT emergency) Campaign {$campaignName} {$sfId->value} status {$campaignStatus} not compatible: {$errorList}"
-            );
+            $errorMessage = "(MAT-405 NOT emergency) Campaign {$campaignName} {$sfId->value} status {$campaignStatus} not compatible: {$errorList}";
+
+            if (Environment::current() === Environment::Production) {
+                // @todo MAT-405: Fix the errors we've seen so far then change this from warning back to error
+                $this->log->warning(
+                    $errorMessage
+                );
+            } else {
+                // logging error not rethrowing to make it easier to debug in staging for now.
+                $this->log->error(
+                    $errorMessage
+                );
+            }
         }
 
         // these models are only in memory, never persisted.
