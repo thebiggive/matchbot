@@ -67,29 +67,29 @@ class CampaignFundingRepository extends EntityRepository
     }
 
     /**
-     * Returns all CampaignFunding associated with meta campaign, including those that have zero
-     * funds available at this time.
-     *
-     * Result is in an arbitrary order, unlike getAvailableFundings which gives an ordered list.
-     *
-     * @return CampaignFunding[]
      */
-    public function getAvailableFundingsForMetaCampaign(MetaCampaign $metaCampaign): array
+    public function getAmountAvailableForMetaCampaign(MetaCampaign $metaCampaign): Money
     {
         $query = $this->getEntityManager()->createQuery(dql: <<<'DQL'
-            SELECT cf FROM MatchBot\Domain\CampaignFunding cf
+            SELECT COALESCE(SUM(cf.amountAvailable), 0) as sum, cf.currencyCode FROM MatchBot\Domain\CampaignFunding cf
             JOIN cf.campaigns campaign
-            WHERE cf.amountAvailable > 0
-            AND campaign.metaCampaignSlug = :slug
+            WHERE campaign.metaCampaignSlug = :slug
+            GROUP BY cf.currencyCode
         DQL
         );
 
         $query->setParameter('slug', $metaCampaign->getSlug()->slug);
 
-        /** @var CampaignFunding[] $result */
+        /** @var list<array{sum: numeric-string, currencyCode: string}> $result */
         $result = $query->getResult();
 
-        return $result;
+        Assertion::maxCount($result, 1, 'Campaign Fundings in multiple currencies found for same metacampaign');
+
+        if ($result === []) {
+            return Money::zero();
+        }
+
+        return Money::fromNumericString($result[0]['sum'], Currency::fromIsoCode($result[0]['currencyCode']));
     }
 
     public function getFunding(Fund $fund): ?CampaignFunding

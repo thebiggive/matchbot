@@ -254,6 +254,11 @@ class MetaCampaign extends SalesforceReadProxy
         return $this->title;
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     *
+     * unused but leaving in as likely useful soon.
+     */
     public function getCurrency(): Currency
     {
         return $this->currency;
