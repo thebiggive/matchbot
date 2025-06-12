@@ -135,7 +135,7 @@ class DonationNotifier
             }
         } else {
             $this->logger->info(sprintf(
-                'No $sendRegisterUri so not checking for email verification token for donation %s for email %s',
+                '$sendRegisterUri false so not checking for email verification token for donation %s for email %s',
                 $donation->getId() ?? '[unknown]',
                 $emailAddress->email,
             ));
