@@ -38,9 +38,6 @@ class Put extends Action
         parent::__construct($logger);
     }
 
-    /**
-     * @return Response
-     */
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
