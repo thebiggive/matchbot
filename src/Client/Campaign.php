@@ -12,32 +12,35 @@ use MatchBot\Domain\MetaCampaignSlug;
 /**
  * // Some fields in the following type are marked optional because they do not yet exist in our prod SF org. They
  * // may also separately be nullable.
+ *
+ * @psalm-type SFCharityApiResponse = array{
+     * id: string,
+     * name: string,
+     * logoUri: ?string,
+     * phoneNumber: ?string,
+     * emailAddress: ?string,
+     * postalAddress: ?array{
+     *   city: ?string,
+     *   line1: ?string,
+     *   line2: ?string,
+     *   country: ?string,
+     *   postalCode: ?string
+     * },
+     * twitter: ?string,
+     * website: ?string,
+     * facebook: ?string,
+     * linkedin: ?string,
+     * instagram: ?string,
+     * optInStatement: ?string,
+     * stripeAccountId: string,
+     * hmrcReferenceNumber: string|null,
+     * giftAidOnboardingStatus: string,
+     * regulatorRegion: string,
+     * regulatorNumber: string|null,
+ * }
+ *
  * @psalm-type SFCampaignApiResponse = array{
- *     charity: array{
- *      id: string,
- *      name: string,
- *      logoUri: ?string,
- *      phoneNumber: ?string,
- *      emailAddress: ?string,
- *      postalAddress: ?array{
- *          city: ?string,
- *          line1: ?string,
- *          line2: ?string,
- *          country: ?string,
- *          postalCode: ?string
- *      },
- *      twitter: ?string,
- *      website: ?string,
- *      facebook: ?string,
- *      linkedin: ?string,
- *      instagram: ?string,
- *      optInStatement: ?string,
- *      stripeAccountId: string,
- *      hmrcReferenceNumber: string|null,
- *      giftAidOnboardingStatus: string,
- *      regulatorRegion: string,
- *      regulatorNumber: string,
- *     }|null,
+ *     charity: SFCharityApiResponse|null,
  *     endDate: ?string,
  *     id: string,
  *     isMatched: bool,
