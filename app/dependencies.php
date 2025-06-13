@@ -556,9 +556,8 @@ return function (ContainerBuilder $containerBuilder) {
 
         DonationNotifier::class =>
             static function (ContainerInterface $c): DonationNotifier {
-            // todo - make a settings class.
                 $settings = $c->get(Settings::class);
-                               $donateSettings = $settings->donate;
+                $donateSettings = $settings->donate;
                 $donateBaseUri = $donateSettings['baseUri'];
 
                 return new DonationNotifier(
@@ -566,6 +565,7 @@ return function (ContainerBuilder $containerBuilder) {
                     emailVerificationTokenRepository: $c->get(EmailVerificationTokenRepository::class),
                     now: new \DateTimeImmutable('now'),
                     donateBaseUri: $donateBaseUri,
+                    logger: $c->get(LoggerInterface::class),
                 );
             },
 

@@ -53,6 +53,7 @@ class TestCase extends PHPUnitTestCase
 {
     use ProphecyTrait;
 
+    /** @var SFCampaignApiResponse  */
     public const array CAMPAIGN_FROM_SALESOFRCE = [
         'id' => 'a05xxxxxxxxxxxxxxx',
         'x_isMetaCampaign' => false,
@@ -105,6 +106,7 @@ class TestCase extends PHPUnitTestCase
         'surplusDonationInfo' => '',
         'parentUsesSharedFunds' => false,
         'championOptInStatement' => '',
+        'totalAdjustment' => null,
         'parentMatchFundsRemaining' => null,
         'regularGivingCollectionEnd' => null,
         'charity' => [
@@ -132,6 +134,63 @@ class TestCase extends PHPUnitTestCase
                 'country' => 'some country',
             ],
         ]
+    ];
+
+
+    /** @var SFCampaignApiResponse  */
+    public const array META_CAMPAIGN_FROM_SALESFORCE = [
+        'id' => 'a05xxxxxxxxxxxxxxx',
+        'x_isMetaCampaign' => true,
+        'ready' => true,
+        'title' => 'This is a meta campaign',
+        'video' => null,
+        'hidden' => false,
+        'quotes' => [],
+        'status' => 'Active',
+        'target' => 100.0,
+        'endDate' => '2095-08-01T00:00:00.000Z',
+        'logoUri' => null,
+        'problem' => '',
+        'summary' => '',
+        'updates' => [],
+        'solution' => 'do the saving',
+        'bannerUri' => null,
+        'countries' => [0 => 'United Kingdom',],
+        'isMatched' => true,
+        'parentRef' => null,
+        'startDate' => '2015-08-01T00:00:00.000Z',
+        'categories' => ['Education/Training/Employment', 'Religious'],
+        'championRef' => null,
+        'amountRaised' => 0.0,
+        'championName' => '',
+        'currencyCode' => 'GBP',
+        'campaignCount' => null,
+        'donationCount' => 0,
+        'impactSummary' => null,
+        'impactReporting' => null,
+        'isRegularGiving' => false,
+        'isEmergencyIMF' => false,
+        'slug' => 'some-slug',
+        'campaignFamily' => null,
+        'matchFundsTotal' => 50.0,
+        'thankYouMessage' => 'Thank you for helping us save matchbot! We will be able to match twice as many bots now!',
+        'usesSharedFunds' => false,
+        'alternativeFundUse' => null,
+        'parentAmountRaised' => null,
+        'additionalImageUris' => [],
+        'matchFundsRemaining' => 50.0,
+        'parentDonationCount' => null,
+        'surplusDonationInfo' => '',
+        'parentUsesSharedFunds' => false,
+        'championOptInStatement' => '',
+        'parentMatchFundsRemaining' => null,
+        'regularGivingCollectionEnd' => null,
+        'totalAdjustment' => 0.0,
+        'charity' => null,
+        'aims' => [],
+        'budgetDetails' => [],
+        'beneficiaries' => [],
+        'parentTarget' => null,
     ];
 
     /**

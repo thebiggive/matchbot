@@ -37,7 +37,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *      giftAidOnboardingStatus: string,
  *      regulatorRegion: string,
  *      regulatorNumber: string,
- *     },
+ *     }|null,
  *     endDate: ?string,
  *     id: string,
  *     isMatched: bool,

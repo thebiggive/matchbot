@@ -119,4 +119,10 @@ class MetaCampaignRepository
 
         return $total;
     }
+
+    /** @param Salesforce18Id<MetaCampaign> $sfId */
+    public function findOneBySalesforceId(Salesforce18Id $sfId): ?MetaCampaign
+    {
+        return $this->doctrineRepository->findOneBy(['salesforceId' => $sfId->value]);
+    }
 }

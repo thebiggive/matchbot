@@ -162,6 +162,37 @@ class MetaCampaign extends SalesforceReadProxy
      */
     public static function fromSfCampaignData(MetaCampaignSlug $slug, array $data): self
     {
+        // other than salesforceId which should never change just filling in all placeholder
+        // values here for a microsecond - will be replaced in the call to updateFromSfData.
+        // I'm sure there's a more elegant way to do this but at least this should look OK
+        // from outside the class.
+        $metaCampaign = new self(
+            slug: $slug,
+            salesforceId: Salesforce18Id::ofMetaCampaign($data['id']),
+            title: '',
+            currency: Currency::GBP,
+            status: '',
+            hidden: false,
+            summary: '',
+            bannerURI: null,
+            startDate: new \DateTimeImmutable('1970-01-01'),
+            endDate: new \DateTimeImmutable('1970-01-01'),
+            isRegularGiving: false,
+            isEmergencyIMF: false,
+            totalAdjustment: Money::zero(),
+        );
+
+        $metaCampaign->updateFromSfData($data);
+
+        return $metaCampaign;
+    }
+
+
+    /**
+     * @param SFCampaignApiResponse $data
+     */
+    public function updateFromSfData(array $data): void
+    {
         Assertion::true($data['x_isMetaCampaign'] ?? true);
 
         $status = $data['status'];
@@ -185,21 +216,18 @@ class MetaCampaign extends SalesforceReadProxy
         $totalAdjustment = (string)$data['totalAdjustment'];
         Assertion::numeric($totalAdjustment);
 
-        return new self(
-            slug: $slug,
-            salesforceId: Salesforce18Id::ofMetaCampaign($data['id']),
-            title: $title,
-            currency: $currency,
-            status: $status,
-            hidden: $data['hidden'],
-            summary: $data['summary'],
-            bannerURI: \is_string($bannerUri) ? new Uri($bannerUri) : null,
-            startDate: new \DateTimeImmutable($startDate),
-            endDate: new \DateTimeImmutable($endDate),
-            isRegularGiving: $isRegularGiving,
-            isEmergencyIMF: $data['isEmergencyIMF'] ?? false, // @todo MAT-405 : start sending isEmergencyIMF from SF and remove null coalesce here
-            totalAdjustment: Money::fromNumericString($totalAdjustment, $currency)
-        );
+        $this->status = $status;
+        $this->bannerURI = \is_string($bannerUri) ? (new Uri($bannerUri))->__toString() : null;
+        $this->isRegularGiving = $isRegularGiving;
+        $this->title = $title;
+        $this->currency = $currency;
+        $this->hidden = $data['hidden'];
+        $this->summary = $data['summary'];
+        $this->startDate = new \DateTimeImmutable($startDate);
+        $this->endDate = new \DateTimeImmutable($endDate);
+        $this->isEmergencyIMF = $data['isEmergencyIMF'] ?? false; // @todo MAT-405 : start sending isEmergencyIMF from SF and remove null coalesce here
+
+        $this->totalAdjustment = Money::fromNumericString($totalAdjustment, $currency);
     }
 
     /**
@@ -219,5 +247,15 @@ class MetaCampaign extends SalesforceReadProxy
     public function getTotalAdjustment(): Money
     {
         return $this->totalAdjustment;
+    }
+
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
+
+    public function getCurrency(): Currency
+    {
+        return $this->currency;
     }
 }

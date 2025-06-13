@@ -13,6 +13,7 @@ use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Cache\Adapter\NullAdapter;
@@ -35,13 +36,15 @@ class CampaignServiceTest extends TestCase
         // having all these stubs here suggests probably this service class should be broken up so the part that
         // doesn't use the dependances can be tested separately.
         $this->metaCampaignRepositoryProphecy = $this->prophesize(MetaCampaignRepository::class);
+        $matchFundsServiceProphecy = $this->prophesize(MatchFundsService::class);
+        $matchFundsServiceProphecy->getFundsRemainingForMetaCampaign(Argument::any())->willReturn(Money::zero());
 
         $this->SUT = new CampaignService(
             campaignRepository: $this->createStub(CampaignRepository::class),
             metaCampaignRepository: $this->metaCampaignRepositoryProphecy->reveal(),
             cache: new NullAdapter(),
             donationRepository: $this->createStub(DonationRepository::class),
-            matchFundsRemainingService: $this->createStub(MatchFundsService::class),
+            matchFundsRemainingService: $matchFundsServiceProphecy->reveal(),
             log: $this->createStub(LoggerInterface::class),
             clock: new MockClock(new \DateTimeImmutable('1970-01-01')),
         );

@@ -57,7 +57,7 @@ class CampaignService
             'currencyCode' => $campaign->getCurrencyCode(),
             'endDate' => $this->formatDate($campaign->getEndDate()),
             'isMatched' => $campaign->isMatched(),
-            'matchFundsRemaining' => $this->cachedMatchFundsRemaining($campaign)->toMajorUnitFloat(),
+            'matchFundsRemaining' => $this->cachedCampaignMatchFundsRemaining($campaign)->toMajorUnitFloat(),
             'startDate' => $this->formatDate($campaign->getStartDate()),
             'status' => $campaign->getStatus(),
             'title' => $campaign->getCampaignName(),
@@ -101,12 +101,12 @@ class CampaignService
 
         $sfCampaignData = $campaign->getSalesforceData();
         $sfCharityData = $sfCampaignData['charity'];
+        Assertion::notNull($sfCharityData, 'Charity data should not be null for a charity campaign');
 
         // The variables below currently being taken directly from the stored SF API response, but shouldn't be
         // because matchbot should be able to calculate more up to date or more authoritative versions of them
         // itself. We need to go through and implement a function to calculate each of these using our data
         // about the campaign and related fund(s), meta-campaign, etc.
-        $parentMatchFundsRemaining = $sfCampaignData['parentMatchFundsRemaining'];
         $parentTarget = $sfCampaignData['parentTarget'];
         // end of variables to re-implement above. Other variables can continue being pulled directly from $sfCampaignData
         // as they are specific to the individual charity campaign and originate from user input in salesforce.
@@ -143,9 +143,11 @@ class CampaignService
         if ($metaCampaign && $metaCampaign->usesSharedFunds()) {
             $parentDonationCount = $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign);
             $parentAmountRaised = $this->getAmountRaisedForMetaCampaign($metaCampaign)->toMajorUnitFloat();
+            $parentMatchFundsRemaining = $this->cachedMetaCampaignMatchFundsRemaining($metaCampaign)->toMajorUnitFloat();
         } else {
             $parentDonationCount = null;
             $parentAmountRaised = null;
+            $parentMatchFundsRemaining = null;
         }
 
 
@@ -174,7 +176,7 @@ class CampaignService
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
             logoUri: $sfCampaignData['logoUri'],
-            matchFundsRemaining: $this->cachedMatchFundsRemaining($campaign)->toMajorUnitFloat(),
+            matchFundsRemaining: $this->cachedCampaignMatchFundsRemaining($campaign)->toMajorUnitFloat(),
             matchFundsTotal: $this->cachedTotalMatchFundsForCampaign($campaign)->toMajorUnitFloat(),
             parentAmountRaised: $parentAmountRaised,
             parentDonationCount: $parentDonationCount,
@@ -320,19 +322,9 @@ class CampaignService
         if (($errors) !== []) {
             $errorList = \implode(',', $errors);
 
-            $errorMessage = "(MAT-405 NOT emergency) Campaign {$campaignName} {$sfId->value} status {$campaignStatus} not compatible: {$errorList}";
-
-            if (Environment::current() === Environment::Production) {
-                // @todo MAT-405: Fix the errors we've seen so far then change this from warning back to error
-                $this->log->warning(
-                    $errorMessage
-                );
-            } else {
-                // logging error not rethrowing to make it easier to debug in staging for now.
-                $this->log->error(
-                    $errorMessage
-                );
-            }
+            $this->log->error(
+                "(MAT-405 NOT emergency) Campaign {$campaignName} {$sfId->value} status {$campaignStatus} not compatible: {$errorList}"
+            );
         }
 
         // these models are only in memory, never persisted.
@@ -376,7 +368,7 @@ class CampaignService
         return Money::fromSerialized($cachedAmountArray);
     }
 
-    private function cachedMatchFundsRemaining(Campaign $campaign): Money
+    private function cachedCampaignMatchFundsRemaining(Campaign $campaign): Money
     {
         $id = $campaign->getId();
         if ($id === null) {
@@ -393,6 +385,31 @@ class CampaignService
 
                 $diffSeconds = $startTime->diff($endTime)->f;
                 $this->log->info("Getting getFundsRemaining for campaign {$campaign->getSalesforceId()} took " . (string) $diffSeconds . "s");
+
+                return $returnValue;
+            }
+        );
+
+        return Money::fromSerialized($cachedAmountArray);
+    }
+
+    private function cachedMetaCampaignMatchFundsRemaining(MetaCampaign $metaCampaign): Money
+    {
+        $id = $metaCampaign->getId();
+        if ($id === null) {
+            return Money::zero(Currency::GBP);
+        }
+
+        $cachedAmountArray = $this->cache->get(
+            key: self::CAMPAIGN_MATCH_AMOUNT_AVAILABLE_PREFIX . (string)$id,
+            callback: function (ItemInterface $item) use ($metaCampaign): array {
+                $item->expiresAfter(120); // two minutes
+                $startTime = $this->clock->now();
+                $returnValue = $this->matchFundsRemainingService->getFundsRemainingForMetaCampaign($metaCampaign)->jsonSerialize();
+                $endTime = $this->clock->now();
+
+                $diffSeconds = $startTime->diff($endTime)->f;
+                $this->log->info("Getting getFundsRemaining for metaCampaign {$metaCampaign->getSalesforceId()} took " . (string) $diffSeconds . "s");
 
                 return $returnValue;
             }
