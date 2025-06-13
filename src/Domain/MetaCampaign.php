@@ -258,4 +258,38 @@ class MetaCampaign extends SalesforceReadProxy
     {
         return $this->currency;
     }
+
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    public function isHidden(): bool
+    {
+        return $this->hidden;
+    }
+
+    public function getSummary(): ?string
+    {
+        return $this->summary;
+    }
+
+    public function getBannerUri(): ?UriInterface
+    {
+        if ($this->bannerURI === null) {
+            return null;
+        }
+
+        return new Uri($this->bannerURI);
+    }
+
+    public function getStartDate(): \DateTimeImmutable
+    {
+        return $this->startDate;
+    }
+
+    public function getEndDate(): \DateTimeImmutable
+    {
+        return $this->endDate;
+    }
 }
