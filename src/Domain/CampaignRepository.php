@@ -11,6 +11,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Client;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
+use Psr\Log\LoggerInterface;
 
 use function is_string;
 use function trim;
@@ -217,7 +218,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charityData = $campaignData['charity'];
         Assertion::notNull($charityData, 'Charity must not be null for charity campaign');
 
-        $address = $this->arrayToPostalAddress($charityData['postalAddress'] ?? null);
+        $address = self::arrayToPostalAddress($charityData['postalAddress'] ?? null, $this->getLogger());
         $emailString = $charityData['emailAddress'] ?? null;
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
 
@@ -227,7 +228,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             stripeAccountId: $charityData['stripeAccountId'],
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
-            regulator: $this->getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
+            regulator: self::getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
             regulatorNumber: $charityData['regulatorNumber'],
             time: new \DateTime('now'),
             rawData: $charityData,
@@ -247,7 +248,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charityData = $campaignData['charity'];
         Assertion::notNull($charityData, 'Charity date should not be null for charity campaign');
 
-        $address = $this->arrayToPostalAddress($charityData['postalAddress'] ?? null);
+        $address = self::arrayToPostalAddress($charityData['postalAddress'] ?? null, $this->getLogger());
 
         $emailString = $charityData['emailAddress'] ?? null;
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
@@ -259,7 +260,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             stripeAccountId: $charityData['stripeAccountId'],
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
-            regulator: $this->getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
+            regulator: self::getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
             regulatorNumber: $charityData['regulatorNumber'],
             rawData: $charityData,
             time: new \DateTime('now'),
@@ -497,7 +498,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $this->getEntityManager()->flush();
     }
 
-    protected function getRegulatorHMRCIdentifier(string $regulatorName): ?string
+    public static function getRegulatorHMRCIdentifier(string $regulatorName): ?string
     {
         return match ($regulatorName) {
             'England and Wales' => 'CCEW',
@@ -515,7 +516,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      *           country: ?string,
      *           postalCode: ?string} $postalAddress
      */
-    private function arrayToPostalAddress(?array $postalAddress): PostalAddress
+    public static function arrayToPostalAddress(?array $postalAddress, LoggerInterface $logger): PostalAddress
     {
         if (is_null($postalAddress)) {
             return PostalAddress::null();
@@ -542,7 +543,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 // If this happens more than a couple of times in late April 2025, probaby reduce to warning
                 // level. If it happens a lot more, build stronger Salesforce validation to stop it at
                 // source.
-                $this->logWarning('Postal address from Salesforce is missing line1 but had other parts; treating as all-null');
+                $logger->warning('Postal address from Salesforce is missing line1 but had other parts; treating as all-null');
             }
 
             return PostalAddress::null();
