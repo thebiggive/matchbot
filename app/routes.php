@@ -62,6 +62,11 @@ return function (App $app) {
             \MatchBot\Application\Actions\Campaigns\Get::class
         );
 
+        $versionGroup->get(
+            '/meta-campaigns/{slug:[a-zA-Z0-9-]{2,100}}',
+            \MatchBot\Application\Actions\MetaCampaigns\Get::class,
+        );
+
         $versionGroup->put(
             '/campaigns/{salesforceId:[a-zA-Z0-9]{18}}',
             \MatchBot\Application\Actions\Campaigns\Put::class

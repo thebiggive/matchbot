@@ -15,7 +15,7 @@ namespace MatchBot\Application\HttpModels;
  * DateTimeImmutable objects for now are replaced with string (see comments below). May switch back to proper
  * DateTimeImmutable when we have a tool that can render them as ISO.
  *
- * @psalm-suppress PossiblyUnusedProperty - instances will be seralised ans used in Front End
+ * @psalm-suppress PossiblyUnusedProperty - instances will be seralised and used in Front End
  */
 readonly class Campaign
 {

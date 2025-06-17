@@ -7,6 +7,7 @@ use Assert\LazyAssertionException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\Campaign as CampaignHttpModel;
+use MatchBot\Application\HttpModels\MetaCampaign as MetaCampaignHttpModel;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\Campaign as CampaignDomainModel;
 use Psr\Log\LoggerInterface;
@@ -73,6 +74,36 @@ class CampaignService
             // runtime touches it - SF is currently doing its own division to calculate percent raised in
             // percentRaisedOfIndividualCampaign. We don't need to send it here but could start sending it in future.
         ];
+    }
+
+    public function renderMetaCampaign(MetaCampaign $metaCampaign): MetaCampaignHttpModel
+    {
+        /**
+         * This should not be prod because the todos below need to be fixed first before we call this in prod.
+         */
+        Assertion::notEq(Environment::current(), Environment::Production);
+
+        $salesforceId = $metaCampaign->getSalesforceId();
+        Assertion::notNull($salesforceId);
+
+        return new MetaCampaignHttpModel(
+            id: $salesforceId,
+            title: $metaCampaign->getTitle(),
+            currencyCode: $metaCampaign->getCurrency()->isoCode(case: 'upper'),
+            status: $metaCampaign->getStatus(),
+            hidden: $metaCampaign->isHidden(),
+            ready: true, // @todo-mat-405 - store get a copy of the `ready` value for the metacampaign from SF.
+            summary: $metaCampaign->getSummary(),
+            bannerUri: $metaCampaign->getBannerUri()?->__toString(),
+            amountRaised: $this->getAmountRaisedForMetaCampaign($metaCampaign)->toMajorUnitFloat(),
+            matchFundsRemaining: $this->cachedMetaCampaignMatchFundsRemaining($metaCampaign)->toMajorUnitFloat(),
+            donationCount: $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign),
+            startDate: $this->formatDate($metaCampaign->getStartDate()),
+            endDate: $this->formatDate($metaCampaign->getEndDate()),
+            matchFundsTotal: Money::fromPoundsGBP(9_999_999_999)->toMajorUnitFloat(), // @todo-MAT-405 - replace this with the real number
+            campaignCount: 50_000_000, // @todo-MAT-405 - count the campaigns. May not be this many in practice.
+            usesSharedFunds: $metaCampaign->usesSharedFunds(),
+        );
     }
 
     /**
