@@ -2,7 +2,6 @@
 
 namespace MatchBot\Application\Messenger;
 
-use Assert\AssertionFailedException;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\Donation;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;

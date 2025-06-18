@@ -9,10 +9,9 @@ use Ramsey\Uuid\UuidInterface;
 
 /**
  * UUID of a person as given by our Identity service
- * @psalm-immutable
  */
 #[Embeddable]
-class PersonId
+readonly class PersonId
 {
     #[Column(type: 'uuid')]
     public readonly UuidInterface $id;

@@ -52,7 +52,7 @@
         "slim/psr7": "^1.3",
         "slim/slim": "^4.7",
         "stripe/stripe-php": "^17.2.0",
-        "symfony/amazon-sqs-messenger": "^6.0",
+        "symfony/amazon-sqs-messenger": "^7.1",
         "symfony/cache": "^6.0",
         "symfony/clock": "^7.0",
         "symfony/console": "^6.0",
@@ -62,10 +62,10 @@
         "symfony/notifier": "^6.2",
         "symfony/property-access": "^7.1.0",
         "symfony/rate-limiter": "^7.1",
-        "symfony/redis-messenger": "^6.0",
+        "symfony/redis-messenger": "^7.1",
         "symfony/serializer": "^7.1.0",
         "symfony/slack-notifier": "^6.2",
-        "thebiggive/messages": "^3.3.1"
+        "thebiggive/messages": "^3.3.2"
     },
     "require-dev": {
         "doctrine/event-manager": "^2.0",
