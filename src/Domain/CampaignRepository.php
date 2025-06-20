@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use Assert\AssertionFailedException;
 use DateTime;
+use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Client;
@@ -444,6 +445,78 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * @param array<string, string> $jsonMatchOneConditions
+     * @param array<string, string> $jsonMatchInListConditions
+     */
+    private function filterForSearch(
+        QueryBuilder $qb,
+        ?string $status,
+        array $jsonMatchOneConditions,
+        array $jsonMatchInListConditions,
+        ?string $termWildcarded
+    ): void {
+        $qb->where($qb->expr()->eq('c.hidden', '0'));
+
+        if ($status !== null) {
+            $qb->andWhere($qb->expr()->eq('c.status', ':status'));
+            $qb->setParameter('status', $status);
+        }
+
+        foreach ($jsonMatchOneConditions as $field => $value) {
+            $qb->andWhere($qb->expr()->eq("JSON_EXTRACT(c.salesforceData, '$.$field')", ':jsonMatchOne_' . $field));
+            $qb->setParameter('jsonMatchOne_' . $field, $value);
+        }
+
+        foreach ($jsonMatchInListConditions as $field => $value) {
+            $qb->andWhere($qb->expr()->like("JSON_EXTRACT(c.salesforceData, '$.$field')", ':jsonMatchInList_' . $field));
+            $qb->setParameter('jsonMatchInList_' . $field, '%' . $value . '%');
+        }
+
+        if ($termWildcarded !== null) {
+            /**
+             * @todo We'll probably want to do fulltext search and MATCH() eventually.
+            @link https://michilehr.de/full-text-search-with-mysql-and-doctrine/#3how-to-implement-a-full-text-search-with-doctrine
+             */
+            $whereTitleMatches = "LOWER(JSON_EXTRACT(c.salesforceData, '$.title')) LIKE LOWER(:termForWhere)";
+            $whereSummaryMatches = "LOWER(JSON_EXTRACT(c.salesforceData, '$.summary')) LIKE LOWER(:termForWhere)";
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->like('charity.name', ':termForWhere'),
+                    $whereTitleMatches,
+                    $whereSummaryMatches,
+                )
+            );
+            $qb->setParameter('termForWhere', $termWildcarded);
+        }
+    }
+
+    private function sortForSearch(
+        QueryBuilder $qb,
+        ?string $safeSortField,
+        string $sortDirection,
+        ?string $termWildcarded
+    ): void {
+        if ($safeSortField === 'relevance') {
+            $qb->addOrderBy(
+                <<<EOT
+            CASE
+                WHEN charity.name LIKE :termForOrder THEN 20
+                WHEN LOWER(JSON_EXTRACT(c.salesforceData, '$.title')) LIKE LOWER(:termForOrder) THEN 10
+                WHEN LOWER(JSON_EXTRACT(c.salesforceData, '$.summary')) LIKE LOWER(:termForOrder) THEN 5
+                ELSE 0
+            END
+            EOT,
+                $sortDirection,
+            );
+            $qb->setParameter('termForOrder', $termWildcarded);
+        } elseif ($safeSortField !== null) {
+            $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
+        }
+
+        $qb->addOrderBy('c.endDate', 'DESC');
+    }
+
+    /**
      * @param 'asc'|'desc' $sortDirection
      * @param array<string, string> $jsonMatchOneConditions
      * @param array<string, string> $jsonMatchInListConditions
@@ -461,11 +534,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     ): array {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
-        /** @var ?string $safeSortField */
         $safeSortField = match ($sortField) {
-            // @todo this field needs adding (maybe to a new CampaignStats table) for this to work.
-            // @todo when sorting by matchFundsRemaining works make it the default here. Add other allowable sort-by
-            //       fields to this match.
             'matchFundsRemaining' => throw new \Exception('Sorting by matchFundsRemaining not yet implemented'),
             'relevance' => 'relevance',
             default => null,
@@ -483,72 +552,17 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $qb->select('c')
             ->from(Campaign::class, 'c')
             ->join('c.charity', 'charity')
-            ->where($qb->expr()->eq('c.hidden', '0'))
             ->setFirstResult($offset)
             ->setMaxResults($limit);
 
-        if ($status !== null) {
-            $qb->andWhere($qb->expr()->eq('c.status', ':status'));
-            $qb->setParameter('status', $status);
-        }
-
-        foreach ($jsonMatchOneConditions as $field => $value) {
-            // Check $salesforceData JSON field for an exact match on a single value.
-            $qb->andWhere($qb->expr()->eq("JSON_EXTRACT(c.salesforceData, '$.$field')", ':jsonMatchOne_' . $field));
-            $qb->setParameter('jsonMatchOne_' . $field, $value);
-        }
-
-        foreach ($jsonMatchInListConditions as $field => $value) {
-            // Check $salesforceData JSON field for a match to any value in a list.
-            $qb->andWhere($qb->expr()->like("JSON_EXTRACT(c.salesforceData, '$.$field')", ':jsonMatchInList_' . $field));
-            $qb->setParameter('jsonMatchInList_' . $field, '%' . $value . '%');
-        }
-
-        $termWildcarded = null;
         if ($term !== null) {
             $termWildcarded = '%' . $term . '%';
-
-            // It seems like comparisons are case-sensitive notwithstanding our collation, so we need
-            // to use LOWER(). https://stackoverflow.com/a/59000485/2803757
-            $whereTitleMatches = "LOWER(JSON_EXTRACT(c.salesforceData, '$.title')) LIKE LOWER(:termForWhere)";
-
-            // Fuzzy search for linked Charity.name (which takes precedence) and the whole of $salesforceData.
-            //
-            $qb->andWhere(
-                $qb->expr()->orX(
-                    $qb->expr()->like('charity.name', ':termForWhere'),
-                    $whereTitleMatches
-                )
-            );
-            /**
-             * @todo We'll probably want to do fulltext search and MATCH() eventually.
-             @link https://michilehr.de/full-text-search-with-mysql-and-doctrine/#3how-to-implement-a-full-text-search-with-doctrine
-             */
-            $qb->setParameter('termForWhere', $termWildcarded);
+        } else {
+            $termWildcarded = null;
         }
 
-        // Sort
-        if ($safeSortField === 'relevance') {
-            // If a search term is provided, we want to sort by the relevance score as well.
-            // An alternative to the JSON extract is
-            // `WHEN c.salesforceData LIKE :termForOrder THEN 5`
-            // but just including 2 key fields with more control over order for now.
-            $qb->addOrderBy(<<<EOT
-                CASE
-                    WHEN charity.name LIKE :termForOrder THEN 20
-                    WHEN LOWER(JSON_EXTRACT(c.salesforceData, '$.title')) LIKE LOWER(:termForOrder) THEN 10
-                    WHEN LOWER(JSON_EXTRACT(c.salesforceData, '$.summary')) LIKE LOWER(:termForOrder) THEN 5
-                    ELSE 0
-                END
-                EOT,
-                $sortDirection,
-            );
-            Assertion::notNull($termWildcarded);
-            $qb->setParameter('termForOrder', $termWildcarded);
-        } elseif ($safeSortField !== null) {
-            $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
-        }
-        $qb->addOrderBy('c.endDate', 'DESC');
+        $this->filterForSearch($qb, $status, $jsonMatchOneConditions, $jsonMatchInListConditions, $termWildcarded);
+        $this->sortForSearch($qb, $safeSortField, $sortDirection, $termWildcarded);
 
         $query = $qb->getQuery();
         /** @var list<Campaign> $result */
