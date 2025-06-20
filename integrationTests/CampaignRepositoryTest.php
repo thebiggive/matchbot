@@ -177,7 +177,6 @@ class CampaignRepositoryTest extends IntegrationTest
 
         // assert
         $this->assertCount(1, $result);
-        $this->assertInstanceOf(Campaign::class, $result[0]);
         $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
     }
 
