@@ -477,12 +477,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
              * @todo We'll probably want to do fulltext search and MATCH() eventually.
             @link https://michilehr.de/full-text-search-with-mysql-and-doctrine/#3how-to-implement-a-full-text-search-with-doctrine
              */
-            $whereTitleMatches = "LOWER(JSON_EXTRACT(c.salesforceData, '$.title')) LIKE LOWER(:termForWhere)";
             $whereSummaryMatches = "LOWER(JSON_EXTRACT(c.salesforceData, '$.summary')) LIKE LOWER(:termForWhere)";
             $qb->andWhere(
                 $qb->expr()->orX(
                     $qb->expr()->like('charity.name', ':termForWhere'),
-                    $whereTitleMatches,
+                    $qb->expr()->like('c.name', ':termForWhere'),
                     $whereSummaryMatches,
                 )
             );
@@ -501,7 +500,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 <<<EOT
             CASE
                 WHEN charity.name LIKE :termForOrder THEN 20
-                WHEN LOWER(JSON_EXTRACT(c.salesforceData, '$.title')) LIKE LOWER(:termForOrder) THEN 10
+                WHEN c.name LIKE LOWER(:termForOrder) THEN 10
                 WHEN LOWER(JSON_EXTRACT(c.salesforceData, '$.summary')) LIKE LOWER(:termForOrder) THEN 5
                 ELSE 0
             END
@@ -518,8 +517,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * @param 'asc'|'desc' $sortDirection
-     * @param array<string, string> $jsonMatchOneConditions
-     * @param array<string, string> $jsonMatchInListConditions
+     * @param array<string, string> $jsonMatchOneConditions Keyed on JSON key name. Value must exactly match the
+     *                                                      JSON property with the same key.
+     * @param array<string, string> $jsonMatchInListConditions Keyed on plural JSON key name. Value must exactly match
+     *                                                         one of the items in the JSON array with the same key.
      * @return list<Campaign>
      */
     public function search(

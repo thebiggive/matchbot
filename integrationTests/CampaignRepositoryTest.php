@@ -105,6 +105,82 @@ class CampaignRepositoryTest extends IntegrationTest
         $this->assertCount(0, $campaignsMatchingFixture);
     }
 
+    public function testSearchWithVariousFilters(): void
+    {
+        // arrange
+        $sut = $this->getService(CampaignRepository::class);
+
+        $campaign1 = new Campaign(
+            self::someSalesForce18CampaignId(),
+            metaCampaignSlug: null,
+            charity: TestCase::someCharity(),
+            startDate: new \DateTimeImmutable('-10 months'),
+            endDate: new \DateTimeImmutable('-9 months'),
+            isMatched: true,
+            ready: true,
+            status: null,
+            name: 'Campaign One',
+            currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
+            thankYouMessage: null,
+            rawData: [],
+            hidden: false,
+        );
+
+        $campaign2 = new Campaign(
+            self::someSalesForce18CampaignId(),
+            metaCampaignSlug: 'the-family',
+            charity: TestCase::someCharity(),
+            startDate: new \DateTimeImmutable('-8 months'),
+            endDate: new \DateTimeImmutable('+1 month'),
+            isMatched: true,
+            ready: true,
+            status: 'Active',
+            name: 'Campaign Two is for Porridge and Juice',
+            currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
+            thankYouMessage: null,
+            rawData: [
+                'beneficiaries' => ['Lads', 'Dads'],
+                'categories' => ['Food', 'Drink'],
+                'countries' => ['United Kingdom', 'Ireland'],
+                'parentRef' => 'the-family',
+                'title' => 'Campaign Two is for Porridge and Juice',
+            ],
+            hidden: false,
+        );
+
+        $em = $this->getService(EntityManagerInterface::class);
+        $em->persist($campaign1);
+        $em->persist($campaign2);
+        $em->flush();
+
+        // act
+        $result = $sut->search(
+            sortField: 'relevance',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 6,
+            status: 'Active',
+            jsonMatchOneConditions: [
+                'parentRef' => 'the-family',
+            ],
+            jsonMatchInListConditions: [
+                'beneficiaries' => 'Lads',
+                'categories' => 'Food',
+                'countries' => 'United Kingdom'
+            ],
+            term: 'Porridge',
+        );
+
+        // assert
+        $this->assertCount(1, $result);
+        $this->assertInstanceOf(Campaign::class, $result[0]);
+        $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
+    }
+
     private function getCharityAwaitingGiftAidApproval(): Charity
     {
         $charity = TestCase::someCharity();
