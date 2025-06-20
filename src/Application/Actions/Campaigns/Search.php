@@ -38,7 +38,12 @@ class Search extends Action
             throw new HttpBadRequestException($request, 'Unrecognised sort direction');
         }
 
-        $campaigns = $this->campaignRepository->search(sortField: $sortField, sortDirection: $sortDirection);
+        $campaigns = $this->campaignRepository->search(
+            sortField: $sortField,
+            sortDirection: $sortDirection,
+            offset: (int) ($params['offset'] ?? 0),
+            limit: (int) ($params['limit'] ?? 20),
+        );
 
         // TODO performant summaries – most notably `amountRaised` and `matchFundsRemaining` should
         // come from future stats table.

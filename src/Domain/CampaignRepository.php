@@ -447,7 +447,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @param 'asc'|'desc' $sortDirection
      * @return list<Campaign>
      */
-    public function search(?string $sortField, string $sortDirection): array
+    public function search(?string $sortField, string $sortDirection, int $offset, int $limit): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
@@ -462,7 +462,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $qb = $qb->select('c')
             ->from(Campaign::class, 'c')
-            ->where($qb->expr()->eq('c.hidden', '0'));
+            ->where($qb->expr()->eq('c.hidden', '0'))
+            ->setFirstResult($offset)
+            ->setMaxResults($limit);
 
         if ($safeSortField !== null) {
             $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
