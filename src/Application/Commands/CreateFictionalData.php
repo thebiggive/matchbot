@@ -298,7 +298,7 @@ class CreateFictionalData extends Command
             ImfCampaignTargetOverride: Money::zero(),
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
-            totalMatchedFundsAvailable: Money::zero(),
+            matchFundsTotal: Money::zero(),
         );
     }
 }

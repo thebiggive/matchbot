@@ -24,8 +24,8 @@ final class Version20250623150126 extends AbstractMigration
             ADD total_funding_allocation_currency           VARCHAR(3) NOT NULL,
             ADD amount_pledged_amountInPence                INT        NOT NULL,
             ADD amount_pledged_currency                     VARCHAR(3) NOT NULL,
-            ADD total_matched_funds_available_amountInPence INT        NOT NULL,
-            ADD total_matched_funds_available_currency      VARCHAR(3) NOT NULL
+            ADD match_funds_total_amountInPence INT        NOT NULL,
+            ADD match_funds_total_currency      VARCHAR(3) NOT NULL
         SQL
         );
     }
@@ -40,8 +40,8 @@ final class Version20250623150126 extends AbstractMigration
             DROP total_funding_allocation_currency,
             DROP amount_pledged_amountInPence,
             DROP amount_pledged_currency,
-            DROP total_matched_funds_available_amountInPence,
-            DROP total_matched_funds_available_currency
+            DROP match_funds_total_amountInPence,
+            DROP match_funds_total_currency
         SQL
         );
     }

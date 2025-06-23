@@ -555,7 +555,7 @@ class TestCase extends PHPUnitTestCase
             ImfCampaignTargetOverride: Money::zero(),
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
-            totalMatchedFundsAvailable: Money::zero(),
+            matchFundsTotal: Money::zero(),
         );
     }
 }

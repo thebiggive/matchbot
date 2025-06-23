@@ -100,7 +100,7 @@ class CampaignService
             donationCount: $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign),
             startDate: $this->formatDate($metaCampaign->getStartDate()),
             endDate: $this->formatDate($metaCampaign->getEndDate()),
-            matchFundsTotal: $metaCampaign->getTotalMatchedFundsAvailable()->toMajorUnitFloat(),
+            matchFundsTotal: $metaCampaign->getMatchFundsTotal()->toMajorUnitFloat(),
             campaignCount: 50_000_000, // @todo-MAT-405 - count the campaigns. May not be this many in practice.
             usesSharedFunds: $metaCampaign->usesSharedFunds(),
         );

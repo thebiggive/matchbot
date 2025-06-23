@@ -133,11 +133,9 @@ class MetaCampaign extends SalesforceReadProxy
     /**
      * @param Salesforce18Id<self> $salesforceId
      *
-     * Note that this is the total of funds that *are or were* available, i.e. including funds that are already
-     * allocated to donations. Used for calculating campaign target.
      */
-    #[ORM\Embedded(columnPrefix: 'total_matched_funds_available_')]
-    private Money $totalMatchedFundsAvailable;
+    #[ORM\Embedded(columnPrefix: 'match_funds_total_')]
+    private Money $matchFundsTotal;
 
     /**
      * @param Salesforce18Id<self> $salesforceId
@@ -159,7 +157,7 @@ class MetaCampaign extends SalesforceReadProxy
         Money $ImfCampaignTargetOverride,
         Money $totalFundingAllocation,
         Money $amountPledged,
-        Money $totalMatchedFundsAvailable,
+        Money $matchFundsTotal,
     ) {
         Assertion::same($totalAdjustment->currency, $currency);
 
@@ -179,7 +177,7 @@ class MetaCampaign extends SalesforceReadProxy
         $this->ImfCampaignTargetOverride = $ImfCampaignTargetOverride;
         $this->totalFundingAllocation = $totalFundingAllocation;
         $this->amountPledged = $amountPledged;
-        $this->totalMatchedFundsAvailable = $totalMatchedFundsAvailable;
+        $this->matchFundsTotal = $matchFundsTotal;
     }
 
     /**
@@ -211,7 +209,7 @@ class MetaCampaign extends SalesforceReadProxy
             ImfCampaignTargetOverride: Money::zero(),
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
-            totalMatchedFundsAvailable: Money::zero(),
+            matchFundsTotal: Money::zero(),
         );
 
         $metaCampaign->updateFromSfData($data);
@@ -262,7 +260,7 @@ class MetaCampaign extends SalesforceReadProxy
         $this->ImfCampaignTargetOverride = Money::fromPence((int) (100.0 * ($data['imfCampaignTargetOverride'] ?? 0.0)), $currency);
         $this->totalFundingAllocation = Money::fromPence((int) (100.0 * ($data['totalFundingAllocation'] ?? 0.0)), $currency);
         $this->amountPledged = Money::fromPence((int) (100.0 * ($data['amountPledged'] ?? 0.0)), $currency);
-        $this->totalMatchedFundsAvailable = Money::fromPence((int) (100.0 * ($data['totalMatchedFundsAvailable'] ?? 0.0)), $currency);
+        $this->matchFundsTotal = Money::fromPence((int) (100.0 * ($data['totalMatchedFundsAvailable'] ?? 0.0)), $currency);
 
         $this->totalAdjustment = Money::fromNumericString($totalAdjustment, $currency);
     }
@@ -330,8 +328,8 @@ class MetaCampaign extends SalesforceReadProxy
         return $this->endDate;
     }
 
-    public function getTotalMatchedFundsAvailable(): Money
+    public function getMatchFundsTotal(): Money
     {
-        return $this->totalMatchedFundsAvailable;
+        return $this->matchFundsTotal;
     }
 }
