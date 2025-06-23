@@ -552,6 +552,10 @@ class TestCase extends PHPUnitTestCase
             isRegularGiving: $isRegularGiving,
             isEmergencyIMF: $isEmergencyIMF,
             totalAdjustment: Money::zero(),
+            ImfCampaignTargetOverride: Money::zero(),
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
+            totalMatchedFundsAvailable: Money::zero(),
         );
     }
 }
