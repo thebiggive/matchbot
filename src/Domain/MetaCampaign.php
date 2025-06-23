@@ -329,4 +329,9 @@ class MetaCampaign extends SalesforceReadProxy
     {
         return $this->endDate;
     }
+
+    public function getTotalMatchedFundsAvailable(): Money
+    {
+        return $this->totalMatchedFundsAvailable;
+    }
 }
