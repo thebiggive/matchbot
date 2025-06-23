@@ -13,7 +13,6 @@ use Psr\Http\Message\UriInterface;
 /**
  * @psalm-import-type SFCampaignApiResponse from Client\Campaign
  *
- * @psalm-suppress UnusedProperty - new properties to be used in MAT-405 campaign.parentTarget rendering.
  */
 #[ORM\Table]
 #[ORM\Entity(
@@ -122,13 +121,6 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Embedded(columnPrefix: 'imf_campaign_target_override_')]
     private Money $imfCampaignTargetOverride;
 
-
-    #[ORM\Embedded(columnPrefix: 'total_funding_allocation_')]
-    private Money $totalFundingAllocation;
-
-    #[ORM\Embedded(columnPrefix: 'amount_pledged_')]
-    private Money $amountPledged;
-
     /**
      * @param Salesforce18Id<self> $salesforceId
      *
@@ -154,8 +146,6 @@ class MetaCampaign extends SalesforceReadProxy
         bool $isEmergencyIMF,
         Money $totalAdjustment,
         Money $imfCampaignTargetOverride,
-        Money $totalFundingAllocation,
-        Money $amountPledged,
         Money $matchFundsTotal,
     ) {
         Assertion::same($totalAdjustment->currency, $currency);
@@ -174,8 +164,6 @@ class MetaCampaign extends SalesforceReadProxy
         $this->isEmergencyIMF = $isEmergencyIMF;
         $this->totalAdjustment = $totalAdjustment;
         $this->imfCampaignTargetOverride = $imfCampaignTargetOverride;
-        $this->totalFundingAllocation = $totalFundingAllocation;
-        $this->amountPledged = $amountPledged;
         $this->matchFundsTotal = $matchFundsTotal;
     }
 
@@ -206,8 +194,6 @@ class MetaCampaign extends SalesforceReadProxy
             isEmergencyIMF: false,
             totalAdjustment: Money::zero(),
             imfCampaignTargetOverride: Money::zero(),
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
             matchFundsTotal: Money::zero(),
         );
 
@@ -257,8 +243,6 @@ class MetaCampaign extends SalesforceReadProxy
         $this->isEmergencyIMF = $data['isEmergencyIMF'];
 
         $this->imfCampaignTargetOverride = Money::fromPence((int) (100.0 * ($data['imfCampaignTargetOverride'] ?? 0.0)), $currency);
-        $this->totalFundingAllocation = Money::fromPence((int) (100.0 * ($data['totalFundingAllocation'] ?? 0.0)), $currency);
-        $this->amountPledged = Money::fromPence((int) (100.0 * ($data['amountPledged'] ?? 0.0)), $currency);
         $this->matchFundsTotal = Money::fromPence((int) (100.0 * ($data['totalMatchedFundsAvailable'] ?? 0.0)), $currency);
 
         $this->totalAdjustment = Money::fromNumericString($totalAdjustment, $currency);

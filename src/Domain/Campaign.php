@@ -16,6 +16,8 @@ use MatchBot\Client\Campaign as CampaignClient;
 
 /**
  * @psalm-import-type SFCampaignApiResponse from CampaignClient
+ *
+ * @psalm-suppress UnusedProperty - new properties to be used in MAT-405 campaign.parentTarget rendering.
  */
 #[ORM\Table]
 #[ORM\Index(name: 'end_date_and_is_matched', columns: ['endDate', 'isMatched'])]
@@ -148,6 +150,11 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(nullable: true)]
     protected ?\DateTimeImmutable $regularGivingCollectionEnd;
 
+    #[ORM\Embedded(columnPrefix: 'total_funding_allocation_')]
+    private Money $totalFundingAllocation;
+
+    #[ORM\Embedded(columnPrefix: 'amount_pledged_')]
+    private Money $amountPledged;
 
     /**
      * @param Salesforce18Id<Campaign> $sfId
@@ -167,6 +174,8 @@ class Campaign extends SalesforceReadProxy
         ?string $status,
         string $name,
         string $currencyCode,
+        Money $totalFundingAllocation,
+        Money $amountPledged,
         bool $isRegularGiving,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         ?string $thankYouMessage = null,
@@ -192,6 +201,8 @@ class Campaign extends SalesforceReadProxy
             thankYouMessage: $thankYouMessage,
             hidden: $hidden,
             sfData: $rawData,
+            totalFundingAllocation: $totalFundingAllocation,
+            amountPledged: $amountPledged,
         );
     }
 
@@ -233,6 +244,8 @@ class Campaign extends SalesforceReadProxy
             'Cannot create Charity Campaign using meta campaign data'
         );
 
+        $currency = Currency::fromIsoCode($campaignData['currencyCode']);
+
         return new self(
             sfId: $salesforceId,
             metaCampaignSlug: $campaignData['parentRef'],
@@ -243,12 +256,14 @@ class Campaign extends SalesforceReadProxy
             ready: $ready,
             status: $status,
             name: $title,
-            currencyCode: $campaignData['currencyCode'],
+            currencyCode: $currency->isoCode(),
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
             thankYouMessage: $campaignData['thankYouMessage'],
             rawData: $campaignData,
-            hidden: $campaignData['hidden']
+            hidden: $campaignData['hidden'],
+            totalFundingAllocation: Money::fromPence((int) (100.0 * ($campaignData['totalFundingAllocation'] ?? 0.0)), $currency),
+            amountPledged: Money::fromPence((int) (100.0 * ($campaignData['amountPledged'] ?? 0.0)), $currency),
         );
     }
 
@@ -417,6 +432,8 @@ class Campaign extends SalesforceReadProxy
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         ?string $thankYouMessage,
         bool $hidden,
+        Money $totalFundingAllocation,
+        Money $amountPledged,
         array $sfData,
     ): void {
         Assertion::lessOrEqualThan(
@@ -456,6 +473,8 @@ class Campaign extends SalesforceReadProxy
         $this->isRegularGiving = $isRegularGiving;
         $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
         $this->hidden = $hidden;
+        $this->totalFundingAllocation = $totalFundingAllocation;
+        $this->amountPledged = $amountPledged;
 
         unset($sfData['charity']); // charity stores its own data, we don't need to keep a copy here.
         $this->salesforceData = $sfData;

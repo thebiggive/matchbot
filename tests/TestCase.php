@@ -428,6 +428,8 @@ class TestCase extends PHPUnitTestCase
             thankYouMessage: $thankYouMessage,
             rawData: self::CAMPAIGN_FROM_SALESOFRCE,
             hidden: false,
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
         );
     }
 
@@ -553,8 +555,6 @@ class TestCase extends PHPUnitTestCase
             isEmergencyIMF: $isEmergencyIMF,
             totalAdjustment: Money::zero(),
             imfCampaignTargetOverride: $imfCampaignTargetOverride ?? Money::zero(),
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
             matchFundsTotal: $matchFundsTotal ?? Money::zero(),
         );
     }

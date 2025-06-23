@@ -4,6 +4,7 @@ namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\DomainException\WrongCampaignType;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
@@ -28,6 +29,8 @@ class CampaignTest extends TestCase
             thankYouMessage: null,
             rawData: [],
             hidden: false,
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
         );
 
         $this->assertTrue($campaign->isOpen(new \DateTimeImmutable('2025-01-01')));
@@ -50,6 +53,8 @@ class CampaignTest extends TestCase
             thankYouMessage: null,
             rawData: [],
             hidden: false,
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
         );
 
         $this->assertFalse($campaign->isOpen(at: new \DateTimeImmutable('2025-01-01')));
@@ -73,6 +78,8 @@ class CampaignTest extends TestCase
             thankYouMessage: null,
             rawData: [],
             hidden: false,
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
         );
 
         $this->assertFalse($campaign->isOpen(at: new \DateTimeImmutable('2019-12-31T23:59:59')));
@@ -96,6 +103,8 @@ class CampaignTest extends TestCase
             thankYouMessage: null,
             rawData: [],
             hidden: false,
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
         );
 
         $this->assertFalse($campaign->isOpen(at: new \DateTimeImmutable('2030-12-31')));
