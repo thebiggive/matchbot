@@ -536,7 +536,7 @@ class TestCase extends PHPUnitTestCase
         return hash_hmac('sha256', $body, $salesforceSecretKey);
     }
 
-    public static function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF): MetaCampaign
+    public static function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF, ?Money $imfCampaignTargetOverride = null, ?Money $matchFundsTotal = null): MetaCampaign
     {
         return new MetaCampaign(
             slug: MetaCampaignSlug::of('not-relevant-' . TestCase::randomHex()),
@@ -552,10 +552,10 @@ class TestCase extends PHPUnitTestCase
             isRegularGiving: $isRegularGiving,
             isEmergencyIMF: $isEmergencyIMF,
             totalAdjustment: Money::zero(),
-            ImfCampaignTargetOverride: Money::zero(),
+            imfCampaignTargetOverride: $imfCampaignTargetOverride ?? Money::zero(),
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
-            matchFundsTotal: Money::zero(),
+            matchFundsTotal: $matchFundsTotal ?? Money::zero(),
         );
     }
 }

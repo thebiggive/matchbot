@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use Assert\AssertionFailedException;
 use Doctrine\ORM\Mapping as ORM;
 use Laminas\Diactoros\Uri;
 use MatchBot\Application\Assertion;
@@ -121,7 +120,7 @@ class MetaCampaign extends SalesforceReadProxy
     private bool $isEmergencyIMF;
 
     #[ORM\Embedded(columnPrefix: 'imf_campaign_target_override_')]
-    private Money $ImfCampaignTargetOverride;
+    private Money $imfCampaignTargetOverride;
 
 
     #[ORM\Embedded(columnPrefix: 'total_funding_allocation_')]
@@ -154,7 +153,7 @@ class MetaCampaign extends SalesforceReadProxy
         bool $isRegularGiving,
         bool $isEmergencyIMF,
         Money $totalAdjustment,
-        Money $ImfCampaignTargetOverride,
+        Money $imfCampaignTargetOverride,
         Money $totalFundingAllocation,
         Money $amountPledged,
         Money $matchFundsTotal,
@@ -174,7 +173,7 @@ class MetaCampaign extends SalesforceReadProxy
         $this->isRegularGiving = $isRegularGiving;
         $this->isEmergencyIMF = $isEmergencyIMF;
         $this->totalAdjustment = $totalAdjustment;
-        $this->ImfCampaignTargetOverride = $ImfCampaignTargetOverride;
+        $this->imfCampaignTargetOverride = $imfCampaignTargetOverride;
         $this->totalFundingAllocation = $totalFundingAllocation;
         $this->amountPledged = $amountPledged;
         $this->matchFundsTotal = $matchFundsTotal;
@@ -206,7 +205,7 @@ class MetaCampaign extends SalesforceReadProxy
             isRegularGiving: false,
             isEmergencyIMF: false,
             totalAdjustment: Money::zero(),
-            ImfCampaignTargetOverride: Money::zero(),
+            imfCampaignTargetOverride: Money::zero(),
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             matchFundsTotal: Money::zero(),
@@ -257,7 +256,7 @@ class MetaCampaign extends SalesforceReadProxy
         $this->endDate = new \DateTimeImmutable($endDate);
         $this->isEmergencyIMF = $data['isEmergencyIMF'];
 
-        $this->ImfCampaignTargetOverride = Money::fromPence((int) (100.0 * ($data['imfCampaignTargetOverride'] ?? 0.0)), $currency);
+        $this->imfCampaignTargetOverride = Money::fromPence((int) (100.0 * ($data['imfCampaignTargetOverride'] ?? 0.0)), $currency);
         $this->totalFundingAllocation = Money::fromPence((int) (100.0 * ($data['totalFundingAllocation'] ?? 0.0)), $currency);
         $this->amountPledged = Money::fromPence((int) (100.0 * ($data['amountPledged'] ?? 0.0)), $currency);
         $this->matchFundsTotal = Money::fromPence((int) (100.0 * ($data['totalMatchedFundsAvailable'] ?? 0.0)), $currency);
@@ -331,5 +330,15 @@ class MetaCampaign extends SalesforceReadProxy
     public function getMatchFundsTotal(): Money
     {
         return $this->matchFundsTotal;
+    }
+
+    public function target(): Money
+    {
+        // logic below originally ported from Campaign_Target__c in SF.
+        if ($this->imfCampaignTargetOverride->isStrictlyPositive()) {
+            return $this->imfCampaignTargetOverride;
+        }
+
+        return $this->matchFundsTotal->times(2);
     }
 }
