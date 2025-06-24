@@ -67,6 +67,8 @@ class Search extends Action
                     Assertion::string($value);
                     $jsonMatchOneConditions['parentRef'] = $value;
                     break;
+                default:
+                    // No other params apply a filter using the JSON `salesforceData` field.
             }
         }
 

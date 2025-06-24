@@ -445,6 +445,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * @param QueryBuilder $qb Builder with its select etc. already set up.
      * @param array<string, string> $jsonMatchOneConditions
      * @param array<string, string> $jsonMatchInListConditions
      */
@@ -489,6 +490,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
         }
     }
 
+    /**
+     * @param QueryBuilder $qb Builder with its select etc. already set up.
+     * @param literal-string|null $safeSortField
+     */
     private function sortForSearch(
         QueryBuilder $qb,
         ?string $safeSortField,
