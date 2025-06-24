@@ -104,7 +104,8 @@ class Campaign extends Common
      */
     public function getById(string $id, bool $withCache): array
     {
-        $uri = $this->getUri("{$this->baseUri()}/$id", $withCache);
+        $baseUri = $withCache ? $this->baseUriCached() : $this->baseUri();
+        $uri = $this->getUri("$baseUri/$id", $withCache);
         try {
             $response = $this->getHttpClient()->get($uri);
         } catch (RequestException $exception) {
@@ -131,7 +132,7 @@ class Campaign extends Common
      */
     public function getBySlug(MetaCampaignSlug $slug): array
     {
-        $uri = $this->getUri("{$this->baseUri()}/slug/$slug->slug", false);
+        $uri = $this->getUri("{$this->baseUriCached()}/slug/$slug->slug", false);
         try {
             $response = $this->getHttpClient()->get($uri);
         } catch (RequestException $exception) {
@@ -169,7 +170,7 @@ class Campaign extends Common
         $foundEmptyPage = false;
         while ($offset < $limit) {
             $uri = $this->getUri(
-                "{$this->baseUri()}?parentSlug=$encodedSlug&limit=$pageSize&offset=$offset",
+                "{$this->baseUriCached()}?parentSlug=$encodedSlug&limit=$pageSize&offset=$offset",
                 true
             );
             $response = $this->getHttpClient()->get($uri);
@@ -198,5 +199,10 @@ class Campaign extends Common
     private function baseUri(): string
     {
         return $this->sfApiBaseUrl . '/campaigns/services/apexrest/v1.0/campaigns';
+    }
+
+    private function baseUriCached(): string
+    {
+        return $this->sfApiBaseUrlCached . '/campaigns/services/apexrest/v1.0/campaigns';
     }
 }
