@@ -426,8 +426,8 @@ return function (ContainerBuilder $containerBuilder) {
                 $cacheAdapter,
             );
 
-            $config->addCustomStringFunction('JSON_EXTRACT', JsonExtract::class);
-            $config->addCustomStringFunction('JSON_SEARCH', JsonSearch::class);
+            $config->addCustomStringFunction(JsonExtract::FUNCTION_NAME, JsonExtract::class);
+            $config->addCustomStringFunction(JsonSearch::FUNCTION_NAME, JsonSearch::class);
 
             // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
             // files indefinitely.
