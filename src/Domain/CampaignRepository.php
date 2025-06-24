@@ -562,7 +562,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             ->setMaxResults($limit);
 
         if ($term !== null) {
-            $termWildcarded = '%' . $term . '%';
+            // I think because binding takes care of non-LIKE escapes we only need to consider % and _.
+            $termWildcarded = '%' . addcslashes($term, '%_') . '%';
         } else {
             $termWildcarded = null;
         }
