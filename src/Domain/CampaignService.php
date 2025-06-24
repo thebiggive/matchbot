@@ -100,7 +100,7 @@ class CampaignService
             donationCount: $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign),
             startDate: $this->formatDate($metaCampaign->getStartDate()),
             endDate: $this->formatDate($metaCampaign->getEndDate()),
-            matchFundsTotal: Money::fromPoundsGBP(9_999_999_999)->toMajorUnitFloat(), // @todo-MAT-405 - replace this with the real number
+            matchFundsTotal: $metaCampaign->getMatchFundsTotal()->toMajorUnitFloat(),
             campaignCount: 50_000_000, // @todo-MAT-405 - count the campaigns. May not be this many in practice.
             usesSharedFunds: $metaCampaign->usesSharedFunds(),
         );
@@ -133,14 +133,6 @@ class CampaignService
         $sfCampaignData = $campaign->getSalesforceData();
         $sfCharityData = $sfCampaignData['charity'];
         Assertion::notNull($sfCharityData, 'Charity data should not be null for a charity campaign');
-
-        // The variables below currently being taken directly from the stored SF API response, but shouldn't be
-        // because matchbot should be able to calculate more up to date or more authoritative versions of them
-        // itself. We need to go through and implement a function to calculate each of these using our data
-        // about the campaign and related fund(s), meta-campaign, etc.
-        $parentTarget = $sfCampaignData['parentTarget'];
-        // end of variables to re-implement above. Other variables can continue being pulled directly from $sfCampaignData
-        // as they are specific to the individual charity campaign and originate from user input in salesforce.
 
         try {
             $websiteUri = $charity->getWebsiteUri()?->__toString();
@@ -181,7 +173,6 @@ class CampaignService
             $parentMatchFundsRemaining = null;
         }
 
-
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
             amountRaised: $campaignId === null ? 0 : $this->cachedAmountRaised($campaignId)->toMajorUnitFloat(),
@@ -213,7 +204,7 @@ class CampaignService
             parentDonationCount: $parentDonationCount,
             parentMatchFundsRemaining: $parentMatchFundsRemaining,
             parentRef: $campaign->getMetaCampaignSlug()?->slug,
-            parentTarget: $parentTarget,
+            parentTarget: $metaCampaign?->target()?->toMajorUnitFloat(),
             parentUsesSharedFunds: $metaCampaign && $metaCampaign->usesSharedFunds(),
             problem: $sfCampaignData['problem'],
             quotes: $sfCampaignData['quotes'],

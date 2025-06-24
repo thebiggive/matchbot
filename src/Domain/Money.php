@@ -185,4 +185,14 @@ readonly class Money implements \JsonSerializable, \Stringable
     {
         return $this->amountInPence === 0;
     }
+
+    public function isStrictlyPositive(): bool
+    {
+        return $this->amountInPence > 0;
+    }
+
+    public function times(int $multiplier): self
+    {
+        return new self($this->amountInPence * $multiplier, $this->currency);
+    }
 }

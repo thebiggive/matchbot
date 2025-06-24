@@ -9,6 +9,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Random\Randomizer;
@@ -36,6 +37,8 @@ class CampaignRepositoryTest extends IntegrationTest
             thankYouMessage: null,
             rawData: [],
             hidden: false,
+            amountPledged: Money::zero(),
+            totalFundingAllocation: Money::zero(),
         );
 
 
@@ -84,6 +87,8 @@ class CampaignRepositoryTest extends IntegrationTest
             thankYouMessage: null,
             rawData: [],
             hidden: false,
+            amountPledged: Money::zero(),
+            totalFundingAllocation: Money::zero(),
         );
 
         $em = $this->getService(EntityManagerInterface::class);
