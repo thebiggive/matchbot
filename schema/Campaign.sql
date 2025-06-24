@@ -29,6 +29,8 @@ CREATE TABLE `Campaign` (
   `total_funding_allocation_currency` varchar(3) NOT NULL,
   `amount_pledged_amountInPence` int NOT NULL,
   `amount_pledged_currency` varchar(3) NOT NULL,
+  `total_fundraising_target_amountInPence` int NOT NULL,
+  `total_fundraising_target_currency` varchar(3) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_E663708BD8961D21` (`salesforceId`),
   KEY `IDX_E663708BF5C97E37` (`charity_id`),

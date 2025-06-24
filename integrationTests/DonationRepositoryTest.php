@@ -189,13 +189,14 @@ class DonationRepositoryTest extends IntegrationTest
             status: 'Active',
             name: 'Campaign Name',
             currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
             isRegularGiving: false,
             regularGivingCollectionEnd: null,
             thankYouMessage: null,
             rawData: [],
             hidden: false,
-            amountPledged: Money::zero(),
-            totalFundingAllocation: Money::zero(),
+            totalFundraisingTarget: Money::zero(),
         );
     }
 

@@ -32,13 +32,14 @@ class CampaignRepositoryTest extends IntegrationTest
             status: null,
             name: 'Campaign Name',
             currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
             isRegularGiving: false,
             regularGivingCollectionEnd: null,
             thankYouMessage: null,
             rawData: [],
             hidden: false,
-            amountPledged: Money::zero(),
-            totalFundingAllocation: Money::zero(),
+            totalFundraisingTarget: Money::zero(),
         );
 
 
@@ -82,13 +83,14 @@ class CampaignRepositoryTest extends IntegrationTest
             status: null,
             name: 'Campaign Name',
             currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
             isRegularGiving: false,
             regularGivingCollectionEnd: null,
             thankYouMessage: null,
             rawData: [],
             hidden: false,
-            amountPledged: Money::zero(),
-            totalFundingAllocation: Money::zero(),
+            totalFundraisingTarget: Money::zero(),
         );
 
         $em = $this->getService(EntityManagerInterface::class);

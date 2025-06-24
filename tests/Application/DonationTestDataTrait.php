@@ -167,13 +167,14 @@ trait DonationTestDataTrait
             status: null,
             name: 'Test campaign',
             currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
             isRegularGiving: false,
             regularGivingCollectionEnd: null,
             thankYouMessage: null,
             rawData: [],
             hidden: false,
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
+            totalFundraisingTarget: Money::zero(),
         );
 
         $donation = TestCase::someDonation(amount: '124.56');
