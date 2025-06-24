@@ -18,7 +18,6 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
-use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
@@ -194,8 +193,6 @@ class DonationRepositoryTest extends IntegrationTest
             thankYouMessage: null,
             rawData: [],
             hidden: false,
-            amountPledged: Money::zero(),
-            totalFundingAllocation: Money::zero(),
         );
     }
 
