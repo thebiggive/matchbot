@@ -427,7 +427,7 @@ class Campaign extends SalesforceReadProxy
 
         Assertion::eq($currencyCode, 'GBP', 'Only GBP currency supported at present');
         Assertion::nullOrRegex($status, "/^[A-Za-z]{2,30}$/");
-        Assertion::betweenLength($name, 2, 255);
+        Assertion::betweenLength($name, 1, 255);
         Assertion::nullOrMaxLength($thankYouMessage, 500);
         Assertion::nullOrBetweenLength($metaCampaignSlug, 1, 64);
         Assertion::nullOrRegex($metaCampaignSlug, '/^[-A-Za-z0-9]+$/');
