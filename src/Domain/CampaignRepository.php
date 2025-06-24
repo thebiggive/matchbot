@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use Assert\AssertionFailedException;
 use DateTime;
+use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Client;
@@ -444,31 +445,131 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @param 'asc'|'desc' $sortDirection
-     * @return list<Campaign>
+     * @param QueryBuilder $qb Builder with its select etc. already set up.
+     * @param array<string, string> $jsonMatchOneConditions
+     * @param array<string, string> $jsonMatchInListConditions
      */
-    public function search(?string $sortField, string $sortDirection): array
-    {
-        $qb = $this->getEntityManager()->createQueryBuilder();
+    private function filterForSearch(
+        QueryBuilder $qb,
+        ?string $status,
+        array $jsonMatchOneConditions,
+        array $jsonMatchInListConditions,
+        ?string $termWildcarded
+    ): void {
+        $qb->where($qb->expr()->eq('campaign.hidden', '0'));
 
-        /** @var ?string $safeSortField */
-        $safeSortField = match ($sortField) {
-            // @todo this field needs adding (maybe to a new CampaignStats table) for this to work.
-            // @todo when sorting by matchFundsRemaining works make it the default here. Add other allowable sort-by
-            //       fields to this match.
-            'matchFundsRemaining' => throw new \Exception('Sorting by matchFundsRemaining not yet implemented'),
-            default => null,
-        };
+        if ($status !== null) {
+            $qb->andWhere($qb->expr()->eq('campaign.status', ':status'));
+            $qb->setParameter('status', $status);
+        }
 
-        $qb = $qb->select('c')
-            ->from(Campaign::class, 'c')
-            ->where($qb->expr()->eq('c.hidden', '0'));
+        foreach ($jsonMatchOneConditions as $field => $value) {
+            $qb->andWhere($qb->expr()->eq("JSON_EXTRACT(campaign.salesforceData, '$.$field')", ':jsonMatchOne_' . $field));
+            $qb->setParameter('jsonMatchOne_' . $field, $value);
+        }
 
-        if ($safeSortField !== null) {
+        foreach ($jsonMatchInListConditions as $field => $value) {
+            $qb->andWhere($qb->expr()->like("JSON_EXTRACT(campaign.salesforceData, '$.$field')", ':jsonMatchInList_' . $field));
+            $qb->setParameter('jsonMatchInList_' . $field, '%' . $value . '%');
+        }
+
+        if ($termWildcarded !== null) {
+            /**
+             * @todo We'll probably want to do fulltext search and MATCH() eventually.
+            @link https://michilehr.de/full-text-search-with-mysql-and-doctrine/#3how-to-implement-a-full-text-search-with-doctrine
+             */
+            $whereSummaryMatches = "LOWER(JSON_EXTRACT(campaign.salesforceData, '$.summary')) LIKE LOWER(:termForWhere)";
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->like('charity.name', ':termForWhere'),
+                    $qb->expr()->like('campaign.name', ':termForWhere'),
+                    $whereSummaryMatches,
+                )
+            );
+            $qb->setParameter('termForWhere', $termWildcarded);
+        }
+    }
+
+    /**
+     * @param QueryBuilder $qb Builder with its select etc. already set up.
+     * @param literal-string|null $safeSortField
+     */
+    private function sortForSearch(
+        QueryBuilder $qb,
+        ?string $safeSortField,
+        string $sortDirection,
+        ?string $termWildcarded
+    ): void {
+        if ($safeSortField === 'relevance') {
+            $qb->addOrderBy(
+                <<<EOT
+            CASE
+                WHEN charity.name LIKE :termForOrder THEN 20
+                WHEN campaign.name LIKE LOWER(:termForOrder) THEN 10
+                WHEN LOWER(JSON_EXTRACT(campaign.salesforceData, '$.summary')) LIKE LOWER(:termForOrder) THEN 5
+                ELSE 0
+            END
+            EOT,
+                $sortDirection,
+            );
+            $qb->setParameter('termForOrder', $termWildcarded);
+        } elseif ($safeSortField !== null) {
             $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
         }
 
-        $qb->addOrderBy('c.endDate', 'DESC');
+        $qb->addOrderBy('campaign.endDate', 'DESC');
+    }
+
+    /**
+     * @param 'asc'|'desc' $sortDirection
+     * @param array<string, string> $jsonMatchOneConditions Keyed on JSON key name. Value must exactly match the
+     *                                                      JSON property with the same key.
+     * @param array<string, string> $jsonMatchInListConditions Keyed on plural JSON key name. Value must exactly match
+     *                                                         one of the items in the JSON array with the same key.
+     * @return list<Campaign>
+     */
+    public function search(
+        ?string $sortField,
+        string $sortDirection,
+        int $offset,
+        int $limit,
+        ?string $status,
+        array $jsonMatchOneConditions,
+        array $jsonMatchInListConditions,
+        ?string $term
+    ): array {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+
+        $safeSortField = match ($sortField) {
+            'matchFundsRemaining' => throw new \Exception('Sorting by matchFundsRemaining not yet implemented'),
+            'relevance' => 'relevance',
+            default => null,
+        };
+
+        if ($term === null && $safeSortField === 'relevance') {
+            throw new \Exception('Please provide a term to sort by relevance');
+        }
+
+        if ($safeSortField === null && $term !== null) {
+            $safeSortField = 'relevance';
+            $sortDirection = 'desc';
+        }
+
+        $qb->select('campaign')
+            ->from(Campaign::class, 'campaign')
+            ->join('campaign.charity', 'charity')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit);
+
+        if ($term !== null) {
+            // I think because binding takes care of non-LIKE escapes we only need to consider % and _.
+            $termWildcarded = '%' . addcslashes($term, '%_') . '%';
+        } else {
+            $termWildcarded = null;
+        }
+
+        $this->filterForSearch($qb, $status, $jsonMatchOneConditions, $jsonMatchInListConditions, $termWildcarded);
+        $this->sortForSearch($qb, $safeSortField, $sortDirection, $termWildcarded);
 
         $query = $qb->getQuery();
         /** @var list<Campaign> $result */
