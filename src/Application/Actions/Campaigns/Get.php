@@ -55,6 +55,22 @@ class Get extends Action
                 throw new HttpNotFoundException($request);
             }
             $this->campaignService->checkCampaignCanBeHandledByMatchbotDB($campaign, $sfId);
+
+            // Temporarily replace championName for 8 SCW25 campaigns.
+            $greggsCampaignIds = [
+                'a05WS000004MEy5YAG',
+                'a05WS000004HasnYAC',
+                'a05WS000004PumJYAS',
+                'a05WS000004GkCfYAK',
+                'a05WS000004aiMnYAI',
+                'a05WS000004EqZ7YAK',
+                'a05WS000004ZLAXYA4',
+                'a05WS000004P41JYAS',
+            ];
+            if (in_array($campaign['id'], $greggsCampaignIds, true)) {
+                $campaign['championName'] = 'Greggs Foundation';
+            }
+
             return $this->respondWithData($response, $campaign);
         } catch (NotFoundException | RequestException $e) {
             $campaignMustHaveBeenUpdatedSince = Environment::current()->isLocal() ? '-10000 day' : '-1 day';
