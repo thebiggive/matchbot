@@ -54,10 +54,11 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\MemoryPeakUsageProcessor;
 use Monolog\Processor\UidProcessor;
-use Psr\Cache\CacheItemPoolInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\SimpleCache\CacheInterface as PSR16CacheInterface;
+use Scienta\DoctrineJsonFunctions\Query\AST\Functions\Mysql\JsonExtract;
+use Scienta\DoctrineJsonFunctions\Query\AST\Functions\Mysql\JsonSearch;
 use Slim\Psr7\Factory\ResponseFactory;
 use Stripe\StripeClient;
 use Stripe\Util\ApiVersion;
@@ -424,6 +425,9 @@ return function (ContainerBuilder $containerBuilder) {
                 $settings->doctrine['cache_dir'] . '/proxies',
                 $cacheAdapter,
             );
+
+            $config->addCustomStringFunction(JsonExtract::FUNCTION_NAME, JsonExtract::class);
+            $config->addCustomStringFunction(JsonSearch::FUNCTION_NAME, JsonSearch::class);
 
             // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
             // files indefinitely.

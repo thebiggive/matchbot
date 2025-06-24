@@ -31,14 +31,59 @@ class Search extends Action
         $params = $request->getQueryParams();
         $sortField = $params['sortField'] ?? '';
         $sortDirection = $params['sortDirection'] ?? 'desc';
+        /** @var 'Active'|'Expired'|'Preview'|null */
+        $status = $params['status'] ?? null;
+        /** @var ?string */
+        $term = $params['term'] ?? null;
         Assertion::string($sortDirection);
         Assertion::string($sortField);
+        Assertion::inArray($status, ['Active','Expired','Preview', null]);
+        Assertion::nullOrString($term);
 
         if (!\in_array($sortDirection, ['asc', 'desc'], true)) {
             throw new HttpBadRequestException($request, 'Unrecognised sort direction');
         }
 
-        $campaigns = $this->campaignRepository->search(sortField: $sortField, sortDirection: $sortDirection);
+        // @todo fund slug – have to join when set, and also first start storing in Fund table?
+
+        $jsonMatchOneConditions = [];
+        $jsonMatchInListConditions = [];
+        foreach ($params as $key => $value) {
+            switch ($key) {
+                case 'beneficiary':
+                    Assertion::string($value);
+                    $jsonMatchInListConditions['beneficiaries'] = $value;
+                    break;
+                case 'category':
+                    Assertion::string($value);
+                    $jsonMatchInListConditions['categories'] = $value;
+                    break;
+                case 'country':
+                    Assertion::string($value);
+                    $jsonMatchInListConditions['countries'] = $value;
+                    break;
+                case 'parent':
+                case 'parentSlug':
+                    Assertion::string($value);
+                    $jsonMatchOneConditions['parentRef'] = $value;
+                    break;
+                default:
+                    // No other params apply a filter using the JSON `salesforceData` field.
+            }
+        }
+
+        // Use limit 100 if a higher value requested.
+        $limit = min(100, (int) ($params['limit'] ?? 20));
+        $campaigns = $this->campaignRepository->search(
+            sortField: $sortField,
+            sortDirection: $sortDirection,
+            offset: (int) ($params['offset'] ?? 0),
+            limit: $limit,
+            status: $status,
+            jsonMatchOneConditions: $jsonMatchOneConditions,
+            jsonMatchInListConditions: $jsonMatchInListConditions,
+            term: $term,
+        );
 
         // TODO performant summaries – most notably `amountRaised` and `matchFundsRemaining` should
         // come from future stats table.
