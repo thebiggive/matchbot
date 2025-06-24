@@ -456,20 +456,20 @@ class CampaignRepository extends SalesforceReadProxyRepository
         array $jsonMatchInListConditions,
         ?string $termWildcarded
     ): void {
-        $qb->where($qb->expr()->eq('c.hidden', '0'));
+        $qb->where($qb->expr()->eq('campaign.hidden', '0'));
 
         if ($status !== null) {
-            $qb->andWhere($qb->expr()->eq('c.status', ':status'));
+            $qb->andWhere($qb->expr()->eq('campaign.status', ':status'));
             $qb->setParameter('status', $status);
         }
 
         foreach ($jsonMatchOneConditions as $field => $value) {
-            $qb->andWhere($qb->expr()->eq("JSON_EXTRACT(c.salesforceData, '$.$field')", ':jsonMatchOne_' . $field));
+            $qb->andWhere($qb->expr()->eq("JSON_EXTRACT(campaign.salesforceData, '$.$field')", ':jsonMatchOne_' . $field));
             $qb->setParameter('jsonMatchOne_' . $field, $value);
         }
 
         foreach ($jsonMatchInListConditions as $field => $value) {
-            $qb->andWhere($qb->expr()->like("JSON_EXTRACT(c.salesforceData, '$.$field')", ':jsonMatchInList_' . $field));
+            $qb->andWhere($qb->expr()->like("JSON_EXTRACT(campaign.salesforceData, '$.$field')", ':jsonMatchInList_' . $field));
             $qb->setParameter('jsonMatchInList_' . $field, '%' . $value . '%');
         }
 
@@ -478,11 +478,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
              * @todo We'll probably want to do fulltext search and MATCH() eventually.
             @link https://michilehr.de/full-text-search-with-mysql-and-doctrine/#3how-to-implement-a-full-text-search-with-doctrine
              */
-            $whereSummaryMatches = "LOWER(JSON_EXTRACT(c.salesforceData, '$.summary')) LIKE LOWER(:termForWhere)";
+            $whereSummaryMatches = "LOWER(JSON_EXTRACT(campaign.salesforceData, '$.summary')) LIKE LOWER(:termForWhere)";
             $qb->andWhere(
                 $qb->expr()->orX(
                     $qb->expr()->like('charity.name', ':termForWhere'),
-                    $qb->expr()->like('c.name', ':termForWhere'),
+                    $qb->expr()->like('campaign.name', ':termForWhere'),
                     $whereSummaryMatches,
                 )
             );
@@ -505,8 +505,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 <<<EOT
             CASE
                 WHEN charity.name LIKE :termForOrder THEN 20
-                WHEN c.name LIKE LOWER(:termForOrder) THEN 10
-                WHEN LOWER(JSON_EXTRACT(c.salesforceData, '$.summary')) LIKE LOWER(:termForOrder) THEN 5
+                WHEN campaign.name LIKE LOWER(:termForOrder) THEN 10
+                WHEN LOWER(JSON_EXTRACT(campaign.salesforceData, '$.summary')) LIKE LOWER(:termForOrder) THEN 5
                 ELSE 0
             END
             EOT,
@@ -517,7 +517,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
         }
 
-        $qb->addOrderBy('c.endDate', 'DESC');
+        $qb->addOrderBy('campaign.endDate', 'DESC');
     }
 
     /**
@@ -555,9 +555,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $sortDirection = 'desc';
         }
 
-        $qb->select('c')
-            ->from(Campaign::class, 'c')
-            ->join('c.charity', 'charity')
+        $qb->select('campaign')
+            ->from(Campaign::class, 'campaign')
+            ->join('campaign.charity', 'charity')
             ->setFirstResult($offset)
             ->setMaxResults($limit);
 
