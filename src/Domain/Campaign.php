@@ -270,7 +270,7 @@ class Campaign extends SalesforceReadProxy
             thankYouMessage: $campaignData['thankYouMessage'],
             rawData: $campaignData,
             hidden: $campaignData['hidden'],
-            totalFundraisingTarget: Money::zero(),
+            totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
         );
     }
 
