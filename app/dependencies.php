@@ -565,7 +565,6 @@ return function (ContainerBuilder $containerBuilder) {
                     emailVerificationTokenRepository: $c->get(EmailVerificationTokenRepository::class),
                     now: new \DateTimeImmutable('now'),
                     donateBaseUri: $donateBaseUri,
-                    logger: $c->get(LoggerInterface::class),
                 );
             },
 
