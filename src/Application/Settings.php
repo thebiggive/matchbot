@@ -10,7 +10,7 @@ use PDO;
  * @readonly
  * @psalm-import-type Params from DoctrineDiverManager
  *
- * @psalm-type ApiClient array{global: array{timeout: string}, salesforce: array{baseUri: string}, mailer: array{baseUri: string, sendSecret: string }}
+ * @psalm-type ApiClient array{global: array{timeout: string}, salesforce: array{baseUri: string, baseUriCached: string}, mailer: array{baseUri: string, sendSecret: string }}
  */
 class Settings
 {
@@ -75,6 +75,7 @@ class Settings
             ],
             'salesforce' => [
                 'baseUri' => $this->getStringEnv($env, 'SALESFORCE_API_BASE', false),
+                'baseUriCached' => $this->getStringEnv($env, 'SALESFORCE_API_BASE_CACHED', false),
             ],
             'mailer' => [
                 'baseUri' => $this->getStringEnv($env, 'MAILER_BASE_URI', false),
