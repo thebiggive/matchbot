@@ -113,7 +113,6 @@ class MetaCampaign extends SalesforceReadProxy
      *
      * {@see self::$isRegularGiving}
      *
-     * @psalm-suppress UnusedProperty - will be used soon
      */
     #[ORM\Column()]
     private bool $isEmergencyIMF;
@@ -324,5 +323,10 @@ class MetaCampaign extends SalesforceReadProxy
         }
 
         return $this->matchFundsTotal->times(2);
+    }
+
+    public function isEmergencyIMF(): bool
+    {
+        return $this->isEmergencyIMF;
     }
 }

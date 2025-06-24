@@ -216,7 +216,7 @@ class CampaignService
             regularGivingCollectionEnd: $this->formatDate($campaign->getRegularGivingCollectionEnd()),
             summary: $sfCampaignData['summary'],
             surplusDonationInfo: $sfCampaignData['surplusDonationInfo'],
-            target: $sfCampaignData['target'],
+            target: Campaign::target($campaign, $metaCampaign)->toMajorUnitFloat(),
             thankYouMessage: $campaign->getThankYouMessage() ?? '',
             title: $campaign->getCampaignName(),
             updates: $sfCampaignData['updates'],
