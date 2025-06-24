@@ -68,6 +68,8 @@ class Get extends Action
                 'a05WS000004P41JYAS',
             ];
             if (in_array($campaign['id'], $greggsCampaignIds, true)) {
+                // this code will be deleted when MAT-405 is done so there is a copy of the same
+                // thing in \MatchBot\Domain\CampaignService::renderCampaign which we're intending to keep.
                 $campaign['championName'] = 'Greggs Foundation';
             }
 
