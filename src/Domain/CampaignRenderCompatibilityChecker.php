@@ -28,6 +28,7 @@ class CampaignRenderCompatibilityChecker
 
         'parentUsesSharedFunds', // parent stuff all requires fetching metacampaign separately, we don't yet have
         'parentTarget',         // metacampaigns populated in matchbot db.
+        'target', // matchbot calculated target relies on data that we haven't yet pulled from SF, so will show zero for now.
         'parentAmountRaised',
         'parentDonationCount',
         'parentMatchFundsRemaining',

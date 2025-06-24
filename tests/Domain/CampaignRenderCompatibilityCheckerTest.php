@@ -26,17 +26,4 @@ class CampaignRenderCompatibilityCheckerTest extends TestCase
         // act
         CampaignRenderCompatibilityChecker::checkCampaignHttpModelMatchesModelFromSF($actual, self::CAMPAIGN_FROM_SALESOFRCE);
     }
-
-    public function testWrongTargetNotCompatibleWithSalesforce(): void
-    {
-        // arrange
-        $actual = self::CAMPAIGN_FROM_SALESOFRCE;
-        $actual['target'] += 1.0; // simulates something gone badly wrong
-
-        // assert
-        $this->expectExceptionMessage('target: Value "101" does not equal expected value "100".');
-
-        // act
-        CampaignRenderCompatibilityChecker::checkCampaignHttpModelMatchesModelFromSF($actual, self::CAMPAIGN_FROM_SALESOFRCE);
-    }
 }
