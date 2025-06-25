@@ -6,6 +6,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -92,7 +93,14 @@ class Search extends Action
          * @psalm-suppress RedundantConditionGivenDocblockType We'll soon load all campaign SF data.
          * */
         $campaignsWithSfData = array_filter($campaigns, fn($campaign) => $campaign->getSalesforceData() !== []);
-        $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData);
+        $campaignSummaries = \array_map(
+            function (Campaign $campaign) {
+                $this->logger->info('About to render campaign summary: ' . $campaign->getSalesforceId());
+                $this->logger->info('campaign SF data: ' . \print_r($campaign->getSalesforceData(), true));
+                return $this->campaignService->renderCampaignSummary($campaign);
+            },
+            $campaignsWithSfData
+        );
 
         return new JsonResponse($campaignSummaries, 200);
     }
