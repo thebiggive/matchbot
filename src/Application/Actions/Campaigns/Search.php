@@ -88,12 +88,16 @@ class Search extends Action
 
         /**
          * @todo Performant summaries – most notably `amountRaised` and `matchFundsRemaining` should
-         * come from future stats table.
+         * come from stats table.
          * Some campaigns have SF data {} when they were last synced before we saved full SF data. If we try
          * to render those there are missing array keys for beneficiaries et al.
-         * @psalm-suppress DocblockTypeContradiction For charity only empty SF data; we'll soon load all campaign data.
+         * @psalm-suppress RedundantCondition For charity only empty SF data; we'll soon load all campaign data.
          */
-        $campaignsWithSfData = array_filter($campaigns, fn($campaign) => $campaign->getSalesforceData() !== ['charity' => []]);
+        $campaignsWithSfData = array_filter($campaigns, static function ($campaign) {
+            $coreCampaignData = $campaign->getSalesforceData();
+            unset($coreCampaignData['charity']);
+            return $coreCampaignData !== [];
+        });
         $campaignSummaries = \array_map(
             function (Campaign $campaign) {
                 $this->logger->info('About to render campaign summary: ' . $campaign->getSalesforceId());
