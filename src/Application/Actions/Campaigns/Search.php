@@ -92,7 +92,7 @@ class Search extends Action
          * to render those there are missing array keys for beneficiaries et al.
          * @psalm-suppress DocblockTypeContradiction For charity only empty SF data; we'll soon load all campaign data.
          */
-        $campaignsWithSfData = array_filter($campaigns, fn($campaign) => $campaign->getSalesforceData() !== []);
+        $campaignsWithSfData = array_filter($campaigns, fn($campaign) => $campaign->getSalesforceData() !== ['charity' => []]);
         $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData);
 
         return new JsonResponse($campaignSummaries, 200);
