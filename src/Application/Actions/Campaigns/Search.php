@@ -92,7 +92,7 @@ class Search extends Action
          * to render those there are missing array keys for beneficiaries et al.
          * @psalm-suppress RedundantConditionGivenDocblockType We'll soon load all campaign SF data.
          * */
-        $campaignsWithSfData = array_filter($campaigns, fn($campaign) => $campaign->getSalesforceData() !== []);
+        $campaignsWithSfData = array_filter($campaigns, fn($campaign) => $campaign->getSalesforceData() !== ['charity' => []]);
         $campaignSummaries = \array_map(
             function (Campaign $campaign) {
                 $this->logger->info('About to render campaign summary: ' . $campaign->getSalesforceId());
