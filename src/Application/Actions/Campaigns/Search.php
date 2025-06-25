@@ -90,7 +90,7 @@ class Search extends Action
          * come from future stats table.
          * Some campaigns have SF data {} when they were last synced before we saved full SF data. If we try
          * to render those there are missing array keys for beneficiaries et al.
-         * @psalm-suppress DocblockTypeContradiction We'll soon load all campaign SF data.
+         * @psalm-suppress DocblockTypeContradiction For charity only empty SF data; we'll soon load all campaign data.
          */
         $campaignsWithSfData = array_filter($campaigns, fn($campaign) => $campaign->getSalesforceData() !== []);
         $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData);
