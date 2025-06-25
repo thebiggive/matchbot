@@ -16,6 +16,8 @@ use MatchBot\Client\Campaign as CampaignClient;
 
 /**
  * @psalm-import-type SFCampaignApiResponse from CampaignClient
+ *
+ * @psalm-suppress UnusedProperty - new properties to be used in MAT-405 campaign.parentTarget rendering.
  */
 #[ORM\Table]
 #[ORM\Index(name: 'end_date_and_is_matched', columns: ['endDate', 'isMatched'])]
@@ -148,8 +150,17 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(nullable: true)]
     protected ?\DateTimeImmutable $regularGivingCollectionEnd;
 
+    #[ORM\Embedded(columnPrefix: 'total_funding_allocation_')]
+    private Money $totalFundingAllocation;
+
+    #[ORM\Embedded(columnPrefix: 'amount_pledged_')]
+    private Money $amountPledged;
+
+    #[ORM\Embedded(columnPrefix: 'total_fundraising_target_')]
+    private Money $totalFundraisingTarget;
 
     /**
+     * @param Money $totalFundraisingTarget
      * @param Salesforce18Id<Campaign> $sfId
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
      * @param 'Active'|'Expired'|'Preview'|null $status
@@ -167,8 +178,11 @@ class Campaign extends SalesforceReadProxy
         ?string $status,
         string $name,
         string $currencyCode,
+        Money $totalFundingAllocation,
+        Money $amountPledged,
         bool $isRegularGiving,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
+        Money $totalFundraisingTarget,
         ?string $thankYouMessage = null,
         array $rawData = [],
         bool $hidden = false,
@@ -191,6 +205,9 @@ class Campaign extends SalesforceReadProxy
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             thankYouMessage: $thankYouMessage,
             hidden: $hidden,
+            totalFundingAllocation: $totalFundingAllocation,
+            amountPledged: $amountPledged,
+            totalFundraisingTarget: $totalFundraisingTarget,
             sfData: $rawData,
         );
     }
@@ -233,6 +250,8 @@ class Campaign extends SalesforceReadProxy
             'Cannot create Charity Campaign using meta campaign data'
         );
 
+        $currency = Currency::fromIsoCode($campaignData['currencyCode']);
+
         return new self(
             sfId: $salesforceId,
             metaCampaignSlug: $campaignData['parentRef'],
@@ -243,12 +262,15 @@ class Campaign extends SalesforceReadProxy
             ready: $ready,
             status: $status,
             name: $title,
-            currencyCode: $campaignData['currencyCode'],
+            currencyCode: $currency->isoCode(),
+            totalFundingAllocation: Money::fromPence((int)(100.0 * ($campaignData['totalFundingAllocation'] ?? 0.0)), $currency),
+            amountPledged: Money::fromPence((int)(100.0 * ($campaignData['amountPledged'] ?? 0.0)), $currency),
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
             thankYouMessage: $campaignData['thankYouMessage'],
             rawData: $campaignData,
-            hidden: $campaignData['hidden']
+            hidden: $campaignData['hidden'],
+            totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
         );
     }
 
@@ -401,6 +423,7 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
+     * @param Money $totalFundraisingTarget
      * @param array<string,mixed> $sfData
      * @param 'Active'|'Expired'|'Preview'|null $status
      */
@@ -417,6 +440,9 @@ class Campaign extends SalesforceReadProxy
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         ?string $thankYouMessage,
         bool $hidden,
+        Money $totalFundingAllocation,
+        Money $amountPledged,
+        Money $totalFundraisingTarget,
         array $sfData,
     ): void {
         Assertion::lessOrEqualThan(
@@ -431,8 +457,11 @@ class Campaign extends SalesforceReadProxy
         Assertion::nullOrMaxLength($thankYouMessage, 500);
         Assertion::nullOrBetweenLength($metaCampaignSlug, 1, 64);
         Assertion::nullOrRegex($metaCampaignSlug, '/^[-A-Za-z0-9]+$/');
-        // needed because SF may send an ID if slug is not filled in - we don't want that in the matchbot DB.
-        Assertion::nullOrNotContains($metaCampaignSlug, 'a05', "$metaCampaignSlug appears to be an SF ID, should be a slug");
+
+        if ($metaCampaignSlug !== null && \str_starts_with($metaCampaignSlug, 'a05')) {
+            // needed because SF may send an ID if slug is not filled in - we don't want that in the matchbot DB.
+            throw new \RuntimeException("$metaCampaignSlug appears to be an SF ID, should be a slug");
+        }
 
         if (! $isRegularGiving) {
             Assertion::null(
@@ -453,6 +482,9 @@ class Campaign extends SalesforceReadProxy
         $this->isRegularGiving = $isRegularGiving;
         $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
         $this->hidden = $hidden;
+        $this->totalFundingAllocation = $totalFundingAllocation;
+        $this->amountPledged = $amountPledged;
+        $this->totalFundraisingTarget = $totalFundraisingTarget;
 
         unset($sfData['charity']); // charity stores its own data, we don't need to keep a copy here.
         $this->salesforceData = $sfData;
@@ -558,5 +590,28 @@ class Campaign extends SalesforceReadProxy
         }
 
         return MetaCampaignSlug::of($this->metaCampaignSlug);
+    }
+
+    public static function target(Campaign $campaign, ?MetaCampaign $metaCampaign): Money
+    {
+        if ($metaCampaign) {
+            Assertion::eq($campaign->metaCampaignSlug, $metaCampaign->getSlug()->slug);
+        }
+
+        if ($metaCampaign && $metaCampaign->isEmergencyIMF()) {
+            // Emergency IMF targets can currently assume a shared match pot, so use parent totals to calculate
+            // target for Emergency IMFs&apos; children: double the total match funds available (or override if set)
+            //because parents do not have total fund raising target set */
+
+            return $metaCampaign->target();
+        }
+
+        // SF implementation uses `Type__c = 'Regular Campaign'` is the condition. We don't have a copy of
+        // `Type__c` but I think the below is equivalent:
+        if (! $campaign->isMatched) {
+            return $campaign->totalFundraisingTarget;
+        }
+
+        return Money::sum($campaign->amountPledged, $campaign->totalFundingAllocation)->times(2);
     }
 }

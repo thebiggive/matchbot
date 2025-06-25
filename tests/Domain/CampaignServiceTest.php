@@ -53,9 +53,10 @@ class CampaignServiceTest extends TestCase
     public function testItRendersCampaignWithDetailsOfRelatedMetaCampaignWithSharedFunds(): void
     {
         // arrange
-        $campaign = TestCase::someCampaign();
-        $metaCampaign = $this->someMetaCampaign(isRegularGiving: true, isEmergencyIMF: false);
+        $metaCampaign = self::someMetaCampaign(isRegularGiving: true, isEmergencyIMF: false);
         $metaCampaign->setId(43);
+        $campaign = self::someCampaign(metaCampaignSlug: $metaCampaign->getSlug());
+
 
         $this->metaCampaignRepositoryProphecy->countCompleteDonationsToMetaCampaign($metaCampaign)->willReturn(3);
         $this->metaCampaignRepositoryProphecy->totalAmountRaised($metaCampaign)->willReturn(Money::fromPoundsGBP(12));
@@ -74,8 +75,8 @@ class CampaignServiceTest extends TestCase
     public function testItRendersCampaignWithDetailsOfRelatedMetaCampaignWithNonSharedFunds(): void
     {
         // arrange
-        $campaign = TestCase::someCampaign();
-        $metaCampaign = $this->someMetaCampaign(isRegularGiving: false, isEmergencyIMF: false);
+        $metaCampaign = self::someMetaCampaign(isRegularGiving: false, isEmergencyIMF: false);
+        $campaign = self::someCampaign(metaCampaignSlug: $metaCampaign->getSlug());
 
         // act
         $renderedCampaign = $this->SUT->renderCampaign($campaign, $metaCampaign);

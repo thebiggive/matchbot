@@ -28,11 +28,13 @@ class CampaignRenderCompatibilityChecker
 
         'parentUsesSharedFunds', // parent stuff all requires fetching metacampaign separately, we don't yet have
         'parentTarget',         // metacampaigns populated in matchbot db.
+        'target', // matchbot calculated target relies on data that we haven't yet pulled from SF, so will show zero for now.
         'parentAmountRaised',
         'parentDonationCount',
         'parentMatchFundsRemaining',
         'matchFundsTotal', // checking this fails because our campaign reconstructed from SF data doesn't have a numeric ID we can't find its funds.
         'totalAdjustment', // used for calculation in matchbot for metacampaigns, not output to FE by matchbot.
+        'championName', // Diverging for SCW25 patched funders for now
     ];
 
     /**

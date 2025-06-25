@@ -408,6 +408,10 @@ class TestCase extends PHPUnitTestCase
         ?\DateTimeImmutable $regularGivingCollectionEnd = null,
         string $thankYouMessage = null,
         MetaCampaignSlug $metaCampaignSlug = null,
+        bool $isMatched = false,
+        ?Money $totalFundraisingTarget = null,
+        ?Money $amountPledged = null,
+        ?Money $totalFundingAllocation = null,
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         $sfId ??= Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
@@ -418,16 +422,19 @@ class TestCase extends PHPUnitTestCase
             charity: $charity ?? self::someCharity(stripeAccountId: $stripeAccountId),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('3000-01-01'),
-            isMatched: false,
+            isMatched: $isMatched,
             ready: true,
             status: 'Active',
             name: 'someCampaign',
             currencyCode: 'GBP',
+            totalFundingAllocation: $totalFundingAllocation ?? Money::zero(),
+            amountPledged: $amountPledged ?? Money::zero(),
             isRegularGiving: $isRegularGiving,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             thankYouMessage: $thankYouMessage,
             rawData: self::CAMPAIGN_FROM_SALESOFRCE,
             hidden: false,
+            totalFundraisingTarget: $totalFundraisingTarget ?? Money::zero(),
         );
     }
 
@@ -536,7 +543,7 @@ class TestCase extends PHPUnitTestCase
         return hash_hmac('sha256', $body, $salesforceSecretKey);
     }
 
-    public static function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF): MetaCampaign
+    public static function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF, ?Money $imfCampaignTargetOverride = null, ?Money $matchFundsTotal = null): MetaCampaign
     {
         return new MetaCampaign(
             slug: MetaCampaignSlug::of('not-relevant-' . TestCase::randomHex()),
@@ -552,6 +559,8 @@ class TestCase extends PHPUnitTestCase
             isRegularGiving: $isRegularGiving,
             isEmergencyIMF: $isEmergencyIMF,
             totalAdjustment: Money::zero(),
+            imfCampaignTargetOverride: $imfCampaignTargetOverride ?? Money::zero(),
+            matchFundsTotal: $matchFundsTotal ?? Money::zero(),
         );
     }
 }

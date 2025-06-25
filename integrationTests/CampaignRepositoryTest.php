@@ -9,6 +9,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Random\Randomizer;
@@ -31,11 +32,14 @@ class CampaignRepositoryTest extends IntegrationTest
             status: null,
             name: 'Campaign Name',
             currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
             isRegularGiving: false,
             regularGivingCollectionEnd: null,
             thankYouMessage: null,
             rawData: [],
             hidden: false,
+            totalFundraisingTarget: Money::zero(),
         );
 
 
@@ -79,11 +83,14 @@ class CampaignRepositoryTest extends IntegrationTest
             status: null,
             name: 'Campaign Name',
             currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
             isRegularGiving: false,
             regularGivingCollectionEnd: null,
             thankYouMessage: null,
             rawData: [],
             hidden: false,
+            totalFundraisingTarget: Money::zero(),
         );
 
         $em = $this->getService(EntityManagerInterface::class);
@@ -126,6 +133,9 @@ class CampaignRepositoryTest extends IntegrationTest
             thankYouMessage: null,
             rawData: [],
             hidden: false,
+            totalFundingAllocation: Money::zero(),
+            totalFundraisingTarget: Money::zero(),
+            amountPledged: Money::zero(),
         );
 
         $campaign2 = new Campaign(
@@ -150,6 +160,9 @@ class CampaignRepositoryTest extends IntegrationTest
                 'title' => 'Campaign Two is for Porridge and Juice',
             ],
             hidden: false,
+            totalFundingAllocation: Money::zero(),
+            totalFundraisingTarget: Money::zero(),
+            amountPledged: Money::zero(),
         );
 
         $em = $this->getService(EntityManagerInterface::class);

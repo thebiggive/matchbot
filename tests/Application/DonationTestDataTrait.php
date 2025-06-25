@@ -9,6 +9,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
@@ -166,11 +167,14 @@ trait DonationTestDataTrait
             status: null,
             name: 'Test campaign',
             currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
             isRegularGiving: false,
             regularGivingCollectionEnd: null,
             thankYouMessage: null,
             rawData: [],
             hidden: false,
+            totalFundraisingTarget: Money::zero(),
         );
 
         $donation = TestCase::someDonation(amount: '124.56');

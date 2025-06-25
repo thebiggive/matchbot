@@ -11,7 +11,6 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Settings;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\SalesforceProxy;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 
 abstract class Common
@@ -20,7 +19,7 @@ abstract class Common
 
     /**
      * @var array{
-     *     salesforce: array{ baseUri: string},
+     *     salesforce: array{baseUri: string, baseUriCached: string},
      *     global: array{timeout: string},
      *     mailer: array{baseUri: string, sendSecret: string}
      * }
@@ -28,6 +27,7 @@ abstract class Common
     private readonly array $clientSettings;
     private ?Client $httpClient = null;
     protected readonly string $sfApiBaseUrl;
+    protected readonly string $sfApiBaseUrlCached;
 
     /**
      * @param LoggerInterface $logger
@@ -41,6 +41,7 @@ abstract class Common
     ) {
         $this->clientSettings = $settings->apiClient;
         $this->sfApiBaseUrl = $this->clientSettings['salesforce']['baseUri'];
+        $this->sfApiBaseUrlCached = $this->clientSettings['salesforce']['baseUriCached'];
     }
 
     /**
