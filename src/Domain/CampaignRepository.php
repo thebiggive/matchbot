@@ -301,8 +301,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * Returns the total of all the complete donations to this campaign, including matching but not gift aid.
      *
      * Note that this DOES NOT include gift aid - compare {@see MetaCampaignRepository::totalAmountRaised()} which does.
+     *
+     * @param ?Money $matchFundsUsed If getting figures for stats and you just called {@see self::totalMatchFundsUsed()}
+     *                               yourself, pass its return value to avoid repeating the DB work.
      */
-    public function totalAmountRaised(int $campaignId): Money
+    public function totalAmountRaised(int $campaignId, ?Money $matchFundsUsed = null): Money
     {
         $donationQuery = $this->getEntityManager()->createQuery(
             <<<'DQL'
@@ -335,28 +338,46 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         Assertion::numeric($donationSum);
 
-        $matchedFundQuery = $this->getEntityManager()->createQuery(
-            <<<'DQL'
-            SELECT COALESCE(SUM(fw.amount), 0) as sum
-            FROM MatchBot\Domain\FundingWithdrawal fw
-            JOIN fw.donation donation
-            WHERE donation.campaign = :campaignId AND donation.donationStatus IN (:succcessStatus)
-        DQL
-        );
+        if ($matchFundsUsed === null) {
+            $matchFundsUsed = $this->totalMatchFundsUsed($campaignId);
+        }
 
-        $matchedFundQuery->setParameters([
-            'campaignId' => $campaignId,
-            'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
-        ]);
-
-        $matchedFundResult =  $matchedFundQuery->getSingleScalarResult();
-        Assertion::numeric($matchedFundResult);
-
-        $total = \bcadd($donationSum, (string) $matchedFundResult, 2);
+        $total = \bcadd($donationSum, $matchFundsUsed->toNumericString(), 2);
 
         $currency = Currency::fromIsoCode($donationResult[0]['currencyCode']);
 
         return Money::fromNumericString($total, $currency);
+    }
+
+    public function totalMatchFundsUsed(int $campaignId): Money
+    {
+        // FW doesn't use Money value object or have its own currency code field yet, so we join to CampaignFunding
+        // solely to get that.
+        $query = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            SELECT COALESCE(SUM(fw.amount), 0) as sum, cf.currencyCode as currencyCode
+            FROM MatchBot\Domain\FundingWithdrawal fw
+            JOIN fw.donation donation
+            JOIN fw.campaignFunding cf
+            WHERE donation.campaign = :campaignId AND donation.donationStatus IN (:succcessStatus)
+            GROUP BY cf.currencyCode
+        DQL
+        );
+
+        $query->setParameters([
+            'campaignId' => $campaignId,
+            'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
+        ]);
+
+        /** @var null|array{sum: numeric-string, currencyCode: string} $result */
+        $result = $query->getOneOrNullResult();
+
+        if ($result === null) {
+            return Money::zero();
+        }
+        Assertion::numeric($result['sum']);
+
+        return Money::fromNumericString($result['sum'], Currency::fromIsoCode($result['currencyCode']));
     }
 
     /**
@@ -383,6 +404,28 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $query->setParameters([
             'charity' => $charity,
         ]);
+
+        /** @var list<Campaign> $result */
+        $result =  $query->getResult();
+
+        return $result;
+    }
+
+    /**
+     * @return list<Campaign> Each campaign with a donation collected in the last 5 minutes.
+     */
+    public function findAllWithRecentDonations(): array
+    {
+        $query = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            SELECT DISTINCT campaign
+            FROM MatchBot\Domain\Campaign campaign
+            JOIN MatchBot\Domain\Donation donation WITH donation.campaign = campaign.id
+            WHERE donation.collectedAt >= :recentDonationTime
+            DQL
+        );
+
+        $query->setParameter('recentDonationTime', (new \DateTime('now'))->sub(new \DateInterval('PT5M')));
 
         /** @var list<Campaign> $result */
         $result =  $query->getResult();

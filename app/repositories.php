@@ -10,6 +10,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignStatisticsRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\DoctrineDonationRepository;
@@ -45,6 +46,8 @@ return static function (ContainerBuilder $containerBuilder) {
 
             return $repo;
         },
+
+        CampaignStatisticsRepository::class => static fn(ContainerInterface $c): CampaignStatisticsRepository => new CampaignStatisticsRepository($c->get(EntityManagerInterface::class)),
 
         CharityRepository::class => static function (ContainerInterface $c): CharityRepository {
             $repository = $c->get(EntityManagerInterface::class)->getRepository(Charity::class);

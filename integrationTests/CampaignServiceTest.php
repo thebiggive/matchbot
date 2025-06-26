@@ -70,8 +70,8 @@ class CampaignServiceTest extends IntegrationTest
         \assert($campaignId !== null);
 
         $this->assertEquals(
-            $this->SUT->cachedAmountRaised($campaignId),
             Money::fromPoundsGBP(4),
+            $this->SUT->cachedAmountRaised($campaignId),
         );
     }
 
