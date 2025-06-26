@@ -164,7 +164,7 @@ class TakeRegularGivingDonations extends LockingCommand
         foreach ($donations as $donation) {
             $this->reportableEventHappened = true;
             try {
-                $this->donationService->createPaymentIntent($donation);
+                $this->donationService->createAndAssociatePaymentIntent($donation);
                 $io->writeln("setting payment intent on donation {$donation->getUuid()}");
             } catch (RegularGivingDonationToOldToCollect $e) {
                 $this->logger->error($e->getMessage());
