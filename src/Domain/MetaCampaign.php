@@ -189,9 +189,8 @@ class MetaCampaign extends SalesforceReadProxy
         $endDate = $data['endDate'];
         $title = $data['title'];
 
+        // status may be null for now.
         $status = $data['status'];
-
-        Assertion::notNull($status, "Null status found for metacampaign $title ({$data['id']}), cannot accept update");
 
         Assertion::notNull($startDate);
         Assertion::notNull($endDate);
