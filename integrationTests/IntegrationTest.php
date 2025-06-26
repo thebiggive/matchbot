@@ -244,6 +244,7 @@ abstract class IntegrationTest extends TestCase
 
     public function clearPreviousCampaignsCharitiesAndRelated(): void
     {
+        $this->db()->executeStatement('DELETE FROM CampaignStatistics');
         $this->db()->executeStatement('DELETE FROM FundingWithdrawal');
         $this->db()->executeStatement('DELETE FROM Donation');
         $this->db()->executeStatement('DELETE FROM Campaign_CampaignFunding');

@@ -54,4 +54,14 @@ class CampaignStatistics
     {
         $this->matchFundsUsed = $matchFundsUsed;
     }
+
+    public function getAmountRaised(): Money
+    {
+        return $this->amountRaised;
+    }
+
+    public function getMatchFundsUsed(): Money
+    {
+        return $this->matchFundsUsed;
+    }
 }

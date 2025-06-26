@@ -31,4 +31,24 @@ class CampaignStatisticsRepository
             $this->em->persist($statistics);
         }
     }
+
+    /**
+     * @return array{amountRaised: Money, matchFundsUsed: Money}
+     */
+    public function getStatistics(Campaign $campaign): array
+    {
+        $statistics = $this->doctrineRepository->findOneBy(['campaign' => $campaign]);
+
+        if (!$statistics) {
+            return [
+                'amountRaised' => Money::zero(),
+                'matchFundsUsed' => Money::zero(),
+            ];
+        }
+
+        return [
+            'amountRaised' => $statistics->getAmountRaised(),
+            'matchFundsUsed' => $statistics->getMatchFundsUsed(),
+        ];
+    }
 }
