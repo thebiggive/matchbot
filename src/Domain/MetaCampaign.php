@@ -209,10 +209,6 @@ class MetaCampaign extends SalesforceReadProxy
     {
         Assertion::true($data['x_isMetaCampaign'] ?? true);
 
-        $status = $data['status'];
-
-        Assertion::notNull($status);
-
         $bannerUri = $data['bannerUri'];
         $isRegularGiving = $data['isRegularGiving'] ?? null;
         Assertion::boolean($isRegularGiving);
@@ -220,6 +216,10 @@ class MetaCampaign extends SalesforceReadProxy
         $startDate = $data['startDate'];
         $endDate = $data['endDate'];
         $title = $data['title'];
+
+        $status = $data['status'];
+
+        Assertion::notNull($status, "Null status found for metacampaign $title ({$data['id']}), cannot accept update");
 
         Assertion::notNull($startDate);
         Assertion::notNull($endDate);
