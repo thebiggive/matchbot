@@ -19,6 +19,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
+use Stripe\ConfirmationToken;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
@@ -63,6 +64,13 @@ class Confirm extends Action
         \assert(is_string($paymentMethodId) || is_null($paymentMethodId));
         $confirmationTokenId = $requestBody['stripeConfirmationTokenId'] ?? null;
         \assert(is_string($confirmationTokenId) || is_null($confirmationTokenId));
+        /** @var null|'on_session'|'off_session' $confirmationTokenFutureUsage */
+        $confirmationTokenFutureUsage = $requestBody['stripeConfirmationTokenFutureUsage'] ?? null;
+        Assertion::inArray($confirmationTokenFutureUsage, [
+            ConfirmationToken::SETUP_FUTURE_USAGE_OFF_SESSION,
+            ConfirmationToken::SETUP_FUTURE_USAGE_ON_SESSION,
+            null,
+        ]);
 
         $this->entityManager->beginTransaction();
 
@@ -100,7 +108,8 @@ EOF
         try {
             $updatedIntent = $this->donationService->confirmOnSessionDonation(
                 $donation,
-                StripeConfirmationTokenId::of($confirmationTokenId)
+                StripeConfirmationTokenId::of($confirmationTokenId),
+                $confirmationTokenFutureUsage,
             );
         } catch (CardException $exception) {
             $this->entityManager->rollback();
@@ -161,6 +170,8 @@ EOF
         }
 
         // Assuming Stripe calls worked, commit any changes that `deriveFees()` made to the EM-tracked `$donation`.
+        // In edge cases where setup_future_usage choice changed after an initial failed Confirm, there may also
+        // be a new transactionId (Payment Intent ID) to save.
         $this->entityManager->flush();
         $this->entityManager->commit();
 
