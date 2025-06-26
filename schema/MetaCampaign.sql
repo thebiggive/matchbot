@@ -10,7 +10,7 @@ CREATE TABLE `MetaCampaign` (
   `slug` varchar(64) NOT NULL,
   `title` varchar(255) NOT NULL,
   `currency` varchar(255) NOT NULL,
-  `status` varchar(255) NOT NULL,
+  `status` varchar(255) DEFAULT NULL,
   `hidden` tinyint(1) NOT NULL,
   `summary` varchar(255) DEFAULT NULL,
   `bannerURI` varchar(255) DEFAULT NULL,

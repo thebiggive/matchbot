@@ -25,57 +25,30 @@ use Psr\Http\Message\UriInterface;
 #[ORM\Index(name: 'hidden', columns: ['hidden'])]
 class MetaCampaign extends SalesforceReadProxy
 {
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column(length: 64, unique: true, nullable: false)]
     private string $slug;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column()]
     private string $title;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column()]
     private Currency $currency;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
-    #[ORM\Column()]
-    private string $status;
+    #[ORM\Column(nullable: true)]
+    private ?string $status;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column()]
     private bool $hidden;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column(nullable: true)]
     private ?string $summary;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column(nullable: true)]
     private ?string $bannerURI;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column()]
     private \DateTimeImmutable $startDate;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column()]
     private \DateTimeImmutable $endDate;
 
@@ -98,7 +71,6 @@ class MetaCampaign extends SalesforceReadProxy
      * If true also implies that the charity campaigns will share funds - see doc for
      * {@see self::$isEmergencyIMF}
      *
-     * @psalm-suppress UnusedProperty - will be used soon
      */
     #[ORM\Column()]
     private bool $isRegularGiving;
@@ -276,7 +248,7 @@ class MetaCampaign extends SalesforceReadProxy
         return $this->currency;
     }
 
-    public function getStatus(): string
+    public function getStatus(): ?string
     {
         return $this->status;
     }
