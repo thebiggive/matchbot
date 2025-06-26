@@ -6,7 +6,6 @@ use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -86,21 +85,19 @@ class Search extends Action
             term: $term,
         );
 
-        /**  TODO performant summaries – most notably `amountRaised` and `matchFundsRemaining` should
-         * come from future stats table.
+        /**
+         * @todo Performant summaries – most notably `amountRaised` and `matchFundsRemaining` should
+         * come from stats table.
          * Some campaigns have SF data {} when they were last synced before we saved full SF data. If we try
          * to render those there are missing array keys for beneficiaries et al.
-         * @psalm-suppress RedundantConditionGivenDocblockType We'll soon load all campaign SF data.
-         * */
-        $campaignsWithSfData = array_filter($campaigns, fn($campaign) => $campaign->getSalesforceData() !== ['charity' => []]);
-        $campaignSummaries = \array_map(
-            function (Campaign $campaign) {
-                $this->logger->info('About to render campaign summary: ' . $campaign->getSalesforceId());
-                $this->logger->info('campaign SF data: ' . \print_r($campaign->getSalesforceData(), true));
-                return $this->campaignService->renderCampaignSummary($campaign);
-            },
-            $campaignsWithSfData
-        );
+         * @psalm-suppress RedundantCondition For charity only empty SF data; we'll soon load all campaign data.
+         */
+        $campaignsWithSfData = array_filter($campaigns, static function ($campaign) {
+            $coreCampaignData = $campaign->getSalesforceData();
+            unset($coreCampaignData['charity']);
+            return $coreCampaignData !== [];
+        });
+        $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData);
 
         return new JsonResponse($campaignSummaries, 200);
     }
