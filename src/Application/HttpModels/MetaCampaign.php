@@ -15,7 +15,7 @@ readonly class MetaCampaign
         public string $id,
         public string $title,
         public string $currencyCode,
-        public string $status,
+        public ?string $status,
         public bool $hidden,
         public bool $ready,
         public ?string $summary,

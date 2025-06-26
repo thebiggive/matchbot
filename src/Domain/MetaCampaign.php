@@ -34,8 +34,8 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Column()]
     private Currency $currency;
 
-    #[ORM\Column()]
-    private string $status;
+    #[ORM\Column(nullable: true)]
+    private ?string $status;
 
     #[ORM\Column()]
     private bool $hidden;
@@ -248,7 +248,7 @@ class MetaCampaign extends SalesforceReadProxy
         return $this->currency;
     }
 
-    public function getStatus(): string
+    public function getStatus(): ?string
     {
         return $this->status;
     }
