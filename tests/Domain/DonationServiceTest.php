@@ -305,6 +305,7 @@ class DonationServiceTest extends TestCase
 
         $paymentIntent = new PaymentIntent($paymentIntentId);
         $paymentIntent->status = PaymentIntent::STATUS_SUCCEEDED;
+        $paymentIntent->setup_future_usage = PaymentIntent::SETUP_FUTURE_USAGE_ON_SESSION;
 
         $this->stripeProphecy->confirmPaymentIntent($paymentIntentId, [
             'confirmation_token' => $confirmationTokenId->stripeConfirmationTokenId,
@@ -312,8 +313,16 @@ class DonationServiceTest extends TestCase
             ->willReturn($paymentIntent)
             ->shouldBeCalledOnce();
 
+        $this->stripeProphecy->retrievePaymentIntent($paymentIntentId)
+            ->willReturn($paymentIntent)
+            ->shouldBeCalledOnce();
+
         // act
-        $this->getDonationService()->confirmOnSessionDonation($donation, $confirmationTokenId);
+        $this->getDonationService()->confirmOnSessionDonation(
+            $donation,
+            $confirmationTokenId,
+            ConfirmationToken::SETUP_FUTURE_USAGE_ON_SESSION,
+        );
 
         $this->assertSame('0.52', $donation->getCharityFeeGross());
     }
