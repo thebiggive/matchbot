@@ -303,9 +303,11 @@ class ConfirmTest extends TestCase
         // Every PI starts off with future usage null until JS says otherwise via a Confirm,
         // so the most realistic way to simulate a yes followed by a no is to confirm twice,
         // first with 'on_session' and then with null.
-        $this->callConfirm(sut: $this->sut, futureUsage: PaymentIntent::SETUP_FUTURE_USAGE_ON_SESSION); // Decline
+        $firstResponse = $this->callConfirm(sut: $this->sut, futureUsage: PaymentIntent::SETUP_FUTURE_USAGE_ON_SESSION); // Decline
+        $this->assertSame(402, $firstResponse->getStatusCode()); // 'Payment required'.
 
-        $this->callConfirm(sut: $this->sut, futureUsage: null); // Re-create PI and decline
+        $secondResponse = $this->callConfirm(sut: $this->sut, futureUsage: null); // Re-create PI and decline
+        $this->assertSame(402, $secondResponse->getStatusCode()); // 'Payment required'.
     }
 
     private function successReadyFakeStripeClient(
