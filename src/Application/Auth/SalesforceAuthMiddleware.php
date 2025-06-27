@@ -13,7 +13,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Slim\Psr7\Response;
-use Slim\Psr7\Stream;
+use Symfony\Component\Clock\ClockInterface;
 
 /**
  * This middleware requires that a request is from our own Salesforce instance, based on a shared secret. Salesforce
@@ -32,6 +32,7 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
         #[\SensitiveParameter]
         private string $sfApiKey,
         private LoggerInterface $logger,
+        private ClockInterface $clock,
     ) {
         Assertion::notEmpty($this->sfApiKey);
     }
@@ -71,6 +72,23 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
             $this->sfApiKey
         );
 
-        return ($givenHash === $expectedHash);
+        if ($givenHash !== $expectedHash) {
+            return false;
+        }
+
+        if (\json_validate($content)) {
+            $asArray = \json_decode($content, true, flags: JSON_THROW_ON_ERROR);
+            \assert(\is_array($asArray));
+            /** @var int|null $contentTimestamp */
+            $contentTimestamp =  $asArray['timestamp'] ?? null;
+            Assertion::nullOrNumeric($contentTimestamp);
+
+            $currentTimestamp = $this->clock->now()->getTimestamp();
+            if (\is_int($contentTimestamp) && \abs($contentTimestamp - $currentTimestamp) > 120) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
