@@ -90,7 +90,7 @@ class CampaignService
             id: $salesforceId,
             title: $metaCampaign->getTitle(),
             currencyCode: $metaCampaign->getCurrency()->isoCode(case: 'upper'),
-            status: $metaCampaign->getStatus(),
+            status: $metaCampaign->getStatusAt($this->clock->now()),
             hidden: $metaCampaign->isHidden(),
             ready: true, // @todo-mat-405 - store get a copy of the `ready` value for the metacampaign from SF.
             summary: $metaCampaign->getSummary(),

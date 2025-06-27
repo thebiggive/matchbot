@@ -551,6 +551,7 @@ class TestCase extends PHPUnitTestCase
             title: 'not relevant ' . TestCase::randomHex(),
             currency: Currency::GBP,
             status: 'Active',
+            masterCampaignStatus: MetaCampaign::STATUS_VIEW_CAMPAIGN,
             hidden: false,
             summary: 'not relevant',
             bannerURI: null,
