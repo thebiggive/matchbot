@@ -44,7 +44,7 @@ use PrinsFrank\Standards\Country\CountryAlpha2;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
-use Stripe\Charge;
+use Stripe\ConfirmationToken;
 use Stripe\PaymentIntent;
 
 /**
@@ -300,7 +300,8 @@ class RegularGivingServiceTest extends TestCase
 
         $this->donationServiceProphecy->confirmOnSessionDonation(
             Argument::type(Donation::class),
-            $confirmationTokenId
+            $confirmationTokenId,
+            ConfirmationToken::SETUP_FUTURE_USAGE_OFF_SESSION,
         )
             ->shouldBeCalledOnce()
             ->will(/**

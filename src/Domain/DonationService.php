@@ -257,13 +257,15 @@ class DonationService
      * Finalized a donation, instructing stripe to attempt to take payment immediately for a donor
      * making an immediate, online donation.
      *
+     * @param null|'on_session'|'off_session' $confirmationTokenSetupFutureUsage
      * @throws ApiErrorException
      * @throws RegularGivingDonationToOldToCollect
      * @throws PaymentIntentNotSucceeded
      */
     public function confirmOnSessionDonation(
         Donation $donation,
-        StripeConfirmationTokenId $tokenId
+        StripeConfirmationTokenId $tokenId,
+        ?string $confirmationTokenSetupFutureUsage,
     ): \Stripe\PaymentIntent {
         $this->updateDonationFeesFromConfirmationToken($tokenId, $donation);
 
@@ -276,6 +278,14 @@ class DonationService
         Assertion::notNull($paymentIntentId);
 
         $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
+
+        $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
+        if ($confirmationTokenSetupFutureUsage === null && $paymentIntent->setup_future_usage !== null) {
+            // Replaces $transactionId on the Donation too – which e.g. Confirm should flush shortly.
+            // It's not allowed to un-set future usage on a payment intent by Stripe's API, but the donor
+            // is allowed to change their mind about saving a 2nd card.
+            $this->createAndAssociatePaymentIntent($donation);
+        }
 
         $updatedIntent = $this->stripe->confirmPaymentIntent(
             $paymentIntentId,
@@ -395,7 +405,7 @@ class DonationService
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
         if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {
             $this->loadCampaignsStripeId($campaign);
-            $this->createPaymentIntent($donation);
+            $this->createAndAssociatePaymentIntent($donation);
         }
 
         if ($dispatchUpdateMessage) {
@@ -472,7 +482,7 @@ class DonationService
     /**
      * Creates a payment intent at Stripe and records the PI ID against the donation.
      */
-    public function createPaymentIntent(Donation $donation): void
+    public function createAndAssociatePaymentIntent(Donation $donation): void
     {
         Assertion::same($donation->getPsp(), 'stripe');
 

@@ -22,6 +22,7 @@ use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
+use Stripe\ConfirmationToken;
 use Stripe\Exception\ApiErrorException as StripeApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
@@ -196,7 +197,9 @@ readonly class RegularGivingService
 
         try {
             if ($confirmationTokenId) {
-                $this->donationService->confirmOnSessionDonation($firstDonation, $confirmationTokenId);
+                // The client should be setting every RG card to off_session so we don't need to compare the token's
+                // `setup_future_usage` for the 3rd arg here.
+                $this->donationService->confirmOnSessionDonation($firstDonation, $confirmationTokenId, ConfirmationToken::SETUP_FUTURE_USAGE_OFF_SESSION);
             } else {
                 \assert($donorsSavedPaymentMethod !== null);
                 // @todo-regular-giving - consider if we need to switch to sync confirmation that doesn't rely on a callback
