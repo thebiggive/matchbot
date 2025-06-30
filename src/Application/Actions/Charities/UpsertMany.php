@@ -67,7 +67,7 @@ class UpsertMany extends Action
             $charitySfId = Salesforce18Id::ofCharity($charityData['id']);
             $this->upsertCharity($charityData, $charitySfId);
         }
-        
+
         return new JsonResponse([], 200);
     }
 
