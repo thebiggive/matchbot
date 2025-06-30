@@ -23,10 +23,12 @@ readonly class Money implements \JsonSerializable, \Stringable
         #[Column(length: 3)]
         public Currency $currency
     ) {
+        // Almost 10 trillion £ is well Over the Max. fund value we use in regtest Salesforce sandboxes - these have very high sums of fictional money to allow continous automated donations for a long time.
+        // other envs of course don't use use sums anywhere near this big.
         Assertion::between(
             $this->amountInPence,
             0,
-            9_999_999_999_00, // Max. fund value we use in Salesforce sandboxes
+            9_999_999_999_999_00,
         );
     }
 

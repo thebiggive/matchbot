@@ -85,9 +85,19 @@ class Search extends Action
             term: $term,
         );
 
-        // TODO performant summaries – most notably `amountRaised` and `matchFundsRemaining` should
-        // come from future stats table.
-        $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaigns);
+        /**
+         * @todo Performant summaries – most notably `amountRaised` and `matchFundsRemaining` should
+         * come from stats table.
+         * Some campaigns have SF data {} when they were last synced before we saved full SF data. If we try
+         * to render those there are missing array keys for beneficiaries et al.
+         * @psalm-suppress RedundantCondition For charity only empty SF data; we'll soon load all campaign data.
+         */
+        $campaignsWithSfData = array_filter($campaigns, static function ($campaign) {
+            $coreCampaignData = $campaign->getSalesforceData();
+            unset($coreCampaignData['charity']);
+            return $coreCampaignData !== [];
+        });
+        $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData);
 
         return new JsonResponse($campaignSummaries, 200);
     }
