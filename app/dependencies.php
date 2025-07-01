@@ -554,7 +554,8 @@ return function (ContainerBuilder $containerBuilder) {
             function (ContainerInterface $c) {
                 return new Auth\SalesforceAuthMiddleware(
                     sfApiKey: $c->get(Settings::class)->salesforce['apiKey'],
-                    logger: $c->get(LoggerInterface::class)
+                    logger: $c->get(LoggerInterface::class),
+                    clock: $c->get(ClockInterface::class),
                 );
             },
 
