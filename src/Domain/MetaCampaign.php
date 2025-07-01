@@ -25,6 +25,7 @@ use Psr\Http\Message\UriInterface;
 #[ORM\Index(name: 'hidden', columns: ['hidden'])]
 class MetaCampaign extends SalesforceReadProxy
 {
+    public const string STATUS_VIEW_CAMPAIGN = 'View campaign';
     #[ORM\Column(length: 64, unique: true, nullable: false)]
     private string $slug;
 
@@ -34,8 +35,18 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Column()]
     private Currency $currency;
 
+    /**
+     * @var string|null Copy of Campaign_Status__c in Salesforce
+     */
     #[ORM\Column(nullable: true)]
     private ?string $status;
+
+
+    /**
+     * @var string|null Copy of Master_Campaign_Status__c in Salesforce
+     */
+    #[ORM\Column(nullable: true)]
+    private ?string $masterCampaignStatus;
 
     #[ORM\Column()]
     private bool $hidden;
@@ -108,6 +119,7 @@ class MetaCampaign extends SalesforceReadProxy
         string $title,
         Currency $currency,
         string $status,
+        string $masterCampaignStatus,
         bool $hidden,
         ?string $summary,
         ?UriInterface $bannerURI,
@@ -126,6 +138,7 @@ class MetaCampaign extends SalesforceReadProxy
         $this->title = $title;
         $this->currency = $currency;
         $this->status = $status;
+        $this->masterCampaignStatus = $masterCampaignStatus;
         $this->hidden = $hidden;
         $this->summary = $summary;
         $this->bannerURI = $bannerURI?->__toString();
@@ -156,6 +169,7 @@ class MetaCampaign extends SalesforceReadProxy
             title: '',
             currency: Currency::GBP,
             status: '',
+            masterCampaignStatus: '',
             hidden: false,
             summary: '',
             bannerURI: null,
@@ -190,7 +204,8 @@ class MetaCampaign extends SalesforceReadProxy
         $title = $data['title'];
 
         // status may be null for now.
-        $status = $data['status'];
+        $status = $data['campaignStatus'] ?? null;
+        $masterCampaignStatus = $data['masterCampaignStatus'] ?? null;
 
         Assertion::notNull($startDate);
         Assertion::notNull($endDate);
@@ -202,6 +217,7 @@ class MetaCampaign extends SalesforceReadProxy
         Assertion::numeric($totalAdjustment);
 
         $this->status = $status;
+        $this->masterCampaignStatus = $masterCampaignStatus;
         $this->bannerURI = \is_string($bannerUri) ? (new Uri($bannerUri))->__toString() : null;
         $this->isRegularGiving = $isRegularGiving;
         $this->title = $title;
@@ -247,9 +263,21 @@ class MetaCampaign extends SalesforceReadProxy
         return $this->currency;
     }
 
-    public function getStatus(): ?string
+    public function getStatusAt(\DateTimeImmutable $date): ?string
     {
-        return $this->status;
+        if ($this->masterCampaignStatus !== self::STATUS_VIEW_CAMPAIGN) {
+            return $this->status;
+        }
+
+        if ($date < $this->startDate) {
+            return 'Preview';
+        }
+
+        if ($date > $this->endDate) {
+            return 'Expired';
+        }
+
+        return 'Active';
     }
 
     public function isHidden(): bool

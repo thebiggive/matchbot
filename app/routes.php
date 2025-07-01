@@ -77,6 +77,12 @@ return function (App $app) {
             \MatchBot\Application\Actions\Charities\Put::class
         )->add(SalesforceAuthMiddleware::class);
 
+
+        $versionGroup->post(
+            '/charities/upsert-many',
+            \MatchBot\Application\Actions\Charities\UpsertMany::class
+        )->add(SalesforceAuthMiddleware::class);
+
         $versionGroup->get(
             '/charities/{charitySalesforceId:[a-zA-Z0-9]{18}}/campaigns',
             \MatchBot\Application\Actions\Campaigns\GetSummariesForCharity::class
