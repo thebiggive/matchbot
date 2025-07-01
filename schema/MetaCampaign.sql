@@ -26,6 +26,7 @@ CREATE TABLE `MetaCampaign` (
   `imf_campaign_target_override_currency` varchar(3) NOT NULL,
   `match_funds_total_amountInPence` int NOT NULL,
   `match_funds_total_currency` varchar(3) NOT NULL,
+  `masterCampaignStatus` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_C36155EC989D9B62` (`slug`),
   UNIQUE KEY `UNIQ_C36155ECD8961D21` (`salesforceId`),
