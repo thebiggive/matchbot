@@ -41,11 +41,6 @@ class UpsertMany extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        // not yet ready for use in prod
-        if (Environment::current()->isProduction()) {
-            throw new HttpNotFoundException($request);
-        }
-
         try {
             $requestBody = json_decode(
                 $request->getBody()->getContents(),
