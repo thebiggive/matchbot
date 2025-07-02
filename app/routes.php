@@ -77,6 +77,11 @@ return function (App $app) {
             \MatchBot\Application\Actions\Charities\Put::class
         )->add(SalesforceAuthMiddleware::class);
 
+        $versionGroup->post(
+            '/campaigns/upsert-many',
+            \MatchBot\Application\Actions\Campaigns\UpsertMany::class
+        )->add(SalesforceAuthMiddleware::class);
+
 
         $versionGroup->post(
             '/charities/upsert-many',

@@ -39,7 +39,9 @@ class CampaignRenderCompatibilityChecker
         'imfCampaignTargetOverride',
         'totalFundingAllocation',
         'amountPledged',
-        'totalMatchedFundsAvailable'
+        'totalMatchedFundsAvailable',
+        'masterCampaignStatus', // sent by SF just to allow matchbot to calculate status of a metacampaign at output time
+        'campaignStatus', // sent by SF just to allow matchbot to calculate status of a metacampaign at output time
     ];
 
     /**
