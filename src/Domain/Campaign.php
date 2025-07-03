@@ -22,6 +22,8 @@ use MatchBot\Client\Campaign as CampaignClient;
 #[ORM\Table]
 #[ORM\Index(name: 'end_date_and_is_matched', columns: ['endDate', 'isMatched'])]
 #[ORM\Index(name: 'metaCampaignSlug', columns: ['metaCampaignSlug'])]
+#[ORM\Index(name: 'relatedApplicationStatus', columns: ['relatedApplicationStatus'])]
+#[ORM\Index(name: 'relatedApplicationCharityResponseToOffer', columns: ['relatedApplicationCharityResponseToOffer'])]
 #[ORM\Entity(repositoryClass: CampaignRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class Campaign extends SalesforceReadProxy
@@ -49,8 +51,7 @@ class Campaign extends SalesforceReadProxy
     protected string $currencyCode;
 
     /**
-     * Status as sent from SF API. Not currently used in matchbot but here for ad-hoc DB queries and
-     * possible future use.
+     * Status as sent from SF API.
      *
      * Consider converting to enum or value object before using in any logic.
      *
@@ -60,6 +61,15 @@ class Campaign extends SalesforceReadProxy
      */
     #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
     private ?string $status = null; // @phpstan-ignore doctrine.columnType
+
+
+    /** @var 'Register Interest'|'InProgress'|'Submitted'|'Approved'|'Rejected'|'Pending Approval'|'Missed Deadline'|null */
+    #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
+    private ?string $relatedApplicationStatus; // @phpstan-ignore doctrine.columnType
+
+    /** @var 'Accepted'|'Rejected'|null */
+    #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
+    private ?string $relatedApplicationCharityResponseToOffer; // @phpstan-ignore doctrine.columnType
 
     /**
      * @var string
@@ -165,6 +175,8 @@ class Campaign extends SalesforceReadProxy
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
      * @param 'Active'|'Expired'|'Preview'|null $status
      * @param bool $isRegularGiving
+     * @param 'Register Interest'|'InProgress'|'Submitted'|'Approved'|'Rejected'|'Pending Approval'|'Missed Deadline'|null $relatedApplicationStatus
+     * @param 'Accepted'|'Rejected'|null $relatedApplicationCharityResponseToOffer
      * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
      * */
     public function __construct(
@@ -181,6 +193,8 @@ class Campaign extends SalesforceReadProxy
         Money $totalFundingAllocation,
         Money $amountPledged,
         bool $isRegularGiving,
+        ?string $relatedApplicationStatus,
+        ?string $relatedApplicationCharityResponseToOffer,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         Money $totalFundraisingTarget,
         ?string $thankYouMessage = null,
@@ -195,6 +209,8 @@ class Campaign extends SalesforceReadProxy
         $this->updateFromSfPull(
             currencyCode: $currencyCode,
             status: $status,
+            relatedApplicationStatus: $relatedApplicationStatus,
+            relatedApplicationCharityResponseToOffer: $relatedApplicationCharityResponseToOffer,
             endDate: $endDate,
             isMatched: $isMatched,
             name: $name,
@@ -266,11 +282,13 @@ class Campaign extends SalesforceReadProxy
             totalFundingAllocation: Money::fromPence((int)(100.0 * ($campaignData['totalFundingAllocation'] ?? 0.0)), $currency),
             amountPledged: Money::fromPence((int)(100.0 * ($campaignData['amountPledged'] ?? 0.0)), $currency),
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
+            relatedApplicationStatus: $campaignData['relatedApplicationStatus'] ?? null,
+            relatedApplicationCharityResponseToOffer: $campaignData['relatedApplicationCharityResponseToOffer'] ?? null,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
+            totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
             thankYouMessage: $campaignData['thankYouMessage'],
             rawData: $campaignData,
             hidden: $campaignData['hidden'],
-            totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
         );
     }
 
@@ -424,12 +442,16 @@ class Campaign extends SalesforceReadProxy
 
     /**
      * @param Money $totalFundraisingTarget
-     * @param array<string,mixed> $sfData
      * @param 'Active'|'Expired'|'Preview'|null $status
+     * @param 'Register Interest'|'InProgress'|'Submitted'|'Approved'|'Rejected'|'Pending Approval'|'Missed Deadline'|null $relatedApplicationStatus
+     * @param 'Accepted'|'Rejected'|null $relatedApplicationCharityResponseToOffer
+     * @param array<string,mixed> $sfData
      */
     final public function updateFromSfPull(
         string $currencyCode,
         ?string $status,
+        ?string $relatedApplicationStatus,
+        ?string $relatedApplicationCharityResponseToOffer,
         \DateTimeInterface $endDate,
         bool $isMatched,
         string $name,
@@ -485,6 +507,8 @@ class Campaign extends SalesforceReadProxy
         $this->totalFundingAllocation = $totalFundingAllocation;
         $this->amountPledged = $amountPledged;
         $this->totalFundraisingTarget = $totalFundraisingTarget;
+        $this->relatedApplicationStatus = $relatedApplicationStatus;
+        $this->relatedApplicationCharityResponseToOffer = $relatedApplicationCharityResponseToOffer;
 
         unset($sfData['charity']); // charity stores its own data, we don't need to keep a copy here.
         $this->salesforceData = $sfData;

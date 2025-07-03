@@ -46,6 +46,8 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     ready: bool,
  *     startDate: ?string,
  *     status: 'Active'|'Expired'|'Preview'|null,
+ *     relatedApplicationStatus?: 'Register Interest'|'InProgress'|'Submitted'|'Approved'|'Rejected'|'Pending Approval'|'Missed Deadline'|null,
+ *     relatedApplicationCharityResponseToOffer?: 'Accepted'|'Rejected'|null,
  *     title: ?string,
 *      currencyCode: string,
  *     isRegularGiving?: boolean,

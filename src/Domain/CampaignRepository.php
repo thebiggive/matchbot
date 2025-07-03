@@ -390,6 +390,28 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return $result;
     }
 
+    public function countCampaignsInMetaCampaign(MetaCampaign $metaCampaign): int
+    {
+        // query copied from SOQL query in Salesforce function CampaignService.campaignSfToApi
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT COUNT(c.id)
+            FROM MatchBot\Domain\Campaign c
+            WHERE c.metaCampaignSlug = :slug
+            AND c.status IN ('Active', 'Preview', 'Expired')
+            AND c.relatedApplicationStatus = 'Approved'
+            AND c.relatedApplicationCharityResponseToOffer = 'Accepted'
+        DQL
+        );
+
+        $query->setParameter('slug', $metaCampaign->getSlug()->slug);
+
+        $count = (int)$query->getSingleScalarResult();
+
+        \assert($count >= 0);
+
+        return $count;
+    }
+
     /**
      * @param Campaign $campaign
      * @param  SFCampaignApiResponse $campaignData
@@ -431,6 +453,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign->updateFromSfPull(
             currencyCode: $currency->isoCode(),
             status: $campaignData['status'],
+            relatedApplicationStatus: $campaignData['relatedApplicationStatus'] ?? null,
+            relatedApplicationCharityResponseToOffer: $campaignData['relatedApplicationCharityResponseToOffer'] ?? null,
             endDate: new DateTime($endDateString),
             isMatched: $campaignData['isMatched'],
             name: $title,
