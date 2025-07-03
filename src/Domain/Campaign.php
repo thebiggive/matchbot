@@ -30,6 +30,9 @@ class Campaign extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
+    public final const array APPLICATION_STATUSES = ['Register Interest','InProgress','Submitted','Approved','Rejected','Pending Approval','Missed Deadline'];
+    public final const array CHARITY_RESPONSES_TO_OFFER = ['Accepted', 'Rejected'];
+
     /**
      * @var Charity
      */
@@ -63,11 +66,11 @@ class Campaign extends SalesforceReadProxy
     private ?string $status = null; // @phpstan-ignore doctrine.columnType
 
 
-    /** @var 'Register Interest'|'InProgress'|'Submitted'|'Approved'|'Rejected'|'Pending Approval'|'Missed Deadline'|null */
+    /** @var value-of<self::APPLICATION_STATUSES>|null */
     #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
     private ?string $relatedApplicationStatus; // @phpstan-ignore doctrine.columnType
 
-    /** @var 'Accepted'|'Rejected'|null */
+    /** @var value-of<self::CHARITY_RESPONSES_TO_OFFER>|null */
     #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
     private ?string $relatedApplicationCharityResponseToOffer; // @phpstan-ignore doctrine.columnType
 
@@ -175,8 +178,8 @@ class Campaign extends SalesforceReadProxy
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
      * @param 'Active'|'Expired'|'Preview'|null $status
      * @param bool $isRegularGiving
-     * @param 'Register Interest'|'InProgress'|'Submitted'|'Approved'|'Rejected'|'Pending Approval'|'Missed Deadline'|null $relatedApplicationStatus
-     * @param 'Accepted'|'Rejected'|null $relatedApplicationCharityResponseToOffer
+     * @param value-of<self::APPLICATION_STATUSES>|null $relatedApplicationStatus,
+     * @param value-of<self::CHARITY_RESPONSES_TO_OFFER>|null $relatedApplicationCharityResponseToOffer
      * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
      * */
     public function __construct(
@@ -443,8 +446,8 @@ class Campaign extends SalesforceReadProxy
     /**
      * @param Money $totalFundraisingTarget
      * @param 'Active'|'Expired'|'Preview'|null $status
-     * @param 'Register Interest'|'InProgress'|'Submitted'|'Approved'|'Rejected'|'Pending Approval'|'Missed Deadline'|null $relatedApplicationStatus
-     * @param 'Accepted'|'Rejected'|null $relatedApplicationCharityResponseToOffer
+     * @param value-of<self::APPLICATION_STATUSES>|null $relatedApplicationStatus
+     * @param value-of<self::CHARITY_RESPONSES_TO_OFFER>|null $relatedApplicationCharityResponseToOffer
      * @param array<string,mixed> $sfData
      */
     final public function updateFromSfPull(
@@ -479,6 +482,9 @@ class Campaign extends SalesforceReadProxy
         Assertion::nullOrMaxLength($thankYouMessage, 500);
         Assertion::nullOrBetweenLength($metaCampaignSlug, 1, 64);
         Assertion::nullOrRegex($metaCampaignSlug, '/^[-A-Za-z0-9]+$/');
+
+        Assertion::nullOrInArray($relatedApplicationStatus, self::APPLICATION_STATUSES);
+        Assertion::nullOrInArray($relatedApplicationCharityResponseToOffer, self::CHARITY_RESPONSES_TO_OFFER);
 
         if ($metaCampaignSlug !== null && \str_starts_with($metaCampaignSlug, 'a05')) {
             // needed because SF may send an ID if slug is not filled in - we don't want that in the matchbot DB.
