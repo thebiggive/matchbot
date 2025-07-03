@@ -47,8 +47,6 @@ return static function (ContainerBuilder $containerBuilder) {
             return $repo;
         },
 
-        CampaignStatisticsRepository::class => static fn(ContainerInterface $c): CampaignStatisticsRepository => new CampaignStatisticsRepository($c->get(EntityManagerInterface::class)),
-
         CharityRepository::class => static function (ContainerInterface $c): CharityRepository {
             $repository = $c->get(EntityManagerInterface::class)->getRepository(Charity::class);
             \assert($repository instanceof CharityRepository);

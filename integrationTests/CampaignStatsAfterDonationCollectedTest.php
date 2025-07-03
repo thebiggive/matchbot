@@ -80,6 +80,8 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
             thankYouMessage: null,
             rawData: [],
