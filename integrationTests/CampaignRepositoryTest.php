@@ -35,11 +35,13 @@ class CampaignRepositoryTest extends IntegrationTest
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,
             rawData: [],
-            hidden: false,
-            totalFundraisingTarget: Money::zero(),
+            hidden: false
         );
 
 
@@ -86,6 +88,8 @@ class CampaignRepositoryTest extends IntegrationTest
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
             thankYouMessage: null,
             rawData: [],
@@ -128,14 +132,16 @@ class CampaignRepositoryTest extends IntegrationTest
             status: null,
             name: 'Campaign One',
             currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
             isRegularGiving: false,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,
             rawData: [],
             hidden: false,
-            totalFundingAllocation: Money::zero(),
-            totalFundraisingTarget: Money::zero(),
-            amountPledged: Money::zero(),
         );
 
         $campaign2 = new Campaign(
@@ -149,8 +155,13 @@ class CampaignRepositoryTest extends IntegrationTest
             status: 'Active',
             name: 'Campaign Two is for Porridge and Juice',
             currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
             isRegularGiving: false,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,
             rawData: [
                 'beneficiaries' => ['Lads', 'Dads'],
@@ -160,9 +171,6 @@ class CampaignRepositoryTest extends IntegrationTest
                 'title' => 'Campaign Two is for Porridge and Juice',
             ],
             hidden: false,
-            totalFundingAllocation: Money::zero(),
-            totalFundraisingTarget: Money::zero(),
-            amountPledged: Money::zero(),
         );
 
         $em = $this->getService(EntityManagerInterface::class);

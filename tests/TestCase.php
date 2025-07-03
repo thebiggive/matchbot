@@ -430,11 +430,13 @@ class TestCase extends PHPUnitTestCase
             totalFundingAllocation: $totalFundingAllocation ?? Money::zero(),
             amountPledged: $amountPledged ?? Money::zero(),
             isRegularGiving: $isRegularGiving,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
+            totalFundraisingTarget: $totalFundraisingTarget ?? Money::zero(),
             thankYouMessage: $thankYouMessage,
             rawData: self::CAMPAIGN_FROM_SALESOFRCE,
             hidden: false,
-            totalFundraisingTarget: $totalFundraisingTarget ?? Money::zero(),
         );
     }
 

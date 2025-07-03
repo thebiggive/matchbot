@@ -170,11 +170,13 @@ trait DonationTestDataTrait
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,
             rawData: [],
             hidden: false,
-            totalFundraisingTarget: Money::zero(),
         );
 
         $donation = TestCase::someDonation(amount: '124.56');
