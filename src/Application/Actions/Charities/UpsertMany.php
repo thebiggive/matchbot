@@ -26,7 +26,7 @@ use Symfony\Component\Clock\Clock;
 /**
  * @psalm-import-type SFCharityApiResponse from \MatchBot\Client\Campaign
  */
-class Put extends Action
+class UpsertMany extends Action
 {
     #[Pure]
     public function __construct(
@@ -53,26 +53,24 @@ class Put extends Action
         }
         \assert(\is_array($requestBody));
 
-        if (!isset($requestBody['charity']) || !is_array($requestBody['charity'])) {
+        if (!isset($requestBody['charities']) || !is_array($requestBody['charities'])) {
             throw new HttpBadRequestException($request, 'Missing or invalid charity data');
         }
 
         /** @var SFCharityApiResponse $charityData */
-        $charityData = $requestBody['charity'];
+        foreach ($requestBody['charities'] as $charityData) {
+            $charitySfId = Salesforce18Id::ofCharity($charityData['id']);
+            $this->upsertCharity($charityData, $charitySfId);
+        }
 
-        /** @var Salesforce18Id<Charity> $charitySfId */
-        $charitySfId = Salesforce18Id::of($charityData['id']);
-
-        Assertion::eq($charityData['id'], $args['salesforceId']);
-
-        return $this->upsertCharity($charityData, $charitySfId);
+        return new JsonResponse([], 200);
     }
 
     /**
      * @param SFCharityApiResponse $charityData
      * @param Salesforce18Id<Charity> $charitySfId
      */
-    public function upsertCharity(array $charityData, Salesforce18Id $charitySfId): JsonResponse
+    public function upsertCharity(array $charityData, Salesforce18Id $charitySfId): void
     {
         // Extract data
         $name = $charityData['name'];
@@ -136,8 +134,6 @@ class Put extends Action
         }
 
         $this->entityManager->flush();
-
-        return new JsonResponse([], 200);
     }
 
     /**

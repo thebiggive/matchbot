@@ -46,6 +46,8 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     ready: bool,
  *     startDate: ?string,
  *     status: 'Active'|'Expired'|'Preview'|null,
+ *     relatedApplicationStatus?: value-of<\MatchBot\Domain\Campaign::APPLICATION_STATUSES>|null,
+ *     relatedApplicationCharityResponseToOffer?: value-of<\MatchBot\Domain\Campaign::CHARITY_RESPONSES_TO_OFFER>|null,
  *     title: ?string,
 *      currencyCode: string,
  *     isRegularGiving?: boolean,
@@ -96,6 +98,8 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     amountPledged?: float,
  *     totalMatchedFundsAvailable?: float,
  *     totalFundraisingTarget?: float,
+ *     masterCampaignStatus?: string,
+ *     campaignStatus?: string,
  *     }
  */
 
@@ -136,7 +140,7 @@ class Campaign extends Common
      */
     public function getBySlug(MetaCampaignSlug $slug): array
     {
-        $uri = $this->getUri("{$this->baseUriCached()}/slug/$slug->slug", false);
+        $uri = $this->getUri("{$this->baseUriCached()}/slug/$slug->slug", true);
         try {
             $response = $this->getHttpClient()->get($uri);
         } catch (RequestException $exception) {

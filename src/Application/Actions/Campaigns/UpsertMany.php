@@ -27,10 +27,8 @@ use MatchBot\Client;
 
 /**
  * @psalm-import-type SFCampaignApiResponse from Client\Campaign
- *
- * TODO:: Can be deleted later as we already created a {@see \MatchBot\Application\Actions\Campaigns\UpsertMany} POST method to accept multiple campaigns from SF.
  */
-class Put extends Action
+class UpsertMany extends Action
 {
     #[Pure]
     public function __construct(
@@ -66,33 +64,36 @@ class Put extends Action
         }
         \assert(\is_array($requestBody));
 
-        /** @var SFCampaignApiResponse $campaignData */
-        $campaignData = $requestBody['campaign'];
+        /** @var list<SFCampaignApiResponse> $multiCampaignData */
+        $multiCampaignData = $requestBody['campaigns'];
 
-        /** @var Salesforce18Id<Campaign|MetaCampaign> $campaignSfId */
-        $campaignSfId = Salesforce18Id::of(
-            $campaignData['id'] ?? throw new HttpNotFoundException($request)
-        );
+        foreach ($multiCampaignData as $campaignData) {
+            /** @var Salesforce18Id<Campaign|MetaCampaign> $campaignSfId */
+            $campaignSfId = Salesforce18Id::of(
+                $campaignData['id'] ?? throw new HttpBadRequestException($request)
+            );
 
+            $isMetaCampaign = $campaignData['x_isMetaCampaign'];
 
-        Assertion::eq($campaignData['id'], $args['salesforceId']);
-
-        $isMetaCampaign = $campaignData['x_isMetaCampaign'];
-
-        if ($isMetaCampaign) {
-            /** @var Salesforce18Id<MetaCampaign> $campaignSfId */
-            return $this->upsertMetaCampaign($request, $campaignData, $campaignSfId);
-        } else {
-            /** @var Salesforce18Id<Campaign> $campaignSfId */
-            return $this->upsertCharityCampaign($campaignData, $campaignSfId);
+            if ($isMetaCampaign) {
+                /** @var Salesforce18Id<MetaCampaign> $campaignSfId */
+                $this->upsertMetaCampaign($request, $campaignData, $campaignSfId);
+            } else {
+                /** @var Salesforce18Id<Campaign> $campaignSfId */
+                $this->upsertCharityCampaign($campaignData, $campaignSfId);
+            }
         }
+
+        $this->entityManager->flush();
+
+        return new JsonResponse([], 200);
     }
 
     /**
      * @param SFCampaignApiResponse $campaignData
      * @param Salesforce18Id<Campaign> $campaignSfId
      */
-    public function upsertCharityCampaign(array $campaignData, Salesforce18Id $campaignSfId): JsonResponse
+    public function upsertCharityCampaign(array $campaignData, Salesforce18Id $campaignSfId): void
     {
         $charityData = $campaignData['charity'];
         Assertion::notNull($charityData, 'Charity data must not be null');
@@ -119,10 +120,6 @@ class Put extends Action
             $this->campaignRepository->updateCampaignFromSFData($campaign, $campaignData);
             $this->logger->info("updating campaign {$campaign->getId()} from SF: {$charity->getName()} {$charity->getSalesforceId()}");
         }
-
-        $this->entityManager->flush();
-
-        return new JsonResponse([], 200);
     }
 
 
@@ -130,7 +127,7 @@ class Put extends Action
      * @param SFCampaignApiResponse $campaignData
      * @param Salesforce18Id<MetaCampaign> $campaignSfId
      */
-    public function upsertMetaCampaign(Request $request, array $campaignData, Salesforce18Id $campaignSfId): JsonResponse
+    public function upsertMetaCampaign(Request $request, array $campaignData, Salesforce18Id $campaignSfId): void
     {
         $metaCampaign = $this->metaCampaignRepository->findOneBySalesforceId($campaignSfId);
         $slug = MetaCampaignSlug::of(
@@ -145,9 +142,5 @@ class Put extends Action
             $metaCampaign->updateFromSfData($campaignData);
             $this->logger->info("updating meta campaign {$metaCampaign->getId()} from SF: {$metaCampaign->getTitle()} {$metaCampaign->getSalesforceId()}");
         }
-
-        $this->entityManager->flush();
-
-        return new JsonResponse([], 200);
     }
 }

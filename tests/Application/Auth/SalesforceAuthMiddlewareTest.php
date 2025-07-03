@@ -13,6 +13,9 @@ use Slim\CallableResolver;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Response;
 use Slim\Routing\Route;
+use Symfony\Component\Clock\Clock;
+use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Clock\MockClock;
 
 /**
  * Based on \Mailer\Tests\Application\Auth\SendAuthMiddlewareTest
@@ -53,6 +56,37 @@ class SalesforceAuthMiddlewareTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
     }
 
+
+    public function testTwoMinuteStaleMessageAccepted(): void
+    {
+        $messageCreationTime = new \DateTimeImmutable('2025-01-01T00:00:00');
+        $timestamp = $messageCreationTime->getTimestamp();
+        $body = "{\"timestamp\": $timestamp}";
+        $hash = hash_hmac('sha256', $body, self::API_KEY);
+
+        $request = $this->buildRequest($body, $hash);
+        $response = $this->getInstance(
+            clock: new MockClock($messageCreationTime->modify('+2 minute'))
+        )->process($request, $this->getSuccessHandler());
+
+        $this->assertSame(200, $response->getStatusCode());
+    }
+
+    public function testThreeMinuteStaleMessageRejected(): void
+    {
+        $messageCreationTime = new \DateTimeImmutable('2025-01-01T00:00:00');
+        $timestamp = $messageCreationTime->getTimestamp();
+        $body = "{\"timestamp\": $timestamp}";
+        $hash = hash_hmac('sha256', $body, self::API_KEY);
+
+        $request = $this->buildRequest($body, $hash);
+        $response = $this->getInstance(
+            clock: new MockClock($messageCreationTime->modify('+3 minute'))
+        )->process($request, $this->getSuccessHandler());
+
+        $this->assertSame(401, $response->getStatusCode());
+    }
+
     private function buildRequest(string $body, ?string $hash = null): ServerRequestInterface
     {
         $headers = $hash !== null ? [SalesforceAuthMiddleware::HEADER_NAME => $hash] : [];
@@ -80,8 +114,12 @@ class SalesforceAuthMiddlewareTest extends TestCase
         );
     }
 
-    private function getInstance(): SalesforceAuthMiddleware
+    private function getInstance(?ClockInterface $clock = null): SalesforceAuthMiddleware
     {
-        return new SalesforceAuthMiddleware(self::API_KEY, new NullLogger());
+        return new SalesforceAuthMiddleware(
+            self::API_KEY,
+            new NullLogger(),
+            $clock ?? new MockClock('1970-01-01T00:00:00')
+        );
     }
 }

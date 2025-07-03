@@ -15,7 +15,7 @@ readonly class MetaCampaign
         public string $id,
         public string $title,
         public string $currencyCode,
-        public string $status,
+        public ?string $status,
         public bool $hidden,
         public bool $ready,
         public ?string $summary,
@@ -26,6 +26,7 @@ readonly class MetaCampaign
         public string $startDate,
         public string $endDate,
         public float $matchFundsTotal,
+        /** Approved participating campaign count*/
         public int $campaignCount,
         public bool $usesSharedFunds,
     ) {

@@ -22,17 +22,14 @@ use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Tests\TestCase;
-use PhpParser\Node\Arg;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\UuidInterface;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Psr7\Response;
 use Stripe\ConfirmationToken;
-use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
@@ -47,6 +44,7 @@ use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 class ConfirmTest extends TestCase
 {
+    public const string PAYMENT_INTENT_ID = 'pi_PAYMENTINTENTID';
     public const string PAYMENT_METHOD_ID = 'pm_PAYMENTMETHODID';
     public const string CONFIRMATION_TOKEN_ID = 'ctoken_CONFIRMATIONTOKENID';
 
@@ -59,6 +57,15 @@ class ConfirmTest extends TestCase
     /** @var ObjectProphecy<EntityManagerInterface>  */
     private ObjectProphecy $entityManagerProphecy;
     private \Ramsey\Uuid\UuidInterface $donationId;
+
+    private const array TYPICAL_METADATA_UPDATE = [
+        "metadata" => [
+            "stripeFeeRechargeGross" => "2.66",
+            "stripeFeeRechargeNet" => "2.22",
+            "stripeFeeRechargeVat" => "0.44",
+        ],
+        "application_fee_amount" => 266,
+    ];
 
     #[\Override]
     protected function setUp(): void
@@ -109,15 +116,8 @@ class ConfirmTest extends TestCase
                 'status' => 'requires_action',
                 'client_secret' => 'some_client_secret',
             ],
-            paymentIntentId: 'PAYMENT_INTENT_ID',
-            expectedMetadataUpdate: [
-                "metadata" => [
-                    "stripeFeeRechargeGross" => '2.66',
-                    "stripeFeeRechargeNet" => "2.22",
-                    "stripeFeeRechargeVat" => "0.44",
-                ],
-                "application_fee_amount" => 266,
-            ],
+            paymentIntentId: self::PAYMENT_INTENT_ID,
+            expectedMetadataUpdate: self::TYPICAL_METADATA_UPDATE,
             confirmFailsWithCardError: false,
             confirmFailsWithApiError: false,
             confirmFailsWithPaymentMethodUsedError: false,
@@ -130,7 +130,7 @@ class ConfirmTest extends TestCase
         $this->entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         // act
-        $response = $this->callConfirm($this->sut);
+        $response = $this->callConfirm(sut: $this->sut, futureUsage: PaymentIntent::SETUP_FUTURE_USAGE_ON_SESSION);
 
         // assert
 
@@ -151,7 +151,7 @@ class ConfirmTest extends TestCase
                 'status' => 'requires_action',
                 'client_secret' => 'some_client_secret',
             ],
-            paymentIntentId: 'PAYMENT_INTENT_ID',
+            paymentIntentId: self::PAYMENT_INTENT_ID,
             // £63 donation incurs a fee of 20p + (1.5% == 0.945) == £1.15 (rounded), net.
             expectedMetadataUpdate: [
                 "metadata" => [
@@ -173,7 +173,7 @@ class ConfirmTest extends TestCase
         $this->entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         // act
-        $response = $this->callConfirm($this->sut);
+        $response = $this->callConfirm(sut: $this->sut, futureUsage: PaymentIntent::SETUP_FUTURE_USAGE_ON_SESSION);
 
         // assert
         $this->assertSame(200, $response->getStatusCode());
@@ -187,10 +187,7 @@ class ConfirmTest extends TestCase
     {
         // arrange
         $newCharityFee = '42.00';
-        $this->successReadyFakeStripeClient(
-            amountInWholeUnits: $newCharityFee,
-            confirmCallExpected: false,
-        );
+        $this->successReadyFakeStripeClient(amountInWholeUnits: $newCharityFee);
         $this->donationIsCancelled = true;
 
         // assert
@@ -200,7 +197,7 @@ class ConfirmTest extends TestCase
         );
 
         // act
-        $this->callConfirm($this->sut);
+        $this->callConfirm(sut: $this->sut, futureUsage: null);
     }
 
     public function testItReturns402OnDecline(): void
@@ -214,15 +211,8 @@ class ConfirmTest extends TestCase
                 'status' => 'requires_payment_method',
                 'client_secret' => 'some_client_secret',
             ],
-            paymentIntentId: 'PAYMENT_INTENT_ID',
-            expectedMetadataUpdate: [
-                "metadata" => [
-                    "stripeFeeRechargeGross" => "2.66",
-                    "stripeFeeRechargeNet" => "2.22",
-                    "stripeFeeRechargeVat" => "0.44",
-                ],
-                "application_fee_amount" => 266,
-            ],
+            paymentIntentId: self::PAYMENT_INTENT_ID,
+            expectedMetadataUpdate: self::TYPICAL_METADATA_UPDATE,
             confirmFailsWithCardError: true,
             confirmFailsWithApiError: false,
             confirmFailsWithPaymentMethodUsedError: false,
@@ -231,7 +221,7 @@ class ConfirmTest extends TestCase
 
 
         // act
-        $response = $this->callConfirm($this->sut);
+        $response = $this->callConfirm(sut: $this->sut, futureUsage: PaymentIntent::SETUP_FUTURE_USAGE_ON_SESSION);
 
         // assert
 
@@ -256,15 +246,8 @@ class ConfirmTest extends TestCase
                 'status' => 'requires_payment_method',
                 'client_secret' => 'some_client_secret',
             ],
-            paymentIntentId: 'PAYMENT_INTENT_ID',
-            expectedMetadataUpdate: [
-                "metadata" => [
-                    "stripeFeeRechargeGross" => "2.66",
-                    "stripeFeeRechargeNet" => "2.22",
-                    "stripeFeeRechargeVat" => "0.44",
-                ],
-                "application_fee_amount" => 266,
-            ],
+            paymentIntentId: self::PAYMENT_INTENT_ID,
+            expectedMetadataUpdate: self::TYPICAL_METADATA_UPDATE,
             confirmFailsWithCardError: false,
             confirmFailsWithApiError: true,
             confirmFailsWithPaymentMethodUsedError: false,
@@ -272,7 +255,7 @@ class ConfirmTest extends TestCase
         );
 
         // act
-        $response = $this->callConfirm($this->sut);
+        $response = $this->callConfirm(sut: $this->sut, futureUsage: PaymentIntent::SETUP_FUTURE_USAGE_ON_SESSION);
 
         // assert
 
@@ -286,10 +269,8 @@ class ConfirmTest extends TestCase
         );
     }
 
-    private function successReadyFakeStripeClient(
-        string $amountInWholeUnits,
-        bool $confirmCallExpected
-    ): void {
+    public function testNewlyNullFutureUsageConfirmsViaNewPaymentIntent(): void
+    {
         $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'KI'],
             paymentMethodId: self::PAYMENT_METHOD_ID,
@@ -297,7 +278,43 @@ class ConfirmTest extends TestCase
                 'status' => 'requires_action',
                 'client_secret' => 'some_client_secret',
             ],
-            paymentIntentId: 'PAYMENT_INTENT_ID',
+            paymentIntentId: self::PAYMENT_INTENT_ID,
+            expectedMetadataUpdate: [
+                "metadata" => [
+                    "stripeFeeRechargeGross" => "2.66",
+                    "stripeFeeRechargeNet" => "2.22",
+                    "stripeFeeRechargeVat" => "0.44",
+                ],
+                "application_fee_amount" => 266,
+            ],
+            confirmFailsWithCardError: true,
+            confirmFailsWithApiError: false,
+            confirmFailsWithPaymentMethodUsedError: false,
+            updatePaymentIntentAndConfirmExpected: true,
+            paymentIntentRecreateExpected: true,
+            confirmationTokenId: self::CONFIRMATION_TOKEN_ID,
+        );
+
+        // Every PI starts off with future usage null until JS says otherwise via a Confirm,
+        // so the most realistic way to simulate a yes followed by a no is to confirm twice,
+        // first with 'on_session' and then with null.
+        $firstResponse = $this->callConfirm(sut: $this->sut, futureUsage: PaymentIntent::SETUP_FUTURE_USAGE_ON_SESSION); // Decline
+        $this->assertSame(402, $firstResponse->getStatusCode()); // 'Payment required'.
+
+        $secondResponse = $this->callConfirm(sut: $this->sut, futureUsage: null); // Re-create PI and decline
+        $this->assertSame(200, $secondResponse->getStatusCode()); // `$confirmationRetryWhichSucceeds` doesn't throw.
+    }
+
+    private function successReadyFakeStripeClient(string $amountInWholeUnits): void
+    {
+        $this->fakeStripeClient(
+            cardDetails: ['brand' => 'discover', 'country' => 'KI'],
+            paymentMethodId: self::PAYMENT_METHOD_ID,
+            updatedIntentData: [
+                'status' => 'requires_action',
+                'client_secret' => 'some_client_secret',
+            ],
+            paymentIntentId: self::PAYMENT_INTENT_ID,
             expectedMetadataUpdate: [
                 'metadata' => [
                     'stripeFeeRechargeGross' => $amountInWholeUnits,
@@ -309,7 +326,7 @@ class ConfirmTest extends TestCase
             confirmFailsWithCardError: false,
             confirmFailsWithApiError: false,
             confirmFailsWithPaymentMethodUsedError: false,
-            updatePaymentIntentAndConfirmExpected: $confirmCallExpected,
+            updatePaymentIntentAndConfirmExpected: false,
         );
     }
 
@@ -328,6 +345,7 @@ class ConfirmTest extends TestCase
         bool $confirmFailsWithApiError,
         bool $confirmFailsWithPaymentMethodUsedError,
         bool $updatePaymentIntentAndConfirmExpected = true,
+        bool $paymentIntentRecreateExpected = false,
         ?string $confirmationTokenId = null,
     ): void {
         $paymentMethod = new PaymentMethod(['id' => 'id-doesnt-matter-for-test']);
@@ -336,12 +354,22 @@ class ConfirmTest extends TestCase
         /** @psalm-suppress InvalidPropertyAssignmentValue */
         $paymentMethod->card = $cardDetails; //  @phpstan-ignore assign.propertyType
 
-        $updatedPaymentIntent = new PaymentIntent(['id' => 'id-doesnt-matter-for-test', ...$updatedIntentData]);
+        $updatedPaymentIntent = new PaymentIntent(['id' => self::PAYMENT_INTENT_ID, ...$updatedIntentData]);
         $updatedPaymentIntent->status = $updatedIntentData['status'];
         $updatedPaymentIntent->client_secret = $updatedIntentData['client_secret']; // here
+        $updatedPaymentIntent->setup_future_usage = PaymentIntent::SETUP_FUTURE_USAGE_ON_SESSION; // Simulate box checked in Donate on 1st attempt
 
         $this->stripeProphecy->retrievePaymentIntent($paymentIntentId)
             ->willReturn($updatedPaymentIntent);
+
+        if ($paymentIntentRecreateExpected) {
+            $newPaymentIntent = new PaymentIntent(['id' => 'pi_new-id-for-test', ...$updatedIntentData]);
+            // We would of course expect a new ID from real calls, but making this conditional
+            // should be enough to check we're re-creating PIs only if needed.
+            $this->stripeProphecy->createPaymentIntent(Argument::any())
+                ->shouldBeCalledOnce()
+                ->willReturn($newPaymentIntent);
+        }
 
         if (is_string($confirmationTokenId)) {
             $confirmationToken = new ConfirmationToken();
@@ -355,12 +383,14 @@ class ConfirmTest extends TestCase
             /** @psalm-suppress InvalidPropertyAssignmentValue */
             $confirmationToken->payment_method_preview['card'] = $cardDetails;
 
+            $confirmationToken->setup_future_usage = ConfirmationToken::SETUP_FUTURE_USAGE_ON_SESSION; // Simulate box checked in Donate on 1st attempt
+
             $this->stripeProphecy->retrieveConfirmationToken(StripeConfirmationTokenId::of($confirmationTokenId))
                 ->willReturn($confirmationToken);
         }
 
         if (!$updatePaymentIntentAndConfirmExpected) {
-            return; // $this->stripeProphecy;
+            return;
         }
 
         $this->stripeProphecy->updatePaymentIntent(
@@ -375,6 +405,14 @@ class ConfirmTest extends TestCase
                     "confirmation_token" => $confirmationTokenId,
                 ]
             )->willReturn($updatedPaymentIntent);
+
+            $confirmationRetryWhichSucceeds = $this->stripeProphecy->confirmPaymentIntent(
+                $paymentIntentRecreateExpected ? 'pi_new-id-for-test' : self::PAYMENT_INTENT_ID,
+                [
+                    "confirmation_token" => $confirmationTokenId,
+                ]
+            )->willReturn($updatedPaymentIntent);
+            $confirmationRetryWhichSucceeds->shouldBeCalled();
         } else {
             $confirmation = $this->stripeProphecy->confirmPaymentIntent(
                 $paymentIntentId,
@@ -446,7 +484,7 @@ class ConfirmTest extends TestCase
                     donorEmailAddress: EmailAddress::of('user@example.com'),
                 );
 
-                $donation->setTransactionId('PAYMENT_INTENT_ID');
+                $donation->setTransactionId(self::PAYMENT_INTENT_ID);
                 if ($testCase->donationIsCancelled) {
                     $donation->cancel();
                 }
@@ -457,14 +495,15 @@ class ConfirmTest extends TestCase
         return $donationRepositoryProphecy->reveal();
     }
 
-    private function callConfirm(Confirm $sut): ResponseInterface
+    private function callConfirm(Confirm $sut, ?string $futureUsage): ResponseInterface
     {
         return $sut(
             self::createRequest(
                 method: 'POST',
                 path: 'doesnt-matter-for-test',
                 bodyString: \json_encode([
-                    'stripeConfirmationTokenId' => self::CONFIRMATION_TOKEN_ID
+                    'stripeConfirmationTokenId' => self::CONFIRMATION_TOKEN_ID,
+                    'stripeConfirmationTokenFutureUsage' => $futureUsage,
                 ], \JSON_THROW_ON_ERROR)
             ),
             new Response(),

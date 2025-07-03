@@ -35,6 +35,15 @@ class CampaignRenderCompatibilityChecker
         'matchFundsTotal', // checking this fails because our campaign reconstructed from SF data doesn't have a numeric ID we can't find its funds.
         'totalAdjustment', // used for calculation in matchbot for metacampaigns, not output to FE by matchbot.
         'championName', // Diverging for SCW25 patched funders for now
+        'totalFundraisingTarget', // totalFundraisingTarget and the following four are all sent from SF to matchbot enable matchbot calculating campaign targets, not required by FE. See MAT-435
+        'imfCampaignTargetOverride',
+        'totalFundingAllocation',
+        'amountPledged',
+        'totalMatchedFundsAvailable',
+        'masterCampaignStatus', // sent by SF just to allow matchbot to calculate status of a metacampaign at output time
+        'campaignStatus', // sent by SF just to allow matchbot to calculate status of a metacampaign at output time
+        'relatedApplicationStatus', // sent by SF to allow matchbot to count campaigns etc, not needed in FE.
+        'relatedApplicationCharityResponseToOffer', // sent by SF to allow matchbot to count campaigns etc, not needed in FE.
     ];
 
     /**

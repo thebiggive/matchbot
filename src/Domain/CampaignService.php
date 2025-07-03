@@ -90,7 +90,7 @@ class CampaignService
             id: $salesforceId,
             title: $metaCampaign->getTitle(),
             currencyCode: $metaCampaign->getCurrency()->isoCode(case: 'upper'),
-            status: $metaCampaign->getStatus(),
+            status: $metaCampaign->getStatusAt($this->clock->now()),
             hidden: $metaCampaign->isHidden(),
             ready: true, // @todo-mat-405 - store get a copy of the `ready` value for the metacampaign from SF.
             summary: $metaCampaign->getSummary(),
@@ -101,7 +101,7 @@ class CampaignService
             startDate: $this->formatDate($metaCampaign->getStartDate()),
             endDate: $this->formatDate($metaCampaign->getEndDate()),
             matchFundsTotal: $metaCampaign->getMatchFundsTotal()->toMajorUnitFloat(),
-            campaignCount: 50_000_000, // @todo-MAT-405 - count the campaigns. May not be this many in practice.
+            campaignCount: $this->campaignRepository->countCampaignsInMetaCampaign($metaCampaign),
             usesSharedFunds: $metaCampaign->usesSharedFunds(),
         );
     }

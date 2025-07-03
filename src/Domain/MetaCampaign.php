@@ -25,57 +25,41 @@ use Psr\Http\Message\UriInterface;
 #[ORM\Index(name: 'hidden', columns: ['hidden'])]
 class MetaCampaign extends SalesforceReadProxy
 {
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
+    public const string STATUS_VIEW_CAMPAIGN = 'View campaign';
     #[ORM\Column(length: 64, unique: true, nullable: false)]
     private string $slug;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column()]
     private string $title;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column()]
     private Currency $currency;
 
     /**
-     * @psalm-suppress UnusedProperty - will be used soon
+     * @var string|null Copy of Campaign_Status__c in Salesforce
      */
-    #[ORM\Column()]
-    private string $status;
+    #[ORM\Column(nullable: true)]
+    private ?string $status;
+
 
     /**
-     * @psalm-suppress UnusedProperty - will be used soon
+     * @var string|null Copy of Master_Campaign_Status__c in Salesforce
      */
+    #[ORM\Column(nullable: true)]
+    private ?string $masterCampaignStatus;
+
     #[ORM\Column()]
     private bool $hidden;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column(nullable: true)]
     private ?string $summary;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column(nullable: true)]
     private ?string $bannerURI;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column()]
     private \DateTimeImmutable $startDate;
 
-    /**
-     * @psalm-suppress UnusedProperty - will be used soon
-     */
     #[ORM\Column()]
     private \DateTimeImmutable $endDate;
 
@@ -98,7 +82,6 @@ class MetaCampaign extends SalesforceReadProxy
      * If true also implies that the charity campaigns will share funds - see doc for
      * {@see self::$isEmergencyIMF}
      *
-     * @psalm-suppress UnusedProperty - will be used soon
      */
     #[ORM\Column()]
     private bool $isRegularGiving;
@@ -136,6 +119,7 @@ class MetaCampaign extends SalesforceReadProxy
         string $title,
         Currency $currency,
         string $status,
+        string $masterCampaignStatus,
         bool $hidden,
         ?string $summary,
         ?UriInterface $bannerURI,
@@ -154,6 +138,7 @@ class MetaCampaign extends SalesforceReadProxy
         $this->title = $title;
         $this->currency = $currency;
         $this->status = $status;
+        $this->masterCampaignStatus = $masterCampaignStatus;
         $this->hidden = $hidden;
         $this->summary = $summary;
         $this->bannerURI = $bannerURI?->__toString();
@@ -184,6 +169,7 @@ class MetaCampaign extends SalesforceReadProxy
             title: '',
             currency: Currency::GBP,
             status: '',
+            masterCampaignStatus: '',
             hidden: false,
             summary: '',
             bannerURI: null,
@@ -209,10 +195,6 @@ class MetaCampaign extends SalesforceReadProxy
     {
         Assertion::true($data['x_isMetaCampaign'] ?? true);
 
-        $status = $data['status'];
-
-        Assertion::notNull($status);
-
         $bannerUri = $data['bannerUri'];
         $isRegularGiving = $data['isRegularGiving'] ?? null;
         Assertion::boolean($isRegularGiving);
@@ -220,6 +202,10 @@ class MetaCampaign extends SalesforceReadProxy
         $startDate = $data['startDate'];
         $endDate = $data['endDate'];
         $title = $data['title'];
+
+        // status may be null for now.
+        $status = $data['campaignStatus'] ?? null;
+        $masterCampaignStatus = $data['masterCampaignStatus'] ?? null;
 
         Assertion::notNull($startDate);
         Assertion::notNull($endDate);
@@ -231,6 +217,7 @@ class MetaCampaign extends SalesforceReadProxy
         Assertion::numeric($totalAdjustment);
 
         $this->status = $status;
+        $this->masterCampaignStatus = $masterCampaignStatus;
         $this->bannerURI = \is_string($bannerUri) ? (new Uri($bannerUri))->__toString() : null;
         $this->isRegularGiving = $isRegularGiving;
         $this->title = $title;
@@ -276,9 +263,21 @@ class MetaCampaign extends SalesforceReadProxy
         return $this->currency;
     }
 
-    public function getStatus(): string
+    public function getStatusAt(\DateTimeImmutable $date): ?string
     {
-        return $this->status;
+        if ($this->masterCampaignStatus !== self::STATUS_VIEW_CAMPAIGN) {
+            return $this->status;
+        }
+
+        if ($date < $this->startDate) {
+            return 'Preview';
+        }
+
+        if ($date > $this->endDate) {
+            return 'Expired';
+        }
+
+        return 'Active';
     }
 
     public function isHidden(): bool
