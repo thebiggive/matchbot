@@ -62,6 +62,14 @@ return function (App $app) {
             \MatchBot\Application\Actions\Campaigns\Get::class
         );
 
+        // preview of a campaign intended for use only by the person at the charity who is in the process of
+        // editing the campaign and wants to check their work - not intended for public use although not
+        // currently restricted.
+        $versionGroup->get(
+            '/campaigns/early-preview/{salesforceId:[a-zA-Z0-9]{18}}',
+            \MatchBot\Application\Actions\Campaigns\GetEarlyPreview::class
+        );
+
         $versionGroup->get(
             '/meta-campaigns/{slug:[a-zA-Z0-9-]{2,100}}',
             \MatchBot\Application\Actions\MetaCampaigns\Get::class,
