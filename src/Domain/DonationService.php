@@ -280,15 +280,30 @@ class DonationService
         $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
 
         $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
+
         if ($confirmationTokenSetupFutureUsage === null && $paymentIntent->setup_future_usage !== null) {
             // Replaces $transactionId on the Donation too – which e.g. Confirm should flush shortly.
             // It's not allowed to un-set future usage on a payment intent by Stripe's API, but the donor
             // is allowed to change their mind about saving a 2nd card.
+            $this->logger->info(sprintf(
+                'Donation UUID %s: Replacing payment intent %s in order to respect newly null setup choice',
+                $donation->getUuid(),
+                $paymentIntentId,
+            ));
             $this->createAndAssociatePaymentIntent($donation);
+
+            $paymentIntentId = $donation->getTransactionId();
+            \assert($paymentIntentId !== null);
+
+            $this->logger->info(sprintf(
+                'Donation UUID %s: New payment intent ID %s associated',
+                $donation->getUuid(),
+                $paymentIntentId,
+            ));
         }
 
         $updatedIntent = $this->stripe->confirmPaymentIntent(
-            $paymentIntentId,
+            $paymentIntentId, // May have changed just above, if setup_future_usage did.
             [
                 'confirmation_token' => $tokenId->stripeConfirmationTokenId,
             ]
