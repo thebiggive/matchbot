@@ -36,22 +36,17 @@ class CampaignStatisticsRepository
     }
 
     /**
-     * @return array{amountRaised: Money, matchFundsUsed: Money}
+     * With figures all zero if no donations or match funds used yet *or* if first stats calculation
+     * has not yet run.
      */
-    public function getStatistics(Campaign $campaign): array
+    public function getStatistics(Campaign $campaign): CampaignStatistics
     {
         $statistics = $this->doctrineRepository->findOneBy(['campaign' => $campaign]);
 
         if (!$statistics) {
-            return [
-                'amountRaised' => Money::zero(),
-                'matchFundsUsed' => Money::zero(),
-            ];
+            return new CampaignStatistics($campaign, Money::zero(), Money::zero());
         }
 
-        return [
-            'amountRaised' => $statistics->getAmountRaised(),
-            'matchFundsUsed' => $statistics->getMatchFundsUsed(),
-        ];
+        return $statistics;
     }
 }

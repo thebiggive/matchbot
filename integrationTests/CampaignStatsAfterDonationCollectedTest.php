@@ -44,8 +44,8 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
         $repo = $this->getContainer()->get(CampaignStatisticsRepository::class);
 
         $stats = $repo->getStatistics($this->campaign);
-        $this->assertEquals(Money::zero(), $stats['amountRaised']);
-        $this->assertEquals(Money::zero(), $stats['matchFundsUsed']);
+        $this->assertEquals(Money::zero(), $stats->getAmountRaised());
+        $this->assertEquals(Money::zero(), $stats->getMatchFundsUsed());
     }
 
     public function testStatsMatchOneCollectedDonation(): void
@@ -56,8 +56,8 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
         $this->runStatsUpdateCommand();
 
         $stats = $repo->getStatistics($this->campaign);
-        $this->assertEquals(Money::fromNumericStringGBP(self::RAISED_AFTER_DONATION), $stats['amountRaised']);
-        $this->assertEquals(Money::fromNumericStringGBP(self::DONATION_AMOUNT), $stats['matchFundsUsed']);
+        $this->assertEquals(Money::fromNumericStringGBP(self::RAISED_AFTER_DONATION), $stats->getAmountRaised());
+        $this->assertEquals(Money::fromNumericStringGBP(self::DONATION_AMOUNT), $stats->getMatchFundsUsed());
     }
 
     /**
