@@ -10,6 +10,9 @@ class CampaignStatisticsRepository
     /** @var EntityRepository<CampaignStatistics>  */
     private EntityRepository $doctrineRepository;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod Called by DI container
+     */
     public function __construct(private EntityManagerInterface $em)
     {
         $this->doctrineRepository = $em->getRepository(CampaignStatistics::class);
