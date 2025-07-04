@@ -25,6 +25,8 @@ use Psr\Http\Message\UriInterface;
 #[ORM\Index(name: 'hidden', columns: ['hidden'])]
 class MetaCampaign extends SalesforceReadProxy
 {
+    use TimestampsTrait;
+
     public const string STATUS_VIEW_CAMPAIGN = 'View campaign';
     #[ORM\Column(length: 64, unique: true, nullable: false)]
     private string $slug;
@@ -132,6 +134,8 @@ class MetaCampaign extends SalesforceReadProxy
         Money $matchFundsTotal,
     ) {
         Assertion::same($totalAdjustment->currency, $currency);
+
+        $this->createdNow();
 
         $this->slug = $slug->slug;
         $this->setSalesforceId($salesforceId->value);
