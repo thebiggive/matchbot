@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Campaigns;
 
-use Doctrine\DBAL\Logging\DebugStack;
-use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\TransferException;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Environment;
 use MatchBot\Client\Campaign as SfCampaignClient;
@@ -72,7 +71,7 @@ class Get extends Action
             }
 
             return $this->respondWithData($response, $campaign);
-        } catch (NotFoundException | RequestException $e) {
+        } catch (NotFoundException | TransferException  $e) { // TransferException includes ConnectException, RequestException, etc.
             $campaignMustHaveBeenUpdatedSince = Environment::current()->isLocal() ? '-10000 day' : '-1 day';
             $campaignFromMatchbotDB = $this->campaignRepository->findOneBySalesforceId(
                 $sfId,
@@ -82,7 +81,7 @@ class Get extends Action
             if ($campaignFromMatchbotDB) {
                 if (! \str_starts_with(\strtolower($sfId->value), 'xxx')) {
                     // xxx means this was a deliberate test, no need for alarm.
-                    $this->logger->error("Failed to load campaign ID {$sfId} from SF, serving from Matchbot DB instead: {$e->__toString()}");
+                    $this->logger->warning("Failed to load campaign ID {$sfId} from SF, serving from Matchbot DB instead: {$e->__toString()}");
                 }
 
                 $slug = $campaignFromMatchbotDB->getMetaCampaignSlug();

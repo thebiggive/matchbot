@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\TransferException;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\MetaCampaignSlug;
 
@@ -109,29 +110,50 @@ class Campaign extends Common
      * @param string $id
      * @return SFCampaignApiResponse Single Campaign response object as associative array
      * @throws NotFoundException if Campaign with given ID not found
+     * @throws TransferException if connection or request fails twice
      */
     public function getById(string $id, bool $withCache): array
     {
         $baseUri = $withCache ? $this->baseUriCached() : $this->baseUri();
         $uri = $this->getUri("$baseUri/$id", $withCache);
-        try {
-            $response = $this->getHttpClient()->get($uri);
-        } catch (RequestException $exception) {
-            if ($exception->getResponse()?->getStatusCode() === 404) {
-                // may be safely caught in sandboxes
-                throw new NotFoundException(sprintf('Campaign ID %s not found in SF', $id));
-            }
 
-            // Otherwise, an unknown error occurred -> re-throw
-            throw $exception;
+        $maxRetries = 1;
+        for ($retries = 0; $retries <= $maxRetries; $retries++) {
+            try {
+                $response = $this->getHttpClient()->get($uri, ['timeout' => 15]);
+
+                /**
+                 * @var SFCampaignApiResponse $campaignResponse
+                 */
+                $campaignResponse = json_decode((string)$response->getBody(), true, flags: \JSON_THROW_ON_ERROR);
+
+                return $campaignResponse;
+            } catch (TransferException $exception) {
+                if ($exception instanceof RequestException && $exception->getResponse()?->getStatusCode() === 404) {
+                    // may be safely caught in sandboxes
+                    throw new NotFoundException(sprintf('Campaign ID %s not found in SF', $id));
+                }
+
+                $logMessage = sprintf(
+                    'Campaign get for ID %s failed with %s: %s',
+                    $id,
+                    get_class($exception),
+                    $exception->getMessage()
+                );
+
+                if ($retries < $maxRetries) {
+                    $this->logger->warning($logMessage . ". Retrying...");
+                    continue;
+                }
+
+                $this->logger->error($logMessage . ". Giving up after {$maxRetries} retries.");
+
+                // Otherwise, an unknown error occurred and no retries -> re-throw
+                throw $exception;
+            }
         }
 
-        /**
-         * @var SFCampaignApiResponse $campaignResponse
-         */
-        $campaignResponse = json_decode((string)$response->getBody(), true, flags: \JSON_THROW_ON_ERROR);
-
-        return $campaignResponse;
+        throw new \LogicException('Should either have returned a campaign or thrown an exception.');
     }
 
     /**
