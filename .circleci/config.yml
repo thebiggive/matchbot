@@ -251,7 +251,7 @@ workflows:
           family: 'tbg-regression-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}-consumer'
           service_name: 'tbg-regression-${AWS_REGION}-matchbot-consumer-tasks'
           cluster: 'tbg-regression-${AWS_REGION}'
-          container_image_name_updates: 'container=matchbot_tasks,tag=regression-${CIRCLE_SHA1}'
+          container_image_name_updates: 'container=matchbot_high_priority_queue,tag=regression-${CIRCLE_SHA1},container=matchbot_low_priority_queue,tag=regression-${CIRCLE_SHA1}'
           auth:
             - aws-cli/setup:
                 aws_access_key_id: AWS_ACCESS_KEY_ID
@@ -349,7 +349,7 @@ workflows:
           family: 'tbg-staging-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}-consumer'
           service_name: 'tbg-staging-${AWS_REGION}-matchbot-consumer-tasks'
           cluster: 'tbg-staging-${AWS_REGION}'
-          container_image_name_updates: 'container=matchbot_tasks,tag=staging-${CIRCLE_SHA1}'
+          container_image_name_updates: 'container=matchbot_high_priority_queue,tag=staging-${CIRCLE_SHA1},container=matchbot_low_priority_queue,tag=staging-${CIRCLE_SHA1}'
           auth:
             - aws-cli/setup:
                 aws_access_key_id: AWS_ACCESS_KEY_ID
@@ -446,7 +446,7 @@ workflows:
           family: 'tbg-production-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}-consumer'
           service_name: 'tbg-production-${AWS_REGION}-matchbot-consumer-tasks'
           cluster: 'tbg-production-${AWS_REGION}'
-          container_image_name_updates: 'container=matchbot_tasks,tag=production-${CIRCLE_SHA1}'
+          container_image_name_updates: 'container=matchbot_high_priority_queue,tag=production-${CIRCLE_SHA1},container=matchbot_low_priority_queue,tag=production-${CIRCLE_SHA1}'
           auth:
             - aws-cli/setup:
                 aws_access_key_id: AWS_ACCESS_KEY_ID
