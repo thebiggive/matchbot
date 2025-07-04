@@ -259,9 +259,9 @@ class Campaign extends SalesforceReadProxy
             $endDate ??= '1970-01-01T00:00:00.000Z';
             $title ??= 'Untitled campaign'; // can be null in source data for an expired campaign.
         } else {
-            Assertion::notNull($startDate, 'Start date should not be null');
-            Assertion::notNull($endDate, 'End date should not be null');
-            Assertion::notNull($title);
+            Assertion::notNull($startDate, 'Start date should not be null for campaign ' . $campaignData['id']);
+            Assertion::notNull($endDate, 'End date should not be null for campaign ' . $campaignData['id']);
+            Assertion::notNull($title, 'Title should not be null for campaign ' . $campaignData['id']);
         }
 
         Assertion::false(
