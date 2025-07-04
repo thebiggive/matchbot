@@ -73,7 +73,7 @@ class Get extends Action
             }
 
             return $this->respondWithData($response, $campaign);
-        } catch (NotFoundException | TransferException  $e) { // Includes ConnectException, RequestException, etc.
+        } catch (NotFoundException | TransferException  $e) { // TransferException includes ConnectException, RequestException, etc.
             $campaignMustHaveBeenUpdatedSince = Environment::current()->isLocal() ? '-10000 day' : '-1 day';
             $campaignFromMatchbotDB = $this->campaignRepository->findOneBySalesforceId(
                 $sfId,
