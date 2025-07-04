@@ -20,7 +20,7 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 
 class StripePayoutUpdateTest extends StripeTest
 {
-    const string PAYOUT_TRANSPORT = Transports::TRANSPORT_LOW_PRIORITY;
+    private const string PAYOUT_TRANSPORT = Transports::TRANSPORT_LOW_PRIORITY;
 
     public function testUnsupportedAction(): void
     {
