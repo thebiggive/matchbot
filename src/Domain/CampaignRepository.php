@@ -334,19 +334,14 @@ class CampaignRepository extends SalesforceReadProxyRepository
             "multiple currency donations found for same campaign, can't calculate sum"
         );
 
-        $donationSum = $donationResult[0]['sum'];
-
-        Assertion::numeric($donationSum);
+        $donationSumNumeric = $donationResult[0]['sum'];
+        $donationSum = Money::fromNumericString($donationSumNumeric, Currency::fromIsoCode($donationResult[0]['currencyCode']));
 
         if ($matchFundsUsed === null) {
             $matchFundsUsed = $this->totalMatchFundsUsed($campaignId);
         }
 
-        $total = \bcadd($donationSum, $matchFundsUsed->toNumericString(), 2);
-
-        $currency = Currency::fromIsoCode($donationResult[0]['currencyCode']);
-
-        return Money::fromNumericString($total, $currency);
+        return $donationSum->plus($matchFundsUsed);
     }
 
     public function totalMatchFundsUsed(int $campaignId): Money

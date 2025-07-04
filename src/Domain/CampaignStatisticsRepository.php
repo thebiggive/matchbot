@@ -44,7 +44,7 @@ class CampaignStatisticsRepository
         $statistics = $this->doctrineRepository->findOneBy(['campaign' => $campaign]);
 
         if (!$statistics) {
-            return new CampaignStatistics($campaign, Money::zero(), Money::zero());
+            return new CampaignStatistics($campaign, Money::zero($campaign->getCurrency()), Money::zero($campaign->getCurrency()));
         }
 
         return $statistics;

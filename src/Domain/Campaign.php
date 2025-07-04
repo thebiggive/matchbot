@@ -433,6 +433,11 @@ class Campaign extends SalesforceReadProxy
         $this->currencyCode = $currencyCode;
     }
 
+    public function getCurrency(): Currency
+    {
+        return Currency::fromIsoCode($this->currencyCode);
+    }
+
     public function getEndDate(): DateTimeInterface
     {
         return $this->endDate;
