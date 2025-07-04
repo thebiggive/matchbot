@@ -86,8 +86,6 @@ class Search extends Action
         );
 
         /**
-         * @todo Performant summaries – most notably `amountRaised` and `matchFundsRemaining` should
-         * come from stats table.
          * Some campaigns have SF data {} when they were last synced before we saved full SF data. If we try
          * to render those there are missing array keys for beneficiaries et al.
          * @psalm-suppress RedundantCondition For charity only empty SF data; we'll soon load all campaign data.
