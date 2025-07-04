@@ -26,7 +26,10 @@ class UpdateCampaignDonationStats extends LockingCommand
     #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $campaigns = $this->campaignRepository->findAllWithRecentDonations();
+        // If the 'tick' is completing quickly it runs every minute; if another one has a lock because
+        // it's slower it may be a bit longer. Check 5 minutes back as standard, and there will also soon
+        // be a mop-up task to fill in all campaigns with outdated or no stats. @todo-MAT-413 update this comment.
+        $campaigns = $this->campaignRepository->findWithDonationChangesSince(new \DateTimeImmutable('-5 minutes'));
 
         foreach ($campaigns as $campaign) {
             $campaignId = $campaign->getId();

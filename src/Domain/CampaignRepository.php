@@ -429,20 +429,21 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @return list<Campaign> Each campaign with a donation collected in the last 5 minutes.
+     * @return list<Campaign> Each campaign with a donation updated recently.
+     * It's more DB-efficient to check for any update than for recent collection & recent refunds.
      */
-    public function findAllWithRecentDonations(): array
+    public function findWithDonationChangesSince(\DateTimeImmutable $updatedAfter): array
     {
         $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
             SELECT DISTINCT campaign
             FROM MatchBot\Domain\Campaign campaign
             JOIN MatchBot\Domain\Donation donation WITH donation.campaign = campaign.id
-            WHERE donation.collectedAt >= :recentDonationTime
+            WHERE donation.updatedAt >= :donationUpdatedAfter
             DQL
         );
 
-        $query->setParameter('recentDonationTime', (new \DateTime('now'))->sub(new \DateInterval('PT5M')));
+        $query->setParameter('donationUpdatedAfter', $updatedAfter);
 
         /** @var list<Campaign> $result */
         $result =  $query->getResult();
