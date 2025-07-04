@@ -217,7 +217,7 @@ class MetaCampaign extends SalesforceReadProxy
 
         $currency = Currency::fromIsoCode($data['currencyCode']);
 
-        $totalAdjustment = (string)$data['totalAdjustment'];
+        $totalAdjustment = (string)($data['totalAdjustment'] ?? '0.00');
         Assertion::numeric($totalAdjustment);
 
         $this->status = $status;
