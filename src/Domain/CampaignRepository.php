@@ -606,7 +606,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $qb = $this->getEntityManager()->createQueryBuilder();
 
         $safeSortField = match ($sortField) {
-            'matchFundsRemaining' => throw new \Exception('Sorting by matchFundsRemaining not yet implemented'),
+            'amountRaised' => 'campaignStatistics.amountRaised.amountInPence',
+            'matchFundsUsed' => 'campaignStatistics.matchFundsUsed.amountInPence',
             'relevance' => 'relevance',
             default => null,
         };
@@ -623,6 +624,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $qb->select('campaign')
             ->from(Campaign::class, 'campaign')
             ->join('campaign.charity', 'charity')
+            // Campaigns must have a stats record to be searched. Probably OK and worth it to keep the
+            // join & sorting simple.
+            ->join('campaign.campaignStatistics', 'campaignStatistics')
             ->setFirstResult($offset)
             ->setMaxResults($limit);
 
