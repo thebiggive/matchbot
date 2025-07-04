@@ -146,7 +146,7 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $campaign2 = new Campaign(
             self::someSalesForce18CampaignId(),
-            metaCampaignSlug: 'the-family',
+            metaCampaignSlug: null,
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('-8 months'),
             endDate: new \DateTimeImmutable('+1 month'),
