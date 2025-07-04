@@ -3,6 +3,7 @@
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
+use MatchBot\Application\Assertion;
 
 /**
  * Holds automatically calculated summary information from donations associated with a {@see Campaign}.
@@ -23,26 +24,68 @@ class CampaignStatistics
 {
     use TimestampsTrait;
 
-    #[ORM\OneToOne]
+    #[ORM\OneToOne(inversedBy: 'campaignStatistics')]
     #[ORM\Id]
     private Campaign $campaign;
 
     #[ORM\Column(length: 18, unique: true)]
     protected string $campaignSalesforceId;
 
+    /**
+     * Total of core donation amounts and match funds, without Gift Aid.
+     * Set on construct and updated when donations change.
+     */
     #[ORM\Embedded(columnPrefix: 'amount_raised_')]
     private Money $amountRaised;
 
+    /**
+     * Total of core donation amounts, without match funds or Gift Aid.
+     * Set on construct and updated when donations change.
+     */
+    #[ORM\Embedded(columnPrefix: 'donation_sum_')]
+    private Money $donationSum;
+
+    /** Set on construct only for now */
+    #[ORM\Embedded(columnPrefix: 'match_funds_total_')]
+    private Money $matchFundsTotal;
+
+    /** Set on construct and updated when donations change */
     #[ORM\Embedded(columnPrefix: 'match_funds_used_')]
     private Money $matchFundsUsed;
 
-    public function __construct(Campaign $campaign, Money $amountRaised, Money $matchFundsUsed)
-    {
+    /**
+     * @param Campaign $campaign
+     * @param Money $amountRaised
+     * @param Money $matchFundsUsed
+     * @param Money $matchFundsTotal
+     */
+    public function __construct(
+        Campaign $campaign,
+        Money $donationSum,
+        Money $amountRaised,
+        Money $matchFundsUsed,
+        Money $matchFundsTotal,
+    ) {
+        Assertion::greaterOrEqualThan($matchFundsTotal->toNumericString(), $matchFundsUsed->toNumericString());
+        Assertion::eq(
+            $amountRaised->toNumericString(),
+            $donationSum->plus($matchFundsUsed)->toNumericString(),
+        );
+
         $this->campaign = $campaign;
         $this->campaignSalesforceId = $campaign->getSalesforceId();
         $this->amountRaised = $amountRaised;
+        $this->donationSum  = $donationSum;
+        $this->matchFundsTotal = $matchFundsTotal;
         $this->matchFundsUsed = $matchFundsUsed;
         $this->createdNow();
+    }
+
+    public static function zeroPlaceholder(Campaign $campaign): self
+    {
+        $zero = Money::zero($campaign->getCurrency());
+
+        return new self($campaign, $zero, $zero, $zero, $zero);
     }
 
     public function setAmountRaised(Money $amountRaised): void
@@ -55,6 +98,11 @@ class CampaignStatistics
         $this->matchFundsUsed = $matchFundsUsed;
     }
 
+    public function getDonationSum(): Money
+    {
+        return $this->donationSum;
+    }
+
     public function getAmountRaised(): Money
     {
         return $this->amountRaised;
@@ -63,5 +111,15 @@ class CampaignStatistics
     public function getMatchFundsUsed(): Money
     {
         return $this->matchFundsUsed;
+    }
+
+    public function getMatchFundsRemaining(): Money
+    {
+        return $this->matchFundsTotal->minus($this->matchFundsUsed);
+    }
+
+    public function getMatchFundsTotal(): Money
+    {
+        return $this->matchFundsTotal;
     }
 }

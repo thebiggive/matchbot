@@ -28,7 +28,9 @@ use Symfony\Component\Lock\LockFactory;
 class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
 {
     private Campaign $campaign;
+    private const string CURRENCY_CODE = 'GBP';
     private const string PSP_CUSTOMER_ID = 'cus_inttest_1';
+    private const string FUND_TOTAL_AMOUNT = '500.00';
     private const string DONATION_AMOUNT = '4.00';
     private const string RAISED_AFTER_DONATION = '8.00';
 
@@ -44,20 +46,37 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
         $repo = $this->getContainer()->get(CampaignStatisticsRepository::class);
 
         $stats = $repo->getStatistics($this->campaign);
-        $this->assertEquals(Money::zero(), $stats->getAmountRaised());
-        $this->assertEquals(Money::zero(), $stats->getMatchFundsUsed());
+        $this->assertEquals(Money::zero($this->campaign->getCurrency()), $stats->getAmountRaised());
+        $this->assertEquals(Money::zero($this->campaign->getCurrency()), $stats->getMatchFundsUsed());
+        $this->assertEquals(Money::zero($this->campaign->getCurrency()), $stats->getMatchFundsRemaining());
+        $this->assertEquals(Money::zero($this->campaign->getCurrency()), $stats->getDonationSum());
+        $this->assertEquals(Money::zero($this->campaign->getCurrency()), $stats->getMatchFundsTotal());
     }
 
     public function testStatsMatchOneCollectedDonation(): void
     {
+        // arrange
         $repo = $this->getContainer()->get(CampaignStatisticsRepository::class);
         $this->addCollectedMatchedDonation($this->campaign);
 
         $this->runStatsUpdateCommand();
 
+        // act
         $stats = $repo->getStatistics($this->campaign);
-        $this->assertEquals(Money::fromNumericStringGBP(self::RAISED_AFTER_DONATION), $stats->getAmountRaised());
-        $this->assertEquals(Money::fromNumericStringGBP(self::DONATION_AMOUNT), $stats->getMatchFundsUsed());
+
+        // assert
+        $moneyDonated = Money::fromNumericStringGBP(self::DONATION_AMOUNT);
+        $totalMatchFunds = Money::fromNumericStringGBP(self::FUND_TOTAL_AMOUNT);
+        $expectedRemaining = $totalMatchFunds->minus(Money::fromNumericStringGBP(self::DONATION_AMOUNT));
+
+        $this->assertEquals($moneyDonated, $stats->getDonationSum());
+        $this->assertEquals($moneyDonated, $stats->getMatchFundsUsed());
+        $this->assertEquals($totalMatchFunds, $stats->getMatchFundsTotal());
+        $this->assertEquals($expectedRemaining, $stats->getMatchFundsRemaining());
+        $this->assertEquals(
+            Money::fromNumericStringGBP(self::RAISED_AFTER_DONATION),
+            $stats->getAmountRaised(),
+        );
     }
 
     /**
@@ -76,7 +95,7 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
             ready: true,
             status: 'Active',
             name: 'Campaign Name',
-            currencyCode: 'GBP',
+            currencyCode: self::CURRENCY_CODE,
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
@@ -119,9 +138,11 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
         $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::Pledge);
         $campaignFunding = new CampaignFunding(
             fund: $pledge,
-            amount: '500.0',
-            amountAvailable: '500.0',
+            amount: self::FUND_TOTAL_AMOUNT,
+            amountAvailable: self::FUND_TOTAL_AMOUNT,
         );
+        $campaignFunding->addCampaign($campaign);
+
         $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
         $donation->addFundingWithdrawal($fundingWithdrawal);
         $fundingWithdrawal->setAmount(self::DONATION_AMOUNT); // Fully matched donation.

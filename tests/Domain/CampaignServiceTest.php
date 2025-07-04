@@ -1,25 +1,19 @@
 <?php
 
-namespace Domain;
+namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
-use MatchBot\Domain\Currency;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\MatchFundsService;
-use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignRepository;
-use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
-use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Cache\Adapter\NullAdapter;
-use Symfony\Component\Clock\Clock;
 use Symfony\Component\Clock\MockClock;
-use Symfony\Contracts\Cache\CacheInterface;
 
 class CampaignServiceTest extends TestCase
 {
@@ -44,7 +38,7 @@ class CampaignServiceTest extends TestCase
             metaCampaignRepository: $this->metaCampaignRepositoryProphecy->reveal(),
             cache: new NullAdapter(),
             donationRepository: $this->createStub(DonationRepository::class),
-            matchFundsRemainingService: $matchFundsServiceProphecy->reveal(),
+            matchFundsService: $matchFundsServiceProphecy->reveal(),
             log: $this->createStub(LoggerInterface::class),
             clock: new MockClock(new \DateTimeImmutable('1970-01-01')),
         );

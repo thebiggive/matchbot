@@ -13,8 +13,10 @@ class CampaignStatisticsRepository
     /**
      * @psalm-suppress PossiblyUnusedMethod Called by DI container
      */
-    public function __construct(private EntityManagerInterface $em)
-    {
+    public function __construct(
+        private EntityManagerInterface $em,
+        private MatchFundsService $matchFundsService,
+    ) {
         $this->doctrineRepository = $em->getRepository(CampaignStatistics::class);
     }
 
@@ -22,15 +24,26 @@ class CampaignStatisticsRepository
      * Creates or finds + updates a {@see CampaignStatistics} record; doesn't flush, so callers need to when done
      * building stats.
      */
-    public function updateStatistics(Campaign $campaign, Money $amountRaised, Money $matchFundsUsed): void
-    {
+    public function updateStatistics(
+        Campaign $campaign,
+        Money $donationSum,
+        Money $amountRaised,
+        Money $matchFundsUsed,
+    ): void {
         $statistics = $this->doctrineRepository->findOneBy(['campaign' => $campaign]);
 
         if ($statistics) {
             $statistics->setAmountRaised($amountRaised);
             $statistics->setMatchFundsUsed($matchFundsUsed);
         } else {
-            $statistics = new CampaignStatistics($campaign, $amountRaised, $matchFundsUsed);
+            $statistics = new CampaignStatistics(
+                campaign: $campaign,
+                donationSum: $donationSum,
+                amountRaised: $amountRaised,
+                matchFundsUsed: $matchFundsUsed,
+                matchFundsTotal: $this->matchFundsService->getTotalFunds($campaign),
+            );
+
             $this->em->persist($statistics);
         }
     }
@@ -44,7 +57,7 @@ class CampaignStatisticsRepository
         $statistics = $this->doctrineRepository->findOneBy(['campaign' => $campaign]);
 
         if (!$statistics) {
-            return new CampaignStatistics($campaign, Money::zero($campaign->getCurrency()), Money::zero($campaign->getCurrency()));
+            return CampaignStatistics::zeroPlaceholder($campaign);
         }
 
         return $statistics;

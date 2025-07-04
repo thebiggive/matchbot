@@ -298,14 +298,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * Returns the total of all the complete donations to this campaign, including matching but not gift aid.
-     *
-     * Note that this DOES NOT include gift aid - compare {@see MetaCampaignRepository::totalAmountRaised()} which does.
-     *
-     * @param ?Money $matchFundsUsed If getting figures for stats and you just called {@see self::totalMatchFundsUsed()}
-     *                               yourself, pass its return value to avoid repeating the DB work.
+     * Returns the total of all the complete donations to this campaign, excluding matching and Gift Aid.
      */
-    public function totalAmountRaised(int $campaignId, ?Money $matchFundsUsed = null): Money
+    public function totalCoreDonations(Campaign $campaign): Money
     {
         $donationQuery = $this->getEntityManager()->createQuery(
             <<<'DQL'
@@ -317,7 +312,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
 
         $donationQuery->setParameters([
-            'campaignId' => $campaignId,
+            'campaignId' => $campaign->getId(),
             'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
         ]);
 
@@ -325,7 +320,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $donationResult =  $donationQuery->getResult();
 
         if ($donationResult === []) {
-            return Money::zero(Currency::GBP);
+            return Money::zero($campaign->getCurrency());
         }
 
         Assertion::count(
@@ -335,13 +330,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
 
         $donationSumNumeric = $donationResult[0]['sum'];
-        $donationSum = Money::fromNumericString($donationSumNumeric, Currency::fromIsoCode($donationResult[0]['currencyCode']));
 
-        if ($matchFundsUsed === null) {
-            $matchFundsUsed = $this->totalMatchFundsUsed($campaignId);
-        }
-
-        return $donationSum->plus($matchFundsUsed);
+        return Money::fromNumericString($donationSumNumeric, Currency::fromIsoCode($donationResult[0]['currencyCode']));
     }
 
     public function totalMatchFundsUsed(int $campaignId): Money

@@ -35,8 +35,14 @@ class UpdateCampaignDonationStats extends LockingCommand
             $campaignId = $campaign->getId();
             \assert($campaignId !== null);
             $matchFundsUsed = $this->campaignRepository->totalMatchFundsUsed($campaignId);
-            $amountRaised = $this->campaignRepository->totalAmountRaised($campaignId, $matchFundsUsed);
-            $this->campaignStatisticsRepository->updateStatistics($campaign, $amountRaised, $matchFundsUsed);
+            $donationSum = $this->campaignRepository->totalCoreDonations($campaign);
+
+            $this->campaignStatisticsRepository->updateStatistics(
+                campaign: $campaign,
+                donationSum: $donationSum,
+                matchFundsUsed: $matchFundsUsed,
+                amountRaised: $donationSum->plus($matchFundsUsed),
+            );
             $output->writeln("Prepared statistics for campaign ID {$campaignId}, SF ID {$campaign->getSalesforceId()}");
         }
 

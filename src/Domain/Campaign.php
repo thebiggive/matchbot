@@ -47,6 +47,9 @@ class Campaign extends SalesforceReadProxy
     #[ORM\ManyToMany(targetEntity: CampaignFunding::class, mappedBy: 'campaigns')]
     protected Collection $campaignFundings;
 
+    #[ORM\OneToOne(mappedBy: 'campaign', targetEntity: CampaignStatistics::class, fetch: 'EAGER')]
+    private ?CampaignStatistics $campaignStatistics = null;
+
     /**
      * @var string  ISO 4217 code for the currency in which donations can be accepted and matching's organised.
      */
@@ -648,5 +651,10 @@ class Campaign extends SalesforceReadProxy
         }
 
         return Money::sum($campaign->amountPledged, $campaign->totalFundingAllocation)->times(2);
+    }
+
+    public function getStatistics(): CampaignStatistics
+    {
+        return $this->campaignStatistics ?? CampaignStatistics::zeroPlaceholder($this);
     }
 }
