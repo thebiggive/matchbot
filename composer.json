@@ -130,6 +130,8 @@
         "doctrine:delete-and-recreate": [
             "@doctrine:cache:clear",
             "doctrine orm:schema-tool:drop --full-database --force",
+            "./matchbot matchbot:write-schema-files",
+            "./matchbot matchbot:create-fictional-data --verbose",
             "MYSQL_SCHEMA=matchbot_test vendor/bin/doctrine orm:schema-tool:drop --full-database --force",
             "@doctrine:migrate",
             "./matchbot matchbot:write-schema-files",
