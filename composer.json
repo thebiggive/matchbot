@@ -234,9 +234,17 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:collect-regular-giving"
         ],
-        "messenger:consume": [
+        "messenger:consume:all": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php messenger:consume -vv --time-limit=86400 transport_high_priority transport_low_priority"
+        ],
+        "messenger:consume:high-priority": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php messenger:consume -vv --time-limit=86400 transport_high_priority"
+        ],
+        "messenger:consume:low-priority": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php messenger:consume -vv --time-limit=86400 transport_low_priority"
         ],
         "save-build-commit-id": [
             "echo '<?php \nreturn \"'`git rev-parse HEAD`'\";\n' > .build-commit-id.php"
