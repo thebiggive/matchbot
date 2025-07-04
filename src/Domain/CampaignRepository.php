@@ -513,7 +513,14 @@ class CampaignRepository extends SalesforceReadProxyRepository
         array $jsonMatchInListConditions,
         ?string $termWildcarded
     ): void {
-        $qb->where($qb->expr()->eq('campaign.hidden', '0'));
+        $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
+        $qb->andWhere($qb->expr()->orX(
+            $qb->expr()->eq('campaign.metaCampaignSlug', null),
+            $qb->expr()->andX(
+                $qb->expr()->eq('campaign.relatedApplicationStatus', 'Approved'),
+                $qb->expr()->eq('campaign.relatedApplicationCharityResponseToOffer', 'Accepted'),
+            ),
+        ));
 
         if ($status !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.status', ':status'));
