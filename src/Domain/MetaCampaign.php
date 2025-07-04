@@ -135,6 +135,8 @@ class MetaCampaign extends SalesforceReadProxy
     ) {
         Assertion::same($totalAdjustment->currency, $currency);
 
+        $this->createdNow();
+
         $this->slug = $slug->slug;
         $this->setSalesforceId($salesforceId->value);
         $this->title = $title;
