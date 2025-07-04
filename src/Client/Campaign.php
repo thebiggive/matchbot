@@ -109,7 +109,6 @@ class Campaign extends Common
      * @return SFCampaignApiResponse Single Campaign response object as associative array
      * @throws NotFoundException if Campaign with given ID not found
      * @throws TransferException if connection or request fails twice
-     * @throws \Exception if our loop logic or Guzzle has an unexpexcted case we missed
      */
     public function getById(string $id, bool $withCache): array
     {
