@@ -20,6 +20,8 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 
 class StripePayoutUpdateTest extends StripeTest
 {
+    const string PAYOUT_TRANSPORT = Transports::TRANSPORT_LOW_PRIORITY;
+
     public function testUnsupportedAction(): void
     {
         $app = $this->getAppInstance();
@@ -82,7 +84,7 @@ class StripePayoutUpdateTest extends StripeTest
         $transport = $this->prophesize(InMemoryTransport::class);
         $transport->send(Argument::type(Envelope::class))
             ->willThrow(TransportException::class);
-        $container->set(Transports::TRANSPORT_HIGH_PRIORITY, $transport->reveal());
+        $container->set(self::PAYOUT_TRANSPORT, $transport->reveal());
 
         $body = $this->getStripeHookMock('po_paid');
 
@@ -105,7 +107,7 @@ class StripePayoutUpdateTest extends StripeTest
         $app = $this->getAppInstance();
         $container = $this->diContainer();
         $transport = new InMemoryTransport();
-        $container->set(Transports::TRANSPORT_HIGH_PRIORITY, $transport);
+        $container->set(self::PAYOUT_TRANSPORT, $transport);
         $container->set(SlackChannelChatterFactory::class, $this->createStub(SlackChannelChatterFactory::class));
 
         $body = $this->getStripeHookMock('po_paid');
@@ -130,7 +132,7 @@ class StripePayoutUpdateTest extends StripeTest
         $app = $this->getAppInstance();
         $container = $this->diContainer();
         $transport = new InMemoryTransport();
-        $container->set(Transports::TRANSPORT_HIGH_PRIORITY, $transport);
+        $container->set(self::PAYOUT_TRANSPORT, $transport);
         $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
@@ -166,7 +168,7 @@ class StripePayoutUpdateTest extends StripeTest
         $app = $this->getAppInstance();
         $container = $this->diContainer();
         $transport = new InMemoryTransport();
-        $container->set(Transports::TRANSPORT_HIGH_PRIORITY, $transport);
+        $container->set(self::PAYOUT_TRANSPORT, $transport);
         $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
