@@ -175,7 +175,7 @@ class DonationService
                 $this->logger->warning("Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed");
             }
 
-            $this->fundRepository->pullForCampaign($campaign);
+            $this->fundRepository->pullForCampaign($campaign, $this->clock->now());
 
             $this->entityManager->flush();
 

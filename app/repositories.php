@@ -25,6 +25,7 @@ use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Clock\ClockInterface;
 
 return static function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -42,6 +43,7 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo->setClient($c->get(Client\Campaign::class));
             $repo->setLogger($c->get(LoggerInterface::class));
             $repo->setFundRepository($c->get(FundRepository::class));
+            $repo->setClock($c->get(ClockInterface::class));
 
             return $repo;
         },
