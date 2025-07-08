@@ -37,7 +37,7 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
     #[\Override]
     public function setUp(): void
     {
-        $this->campaign = $this->makeCampaign();
+        $this->campaign = $this->createCampaign();
         parent::setUp();
     }
 
@@ -80,36 +80,6 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
         );
         $leftToTarget = $this->campaign->getTotalFundraisingTarget()->minus($stats->getAmountRaised());
         $this->assertEquals($leftToTarget, $stats->getDistanceToTarget());
-    }
-
-    /**
-     * Copied from DonationRepositoryTest for now.
-     * @todo maybe put somewhere shared?
-     */
-    private function makeCampaign(?Charity $charity = null): Campaign
-    {
-        return new Campaign(
-            Salesforce18Id::ofCampaign('campaignId12345678'),
-            metaCampaignSlug: null,
-            charity: $charity ?? TestCase::someCharity(),
-            startDate: new \DateTimeImmutable('now'),
-            endDate: new \DateTimeImmutable('now'),
-            isMatched: true,
-            ready: true,
-            status: 'Active',
-            name: 'Campaign Name',
-            currencyCode: self::CURRENCY_CODE,
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
-            isRegularGiving: false,
-            relatedApplicationStatus: null,
-            relatedApplicationCharityResponseToOffer: null,
-            regularGivingCollectionEnd: null,
-            thankYouMessage: null,
-            rawData: [],
-            hidden: false,
-            totalFundraisingTarget: Money::zero(),
-        );
     }
 
     private function addCollectedMatchedDonation(Campaign $campaign): void

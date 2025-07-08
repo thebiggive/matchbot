@@ -72,7 +72,7 @@ class DonationRepositoryTest extends IntegrationTest
     }
     private function prepareAndPersistDonation(Charity $charity): Donation
     {
-        $campaign = $this->makeCampaign($charity);
+        $campaign = $this->createCampaign($charity);
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign);
@@ -114,7 +114,7 @@ class DonationRepositoryTest extends IntegrationTest
     public function testItFindsExpiredDonations(): void
     {
         // arrange
-        $campaign = $this->makeCampaign();
+        $campaign = $this->createCampaign();
         $randomEmailAddress = 'email' . random_int(1000, 99999) . '@example.com';
 
         $this->makeDonation($randomEmailAddress, $campaign, DonationStatus::Pending);
@@ -145,7 +145,7 @@ class DonationRepositoryTest extends IntegrationTest
     public function testItFindsDonationsToCancel(): void
     {
         // arrange
-        $campaign = $this->makeCampaign();
+        $campaign = $this->createCampaign();
         $campaignId = $campaign->getSalesforceId();
         $randomEmailAddress = 'email' . random_int(1000, 99999) . '@example.com';
 
@@ -173,32 +173,6 @@ class DonationRepositoryTest extends IntegrationTest
         $this->assertEquals(
             DonationStatus::Pending,
             $donation->getDonationStatus()
-        );
-    }
-
-    public function makeCampaign(?Charity $charity = null): Campaign
-    {
-        return new Campaign(
-            Salesforce18Id::ofCampaign('campaignId12345678'),
-            metaCampaignSlug: null,
-            charity: $charity ?? TestCase::someCharity(),
-            startDate: new \DateTimeImmutable('now'),
-            endDate: new \DateTimeImmutable('now'),
-            isMatched: true,
-            ready: true,
-            status: 'Active',
-            name: 'Campaign Name',
-            currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
-            isRegularGiving: false,
-            relatedApplicationStatus: null,
-            relatedApplicationCharityResponseToOffer: null,
-            regularGivingCollectionEnd: null,
-            totalFundraisingTarget: Money::zero(),
-            thankYouMessage: null,
-            rawData: [],
-            hidden: false,
         );
     }
 

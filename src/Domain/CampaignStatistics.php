@@ -57,7 +57,11 @@ class CampaignStatistics
     #[ORM\Embedded(columnPrefix: 'match_funds_remaining_')]
     private Money $matchFundsRemaining;
 
-    /** Set on construct and when donations change. Uses {@see Campaign::$totalFundraisingTarget} on each update. */
+    /**
+     * Set on construct and when donations change. Uses {@see Campaign::$totalFundraisingTarget} on each update.
+     * It's set to zero of the Campaign currency when the target is met, which also leads search to exclude the
+     * Campaign when sorting by distance ascending.
+     */
     #[ORM\Embedded(columnPrefix: 'distance_to_target_')]
     private Money $distanceToTarget;
 
@@ -147,6 +151,10 @@ class CampaignStatistics
         $this->matchFundsUsed = $matchFundsUsed;
         $this->matchFundsTotal = $matchFundsTotal;
         $this->matchFundsRemaining = $matchFundsTotal->minus($matchFundsUsed);
-        $this->distanceToTarget = $this->campaign->getTotalFundraisingTarget()->minus($amountRaised);
+
+        $target = $this->campaign->getTotalFundraisingTarget();
+        $this->distanceToTarget = $target->lessThan($amountRaised)
+            ? Money::zero($this->campaign->getCurrency())
+            : $target->minus($amountRaised);
     }
 }
