@@ -9,7 +9,6 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignStatisticsRepository;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
@@ -75,8 +74,10 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
             Money::fromNumericStringGBP(self::RAISED_AFTER_DONATION),
             $stats->getAmountRaised(),
         );
-        $leftToTarget = $this->campaign->getTotalFundraisingTarget()->minus($stats->getAmountRaised());
-        $this->assertEquals($leftToTarget, $stats->getDistanceToTarget());
+        // Using major units in the test since the 2nd operand can be negative and Money doesn't allow that. Runtime code
+        // uses Money less-than comparison check instead and returns 0 if it would be negative, hence `max(0, ...)`.
+        $leftToTargetMajorUnit = max(0, $this->campaign->getTotalFundraisingTarget()->toMajorUnitFloat() - (int) self::RAISED_AFTER_DONATION);
+        $this->assertEquals($leftToTargetMajorUnit, $stats->getDistanceToTarget()->toMajorUnitFloat());
     }
 
     private function addCollectedMatchedDonation(Campaign $campaign): void
@@ -148,6 +149,7 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
             'matchbot:update-campaign-donation-stats starting!',
             "Prepared statistics for campaign ID {$this->campaign->getId()}, SF ID campaignid12345678",
             'Updated statistics for 1 campaigns with recent donations',
+            'Updated statistics for 0 campaigns with no recent stats',
             'matchbot:update-campaign-donation-stats complete!',
             '',
         ]);

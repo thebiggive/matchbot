@@ -28,8 +28,9 @@ class UpdateCampaignDonationStats extends LockingCommand
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $this->updateRecentlyUpdatedDonationCampaigns($output);
-        $this->updateOldMissedCampaigns($output);
+        $this->entityManager->flush(); // Need to ensure we don't try to insert the same stat row twice.
 
+        $this->updateOldMissedCampaigns($output);
         $this->entityManager->flush();
 
         return 0;
