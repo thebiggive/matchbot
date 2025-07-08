@@ -2,15 +2,22 @@
 
 namespace MatchBot\IntegrationTests;
 
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Auth\SalesforceAuthMiddleware;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\Actions\Hooks\StripeTest;
 use MatchBot\Tests\TestCase;
+use MatchBot\Client;
 
+/**
+ * @psalm-import-type SFCampaignApiResponse from Client\Campaign
+ */
 class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\IntegrationTest
 {
     public function testItAcceptsAPushOfANewCampaignFromSf(): void
@@ -23,6 +30,8 @@ class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\Integratio
 
         $campaignData['id'] = $campaignSfId->value;
         $campaignData['charity']['id'] = $charitySfId->value;
+
+        $this->persistCharityToDb($campaignData);
 
         $body = \json_encode(['campaign' => $campaignData], JSON_THROW_ON_ERROR);
 
@@ -84,8 +93,11 @@ class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\Integratio
         $metaCampaignSfId = Salesforce18Id::ofMetaCampaign(self::randomString());
         $charitySfId = Salesforce18Id::ofCampaign(self::randomString());
 
+
         $campaignData['campaigns'][0]['id'] = $campaignSfId->value;
         $campaignData['campaigns'][0]['charity']['id'] = $charitySfId->value;
+
+        $this->persistCharityToDb($campaignData['campaigns'][0]);
 
         $campaignData['campaigns'][1]['id'] = $metaCampaignSfId->value;
 
@@ -111,5 +123,18 @@ class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\Integratio
         $this->assertSame('Society for the advancement of bots and matches', $campaign->getCharity()->getName());
 
         $this->assertSame('This is a meta campaign', $metaCampaign->getTitle());
+    }
+
+    /**
+     * Persisting Charity in the database. Assuming that the charity should be in Matchbot before the Campaign is created.
+     *
+     * @param SFCampaignApiResponse $campaignData
+     */
+    public function persistCharityToDb(array $campaignData): void
+    {
+        $charity = $this->getService(CampaignRepository::class)->newCharityFromCampaignData($campaignData);
+        $em = $this->getService(EntityManagerInterface::class);
+        $em->persist($charity);
+        $em->flush();
     }
 }
