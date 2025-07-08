@@ -442,6 +442,27 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * @return list<Campaign> Each campaign with no stats since $oldestExpected.
+     */
+    public function findCampaignsWithNoRecentStats(\DateTimeImmutable $oldestExpected): array
+    {
+        $query = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            SELECT campaign FROM MatchBot\Domain\Campaign campaign
+            LEFT OUTER JOIN MatchBot\Domain\CampaignStatistics stats WITH stats.campaign = campaign.id
+            WHERE stats.campaign IS NULL OR stats.updatedAt < :oldestExpected
+            ORDER BY campaign.createdAt ASC
+        DQL
+        );
+        $query->setParameter('oldestExpected', $oldestExpected);
+
+        /** @var list<Campaign> $result */
+        $result =  $query->getResult();
+
+        return $result;
+    }
+
+    /**
      * @param Campaign $campaign
      * @param  SFCampaignApiResponse $campaignData
      */

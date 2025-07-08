@@ -24,7 +24,7 @@ class CampaignStatistics
 {
     use TimestampsTrait;
 
-    #[ORM\OneToOne(inversedBy: 'campaignStatistics')]
+    #[ORM\OneToOne(inversedBy: 'campaignStatistics', fetch: 'EAGER')]
     #[ORM\Id]
     private Campaign $campaign;
 
@@ -81,7 +81,6 @@ class CampaignStatistics
         $this->campaignSalesforceId = $campaign->getSalesforceId();
 
         $this->setTotals(
-            campaign: $campaign,
             donationSum: $donationSum,
             amountRaised: $amountRaised,
             matchFundsUsed: $matchFundsUsed,
@@ -113,7 +112,7 @@ class CampaignStatistics
 
     public function getMatchFundsRemaining(): Money
     {
-        return $this->matchFundsTotal->minus($this->matchFundsUsed);
+        return $this->matchFundsRemaining;
     }
 
     public function getMatchFundsTotal(): Money
@@ -121,8 +120,12 @@ class CampaignStatistics
         return $this->matchFundsTotal;
     }
 
+    public function getDistanceToTarget(): Money
+    {
+        return $this->distanceToTarget;
+    }
+
     final public function setTotals(
-        Campaign $campaign,
         Money $donationSum,
         Money $amountRaised,
         Money $matchFundsUsed,
@@ -144,6 +147,6 @@ class CampaignStatistics
         $this->matchFundsUsed = $matchFundsUsed;
         $this->matchFundsTotal = $matchFundsTotal;
         $this->matchFundsRemaining = $matchFundsTotal->minus($matchFundsUsed);
-        $this->distanceToTarget = $campaign->getTotalFundraisingTarget()->minus($amountRaised);
+        $this->distanceToTarget = $this->campaign->getTotalFundraisingTarget()->minus($amountRaised);
     }
 }

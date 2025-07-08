@@ -57,6 +57,7 @@ class CallFrequentCommandsTest extends IntegrationTest
             'matchbot:cancel-stale-donation-fund-tips complete!',
             'matchbot:update-campaign-donation-stats starting!',
             'Updated statistics for 0 campaigns with recent donations',
+            'Updated statistics for 0 campaigns with no recent stats',
             'matchbot:update-campaign-donation-stats complete!',
             'matchbot:tick complete!',
             '',
