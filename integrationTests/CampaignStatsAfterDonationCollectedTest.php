@@ -76,7 +76,10 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
         );
         // Using major units in the test since the 2nd operand can be negative and Money doesn't allow that. Runtime code
         // uses Money less-than comparison check instead and returns 0 if it would be negative, hence `max(0, ...)`.
-        $leftToTargetMajorUnit = max(0, $this->campaign->getTotalFundraisingTarget()->toMajorUnitFloat() - (int) self::RAISED_AFTER_DONATION);
+        $leftToTargetMajorUnit = max(
+            0,
+            (int) $this->campaign->getTotalFundraisingTarget()->toMajorUnitFloat() - (int) self::RAISED_AFTER_DONATION,
+        );
         $this->assertEquals($leftToTargetMajorUnit, $stats->getDistanceToTarget()->toMajorUnitFloat());
     }
 
