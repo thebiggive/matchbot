@@ -26,8 +26,8 @@ final class Version20250708110227 extends AbstractMigration
             SQL);
 
         $this->addSql(<<<'SQL'
-            UPDATE Campaign SET match_funds_remaining_currency = 'GBP' WHERE match_funds_remaining_amountInPence = 0;
-            UPDATE Campaign SET distance_to_target_currency = 'GBP' WHERE distance_to_target_amountInPence = 0;
+            UPDATE CampaignStatistics SET match_funds_remaining_currency = 'GBP' WHERE match_funds_remaining_amountInPence = 0;
+            UPDATE CampaignStatistics SET distance_to_target_currency = 'GBP' WHERE distance_to_target_amountInPence = 0;
         SQL
         );
     }
