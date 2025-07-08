@@ -97,6 +97,6 @@ class Search extends Action
         });
         $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData);
 
-        return new JsonResponse($campaignSummaries, 200);
+        return new JsonResponse(['campaignSummaries' => $campaignSummaries], 200);
     }
 }
