@@ -215,6 +215,8 @@ class CreateFictionalData extends Command
             'championOptInStatement' => null,
             'parentMatchFundsRemaining' => null,
             'regularGivingCollectionEnd' => null,
+            'relatedApplicationStatus' => 'Approved',
+            'relatedApplicationCharityResponseToOffer' => 'Accepted',
         ];
     }
 
@@ -251,8 +253,6 @@ class CreateFictionalData extends Command
             'stripeAccountId' => $stripeAccountId,
             'hmrcReferenceNumber' => null,
             'giftAidOnboardingStatus' => 'Invited to Onboard',
-            'relatedApplicationStatus' => 'Approved',
-            'relatedApplicationCharityResponseToOffer' => 'Accepted',
         ];
     }
 
