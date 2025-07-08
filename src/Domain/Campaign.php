@@ -630,6 +630,14 @@ class Campaign extends SalesforceReadProxy
         return MetaCampaignSlug::of($this->metaCampaignSlug);
     }
 
+    /**
+     * Gets the most relevant target, factoring in meta-campaign in shared funds scenarios and using MatchBot's own
+     * funding records.
+     *
+     * The non-shared, matched charity campaign case should derive a sum (on the final line) which matches
+     * the Salesforce-reported totalFundraisingTarget. {@see getTotalFundraisingTarget()} which surfaces that
+     * directly for sorting etc.
+     */
     public static function target(Campaign $campaign, ?MetaCampaign $metaCampaign): Money
     {
         if ($metaCampaign) {
@@ -651,6 +659,18 @@ class Campaign extends SalesforceReadProxy
         }
 
         return Money::sum($campaign->amountPledged, $campaign->totalFundingAllocation)->times(2);
+    }
+
+    /**
+     * Get the target from Salesforce verbatim. This might be slightly misleading for printing in shared funds cases
+     * (where charity campaigns don't really independently have a target) but is good enough to use for sorting in
+     * all campaign types. It's used for {@see CampaignStatistics} for example.
+     *
+     * See also {@see target()} which may be better for surfacing the most relevant target in a response.
+     */
+    public function getTotalFundraisingTarget(): Money
+    {
+        return $this->totalFundraisingTarget;
     }
 
     public function getStatistics(): CampaignStatistics

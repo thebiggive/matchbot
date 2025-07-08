@@ -57,6 +57,10 @@ class CampaignStatistics
     #[ORM\Embedded(columnPrefix: 'match_funds_remaining_')]
     private Money $matchFundsRemaining;
 
+    /** Set on construct and when donations change. Uses {@see Campaign::$totalFundraisingTarget} on each update. */
+    #[ORM\Embedded(columnPrefix: 'distance_to_target_')]
+    private Money $distanceToTarget;
+
     /**
      * @param Campaign $campaign
      * @param Money $amountRaised
@@ -77,6 +81,7 @@ class CampaignStatistics
         $this->campaignSalesforceId = $campaign->getSalesforceId();
 
         $this->setTotals(
+            campaign: $campaign,
             donationSum: $donationSum,
             amountRaised: $amountRaised,
             matchFundsUsed: $matchFundsUsed,
@@ -117,6 +122,7 @@ class CampaignStatistics
     }
 
     final public function setTotals(
+        Campaign $campaign,
         Money $donationSum,
         Money $amountRaised,
         Money $matchFundsUsed,
@@ -138,5 +144,6 @@ class CampaignStatistics
         $this->matchFundsUsed = $matchFundsUsed;
         $this->matchFundsTotal = $matchFundsTotal;
         $this->matchFundsRemaining = $matchFundsTotal->minus($matchFundsUsed);
+        $this->distanceToTarget = $campaign->getTotalFundraisingTarget()->minus($amountRaised);
     }
 }

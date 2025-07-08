@@ -34,6 +34,7 @@ class CampaignStatisticsRepository
 
         if ($statistics) {
             $statistics->setTotals(
+                campaign: $campaign,
                 donationSum: $donationSum,
                 amountRaised: $amountRaised,
                 matchFundsUsed: $matchFundsUsed,

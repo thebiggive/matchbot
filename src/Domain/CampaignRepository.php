@@ -607,6 +607,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $safeSortField = match ($sortField) {
             'amountRaised' => 'campaignStatistics.amountRaised.amountInPence',
+            'distanceToTarget' => 'campaignStatistics.distanceToTarget.amountInPence',
+            'matchFundsRemaining' => 'campaignStatistics.matchFundsRemaining.amountInPence',
             'matchFundsUsed' => 'campaignStatistics.matchFundsUsed.amountInPence',
             'relevance' => 'relevance',
             default => null,
