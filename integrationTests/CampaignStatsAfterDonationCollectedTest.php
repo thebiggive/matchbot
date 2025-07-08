@@ -17,9 +17,7 @@ use MatchBot\Domain\FundType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
-use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
-use MatchBot\Tests\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -28,7 +26,6 @@ use Symfony\Component\Lock\LockFactory;
 class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
 {
     private Campaign $campaign;
-    private const string CURRENCY_CODE = 'GBP';
     private const string PSP_CUSTOMER_ID = 'cus_inttest_1';
     private const string FUND_TOTAL_AMOUNT = '500.00';
     private const string DONATION_AMOUNT = '4.00';
