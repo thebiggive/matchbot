@@ -17,12 +17,9 @@ abstract class SalesforceReadProxy extends SalesforceProxy
     #[ORM\Column(nullable: true)]
     protected ?DateTime $salesforceLastPull = null;
 
-    /**
-     * @param DateTime $salesforceLastPull
-     */
-    public function setSalesforceLastPull(DateTime $salesforceLastPull): void
+    public function setSalesforceLastPull(\DateTimeInterface $salesforceLastPull): void
     {
-        $this->salesforceLastPull = $salesforceLastPull;
+        $this->salesforceLastPull = DateTime::createFromInterface($salesforceLastPull);
     }
 
     public function getSalesforceLastPull(): ?\DateTimeImmutable

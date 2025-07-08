@@ -55,7 +55,7 @@ class PullMetaCampaignFromSF extends LockingCommand
         foreach ($campaigns as $campaign) {
             $i++;
             $output->writeln("Pulling funds for ($i of $total) '{$campaign->getCampaignName()}'");
-            $this->fundRepository->pullForCampaign($campaign);
+            $this->fundRepository->pullForCampaign($campaign, $this->now);
         }
 
         $output->writeln("Fetched $total campaigns total from Salesforce for '$metaCampaginSlug->slug'");

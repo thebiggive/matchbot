@@ -13,6 +13,7 @@ use MatchBot\Client;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Clock\ClockInterface;
 
 use function is_string;
 use function trim;
@@ -26,6 +27,8 @@ use function trim;
 class CampaignRepository extends SalesforceReadProxyRepository
 {
     private FundRepository $fundRepository; // @phpstan-ignore property.uninitialized
+
+    private ClockInterface $clock;  // @phpstan-ignore property.uninitialized
 
     /**
      * Gets campaigns that it is particular important matchbot has up-to-date information about.
@@ -288,7 +291,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         if ($count === 0) {
             $campaign = $this->pullNewFromSf($campaignId);
-            $this->fundRepository->pullForCampaign($campaign);
+            $this->fundRepository->pullForCampaign($campaign, $this->clock->now());
         }
     }
 
@@ -410,6 +413,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
         \assert($count >= 0);
 
         return $count;
+    }
+
+    public function setClock(ClockInterface $clock): void
+    {
+        $this->clock = $clock;
     }
 
     /**

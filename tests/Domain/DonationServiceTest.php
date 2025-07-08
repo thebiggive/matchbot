@@ -373,7 +373,7 @@ class DonationServiceTest extends TestCase
         $campaignRepoProphecy->pullNewFromSf(Salesforce18Id::ofCampaign(self::CAMPAIGN_ID))
             ->willReturn($dummyCampaign);
 
-        $fundRepositoryProphecy->pullForCampaign(Argument::type(Campaign::class))->shouldBeCalled();
+        $fundRepositoryProphecy->pullForCampaign(Argument::type(Campaign::class), Argument::type(\DateTimeImmutable::class))->shouldBeCalled();
 
         $createPayload = new DonationCreate(
             currencyCode: 'GBP',

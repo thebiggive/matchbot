@@ -27,7 +27,8 @@ class UpdateCampaigns extends LockingCommand
         /** @var EntityManager|EntityManagerInterface $entityManager */
         private EntityManagerInterface $entityManager,
         private FundRepository $fundRepository,
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
+        private \DateTimeImmutable $now,
     ) {
         parent::__construct();
     }
@@ -122,7 +123,7 @@ EOT
     protected function pull(Campaign $campaign, OutputInterface $output): void
     {
         $this->campaignRepository->updateFromSf($campaign);
-        $this->fundRepository->pullForCampaign($campaign);
+        $this->fundRepository->pullForCampaign($campaign, $this->now);
         $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
     }
 }
