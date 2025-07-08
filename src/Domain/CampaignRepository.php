@@ -532,7 +532,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $status,
         array $jsonMatchOneConditions,
         array $jsonMatchInListConditions,
-        ?string $termWildcarded
+        ?string $termWildcarded,
+        bool $filterOutTargetMet,
     ): void {
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
         $qb->andWhere(<<<DQL
@@ -573,6 +574,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 )
             );
             $qb->setParameter('termForWhere', $termWildcarded);
+        }
+
+        if ($filterOutTargetMet) {
+            $qb->andWhere($qb->expr()->neq('campaignStatistics.distanceToTarget.amountInPence', 0));
         }
     }
 
@@ -660,7 +665,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $termWildcarded = null;
         }
 
-        $this->filterForSearch($qb, $status, $jsonMatchOneConditions, $jsonMatchInListConditions, $termWildcarded);
+        $filterOutTargetMet =
+            $safeSortField === 'campaignStatistics.distanceToTarget.amountInPence' &&
+            $sortDirection === 'asc';
+        $this->filterForSearch($qb, $status, $jsonMatchOneConditions, $jsonMatchInListConditions, $termWildcarded, $filterOutTargetMet);
         $this->sortForSearch($qb, $safeSortField, $sortDirection, $termWildcarded);
 
         $query = $qb->getQuery();
