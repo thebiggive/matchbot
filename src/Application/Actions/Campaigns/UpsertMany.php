@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Campaigns;
 
+use _PHPStan_db66d83f6\Nette\Neon\Exception;
 use Doctrine\ORM\EntityManager;
 use JetBrains\PhpStorm\Pure;
 use Laminas\Diactoros\Response\JsonResponse;
@@ -104,10 +105,7 @@ class UpsertMany extends Action
         $charity = $this->charityRepository->findOneBySalesforceId($charitySfId);
 
         if (!$charity) {
-            $charity = $this->campaignRepository->newCharityFromCampaignData($campaignData);
-            $this->entityManager->persist($charity);
-
-            $this->logger->info("Saving new charity from SF: {$charity->getName()} {$charity->getSalesforceId()}");
+            throw new \Exception("Does not have a Charity record with the details: {$charityData['name']} {$charityData['id']} Campaign Details: {$campaignData['title']} {$campaignData['id']}");
         }
         // else we DO NOT update the charity here - for efficiency and clarity a separate action should be used to send
         // charity updates when they change, instead of updating the charity every time a campaign changes.
