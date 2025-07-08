@@ -114,7 +114,8 @@ class UpsertMany extends Action
             $this->logger->info("Saving new campaign from SF: {$charity->getName()} {$charity->getSalesforceId()}");
             $this->entityManager->persist($campaign);
         } else {
-            $this->campaignRepository->updateCampaignFromSFData($campaign, $campaignData);
+            // don't update the charity, won't work if we are updating many at once in parallel and the charity gets updated separatley.
+            $this->campaignRepository->updateCampaignFromSFData($campaign, $campaignData, alsoUpdateCharity: false);
             $this->logger->info("updating campaign {$campaign->getId()} from SF: {$charity->getName()} {$charity->getSalesforceId()}");
         }
     }

@@ -474,7 +474,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @param Campaign $campaign
      * @param  SFCampaignApiResponse $campaignData
      */
-    public function updateCampaignFromSFData(Campaign $campaign, array $campaignData): void
+    public function updateCampaignFromSFData(Campaign $campaign, array $campaignData, bool $alsoUpdateCharity = true): void
     {
         $startDateString = $campaignData['startDate'];
         $endDateString = $campaignData['endDate'];
@@ -486,7 +486,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
         Assertion::notNull($endDateString, "Null end date supplied when attempting to update campaign {$campaign->getSalesforceId()}");
         Assertion::notNull($title, "Null title supplied when attempting to updated campaign {$campaign->getSalesforceId()}");
 
-        $this->updateCharityFromCampaignData($campaign->getCharity(), $campaignData);
+        if ($alsoUpdateCharity) {
+            $this->updateCharityFromCampaignData($campaign->getCharity(), $campaignData);
+        }
 
         if ($campaign->hasBeenPersisted() && $campaign->getCurrencyCode() !== $campaignData['currencyCode']) {
             $this->logWarning(sprintf(
