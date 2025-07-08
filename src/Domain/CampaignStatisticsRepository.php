@@ -33,8 +33,12 @@ class CampaignStatisticsRepository
         $statistics = $this->doctrineRepository->findOneBy(['campaign' => $campaign]);
 
         if ($statistics) {
-            $statistics->setAmountRaised($amountRaised);
-            $statistics->setMatchFundsUsed($matchFundsUsed);
+            $statistics->setTotals(
+                donationSum: $donationSum,
+                amountRaised: $amountRaised,
+                matchFundsUsed: $matchFundsUsed,
+                matchFundsTotal: $this->matchFundsService->getTotalFunds($campaign),
+            );
         } else {
             $statistics = new CampaignStatistics(
                 campaign: $campaign,

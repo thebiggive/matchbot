@@ -49,9 +49,13 @@ class CampaignStatistics
     #[ORM\Embedded(columnPrefix: 'match_funds_total_')]
     private Money $matchFundsTotal;
 
-    /** Set on construct and updated when donations change */
+    /** Set on construct and updated when donations change. */
     #[ORM\Embedded(columnPrefix: 'match_funds_used_')]
     private Money $matchFundsUsed;
+
+    /** Set on construct and updated when donations change. */
+    #[ORM\Embedded(columnPrefix: 'match_funds_remaining_')]
+    private Money $matchFundsRemaining;
 
     /**
      * @param Campaign $campaign
@@ -66,19 +70,16 @@ class CampaignStatistics
         Money $matchFundsUsed,
         Money $matchFundsTotal,
     ) {
-        Assertion::greaterOrEqualThan($matchFundsTotal->toNumericString(), $matchFundsUsed->toNumericString());
-        Assertion::eq(
-            $amountRaised->toNumericString(),
-            $donationSum->plus($matchFundsUsed)->toNumericString(),
-        );
-
+        $this->createdNow();
         $this->campaign = $campaign;
         $this->campaignSalesforceId = $campaign->getSalesforceId();
-        $this->amountRaised = $amountRaised;
-        $this->donationSum  = $donationSum;
-        $this->matchFundsTotal = $matchFundsTotal;
-        $this->matchFundsUsed = $matchFundsUsed;
-        $this->createdNow();
+
+        $this->setTotals(
+            donationSum: $donationSum,
+            amountRaised: $amountRaised,
+            matchFundsUsed: $matchFundsUsed,
+            matchFundsTotal: $matchFundsTotal,
+        );
     }
 
     public static function zeroPlaceholder(Campaign $campaign): self
@@ -86,16 +87,6 @@ class CampaignStatistics
         $zero = Money::zero($campaign->getCurrency());
 
         return new self($campaign, $zero, $zero, $zero, $zero);
-    }
-
-    public function setAmountRaised(Money $amountRaised): void
-    {
-        $this->amountRaised = $amountRaised;
-    }
-
-    public function setMatchFundsUsed(Money $matchFundsUsed): void
-    {
-        $this->matchFundsUsed = $matchFundsUsed;
     }
 
     public function getDonationSum(): Money
@@ -121,5 +112,29 @@ class CampaignStatistics
     public function getMatchFundsTotal(): Money
     {
         return $this->matchFundsTotal;
+    }
+
+    final public function setTotals(
+        Money $donationSum,
+        Money $amountRaised,
+        Money $matchFundsUsed,
+        Money $matchFundsTotal,
+    ): void {
+        Assertion::greaterOrEqualThan(
+            $matchFundsTotal->toNumericString(),
+            $matchFundsUsed->toNumericString(),
+            'Match funds total must be greater than or equal to match funds used',
+        );
+        Assertion::eq(
+            $amountRaised->toNumericString(),
+            $donationSum->plus($matchFundsUsed)->toNumericString(),
+            'Amount raised must equal donation sum plus match funds used',
+        );
+
+        $this->amountRaised = $amountRaised;
+        $this->donationSum = $donationSum;
+        $this->matchFundsUsed = $matchFundsUsed;
+        $this->matchFundsTotal = $matchFundsTotal;
+        $this->matchFundsRemaining = $matchFundsTotal->minus($matchFundsUsed);
     }
 }
