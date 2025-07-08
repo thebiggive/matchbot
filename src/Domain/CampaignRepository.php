@@ -301,11 +301,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * Returns the total of all the complete donations to this campaign, including matching but not gift aid.
-     *
-     * Note that this DOES NOT include gift aid - compare {@see MetaCampaignRepository::totalAmountRaised()} which does.
+     * Returns the total of all the complete donations to this campaign, excluding matching and Gift Aid.
      */
-    public function totalAmountRaised(int $campaignId): Money
+    public function totalCoreDonations(Campaign $campaign): Money
     {
         $donationQuery = $this->getEntityManager()->createQuery(
             <<<'DQL'
@@ -317,7 +315,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
 
         $donationQuery->setParameters([
-            'campaignId' => $campaignId,
+            'campaignId' => $campaign->getId(),
             'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
         ]);
 
@@ -325,7 +323,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $donationResult =  $donationQuery->getResult();
 
         if ($donationResult === []) {
-            return Money::zero(Currency::GBP);
+            return Money::zero($campaign->getCurrency());
         }
 
         Assertion::count(
@@ -334,32 +332,40 @@ class CampaignRepository extends SalesforceReadProxyRepository
             "multiple currency donations found for same campaign, can't calculate sum"
         );
 
-        $donationSum = $donationResult[0]['sum'];
+        $donationSumNumeric = $donationResult[0]['sum'];
 
-        Assertion::numeric($donationSum);
+        return Money::fromNumericString($donationSumNumeric, Currency::fromIsoCode($donationResult[0]['currencyCode']));
+    }
 
-        $matchedFundQuery = $this->getEntityManager()->createQuery(
+    public function totalMatchFundsUsed(int $campaignId): Money
+    {
+        // FW doesn't use Money value object or have its own currency code field yet, so we join to CampaignFunding
+        // solely to get that.
+        $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
-            SELECT COALESCE(SUM(fw.amount), 0) as sum
+            SELECT COALESCE(SUM(fw.amount), 0) as sum, cf.currencyCode as currencyCode
             FROM MatchBot\Domain\FundingWithdrawal fw
             JOIN fw.donation donation
+            JOIN fw.campaignFunding cf
             WHERE donation.campaign = :campaignId AND donation.donationStatus IN (:succcessStatus)
+            GROUP BY cf.currencyCode
         DQL
         );
 
-        $matchedFundQuery->setParameters([
+        $query->setParameters([
             'campaignId' => $campaignId,
             'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
         ]);
 
-        $matchedFundResult =  $matchedFundQuery->getSingleScalarResult();
-        Assertion::numeric($matchedFundResult);
+        /** @var null|array{sum: numeric-string, currencyCode: string} $result */
+        $result = $query->getOneOrNullResult();
 
-        $total = \bcadd($donationSum, (string) $matchedFundResult, 2);
+        if ($result === null) {
+            return Money::zero();
+        }
+        Assertion::numeric($result['sum']);
 
-        $currency = Currency::fromIsoCode($donationResult[0]['currencyCode']);
-
-        return Money::fromNumericString($total, $currency);
+        return Money::fromNumericString($result['sum'], Currency::fromIsoCode($result['currencyCode']));
     }
 
     /**
@@ -418,6 +424,50 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function setClock(ClockInterface $clock): void
     {
         $this->clock = $clock;
+    }
+
+    /**
+     * @return list<Campaign> Each campaign with a donation updated recently.
+     * It's more DB-efficient to check for any update than for recent collection & recent refunds.
+     */
+    public function findWithDonationChangesSince(\DateTimeImmutable $updatedAfter): array
+    {
+        $query = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            SELECT DISTINCT campaign
+            FROM MatchBot\Domain\Campaign campaign
+            JOIN MatchBot\Domain\Donation donation WITH donation.campaign = campaign.id
+            WHERE donation.updatedAt >= :donationUpdatedAfter
+            DQL
+        );
+
+        $query->setParameter('donationUpdatedAfter', $updatedAfter);
+
+        /** @var list<Campaign> $result */
+        $result =  $query->getResult();
+
+        return $result;
+    }
+
+    /**
+     * @return list<Campaign> Each campaign with no stats since $oldestExpected.
+     */
+    public function findCampaignsWithNoRecentStats(\DateTimeImmutable $oldestExpected): array
+    {
+        $query = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            SELECT campaign FROM MatchBot\Domain\Campaign campaign
+            LEFT OUTER JOIN MatchBot\Domain\CampaignStatistics stats WITH stats.campaign = campaign.id
+            WHERE stats.campaign IS NULL OR stats.updatedAt < :oldestExpected
+            ORDER BY campaign.createdAt ASC
+        DQL
+        );
+        $query->setParameter('oldestExpected', $oldestExpected);
+
+        /** @var list<Campaign> $result */
+        $result =  $query->getResult();
+
+        return $result;
     }
 
     /**
@@ -490,9 +540,18 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $status,
         array $jsonMatchOneConditions,
         array $jsonMatchInListConditions,
-        ?string $termWildcarded
+        ?string $termWildcarded,
+        bool $filterOutTargetMet,
     ): void {
-        $qb->where($qb->expr()->eq('campaign.hidden', '0'));
+        $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
+        $qb->andWhere(<<<DQL
+            campaign.metaCampaignSlug IS NULL OR
+            (
+                campaign.relatedApplicationStatus = 'Approved' AND
+                campaign.relatedApplicationCharityResponseToOffer = 'Accepted'
+            )
+            DQL
+        );
 
         if ($status !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.status', ':status'));
@@ -523,6 +582,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 )
             );
             $qb->setParameter('termForWhere', $termWildcarded);
+        }
+
+        if ($filterOutTargetMet) {
+            $qb->andWhere($qb->expr()->neq('campaignStatistics.distanceToTarget.amountInPence', 0));
         }
     }
 
@@ -577,7 +640,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $qb = $this->getEntityManager()->createQueryBuilder();
 
         $safeSortField = match ($sortField) {
-            'matchFundsRemaining' => throw new \Exception('Sorting by matchFundsRemaining not yet implemented'),
+            'amountRaised' => 'campaignStatistics.amountRaised.amountInPence',
+            'distanceToTarget' => 'campaignStatistics.distanceToTarget.amountInPence',
+            'matchFundsRemaining' => 'campaignStatistics.matchFundsRemaining.amountInPence',
+            'matchFundsUsed' => 'campaignStatistics.matchFundsUsed.amountInPence',
             'relevance' => 'relevance',
             default => null,
         };
@@ -594,6 +660,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $qb->select('campaign')
             ->from(Campaign::class, 'campaign')
             ->join('campaign.charity', 'charity')
+            // Campaigns must have a stats record to be searched. Probably OK and worth it to keep the
+            // join & sorting simple.
+            ->join('campaign.campaignStatistics', 'campaignStatistics')
             ->setFirstResult($offset)
             ->setMaxResults($limit);
 
@@ -604,7 +673,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $termWildcarded = null;
         }
 
-        $this->filterForSearch($qb, $status, $jsonMatchOneConditions, $jsonMatchInListConditions, $termWildcarded);
+        $filterOutTargetMet =
+            $safeSortField === 'campaignStatistics.distanceToTarget.amountInPence' &&
+            $sortDirection === 'asc';
+        $this->filterForSearch($qb, $status, $jsonMatchOneConditions, $jsonMatchInListConditions, $termWildcarded, $filterOutTargetMet);
         $this->sortForSearch($qb, $safeSortField, $sortDirection, $termWildcarded);
 
         $query = $qb->getQuery();

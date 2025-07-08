@@ -12,9 +12,11 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Settings;
 use MatchBot\Client\Mandate as MandateSFClient;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\Charity;
 use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\SalesforceProxy;
@@ -244,6 +246,7 @@ abstract class IntegrationTest extends TestCase
 
     public function clearPreviousCampaignsCharitiesAndRelated(): void
     {
+        $this->db()->executeStatement('DELETE FROM CampaignStatistics');
         $this->db()->executeStatement('DELETE FROM FundingWithdrawal');
         $this->db()->executeStatement('DELETE FROM Donation');
         $this->db()->executeStatement('DELETE FROM Campaign_CampaignFunding');
@@ -487,6 +490,32 @@ abstract class IntegrationTest extends TestCase
         @$fakeStripeClient->customerSessions = $stripeCustomerSessions->reveal();
 
         return $fakeStripeClient;
+    }
+
+    protected function createCampaign(?Charity $charity = null): Campaign
+    {
+        return new Campaign(
+            Salesforce18Id::ofCampaign('campaignId12345678'),
+            metaCampaignSlug: null,
+            charity: $charity ?? \MatchBot\Tests\TestCase::someCharity(),
+            startDate: new \DateTimeImmutable('now'),
+            endDate: new \DateTimeImmutable('now'),
+            isMatched: true,
+            ready: true,
+            status: 'Active',
+            name: 'Campaign Name',
+            currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
+            isRegularGiving: false,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
+            regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
+            thankYouMessage: null,
+            rawData: [],
+            hidden: false,
+        );
     }
 
     protected function createDonation(

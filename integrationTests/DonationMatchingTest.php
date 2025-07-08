@@ -7,6 +7,7 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DoctrineDonationRepository;
 use Psr\Log\LoggerInterface;
 use Redis;
@@ -32,7 +33,7 @@ class DonationMatchingTest extends IntegrationTest
         ['campaignFundingId' => $this->campaignFundingId, 'campaignId' => $campaignId] =
             $this->addFundedCampaignAndCharityToDB(campaignSfId: $this->randomString(), fundWithAmountInPounds: 100);
 
-        $campaign = $this->getService(\MatchBot\Domain\CampaignRepository::class)->find($campaignId);
+        $campaign = $this->getService(CampaignRepository::class)->find($campaignId);
         Assertion::notNull($campaign);
         $campaignFunding = $this->campaignFundingRepository->find($this->campaignFundingId);
         Assertion::notNull($campaignFunding);
@@ -62,7 +63,7 @@ class DonationMatchingTest extends IntegrationTest
         );
         ['campaignFundingId' => $this->campaignFundingId, 'campaignId' => $campaignId] = $campaignInfo;
 
-        $campaign = $this->getService(\MatchBot\Domain\CampaignRepository::class)->find($campaignId);
+        $campaign = $this->getService(CampaignRepository::class)->find($campaignId);
         Assertion::notNull($campaign);
         $campaignFunding = $this->campaignFundingRepository->find($this->campaignFundingId);
         Assertion::notNull($campaignFunding);
@@ -75,6 +76,8 @@ class DonationMatchingTest extends IntegrationTest
                 campaignSfID: $campaign->getSalesforceId(),
                 amountInPounds: 10,
             );
+
+            $this->fail('Expected an exception to be thrown when subtracting funds');
         } catch (\Exception $e) {
             $this->assertSame(
                 'Throwing after subtracting funds to test how our system handles the crash',

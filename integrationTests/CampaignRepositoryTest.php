@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignStatistics;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
@@ -146,7 +147,7 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $campaign2 = new Campaign(
             self::someSalesForce18CampaignId(),
-            metaCampaignSlug: 'the-family',
+            metaCampaignSlug: null,
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('-8 months'),
             endDate: new \DateTimeImmutable('+1 month'),
@@ -173,9 +174,15 @@ class CampaignRepositoryTest extends IntegrationTest
             hidden: false,
         );
 
+        // Add empty initial stats
+        $stats1 = CampaignStatistics::zeroPlaceholder($campaign1);
+        $stats2 = CampaignStatistics::zeroPlaceholder($campaign2);
+
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign1);
         $em->persist($campaign2);
+        $em->persist($stats1);
+        $em->persist($stats2);
         $em->flush();
 
         // act
