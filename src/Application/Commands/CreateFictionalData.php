@@ -23,7 +23,6 @@ use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
-use Ramsey\Uuid\Uuid;
 use Random\Randomizer;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Attribute\AsCommand;
