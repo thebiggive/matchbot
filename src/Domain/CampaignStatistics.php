@@ -62,6 +62,8 @@ class CampaignStatistics
      * @param Money $amountRaised
      * @param Money $matchFundsUsed
      * @param Money $matchFundsTotal
+     *
+     * $amountRaised must be equal to $matchFundsUsed + $donationSum
      */
     public function __construct(
         Campaign $campaign,
