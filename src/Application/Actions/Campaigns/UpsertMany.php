@@ -24,6 +24,9 @@ use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
 use MatchBot\Client;
+use Symfony\Component\Lock\Exception\LockAcquiringException;
+use Symfony\Component\Lock\Exception\LockConflictedException;
+use Symfony\Component\Lock\LockFactory;
 
 /**
  * @psalm-import-type SFCampaignApiResponse from Client\Campaign
@@ -37,6 +40,7 @@ class UpsertMany extends Action
         private MetaCampaignRepository $metaCampaignRepository,
         private CharityRepository $charityRepository,
         private EntityManager $entityManager,
+        private LockFactory $lockFactory,
     ) {
         parent::__construct($logger);
     }
@@ -66,6 +70,17 @@ class UpsertMany extends Action
 
         /** @var list<SFCampaignApiResponse> $multiCampaignData */
         $multiCampaignData = $requestBody['campaigns'];
+
+        try {
+            // we don't want to run this section twice at once in two threads because the ORM doens't actually do an
+            // upsert - it checks for existence and then does an insert or update accordingly. If two threads
+            // try to insert the same charity then one will throw a UniqueConstraintViolationException and close the EM
+            $lock = $this->lockFactory->createLock(self::class, autoRelease: true);
+            $lock->acquire(blocking: true);
+        } catch (LockConflictedException | LockAcquiringException) {
+            $this->logger->error("Could not aquire lock to upsert campaigns");
+            return new JsonResponse("Could not aquire lock to upsert campaigns", 400);
+        }
 
         foreach ($multiCampaignData as $campaignData) {
             /** @var Salesforce18Id<Campaign|MetaCampaign> $campaignSfId */
