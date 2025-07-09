@@ -457,7 +457,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
             SELECT campaign FROM MatchBot\Domain\Campaign campaign
-            LEFT OUTER JOIN MatchBot\Domain\CampaignStatistics stats WITH stats.campaign = campaign.id
+            LEFT OUTER JOIN campaign.campaignStatistics stats
             WHERE stats.campaign IS NULL OR stats.updatedAt < :oldestExpected
             ORDER BY campaign.createdAt ASC
         DQL
