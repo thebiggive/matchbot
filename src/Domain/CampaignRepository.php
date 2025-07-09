@@ -617,7 +617,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
         }
 
-        $qb->addOrderBy('campaign.endDate', 'DESC');
+        // Active, Expired, Preview in that order.
+        $qb->addOrderBy('campaign.status', 'ASC');
     }
 
     /**
@@ -647,14 +648,14 @@ class CampaignRepository extends SalesforceReadProxyRepository
             'matchFundsRemaining' => 'campaignStatistics.matchFundsRemaining.amountInPence',
             'matchFundsUsed' => 'campaignStatistics.matchFundsUsed.amountInPence',
             'relevance' => 'relevance',
-            default => null,
+            default => 'campaignStatistics.matchFundsUsed.amountInPence',
         };
 
         if ($term === null && $safeSortField === 'relevance') {
             throw new \Exception('Please provide a term to sort by relevance');
         }
 
-        if ($safeSortField === null && $term !== null) {
+        if ($term !== null) {
             $safeSortField = 'relevance';
             $sortDirection = 'desc';
         }
@@ -696,6 +697,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
 
         $query = $qb->getQuery();
+
         /** @var list<Campaign> $result */
         $result = $query->getResult();
 
