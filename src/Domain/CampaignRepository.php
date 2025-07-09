@@ -545,6 +545,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         bool $filterOutTargetMet,
     ): void {
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
+        $qb->andWhere('campaign.status IS NOT NULL');
         $qb->andWhere(<<<DQL
             campaign.metaCampaignSlug IS NULL OR
             (
