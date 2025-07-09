@@ -28,6 +28,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
         private Environment $environment,
         private CampaignRepository $campaignRepository,
         private FundRepository $fundRepository,
+        private \DateTimeImmutable $now,
     ) {
         parent::__construct();
     }
@@ -66,7 +67,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
             $output->writeln("Campaign {$this->campaignFullName($campaign)} not found, pulled from SF");
         }
 
-        $this->fundRepository->pullForCampaign($campaign);
+        $this->fundRepository->pullForCampaign($campaign, $this->now);
         $output->writeln("Fund data updated for campaign " . $this->campaignFullName($campaign));
 
         return 0;

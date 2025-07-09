@@ -23,6 +23,7 @@ use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
 use MatchBot\Application\Commands\SendStatistics;
 use MatchBot\Application\Commands\SetupTestMandate;
 use MatchBot\Application\Commands\TakeRegularGivingDonations;
+use MatchBot\Application\Commands\UpdateCampaignDonationStats;
 use MatchBot\Application\Commands\UpdateCampaigns;
 use MatchBot\Application\Commands\WriteSchemaFile;
 use Monolog\Handler\StreamHandler;
@@ -46,24 +47,21 @@ $commands = array_map($psr11App->get(...), [
     ClaimGiftAid::class,
     ConsumeMessagesCommand::class,
     CreateFictionalData::class,
-
     ExpireMatchFunds::class,
     ExpirePendingMandates::class,
     HandleOutOfSyncFunds::class,
     PullIndividualCampaignFromSF::class,
-
     PullMetaCampaignFromSF::class,
     PushDailyFundTotals::class,
     PushDonations::class,
     RedistributeMatchFunds::class,
-
     ResetMatching::class,
     RetrospectivelyMatch::class,
     ScheduledOutOfSyncFundsCheck::class,
     SendStatistics::class,
-
     SetupTestMandate::class,
     TakeRegularGivingDonations::class,
+    UpdateCampaignDonationStats::class,
     UpdateCampaigns::class,
     WriteSchemaFile::class,
 ]);

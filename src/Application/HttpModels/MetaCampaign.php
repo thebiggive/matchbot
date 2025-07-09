@@ -26,6 +26,7 @@ readonly class MetaCampaign
         public string $startDate,
         public string $endDate,
         public float $matchFundsTotal,
+        /** Approved participating campaign count*/
         public int $campaignCount,
         public bool $usesSharedFunds,
     ) {

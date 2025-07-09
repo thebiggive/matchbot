@@ -23,6 +23,15 @@ use Psr\Log\NullLogger;
 class FundRepositoryTest extends TestCase
 {
     public const string CAMPAIGN_SF_ID = 'SFFaKEID987XXxXXXX';
+    private \DateTimeImmutable $now;
+
+
+    #[\Override]
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->now = new \DateTimeImmutable('2020-01-01T00:00:00z'); // specific date doesn't matter for now.
+    }
 
     public function testPull(): void
     {
@@ -96,7 +105,7 @@ class FundRepositoryTest extends TestCase
 
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID));
 
-        $repo->pullForCampaign($campaign);
+        $repo->pullForCampaign($campaign, $this->now);
 
         $this->assertInstanceOf(CampaignFunding::class, $campaignFunding);
         $this->assertInstanceOf(\DateTime::class, $campaignFunding->getCreatedDate());
@@ -145,7 +154,7 @@ class FundRepositoryTest extends TestCase
 
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID));
 
-        $repo->pullForCampaign($campaign);
+        $repo->pullForCampaign($campaign, $this->now);
     }
 
     public function testPullForCampaignAllExistingWithBalanceUpdated(): void
@@ -202,7 +211,7 @@ class FundRepositoryTest extends TestCase
 
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID));
 
-        $repo->pullForCampaign($campaign);
+        $repo->pullForCampaign($campaign, $this->now);
     }
 
     /**
@@ -252,7 +261,7 @@ class FundRepositoryTest extends TestCase
 
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID));
 
-        $repo->pullForCampaign($campaign);
+        $repo->pullForCampaign($campaign, $this->now);
     }
 
     private function getExistingFund(bool $shared): Fund
@@ -264,7 +273,7 @@ class FundRepositoryTest extends TestCase
             fundType: FundType::ChampionFund
         );
         $existingFund->setId($shared ? 456456 : 123123);
-        $existingFund->setSalesforceLastPull(new \DateTime());
+        $existingFund->setSalesforceLastPull($this->now);
 
         return $existingFund;
     }

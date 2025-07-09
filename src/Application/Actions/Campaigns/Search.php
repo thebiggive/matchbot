@@ -46,7 +46,6 @@ class Search extends Action
 
         // @todo fund slug – have to join when set, and also first start storing in Fund table?
 
-        $jsonMatchOneConditions = [];
         $jsonMatchInListConditions = [];
         foreach ($params as $key => $value) {
             switch ($key) {
@@ -62,15 +61,14 @@ class Search extends Action
                     Assertion::string($value);
                     $jsonMatchInListConditions['countries'] = $value;
                     break;
-                case 'parent':
-                case 'parentSlug':
-                    Assertion::string($value);
-                    $jsonMatchOneConditions['parentRef'] = $value;
-                    break;
                 default:
                     // No other params apply a filter using the JSON `salesforceData` field.
             }
         }
+
+        /** @var ?string $parentSlug */
+        $parentSlug = $params['parentSlug'] ?? null;
+        Assertion::nullOrString($parentSlug);
 
         // Use limit 100 if a higher value requested.
         $limit = min(100, (int) ($params['limit'] ?? 20));
@@ -80,14 +78,12 @@ class Search extends Action
             offset: (int) ($params['offset'] ?? 0),
             limit: $limit,
             status: $status,
-            jsonMatchOneConditions: $jsonMatchOneConditions,
+            metaCampaignSlug: $parentSlug,
             jsonMatchInListConditions: $jsonMatchInListConditions,
             term: $term,
         );
 
         /**
-         * @todo Performant summaries – most notably `amountRaised` and `matchFundsRemaining` should
-         * come from stats table.
          * Some campaigns have SF data {} when they were last synced before we saved full SF data. If we try
          * to render those there are missing array keys for beneficiaries et al.
          * @psalm-suppress RedundantCondition For charity only empty SF data; we'll soon load all campaign data.
@@ -99,6 +95,6 @@ class Search extends Action
         });
         $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData);
 
-        return new JsonResponse($campaignSummaries, 200);
+        return new JsonResponse(['campaignSummaries' => $campaignSummaries], 200);
     }
 }

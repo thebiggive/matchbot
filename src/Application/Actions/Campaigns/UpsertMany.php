@@ -104,10 +104,7 @@ class UpsertMany extends Action
         $charity = $this->charityRepository->findOneBySalesforceId($charitySfId);
 
         if (!$charity) {
-            $charity = $this->campaignRepository->newCharityFromCampaignData($campaignData);
-            $this->entityManager->persist($charity);
-
-            $this->logger->info("Saving new charity from SF: {$charity->getName()} {$charity->getSalesforceId()}");
+            throw new \Exception("Does not have a Charity record with the details: {$charityData['name']} {$charityData['id']} Campaign Details: {$campaignData['title']} {$campaignData['id']}");
         }
         // else we DO NOT update the charity here - for efficiency and clarity a separate action should be used to send
         // charity updates when they change, instead of updating the charity every time a campaign changes.
@@ -117,7 +114,8 @@ class UpsertMany extends Action
             $this->logger->info("Saving new campaign from SF: {$charity->getName()} {$charity->getSalesforceId()}");
             $this->entityManager->persist($campaign);
         } else {
-            $this->campaignRepository->updateCampaignFromSFData($campaign, $campaignData);
+            // don't update the charity, won't work if we are updating many at once in parallel and the charity gets updated separatley.
+            $this->campaignRepository->updateCampaignFromSFData($campaign, $campaignData, alsoUpdateCharity: false);
             $this->logger->info("updating campaign {$campaign->getId()} from SF: {$charity->getName()} {$charity->getSalesforceId()}");
         }
     }

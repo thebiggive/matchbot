@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignStatistics;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
@@ -35,11 +36,13 @@ class CampaignRepositoryTest extends IntegrationTest
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,
             rawData: [],
-            hidden: false,
-            totalFundraisingTarget: Money::zero(),
+            hidden: false
         );
 
 
@@ -86,6 +89,8 @@ class CampaignRepositoryTest extends IntegrationTest
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
             thankYouMessage: null,
             rawData: [],
@@ -128,14 +133,16 @@ class CampaignRepositoryTest extends IntegrationTest
             status: null,
             name: 'Campaign One',
             currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
             isRegularGiving: false,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,
             rawData: [],
             hidden: false,
-            totalFundingAllocation: Money::zero(),
-            totalFundraisingTarget: Money::zero(),
-            amountPledged: Money::zero(),
         );
 
         $campaign2 = new Campaign(
@@ -149,25 +156,32 @@ class CampaignRepositoryTest extends IntegrationTest
             status: 'Active',
             name: 'Campaign Two is for Porridge and Juice',
             currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
             isRegularGiving: false,
+            relatedApplicationStatus: 'Approved',
+            relatedApplicationCharityResponseToOffer: 'Accepted',
             regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,
             rawData: [
                 'beneficiaries' => ['Lads', 'Dads'],
                 'categories' => ['Food', 'Drink'],
                 'countries' => ['United Kingdom', 'Ireland'],
-                'parentRef' => 'the-family',
                 'title' => 'Campaign Two is for Porridge and Juice',
             ],
             hidden: false,
-            totalFundingAllocation: Money::zero(),
-            totalFundraisingTarget: Money::zero(),
-            amountPledged: Money::zero(),
         );
+
+        // Add empty initial stats
+        $stats1 = CampaignStatistics::zeroPlaceholder($campaign1);
+        $stats2 = CampaignStatistics::zeroPlaceholder($campaign2);
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign1);
         $em->persist($campaign2);
+        $em->persist($stats1);
+        $em->persist($stats2);
         $em->flush();
 
         // act
@@ -177,9 +191,7 @@ class CampaignRepositoryTest extends IntegrationTest
             offset: 0,
             limit: 6,
             status: 'Active',
-            jsonMatchOneConditions: [
-                'parentRef' => 'the-family',
-            ],
+            metaCampaignSlug: 'the-family',
             jsonMatchInListConditions: [
                 'beneficiaries' => 'Lads',
                 'categories' => 'Food',

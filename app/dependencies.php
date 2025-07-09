@@ -344,9 +344,12 @@ return function (ContainerBuilder $containerBuilder) {
                     // `CharityUpdated` does call out to Salesforce, to read data, but it's rarer and
                     // occasionally more time-sensitive than the group below which push data.
                     CharityUpdated::class => [Transports::TRANSPORT_HIGH_PRIORITY],
-                    StripePayout::class => [Transports::TRANSPORT_HIGH_PRIORITY],
 
-                    // Outbound, Salesforce (lower priority), for MatchBot worker; SQS queue in Production.
+                    // Outbound, payout processing and Salesforce pushes (lower priority). For MatchBot worker; SQS
+                    // queue in Production. Payouts are low priority solely because they can be slow due to numerous
+                    // Stripe callouts and in some situations there's only 1 ECS task. We want more time-sensitive
+                    // messages to still jump `StripePayout`s in the queue in that case.
+                    StripePayout::class => [Transports::TRANSPORT_LOW_PRIORITY],
                     DonationUpserted::class => [Transports::TRANSPORT_LOW_PRIORITY],
                     FundTotalUpdated::class => [Transports::TRANSPORT_LOW_PRIORITY],
                     MandateUpserted::class => [Transports::TRANSPORT_LOW_PRIORITY],

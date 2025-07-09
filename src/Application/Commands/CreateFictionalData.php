@@ -7,9 +7,11 @@ use Laminas\Diactoros\Uri;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Client\Campaign as CampaignClient;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
+use MatchBot\Domain\CampaignStatistics;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\Fund;
@@ -21,7 +23,6 @@ use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
-use Ramsey\Uuid\Uuid;
 use Random\Randomizer;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -96,16 +97,18 @@ class CreateFictionalData extends Command
             $campaignId = Salesforce18Id::ofCampaign($fictionalCampaign['id']);
             $campaign = $this->campaignRepository->findOneBySalesforceId($campaignId);
             if (!$campaign) {
-                $campaign = \MatchBot\Domain\Campaign::fromSfCampaignData(
+                $campaign = Campaign::fromSfCampaignData(
                     $fictionalCampaign,
                     $campaignId,
                     $charity
                 );
 
                 $campaign->setSalesforceLastPull(new \DateTime());
+                $stats = CampaignStatistics::zeroPlaceholder($campaign);
 
                 $io->writeln("Created fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
                 $this->em->persist($campaign);
+                $this->em->persist($stats);
                 $campaignFunding->addCampaign($campaign);
             } else {
                 $io->writeln("Found existing fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
@@ -212,6 +215,8 @@ class CreateFictionalData extends Command
             'championOptInStatement' => null,
             'parentMatchFundsRemaining' => null,
             'regularGivingCollectionEnd' => null,
+            'relatedApplicationStatus' => 'Approved',
+            'relatedApplicationCharityResponseToOffer' => 'Accepted',
         ];
     }
 

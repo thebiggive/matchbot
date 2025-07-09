@@ -25,6 +25,8 @@ use Psr\Http\Message\UriInterface;
 #[ORM\Index(name: 'hidden', columns: ['hidden'])]
 class MetaCampaign extends SalesforceReadProxy
 {
+    use TimestampsTrait;
+
     public const string STATUS_VIEW_CAMPAIGN = 'View campaign';
     #[ORM\Column(length: 64, unique: true, nullable: false)]
     private string $slug;
@@ -51,7 +53,7 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Column()]
     private bool $hidden;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(length: 1_000, nullable: true)]
     private ?string $summary;
 
     #[ORM\Column(nullable: true)]
@@ -133,6 +135,8 @@ class MetaCampaign extends SalesforceReadProxy
     ) {
         Assertion::same($totalAdjustment->currency, $currency);
 
+        $this->createdNow();
+
         $this->slug = $slug->slug;
         $this->setSalesforceId($salesforceId->value);
         $this->title = $title;
@@ -213,7 +217,11 @@ class MetaCampaign extends SalesforceReadProxy
 
         $currency = Currency::fromIsoCode($data['currencyCode']);
 
-        $totalAdjustment = (string)$data['totalAdjustment'];
+        $totalAdjustment = (string)($data['totalAdjustment'] ?? '0.00');
+        /** @psalm-suppress TypeDoesNotContainType */
+        if ($totalAdjustment === '') {
+            $totalAdjustment = '0.0';
+        }
         Assertion::numeric($totalAdjustment);
 
         $this->status = $status;

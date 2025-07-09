@@ -36,9 +36,10 @@ class FundRepository extends SalesforceReadProxyRepository
 
     /**
      * @param Campaign  $campaign
+     * @param DateTimeImmutable $at
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      */
-    public function pullForCampaign(Campaign $campaign): void
+    public function pullForCampaign(Campaign $campaign, \DateTimeImmutable $at): void
     {
         $client = $this->getClient();
 
@@ -91,8 +92,8 @@ class FundRepository extends SalesforceReadProxyRepository
 
             if ($campaignFunding) {
                 // Existing funding -> check for balance increase and apply any in a high-volume-safe way.
-                // Note that a balance DECREASE on the API side is unsupported and would be error logged below,
-                // as this risks invalidating in-progress donation matches.
+                // Note that a balance DECREASE after campaign open time is unsupported and would be error
+                // logged below, as this risks invalidating in-progress donation matches.
                 $increaseInAmount = bcsub($amountForCampaign, $campaignFunding->getAmount(), 2);
 
                 if (bccomp($increaseInAmount, '0.00', 2) === 1) {
@@ -111,10 +112,10 @@ class FundRepository extends SalesforceReadProxyRepository
                     $campaignFunding->setAmount($amountForCampaign);
                 }
 
-                if (bccomp($increaseInAmount, '0.00', 2) === -1) {
+                if (bccomp($increaseInAmount, '0.00', 2) === -1 && $campaign->getStartDate() < $at) {
                     $this->getLogger()->error(
                         "Funding ID {$campaignFunding->getId()} balance could not be negative-increased by " .
-                        "£{$increaseInAmount}. Salesforce Fund ID {$fundData['id']}."
+                        "£{$increaseInAmount}. Salesforce Fund ID {$fundData['id']} as campaign {$campaignSFId} opened in past"
                     );
                 }
             } else {

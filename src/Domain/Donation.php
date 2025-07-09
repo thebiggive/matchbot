@@ -89,7 +89,8 @@ class Donation extends SalesforceWriteProxy
     /**
      * @var string|null PSP's transaction ID assigned on their processing.
      *
-     * In the case of stripe (which is the only thing we support at present, this is the payment intent ID)
+     * In the case of stripe (which is the only thing we support at present, this is the payment intent ID).
+     * May change after initial assignment until donation's Collected, in some edge cases.
      */
     #[ORM\Column(unique: true, nullable: true)]
     protected ?string $transactionId = null;

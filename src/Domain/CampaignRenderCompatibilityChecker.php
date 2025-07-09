@@ -42,6 +42,8 @@ class CampaignRenderCompatibilityChecker
         'totalMatchedFundsAvailable',
         'masterCampaignStatus', // sent by SF just to allow matchbot to calculate status of a metacampaign at output time
         'campaignStatus', // sent by SF just to allow matchbot to calculate status of a metacampaign at output time
+        'relatedApplicationStatus', // sent by SF to allow matchbot to count campaigns etc, not needed in FE.
+        'relatedApplicationCharityResponseToOffer', // sent by SF to allow matchbot to count campaigns etc, not needed in FE.
     ];
 
     /**

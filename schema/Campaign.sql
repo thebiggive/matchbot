@@ -31,10 +31,14 @@ CREATE TABLE `Campaign` (
   `amount_pledged_currency` varchar(3) NOT NULL,
   `total_fundraising_target_amountInPence` int NOT NULL,
   `total_fundraising_target_currency` varchar(3) NOT NULL,
+  `relatedApplicationStatus` varchar(64) DEFAULT NULL,
+  `relatedApplicationCharityResponseToOffer` varchar(64) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_E663708BD8961D21` (`salesforceId`),
   KEY `IDX_E663708BF5C97E37` (`charity_id`),
   KEY `end_date_and_is_matched` (`endDate`,`isMatched`),
   KEY `metaCampaignSlug` (`metaCampaignSlug`),
+  KEY `relatedApplicationStatus` (`relatedApplicationStatus`),
+  KEY `relatedApplicationCharityResponseToOffer` (`relatedApplicationCharityResponseToOffer`),
   CONSTRAINT `FK_E663708BF5C97E37` FOREIGN KEY (`charity_id`) REFERENCES `Charity` (`id`)
 )

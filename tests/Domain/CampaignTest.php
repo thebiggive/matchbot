@@ -28,11 +28,13 @@ class CampaignTest extends TestCase
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,
             rawData: [],
             hidden: false,
-            totalFundraisingTarget: Money::zero(),
         );
 
         $this->assertTrue($campaign->isOpen(new \DateTimeImmutable('2025-01-01')));
@@ -53,11 +55,13 @@ class CampaignTest extends TestCase
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,
             rawData: [],
             hidden: false,
-            totalFundraisingTarget: Money::zero(),
         );
 
         $this->assertFalse($campaign->isOpen(at: new \DateTimeImmutable('2025-01-01')));
@@ -78,6 +82,8 @@ class CampaignTest extends TestCase
             currencyCode: 'GBP',
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             isRegularGiving: false,
             regularGivingCollectionEnd: null,
             thankYouMessage: null,
@@ -103,6 +109,8 @@ class CampaignTest extends TestCase
             name: 'campaign name',
             currencyCode: 'GBP',
             totalFundingAllocation: Money::zero(),
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
             amountPledged: Money::zero(),
             isRegularGiving: false,
             regularGivingCollectionEnd: null,
