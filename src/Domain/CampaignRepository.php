@@ -678,7 +678,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $filterOutTargetMet =
             $safeSortField === 'campaignStatistics.distanceToTarget.amountInPence' &&
             $sortDirection === 'asc';
-        
+
         $this->filterForSearch(
             qb: $qb,
             status: $status,
