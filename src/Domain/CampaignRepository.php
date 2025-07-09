@@ -534,13 +534,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * @param QueryBuilder $qb Builder with its select etc. already set up.
-     * @param array<string, string> $jsonMatchOneConditions
      * @param array<string, string> $jsonMatchInListConditions
      */
     private function filterForSearch(
         QueryBuilder $qb,
         ?string $status,
-        array $jsonMatchOneConditions,
+        ?string $metaCampaignSlug,
         array $jsonMatchInListConditions,
         ?string $termWildcarded,
         bool $filterOutTargetMet,
@@ -560,9 +559,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('status', $status);
         }
 
-        foreach ($jsonMatchOneConditions as $field => $value) {
-            $qb->andWhere($qb->expr()->eq("JSON_EXTRACT(campaign.salesforceData, '$.$field')", ':jsonMatchOne_' . $field));
-            $qb->setParameter('jsonMatchOne_' . $field, $value);
+        if ($metaCampaignSlug !== null) {
+            $qb->andWhere($qb->expr()->eq('campaign.metaCampaignSlug', ':metaCampaignSlug'));
+            $qb->setParameter('metaCampaignSlug', $metaCampaignSlug);
         }
 
         foreach ($jsonMatchInListConditions as $field => $value) {
@@ -623,10 +622,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * @param 'asc'|'desc' $sortDirection
-     * @param array<string, string> $jsonMatchOneConditions Keyed on JSON key name. Value must exactly match the
-     *                                                      JSON property with the same key.
      * @param array<string, string> $jsonMatchInListConditions Keyed on plural JSON key name. Value must exactly match
      *                                                         one of the items in the JSON array with the same key.
+     *
+     * Warning - keys in $jsonMatchInListConditionsmust be literal strings otherwise there will be SQL injection vuulnerabilities.
+     *
      * @return list<Campaign>
      */
     public function search(
@@ -635,7 +635,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         int $offset,
         int $limit,
         ?string $status,
-        array $jsonMatchOneConditions,
+        ?string $metaCampaignSlug,
         array $jsonMatchInListConditions,
         ?string $term
     ): array {
@@ -678,8 +678,22 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $filterOutTargetMet =
             $safeSortField === 'campaignStatistics.distanceToTarget.amountInPence' &&
             $sortDirection === 'asc';
-        $this->filterForSearch($qb, $status, $jsonMatchOneConditions, $jsonMatchInListConditions, $termWildcarded, $filterOutTargetMet);
-        $this->sortForSearch($qb, $safeSortField, $sortDirection, $termWildcarded);
+        
+        $this->filterForSearch(
+            qb: $qb,
+            status: $status,
+            metaCampaignSlug: $metaCampaignSlug,
+            jsonMatchInListConditions: $jsonMatchInListConditions,
+            termWildcarded: $termWildcarded,
+            filterOutTargetMet: $filterOutTargetMet
+        );
+
+        $this->sortForSearch(
+            qb: $qb,
+            safeSortField: $safeSortField,
+            sortDirection: $sortDirection,
+            termWildcarded: $termWildcarded
+        );
 
         $query = $qb->getQuery();
         /** @var list<Campaign> $result */

@@ -147,7 +147,7 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $campaign2 = new Campaign(
             self::someSalesForce18CampaignId(),
-            metaCampaignSlug: null,
+            metaCampaignSlug: 'the-family',
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('-8 months'),
             endDate: new \DateTimeImmutable('+1 month'),
@@ -159,8 +159,8 @@ class CampaignRepositoryTest extends IntegrationTest
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
-            relatedApplicationStatus: null,
-            relatedApplicationCharityResponseToOffer: null,
+            relatedApplicationStatus: 'Approved',
+            relatedApplicationCharityResponseToOffer: 'Accepted',
             regularGivingCollectionEnd: null,
             totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,
@@ -168,7 +168,6 @@ class CampaignRepositoryTest extends IntegrationTest
                 'beneficiaries' => ['Lads', 'Dads'],
                 'categories' => ['Food', 'Drink'],
                 'countries' => ['United Kingdom', 'Ireland'],
-                'parentRef' => 'the-family',
                 'title' => 'Campaign Two is for Porridge and Juice',
             ],
             hidden: false,
@@ -192,9 +191,7 @@ class CampaignRepositoryTest extends IntegrationTest
             offset: 0,
             limit: 6,
             status: 'Active',
-            jsonMatchOneConditions: [
-                'parentRef' => 'the-family',
-            ],
+            metaCampaignSlug: 'the-family',
             jsonMatchInListConditions: [
                 'beneficiaries' => 'Lads',
                 'categories' => 'Food',
