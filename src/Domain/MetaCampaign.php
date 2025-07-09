@@ -53,7 +53,7 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Column()]
     private bool $hidden;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(length: 1_000, nullable: true)]
     private ?string $summary;
 
     #[ORM\Column(nullable: true)]

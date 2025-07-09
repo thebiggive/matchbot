@@ -12,7 +12,7 @@ CREATE TABLE `MetaCampaign` (
   `currency` varchar(255) NOT NULL,
   `status` varchar(255) DEFAULT NULL,
   `hidden` tinyint(1) NOT NULL,
-  `summary` varchar(255) DEFAULT NULL,
+  `summary` varchar(1000) DEFAULT NULL,
   `bannerURI` varchar(255) DEFAULT NULL,
   `startDate` datetime NOT NULL COMMENT '(DC2Type:datetime_immutable)',
   `endDate` datetime NOT NULL COMMENT '(DC2Type:datetime_immutable)',
