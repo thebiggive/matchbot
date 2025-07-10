@@ -105,6 +105,7 @@ readonly class MandateUpsertedHandler
         do {
             try {
                 if ($tries > 0) {
+                    /** @psalm-suppress InvalidCast There's a bug analysing do/while w.r.t. $tries */
                     $this->logger->info("Retrying setting Salesforce fields for mandate $uuid after $tries tries");
                 }
                 $this->setSalesforceFields($uuid, $salesforceId);

@@ -427,6 +427,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         do {
             try {
                 if ($tries > 0) {
+                    /** @psalm-suppress InvalidCast There's a bug analysing do/while w.r.t. $tries */
                     $this->getLogger()->info("Retrying setting Salesforce fields for donation $uuid after $tries tries");
                 }
                 $this->setSalesforcePushComplete($uuid, $salesforceId);
