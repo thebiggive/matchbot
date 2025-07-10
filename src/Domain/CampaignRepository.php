@@ -643,6 +643,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
     ): array {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
+        if ($sortField === null && $term !== null) {
+            $sortField = 'relevance';
+            $sortDirection = 'desc';
+        }
+
         $safeSortField = match ($sortField) {
             'amountRaised' => 'campaignStatistics.amountRaised.amountInPence',
             'distanceToTarget' => 'campaignStatistics.distanceToTarget.amountInPence',
@@ -654,11 +659,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         if ($term === null && $safeSortField === 'relevance') {
             throw new \Exception('Please provide a term to sort by relevance');
-        }
-
-        if ($term !== null) {
-            $safeSortField = 'relevance';
-            $sortDirection = 'desc';
         }
 
         $qb->select('campaign')
