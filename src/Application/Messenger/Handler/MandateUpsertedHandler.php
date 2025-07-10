@@ -3,6 +3,7 @@
 namespace MatchBot\Application\Messenger\Handler;
 
 use Assert\Assertion;
+use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\MandateUpserted;
@@ -17,9 +18,7 @@ use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\Clock\Clock;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Stamp\DelayStamp;
 
 /**
  * Sends mandates to Salesforce.
@@ -27,6 +26,8 @@ use Symfony\Component\Messenger\Stamp\DelayStamp;
 #[AsMessageHandler]
 readonly class MandateUpsertedHandler
 {
+    private const int MAX_SALEFORCE_FIELD_UPDATE_TRIES = 3;
+
     public function __construct(
         private LoggerInterface $logger,
         private MandateClient $client,
@@ -48,7 +49,7 @@ readonly class MandateUpsertedHandler
 
         try {
             $sfId = $this->client->createOrUpdate($message);
-            $this->setSalesforceFields($uuid, $sfId);
+            $this->setSalesforceFieldsWithRetry($message, $sfId);
 
             $donations = $this->donationRepository->findAllForMandate(Uuid::fromString($message->uuid));
 
@@ -65,7 +66,7 @@ readonly class MandateUpsertedHandler
             $this->logger->info(
                 "Marking 404 campaign Salesforce mandate {$message->uuid} as complete; won't push again."
             );
-            $this->setSalesforceFields($uuid, null);
+            $this->setSalesforceFieldsWithRetry($message, null);
 
             return;
         } catch (BadRequestException | BadResponseException $exception) {
@@ -85,6 +86,54 @@ readonly class MandateUpsertedHandler
                 $exception->getTraceAsString(),
             ));
         }
+    }
+
+    /**
+     * Try to safely set Salesforce ID, and other push tracking fields. If it
+     * fails repeatedly, this should be safe to leave for a later update.
+     * Salesforce has UUIDs so we won't lose the ability to reconcile the records.
+     *
+     * @param Salesforce18Id<RegularGivingMandate>|null $salesforceId
+     */
+    private function setSalesforceFieldsWithRetry(
+        MandateUpserted $changeMessage,
+        ?Salesforce18Id $salesforceId
+    ): void {
+        $tries = 0;
+        $uuid = $changeMessage->uuid;
+
+        do {
+            try {
+                if ($tries > 0) {
+                    $this->logger->info("Retrying setting Salesforce fields for mandate $uuid after $tries tries");
+                }
+                $this->setSalesforceFields($uuid, $salesforceId);
+                return;
+            } catch (DBALException\RetryableException $exception) {
+                $this->logger->info(sprintf(
+                    '%s: Lock unavailable to set Salesforce fields on mandate %s with Salesforce ID %s on try #%d',
+                    get_class($exception),
+                    $uuid,
+                    $salesforceId->value ?? 'null',
+                    $tries,
+                ));
+            } catch (DBALException\ConnectionLost $exception) {
+                // Seen only at fairly quiet times *and* before we increased DB wait_timeout from 8 hours
+                // to just over workers' max lifetime of 24 hours. Should happen rarely or never with new DB config.
+                $this->logger->warning(sprintf(
+                    '%s: Connection lost while setting Salesforce fields on donation %s, try #%d',
+                    get_class($exception),
+                    $uuid,
+                    $tries,
+                ));
+            }
+
+            $tries++;
+        } while ($tries < self::MAX_SALEFORCE_FIELD_UPDATE_TRIES);
+
+        $this->logger->error(
+            "Failed to set Salesforce fields for mandate $uuid after $tries tries"
+        );
     }
 
     /**
