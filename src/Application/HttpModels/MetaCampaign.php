@@ -29,6 +29,8 @@ readonly class MetaCampaign
         /** Approved participating campaign count*/
         public int $campaignCount,
         public bool $usesSharedFunds,
+        /** Whether the page for this campaign uses the new style of banner display created in ticket DON-1120 */
+        public bool $useDon1120Banner = false,
     ) {
     }
 }
