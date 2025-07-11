@@ -492,18 +492,29 @@ abstract class IntegrationTest extends TestCase
         return $fakeStripeClient;
     }
 
-    protected function createCampaign(?Charity $charity = null): Campaign
-    {
+    /**
+     * @param 'Active'|'Expired'|'Preview' $status
+     */
+    protected function createCampaign(
+        ?Charity $charity = null,
+        string $name = 'Campaign Name',
+        string $status = 'Active',
+        bool $withUniqueSalesforceId = false,
+    ): Campaign {
+        $salesforceId = $withUniqueSalesforceId
+            ? Salesforce18Id::ofCampaign(self::randomString())
+            : Salesforce18Id::ofCampaign('campaignId12345678');
+
         return new Campaign(
-            Salesforce18Id::ofCampaign('campaignId12345678'),
+            $salesforceId,
             metaCampaignSlug: null,
             charity: $charity ?? \MatchBot\Tests\TestCase::someCharity(),
             startDate: new \DateTimeImmutable('now'),
             endDate: new \DateTimeImmutable('now'),
             isMatched: true,
             ready: true,
-            status: 'Active',
-            name: 'Campaign Name',
+            status: $status,
+            name: $name,
             currencyCode: 'GBP',
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),

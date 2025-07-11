@@ -205,6 +205,45 @@ class CampaignRepositoryTest extends IntegrationTest
         $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
     }
 
+    public function testSearchSortsByStatus(): void
+    {
+        $sut = $this->getService(CampaignRepository::class);
+        $em = $this->getService(EntityManagerInterface::class);
+
+        $charity = TestCase::someCharity();
+
+        foreach (['Expired', 'Active', 'Preview'] as $status) {
+            $campaign = $this->createCampaign(
+                charity: $charity,
+                name: 'Campaign ' . $status,
+                status: $status,
+                withUniqueSalesforceId: true,
+            );
+            $stats = CampaignStatistics::zeroPlaceholder($campaign);
+            $em->persist($campaign);
+            $em->persist($stats);
+        }
+        $em->flush();
+
+        $returnValue = $sut->search(
+            sortField: null,
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 6,
+            status: null,
+            metaCampaignSlug: null,
+            jsonMatchInListConditions: [],
+            term: null,
+        );
+
+        $returnCampaignNames = array_map(
+            static fn(Campaign $campaign) => $campaign->getCampaignName(),
+            $returnValue
+        );
+
+        $this->assertSame(['Campaign Active', 'Campaign Expired', 'Campaign Preview'], $returnCampaignNames);
+    }
+
     private function getCharityAwaitingGiftAidApproval(): Charity
     {
         $charity = TestCase::someCharity();

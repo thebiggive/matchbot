@@ -457,7 +457,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
             SELECT campaign FROM MatchBot\Domain\Campaign campaign
-            LEFT OUTER JOIN MatchBot\Domain\CampaignStatistics stats WITH stats.campaign = campaign.id
+            LEFT OUTER JOIN campaign.campaignStatistics stats
             WHERE stats.campaign IS NULL OR stats.updatedAt < :oldestExpected
             ORDER BY campaign.createdAt ASC
         DQL
@@ -545,6 +545,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         bool $filterOutTargetMet,
     ): void {
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
+        $qb->andWhere('campaign.status IS NOT NULL');
         $qb->andWhere(<<<DQL
             campaign.metaCampaignSlug IS NULL OR
             (
@@ -617,7 +618,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
         }
 
-        $qb->addOrderBy('campaign.endDate', 'DESC');
+        // Active, Expired, Preview in that order.
+        $qb->addOrderBy('campaign.status', 'ASC');
     }
 
     /**
@@ -641,22 +643,22 @@ class CampaignRepository extends SalesforceReadProxyRepository
     ): array {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
+        if ($sortField === null && $term !== null) {
+            $sortField = 'relevance';
+            $sortDirection = 'desc';
+        }
+
         $safeSortField = match ($sortField) {
             'amountRaised' => 'campaignStatistics.amountRaised.amountInPence',
             'distanceToTarget' => 'campaignStatistics.distanceToTarget.amountInPence',
             'matchFundsRemaining' => 'campaignStatistics.matchFundsRemaining.amountInPence',
             'matchFundsUsed' => 'campaignStatistics.matchFundsUsed.amountInPence',
             'relevance' => 'relevance',
-            default => null,
+            default => 'campaignStatistics.matchFundsUsed.amountInPence',
         };
 
         if ($term === null && $safeSortField === 'relevance') {
             throw new \Exception('Please provide a term to sort by relevance');
-        }
-
-        if ($safeSortField === null && $term !== null) {
-            $safeSortField = 'relevance';
-            $sortDirection = 'desc';
         }
 
         $qb->select('campaign')
@@ -696,6 +698,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
 
         $query = $qb->getQuery();
+
         /** @var list<Campaign> $result */
         $result = $query->getResult();
 
