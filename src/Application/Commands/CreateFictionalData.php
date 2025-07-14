@@ -284,7 +284,10 @@ class CreateFictionalData extends Command
 
     private function createMetaCampaign(MetaCampaignSlug $slug): MetaCampaign
     {
-        $randomSeed = \random_int(1, 100);
+        $bannerURI = "https://picsum.photos/id/88/1700/500";
+        // Fixed image, so we can set a focal position/region to ensure is always visible -  this is an overhead shot
+        // of a road, we can say the traffic light on the RHS is the focal point at position 71%, 48%. For now this
+        // is hard-coded in Front End.
 
         return new MetaCampaign(
             $slug,
@@ -295,7 +298,7 @@ class CreateFictionalData extends Command
             masterCampaignStatus: MetaCampaign::STATUS_VIEW_CAMPAIGN,
             hidden: false,
             summary: 'These campaigns exist in the local Matchbot Database, they are not real and not currently expected to exist in any Salesforce org',
-            bannerURI: new Uri("https://picsum.photos/seed/$randomSeed/1700/500"),
+            bannerURI: new Uri($bannerURI),
             startDate: new \DateTimeImmutable('1990-01-01'),
             endDate: new \DateTimeImmutable('2090-01-01'),
             isRegularGiving: false,
