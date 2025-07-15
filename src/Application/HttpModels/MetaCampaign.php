@@ -2,6 +2,8 @@
 
 namespace MatchBot\Application\HttpModels;
 
+use MatchBot\Domain\BannerLayout;
+
 /**
  * Representation of a Meta Campaign to serialise and send to FE. Should be assignable to TS MetaCampaign model
  * (which we may want to introduce automatic checks for in future) and match the MetaCampaign as served from SF.
@@ -31,6 +33,7 @@ readonly class MetaCampaign
         public bool $usesSharedFunds,
         /** Whether the page for this campaign uses the new style of banner display created in ticket DON-1120 */
         public bool $useDon1120Banner = false,
+        public ?BannerLayout $bannerLayout = null,
     ) {
     }
 }
