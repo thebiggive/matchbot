@@ -81,10 +81,7 @@ class CampaignService
         $salesforceId = $metaCampaign->getSalesforceId();
         Assertion::notNull($salesforceId);
 
-        $usesDon1120Banner = match ($metaCampaign->getSlug()->slug) {
-            'local-test' => true,
-            default => false,
-        };
+        $bannerLayout = MetaCampaignLayoutChoices::forSlug($metaCampaign->getSlug());
 
         return new MetaCampaignHttpModel(
             id: $salesforceId,
@@ -103,7 +100,8 @@ class CampaignService
             matchFundsTotal: $metaCampaign->getMatchFundsTotal()->toMajorUnitFloat(),
             campaignCount: $this->campaignRepository->countCampaignsInMetaCampaign($metaCampaign),
             usesSharedFunds: $metaCampaign->usesSharedFunds(),
-            useDon1120Banner: $usesDon1120Banner,
+            useDon1120Banner: ! \is_null($bannerLayout),
+            bannerLayout: $bannerLayout,
         );
     }
 
