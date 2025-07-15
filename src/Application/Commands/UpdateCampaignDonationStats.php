@@ -95,6 +95,7 @@ class UpdateCampaignDonationStats extends LockingCommand
 
         $statistics = $campaign->getStatistics(); // New & zeroes if not done before.
         $changed = $statistics->setTotals(
+            at: new \DateTimeImmutable('now'),
             donationSum: $donationSum,
             amountRaised: $donationSum->plus($matchFundsUsed),
             matchFundsUsed: $matchFundsUsed,

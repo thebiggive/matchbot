@@ -27,7 +27,7 @@ class CampaignStatisticsRepository
         $statistics = $this->doctrineRepository->findOneBy(['campaign' => $campaign]);
 
         if (!$statistics) {
-            return CampaignStatistics::zeroPlaceholder($campaign);
+            return CampaignStatistics::zeroPlaceholder($campaign, new \DateTimeImmutable('now'));
         }
 
         return $statistics;

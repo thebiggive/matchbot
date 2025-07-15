@@ -705,6 +705,6 @@ class Campaign extends SalesforceReadProxy
 
     public function getStatistics(): CampaignStatistics
     {
-        return $this->campaignStatistics ?? CampaignStatistics::zeroPlaceholder($this);
+        return $this->campaignStatistics ?? CampaignStatistics::zeroPlaceholder($this, new \DateTimeImmutable('now'));
     }
 }

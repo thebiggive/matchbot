@@ -80,6 +80,7 @@ class CampaignStatistics
      * $amountRaised must be equal to $matchFundsUsed + $donationSum
      */
     public function __construct(
+        \DateTimeImmutable $at,
         Campaign $campaign,
         Money $donationSum,
         Money $amountRaised,
@@ -91,6 +92,7 @@ class CampaignStatistics
         $this->campaignSalesforceId = $campaign->getSalesforceId();
 
         $this->setTotals(
+            at: $at,
             donationSum: $donationSum,
             amountRaised: $amountRaised,
             matchFundsUsed: $matchFundsUsed,
@@ -99,11 +101,11 @@ class CampaignStatistics
         );
     }
 
-    public static function zeroPlaceholder(Campaign $campaign): self
+    public static function zeroPlaceholder(Campaign $campaign, \DateTimeImmutable $at): self
     {
         $zero = Money::zero($campaign->getCurrency());
 
-        return new self($campaign, $zero, $zero, $zero, $zero);
+        return new self($at, $campaign, $zero, $zero, $zero, $zero);
     }
 
     public function getDonationSum(): Money
@@ -145,6 +147,7 @@ class CampaignStatistics
      * @return bool Whether anything changed vs. the previously persisted stats.
      */
     final public function setTotals(
+        \DateTimeImmutable $at,
         Money $donationSum,
         Money $amountRaised,
         Money $matchFundsUsed,
@@ -189,12 +192,12 @@ class CampaignStatistics
             || $previousStats?->getDistanceToTarget() != $this->distanceToTarget
         );
 
-        $this->lastCheck = new \DateTimeImmutable();
+        $this->lastCheck = $at;
         if (!$didRealUpdate) {
             return false;
         }
 
-        $this->lastRealUpdate = new \DateTimeImmutable();
+        $this->lastRealUpdate = $at;
 
         return true;
     }
