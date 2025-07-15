@@ -14,6 +14,8 @@ use MatchBot\Application\Environment;
 class CampaignRenderCompatibilityChecker
 {
     private const array KEYS_TO_SKIP = [
+        'x_isMetaCampaign',
+        'isMetaCampaign',
         'isEmergencyIMF', // not used by FE,
         'amountRaised',  // don't need to check amount raised as it is being handled by matchbot and Salesforce data
                          // might not be identical
@@ -42,6 +44,8 @@ class CampaignRenderCompatibilityChecker
         'totalMatchedFundsAvailable',
         'masterCampaignStatus', // sent by SF just to allow matchbot to calculate status of a metacampaign at output time
         'campaignStatus', // sent by SF just to allow matchbot to calculate status of a metacampaign at output time
+        'pinPosition',
+        'championPagePinPosition',
         'relatedApplicationStatus', // sent by SF to allow matchbot to count campaigns etc, not needed in FE.
         'relatedApplicationCharityResponseToOffer', // sent by SF to allow matchbot to count campaigns etc, not needed in FE.
     ];
@@ -80,12 +84,7 @@ class CampaignRenderCompatibilityChecker
     ): void {
         /** @var mixed $expectedValue */
         foreach ($expected as $key => $expectedValue) {
-            if (is_string($key) && \str_starts_with(haystack: $key, needle: 'x_')) {
-                // field is intended for use within matchbot only, does not need to be emitted to FE
-                continue;
-            }
             /** @var mixed $value */
-
             $value = \array_key_exists($key, $actual) ?
                 $actual[$key] : '<UNDEFINED>';
 

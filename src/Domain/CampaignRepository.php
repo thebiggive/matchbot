@@ -513,6 +513,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign->updateFromSfPull(
             currencyCode: $currency->isoCode(),
             status: $campaignData['status'],
+            pinPosition: $campaignData['pinPosition'] ?? null,
+            championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
             relatedApplicationStatus: $campaignData['relatedApplicationStatus'] ?? null,
             relatedApplicationCharityResponseToOffer: $campaignData['relatedApplicationCharityResponseToOffer'] ?? null,
             endDate: new DateTime($endDateString),

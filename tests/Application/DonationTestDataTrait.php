@@ -170,6 +170,8 @@ trait DonationTestDataTrait
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            pinPosition: null,
+            championPagePinPosition: null,
             relatedApplicationStatus: null,
             relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,

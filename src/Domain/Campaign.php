@@ -176,6 +176,18 @@ class Campaign extends SalesforceReadProxy
     private Money $totalFundraisingTarget;
 
     /**
+     * Optional BG-defined default sort override for the metacampaign grid.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?int $pinPosition;
+
+    /**
+     * Optional BG-defined default sort override specifically for the funder-filtered view of a metacampaign.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?int $championPagePinPosition;
+
+    /**
      * @param Money $totalFundraisingTarget
      * @param Salesforce18Id<Campaign> $sfId
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
@@ -199,6 +211,8 @@ class Campaign extends SalesforceReadProxy
         Money $totalFundingAllocation,
         Money $amountPledged,
         bool $isRegularGiving,
+        ?int $pinPosition,
+        ?int $championPagePinPosition,
         ?string $relatedApplicationStatus,
         ?string $relatedApplicationCharityResponseToOffer,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
@@ -215,6 +229,8 @@ class Campaign extends SalesforceReadProxy
         $this->updateFromSfPull(
             currencyCode: $currencyCode,
             status: $status,
+            pinPosition: $pinPosition,
+            championPagePinPosition: $championPagePinPosition,
             relatedApplicationStatus: $relatedApplicationStatus,
             relatedApplicationCharityResponseToOffer: $relatedApplicationCharityResponseToOffer,
             endDate: $endDate,
@@ -288,6 +304,8 @@ class Campaign extends SalesforceReadProxy
             totalFundingAllocation: Money::fromPence((int)(100.0 * ($campaignData['totalFundingAllocation'] ?? 0.0)), $currency),
             amountPledged: Money::fromPence((int)(100.0 * ($campaignData['amountPledged'] ?? 0.0)), $currency),
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
+            pinPosition: $campaignData['pinPosition'] ?? null,
+            championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
             relatedApplicationStatus: $campaignData['relatedApplicationStatus'] ?? null,
             relatedApplicationCharityResponseToOffer: $campaignData['relatedApplicationCharityResponseToOffer'] ?? null,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
@@ -461,6 +479,8 @@ class Campaign extends SalesforceReadProxy
     final public function updateFromSfPull(
         string $currencyCode,
         ?string $status,
+        ?int $pinPosition,
+        ?int $championPagePinPosition,
         ?string $relatedApplicationStatus,
         ?string $relatedApplicationCharityResponseToOffer,
         \DateTimeInterface $endDate,
@@ -521,6 +541,8 @@ class Campaign extends SalesforceReadProxy
         $this->totalFundingAllocation = $totalFundingAllocation;
         $this->amountPledged = $amountPledged;
         $this->totalFundraisingTarget = $totalFundraisingTarget;
+        $this->pinPosition = $pinPosition;
+        $this->championPagePinPosition = $championPagePinPosition;
         $this->relatedApplicationStatus = $relatedApplicationStatus;
         $this->relatedApplicationCharityResponseToOffer = $relatedApplicationCharityResponseToOffer;
 

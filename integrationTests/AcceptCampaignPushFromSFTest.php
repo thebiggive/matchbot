@@ -22,7 +22,7 @@ class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\Integratio
 {
     public function testItAcceptsAPushOfANewCampaignFromSf(): void
     {
-        $campaignData = TestCase::CAMPAIGN_FROM_SALESOFRCE;
+        $campaignData = TestCase::CAMPAIGN_FROM_SALESFORCE;
 
         // randomise IDs to prevent duplicate issues
         $campaignSfId = Salesforce18Id::ofCampaign(self::randomString());
@@ -84,7 +84,7 @@ class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\Integratio
     public function testItAcceptsAPushOfANewCampaignsFromSf(): void
     {
         $campaignData = ['campaigns' => [
-            TestCase::CAMPAIGN_FROM_SALESOFRCE,
+            TestCase::CAMPAIGN_FROM_SALESFORCE,
             TestCase::META_CAMPAIGN_FROM_SALESFORCE,
         ]];
 

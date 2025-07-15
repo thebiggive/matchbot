@@ -13,7 +13,7 @@ class AcceptCharityPushFromSFTest extends \MatchBot\IntegrationTests\Integration
     public function testItAcceptsAPushOfANewCharityFromSf(): void
     {
         // Extract charity data from the campaign data
-        $charityData = TestCase::CAMPAIGN_FROM_SALESOFRCE['charity'];
+        $charityData = TestCase::CAMPAIGN_FROM_SALESFORCE['charity'];
 
         // Randomize ID to prevent duplicate issues
         $charitySfId = Salesforce18Id::ofCharity(self::randomString());
@@ -52,7 +52,7 @@ class AcceptCharityPushFromSFTest extends \MatchBot\IntegrationTests\Integration
         $this->em->flush();
 
         // Now update it
-        $charityData = TestCase::CAMPAIGN_FROM_SALESOFRCE['charity'];
+        $charityData = TestCase::CAMPAIGN_FROM_SALESFORCE['charity'];
         $charityData['id'] = $charitySfId->value;
         $charityData['name'] = 'Updated Charity Name';
 
@@ -81,7 +81,7 @@ class AcceptCharityPushFromSFTest extends \MatchBot\IntegrationTests\Integration
     public function testItAcceptsAPushOfNewCharityFromSfUsingList(): void
     {
         // Extract charity data from the campaign data
-        $charityData = TestCase::CAMPAIGN_FROM_SALESOFRCE['charity'];
+        $charityData = TestCase::CAMPAIGN_FROM_SALESFORCE['charity'];
 
         // Randomize ID to prevent duplicate issues
         $charitySfId = Salesforce18Id::ofCharity(self::randomString());
@@ -120,7 +120,7 @@ class AcceptCharityPushFromSFTest extends \MatchBot\IntegrationTests\Integration
         $this->em->flush();
 
         // Now update it
-        $charityData = TestCase::CAMPAIGN_FROM_SALESOFRCE['charity'];
+        $charityData = TestCase::CAMPAIGN_FROM_SALESFORCE['charity'];
         $charityData['id'] = $charitySfId->value;
         $charityData['name'] = 'Updated Charity Name';
 
