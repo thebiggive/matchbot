@@ -42,12 +42,19 @@ class UpdateCampaignDonationStats extends LockingCommand
         // it's slower it may be a bit longer. Check 5 minutes back as standard, and there is also a mop-up task
         // to fill in all campaigns with outdated or no stats.
         $campaigns = $this->campaignRepository->findWithDonationChangesSince(new \DateTimeImmutable('-5 minutes'));
+        $numChanged = 0;
 
         foreach ($campaigns as $campaign) {
-            $this->handleCampaign($campaign, $output);
+            if ($this->handleCampaign($campaign, $output)) {
+                $numChanged++;
+            }
         }
 
-        $output->writeln(sprintf('Updated statistics for %d campaigns with recent donations', count($campaigns)));
+        $output->writeln(sprintf(
+            'Updated statistics for %d of %d campaigns with recent donations',
+            $numChanged,
+            count($campaigns),
+        ));
     }
 
     /**
@@ -58,19 +65,26 @@ class UpdateCampaignDonationStats extends LockingCommand
     {
         $oldestExpectedWithoutStats = new \DateTimeImmutable('-1 day');
         $campaigns = $this->campaignRepository->findCampaignsWithNoRecentStats($oldestExpectedWithoutStats);
+        $numChanged = 0;
 
         foreach ($campaigns as $campaign) {
-            $this->handleCampaign($campaign, $output);
+            if ($this->handleCampaign($campaign, $output)) {
+                $numChanged++;
+            }
         }
 
-        $output->writeln(sprintf('Updated statistics for %d campaigns with no recent stats', count($campaigns)));
+        $output->writeln(sprintf(
+            'Updated statistics for %d of %d campaigns with no recent stats',
+            $numChanged,
+            count($campaigns),
+        ));
     }
 
     /**
      * Creates or finds + updates a {@see CampaignStatistics} record, via eager loading from $campaign.
      * Doesn't flush, so callers need to when done building stats.
      */
-    private function handleCampaign(Campaign $campaign, OutputInterface $output): void
+    private function handleCampaign(Campaign $campaign, OutputInterface $output): bool
     {
         $campaignId = $campaign->getId();
         \assert($campaignId !== null);
@@ -78,7 +92,7 @@ class UpdateCampaignDonationStats extends LockingCommand
         $donationSum = $this->campaignRepository->totalCoreDonations($campaign);
 
         $statistics = $campaign->getStatistics(); // New & zeroes if not done before.
-        $statistics->setTotals(
+        $changed = $statistics->setTotals(
             donationSum: $donationSum,
             amountRaised: $donationSum->plus($matchFundsUsed),
             matchFundsUsed: $matchFundsUsed,
@@ -86,6 +100,10 @@ class UpdateCampaignDonationStats extends LockingCommand
         );
         $this->entityManager->persist($statistics);
 
-        $output->writeln("Prepared statistics for campaign ID {$campaignId}, SF ID {$campaign->getSalesforceId()}");
+        if ($changed) {
+            $output->writeln("Prepared statistics for campaign ID {$campaignId}, SF ID {$campaign->getSalesforceId()}");
+        }
+
+        return $changed;
     }
 }

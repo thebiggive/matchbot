@@ -24,6 +24,12 @@ class CampaignStatistics
 {
     use TimestampsTrait;
 
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastCheck = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastRealUpdate = null;
+
     #[ORM\OneToOne(inversedBy: 'campaignStatistics', fetch: 'EAGER')]
     #[ORM\Id]
     private Campaign $campaign;
@@ -129,12 +135,18 @@ class CampaignStatistics
         return $this->distanceToTarget;
     }
 
+    /**
+     * We manually set $lastCheck and $lastRealUpdate, since we need the former to avoid wasting resources and
+     * changing that will cause lifecycle hooks to change $updatedAt.
+     *
+     * @return bool Whether anything changed vs. the previously persisted stats.
+     */
     final public function setTotals(
         Money $donationSum,
         Money $amountRaised,
         Money $matchFundsUsed,
         Money $matchFundsTotal,
-    ): void {
+    ): bool {
         Assertion::greaterOrEqualThan(
             $matchFundsTotal->toNumericString(),
             $matchFundsUsed->toNumericString(),
@@ -146,6 +158,7 @@ class CampaignStatistics
             'Amount raised must equal donation sum plus match funds used',
         );
 
+        $previousStats = clone $this;
         $this->amountRaised = $amountRaised;
         $this->donationSum = $donationSum;
         $this->matchFundsUsed = $matchFundsUsed;
@@ -156,5 +169,23 @@ class CampaignStatistics
         $this->distanceToTarget = $target->lessThan($amountRaised)
             ? Money::zero($this->campaign->getCurrency())
             : $target->minus($amountRaised);
+
+        $didRealUpdate = (
+            $previousStats->getAmountRaised() != $amountRaised
+            || $previousStats->getDonationSum() != $donationSum
+            || $previousStats->getMatchFundsUsed() != $matchFundsUsed
+            || $previousStats->getMatchFundsTotal() != $matchFundsTotal
+            || $previousStats->getMatchFundsRemaining() != $this->matchFundsRemaining
+            || $previousStats->getDistanceToTarget() != $this->distanceToTarget
+        );
+
+        $this->lastCheck = new \DateTimeImmutable();
+        if (!$didRealUpdate) {
+            return false;
+        }
+
+        $this->lastRealUpdate = new \DateTimeImmutable();
+
+        return true;
     }
 }
