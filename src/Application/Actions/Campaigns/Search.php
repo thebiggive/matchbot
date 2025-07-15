@@ -15,7 +15,6 @@ use Slim\Exception\HttpBadRequestException;
 
 /**
  * Frontend will typically default searches with a `?term` to 'relevance' order and others to 'distanceToTarget'.
- * No defaults are set server-side any more.
  */
 class Search extends Action
 {

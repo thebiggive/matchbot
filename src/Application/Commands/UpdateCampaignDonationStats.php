@@ -83,6 +83,8 @@ class UpdateCampaignDonationStats extends LockingCommand
     /**
      * Creates or finds + updates a {@see CampaignStatistics} record, via eager loading from $campaign.
      * Doesn't flush, so callers need to when done building stats.
+     *
+     * @return bool whether or not the statistics have changed
      */
     private function handleCampaign(Campaign $campaign, OutputInterface $output): bool
     {
