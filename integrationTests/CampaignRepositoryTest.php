@@ -36,6 +36,8 @@ class CampaignRepositoryTest extends IntegrationTest
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            pinPosition: null,
+            championPagePinPosition: null,
             relatedApplicationStatus: null,
             relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
@@ -89,6 +91,8 @@ class CampaignRepositoryTest extends IntegrationTest
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            pinPosition: null,
+            championPagePinPosition: null,
             relatedApplicationStatus: null,
             relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
@@ -136,6 +140,8 @@ class CampaignRepositoryTest extends IntegrationTest
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            pinPosition: null,
+            championPagePinPosition: null,
             relatedApplicationStatus: null,
             relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
@@ -159,6 +165,8 @@ class CampaignRepositoryTest extends IntegrationTest
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
             isRegularGiving: false,
+            pinPosition: null,
+            championPagePinPosition: null,
             relatedApplicationStatus: 'Approved',
             relatedApplicationCharityResponseToOffer: 'Accepted',
             regularGivingCollectionEnd: null,
@@ -174,8 +182,8 @@ class CampaignRepositoryTest extends IntegrationTest
         );
 
         // Add empty initial stats
-        $stats1 = CampaignStatistics::zeroPlaceholder($campaign1);
-        $stats2 = CampaignStatistics::zeroPlaceholder($campaign2);
+        $stats1 = CampaignStatistics::zeroPlaceholder($campaign1, new \DateTimeImmutable('now'));
+        $stats2 = CampaignStatistics::zeroPlaceholder($campaign2, new \DateTimeImmutable('now'));
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign1);
@@ -219,14 +227,14 @@ class CampaignRepositoryTest extends IntegrationTest
                 status: $status,
                 withUniqueSalesforceId: true,
             );
-            $stats = CampaignStatistics::zeroPlaceholder($campaign);
+            $stats = CampaignStatistics::zeroPlaceholder($campaign, new \DateTimeImmutable('now'));
             $em->persist($campaign);
             $em->persist($stats);
         }
         $em->flush();
 
         $returnValue = $sut->search(
-            sortField: null,
+            sortField: 'distanceToTarget',
             sortDirection: 'desc',
             offset: 0,
             limit: 6,
@@ -241,7 +249,8 @@ class CampaignRepositoryTest extends IntegrationTest
             $returnValue
         );
 
-        $this->assertSame(['Campaign Active', 'Campaign Expired', 'Campaign Preview'], $returnCampaignNames);
+        // Expired is excluded from the Explore list with no metacampaign slug.
+        $this->assertSame(['Campaign Active', 'Campaign Preview'], $returnCampaignNames);
     }
 
     private function getCharityAwaitingGiftAidApproval(): Charity

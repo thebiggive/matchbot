@@ -104,7 +104,7 @@ class CreateFictionalData extends Command
                 );
 
                 $campaign->setSalesforceLastPull(new \DateTime());
-                $stats = CampaignStatistics::zeroPlaceholder($campaign);
+                $stats = CampaignStatistics::zeroPlaceholder($campaign, new \DateTimeImmutable('now'));
 
                 $io->writeln("Created fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
                 $this->em->persist($campaign);

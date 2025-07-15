@@ -22,6 +22,8 @@ CREATE TABLE `CampaignStatistics` (
   `match_funds_remaining_currency` varchar(3) NOT NULL,
   `distance_to_target_amountInPence` int NOT NULL,
   `distance_to_target_currency` varchar(3) NOT NULL,
+  `lastCheck` datetime DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)',
+  `lastRealUpdate` datetime DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)',
   PRIMARY KEY (`campaign_id`),
   UNIQUE KEY `UNIQ_7DDC8DA446D048DD` (`campaignSalesforceId`),
   KEY `amount_raised_amountInPence` (`amount_raised_amountInPence`),

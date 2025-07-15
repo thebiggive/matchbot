@@ -13,6 +13,9 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 
+/**
+ * Frontend will typically default searches with a `?term` to 'relevance' order and others to 'distanceToTarget'.
+ */
 class Search extends Action
 {
     public function __construct(
@@ -29,7 +32,7 @@ class Search extends Action
         Assertion::notSame(Environment::current(), Environment::Production);
 
         $params = $request->getQueryParams();
-        $sortField = $params['sortField'] ?? '';
+        $sortField = $params['sortField'] ?? 'distanceToTarget';
         $sortDirection = $params['sortDirection'] ?? 'desc';
         /** @var 'Active'|'Expired'|'Preview'|null */
         $status = $params['status'] ?? null;
