@@ -249,7 +249,8 @@ class CampaignRepositoryTest extends IntegrationTest
             $returnValue
         );
 
-        $this->assertSame(['Campaign Active', 'Campaign Expired', 'Campaign Preview'], $returnCampaignNames);
+        // Expired is excluded from the Explore list with no metacampaign slug.
+        $this->assertSame(['Campaign Active', 'Campaign Preview'], $returnCampaignNames);
     }
 
     private function getCharityAwaitingGiftAidApproval(): Charity

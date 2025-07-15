@@ -547,7 +547,17 @@ class CampaignRepository extends SalesforceReadProxyRepository
         bool $filterOutTargetMet,
     ): void {
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
-        $qb->andWhere('campaign.status IS NOT NULL');
+
+        if ($status !== null) {
+            $qb->andWhere($qb->expr()->eq('campaign.status', ':status'));
+            $qb->setParameter('status', $status);
+        } elseif ($metaCampaignSlug === null) {
+            $qb->andWhere('campaign.status IN (:nonExpired)');
+            $qb->setParameter('nonExpired', ['Active', 'Preview']);
+        } else {
+            $qb->andWhere('campaign.status IS NOT NULL');
+        }
+
         $qb->andWhere(<<<DQL
             campaign.metaCampaignSlug IS NULL OR
             (
@@ -556,11 +566,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             )
             DQL
         );
-
-        if ($status !== null) {
-            $qb->andWhere($qb->expr()->eq('campaign.status', ':status'));
-            $qb->setParameter('status', $status);
-        }
 
         if ($metaCampaignSlug !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.metaCampaignSlug', ':metaCampaignSlug'));
@@ -595,14 +600,22 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * @param QueryBuilder $qb Builder with its select etc. already set up.
-     * @param literal-string|null $safeSortField
+     * @param literal-string $safeSortField
      */
     private function sortForSearch(
         QueryBuilder $qb,
-        ?string $safeSortField,
+        bool $applyPinSort,
+        string $safeSortField,
         string $sortDirection,
         ?string $termWildcarded
     ): void {
+        // Active, Expired, Preview in that order; status sort takes highest precedence.
+        $qb->addOrderBy('campaign.status', 'asc');
+
+        if ($applyPinSort) {
+            $qb->addOrderBy('pinPosition', 'asc');
+        }
+
         if ($safeSortField === 'relevance') {
             $qb->addOrderBy(
                 <<<EOT
@@ -616,12 +629,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 $sortDirection,
             );
             $qb->setParameter('termForOrder', $termWildcarded);
-        } elseif ($safeSortField !== null) {
+        } else {
             $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
         }
-
-        // Active, Expired, Preview in that order.
-        $qb->addOrderBy('campaign.status', 'ASC');
     }
 
     /**
@@ -658,7 +668,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
             throw new \Exception('Please provide a term to sort by relevance');
         }
 
-        $qb->select('campaign')
+        $qb->select(<<<SELECT
+              campaign,
+              COALESCE(campaign.pinPosition, 999999999) AS HIDDEN pinPosition
+            SELECT)
             ->from(Campaign::class, 'campaign')
             ->join('campaign.charity', 'charity')
             // Campaigns must have a stats record to be searched. Probably OK and worth it to keep the
@@ -689,9 +702,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $this->sortForSearch(
             qb: $qb,
+            applyPinSort: $jsonMatchInListConditions === [],
             safeSortField: $safeSortField,
             sortDirection: $sortDirection,
-            termWildcarded: $termWildcarded
+            termWildcarded: $termWildcarded,
         );
 
         $query = $qb->getQuery();
