@@ -142,11 +142,11 @@ class Campaign extends Common
                 );
 
                 if ($retries < $maxRetries) {
-                    $this->logger->warning($logMessage . ". Retrying...");
+                    $this->logger->info($logMessage . ". Retrying...");
                     continue;
                 }
 
-                $this->logger->error($logMessage . ". Giving up after {$maxRetries} retries.");
+                $this->logger->warning($logMessage . ". Giving up after {$maxRetries} retries.");
 
                 // Otherwise, an unknown error occurred and no retries -> re-throw
                 throw $exception;
