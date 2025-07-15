@@ -95,6 +95,7 @@ class CampaignStatistics
             amountRaised: $amountRaised,
             matchFundsUsed: $matchFundsUsed,
             matchFundsTotal: $matchFundsTotal,
+            alwaysConsiderChanged: true,
         );
     }
 
@@ -139,6 +140,8 @@ class CampaignStatistics
      * We manually set $lastCheck and $lastRealUpdate, since we need the former to avoid wasting resources and
      * changing that will cause lifecycle hooks to change $updatedAt.
      *
+     * @param bool $alwaysConsiderChanged Hacky prop for now to avoid sa & runtime confusion about uninitialised
+     *                                    props. Constructor sets true, other callers false.
      * @return bool Whether anything changed vs. the previously persisted stats.
      */
     final public function setTotals(
@@ -146,6 +149,7 @@ class CampaignStatistics
         Money $amountRaised,
         Money $matchFundsUsed,
         Money $matchFundsTotal,
+        bool $alwaysConsiderChanged,
     ): bool {
         Assertion::greaterOrEqualThan(
             $matchFundsTotal->toNumericString(),
@@ -158,7 +162,12 @@ class CampaignStatistics
             'Amount raised must equal donation sum plus match funds used',
         );
 
-        $previousStats = clone $this;
+        /** @var ?CampaignStatistics $previousStats */
+        $previousStats = null;
+        if (!$alwaysConsiderChanged) {
+            $previousStats = clone $this;
+        }
+
         $this->amountRaised = $amountRaised;
         $this->donationSum = $donationSum;
         $this->matchFundsUsed = $matchFundsUsed;
@@ -171,12 +180,13 @@ class CampaignStatistics
             : $target->minus($amountRaised);
 
         $didRealUpdate = (
-            $previousStats->getAmountRaised() != $amountRaised
-            || $previousStats->getDonationSum() != $donationSum
-            || $previousStats->getMatchFundsUsed() != $matchFundsUsed
-            || $previousStats->getMatchFundsTotal() != $matchFundsTotal
-            || $previousStats->getMatchFundsRemaining() != $this->matchFundsRemaining
-            || $previousStats->getDistanceToTarget() != $this->distanceToTarget
+            $alwaysConsiderChanged
+            || $previousStats?->getAmountRaised() != $amountRaised
+            || $previousStats?->getDonationSum() != $donationSum
+            || $previousStats?->getMatchFundsUsed() != $matchFundsUsed
+            || $previousStats?->getMatchFundsTotal() != $matchFundsTotal
+            || $previousStats?->getMatchFundsRemaining() != $this->matchFundsRemaining
+            || $previousStats?->getDistanceToTarget() != $this->distanceToTarget
         );
 
         $this->lastCheck = new \DateTimeImmutable();

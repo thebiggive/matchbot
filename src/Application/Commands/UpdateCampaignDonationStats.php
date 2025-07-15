@@ -97,6 +97,7 @@ class UpdateCampaignDonationStats extends LockingCommand
             amountRaised: $donationSum->plus($matchFundsUsed),
             matchFundsUsed: $matchFundsUsed,
             matchFundsTotal: $this->matchFundsService->getTotalFunds($campaign),
+            alwaysConsiderChanged: false,
         );
         $this->entityManager->persist($statistics);
 

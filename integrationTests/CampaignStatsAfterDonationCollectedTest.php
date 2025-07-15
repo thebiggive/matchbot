@@ -152,8 +152,8 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
         $expectedOutput = implode(\PHP_EOL, [
             'matchbot:update-campaign-donation-stats starting!',
             "Prepared statistics for campaign ID {$this->campaign->getId()}, SF ID campaignid12345678",
-            'Updated statistics for 1 campaigns with recent donations',
-            'Updated statistics for 0 campaigns with no recent stats',
+            'Updated statistics for 1 of 1 campaigns with recent donations',
+            'Updated statistics for 0 of 0 campaigns with no recent stats',
             'matchbot:update-campaign-donation-stats complete!',
             '',
         ]);
