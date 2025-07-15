@@ -632,7 +632,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @return list<Campaign>
      */
     public function search(
-        ?string $sortField,
+        string $sortField,
         string $sortDirection,
         int $offset,
         int $limit,
@@ -643,18 +643,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
     ): array {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
-        if ($sortField === null && $term !== null) {
-            $sortField = 'relevance';
-            $sortDirection = 'desc';
-        }
-
         $safeSortField = match ($sortField) {
             'amountRaised' => 'campaignStatistics.amountRaised.amountInPence',
             'distanceToTarget' => 'campaignStatistics.distanceToTarget.amountInPence',
             'matchFundsRemaining' => 'campaignStatistics.matchFundsRemaining.amountInPence',
             'matchFundsUsed' => 'campaignStatistics.matchFundsUsed.amountInPence',
             'relevance' => 'relevance',
-            default => 'campaignStatistics.matchFundsUsed.amountInPence',
+            default => throw new \InvalidArgumentException("Invalid sort field '$sortField'"),
         };
 
         if ($term === null && $safeSortField === 'relevance') {

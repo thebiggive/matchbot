@@ -7,7 +7,6 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\BadCommandException;

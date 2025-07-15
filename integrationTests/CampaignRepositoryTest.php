@@ -226,7 +226,7 @@ class CampaignRepositoryTest extends IntegrationTest
         $em->flush();
 
         $returnValue = $sut->search(
-            sortField: null,
+            sortField: 'distanceToTarget',
             sortDirection: 'desc',
             offset: 0,
             limit: 6,
