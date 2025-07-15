@@ -13,43 +13,9 @@ class CampaignStatisticsRepository
     /**
      * @psalm-suppress PossiblyUnusedMethod Called by DI container
      */
-    public function __construct(
-        private EntityManagerInterface $em,
-        private MatchFundsService $matchFundsService,
-    ) {
+    public function __construct(EntityManagerInterface $em)
+    {
         $this->doctrineRepository = $em->getRepository(CampaignStatistics::class);
-    }
-
-    /**
-     * Creates or finds + updates a {@see CampaignStatistics} record; doesn't flush, so callers need to when done
-     * building stats.
-     */
-    public function updateStatistics(
-        Campaign $campaign,
-        Money $donationSum,
-        Money $amountRaised,
-        Money $matchFundsUsed,
-    ): void {
-        $statistics = $this->doctrineRepository->findOneBy(['campaign' => $campaign]);
-
-        if ($statistics) {
-            $statistics->setTotals(
-                donationSum: $donationSum,
-                amountRaised: $amountRaised,
-                matchFundsUsed: $matchFundsUsed,
-                matchFundsTotal: $this->matchFundsService->getTotalFunds($campaign),
-            );
-        } else {
-            $statistics = new CampaignStatistics(
-                campaign: $campaign,
-                donationSum: $donationSum,
-                amountRaised: $amountRaised,
-                matchFundsUsed: $matchFundsUsed,
-                matchFundsTotal: $this->matchFundsService->getTotalFunds($campaign),
-            );
-
-            $this->em->persist($statistics);
-        }
     }
 
     /**

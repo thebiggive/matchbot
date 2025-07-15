@@ -33,6 +33,8 @@ CREATE TABLE `Campaign` (
   `total_fundraising_target_currency` varchar(3) NOT NULL,
   `relatedApplicationStatus` varchar(64) DEFAULT NULL,
   `relatedApplicationCharityResponseToOffer` varchar(64) DEFAULT NULL,
+  `pinPosition` int DEFAULT NULL,
+  `championPagePinPosition` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_E663708BD8961D21` (`salesforceId`),
   KEY `IDX_E663708BF5C97E37` (`charity_id`),
