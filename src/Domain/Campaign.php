@@ -176,13 +176,21 @@ class Campaign extends SalesforceReadProxy
     private Money $totalFundraisingTarget;
 
     /**
-     * Optional BG-defined default sort override for the metacampaign grid.
+     * Optional BG-defined default sort override for the metacampaign grid. Works as a rank value when set,
+     * typically positive but not *required* to be positive or unique.
+     *
+     * Any value below 99,999,999 takes precedence over all nulls.
+     *
+     * Pin position is used in the default metacampaign view. Applying certain filters (beneficiary, category,
+     * country) or choosing a non-default sort order turns off pinning.
      */
     #[ORM\Column(nullable: true)]
     private ?int $pinPosition;
 
     /**
      * Optional BG-defined default sort override specifically for the funder-filtered view of a metacampaign.
+     *
+     * @see self::$pinPosition for details. This works the same but just on the `/:metacampaignSlug/:funder` view.
      */
     #[ORM\Column(nullable: true)]
     private ?int $championPagePinPosition;
