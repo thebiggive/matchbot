@@ -7,13 +7,11 @@ use MatchBot\Application\Commands\UpdateCampaignDonationStats;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignStatisticsRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
-use MatchBot\Domain\MatchFundsService;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
@@ -139,11 +137,7 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
         $output = new BufferedOutput();
         $lockFactory = new LockFactory(new AlwaysAvailableLockStore());
         $application = $this->buildMinimalApp($lockFactory);
-        $command = new UpdateCampaignDonationStats(
-            $this->getContainer()->get(CampaignRepository::class),
-            $this->getContainer()->get(EntityManagerInterface::class),
-            $this->getContainer()->get(MatchFundsService::class),
-        );
+        $command = $this->getService(UpdateCampaignDonationStats::class);
         $command->setApplication($application);
         $command->setLockFactory($lockFactory);
 
