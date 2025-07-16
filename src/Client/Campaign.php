@@ -93,7 +93,6 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     alternativeFundUse: ?string,
  *     additionalImageUris: list<array{order: int, uri: string}>,
  *     isMetaCampaign: ?bool,
- *     x_isMetaCampaign: ?bool,
  *     isEmergencyIMF: bool,
  *     slug: ?string,
  *     campaignFamily: ?string,
