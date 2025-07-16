@@ -20,12 +20,10 @@ final class Version20250716102844 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $this->addSql('CREATE INDEX lastCheck ON CampaignStatistics (lastCheck)');
-        $this->addSql('ALTER TABLE Fund DROP slug');
     }
 
     public function down(Schema $schema): void
     {
         $this->addSql('DROP INDEX lastCheck ON CampaignStatistics');
-        $this->addSql('ALTER TABLE Fund ADD slug VARCHAR(100) DEFAULT NULL');
     }
 }
