@@ -211,7 +211,7 @@ class HandleOutOfSyncFundsTest extends TestCase
     private function getFundingInSync(): CampaignFunding
     {
         $fundingInSync = new CampaignFunding(
-            fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
+            fund: new Fund('GBP', 'some pledge', null, null, fundType: FundType::Pledge),
             amount: '123.45',
             amountAvailable: '80.01',
         );
@@ -223,7 +223,7 @@ class HandleOutOfSyncFundsTest extends TestCase
     private function getFundingOverMatched(): CampaignFunding
     {
         $fundingOverMatched = new CampaignFunding(
-            fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
+            fund: new Fund('GBP', 'some pledge', null, null, fundType: FundType::Pledge),
             amount: '150',
             amountAvailable: '99.0',
         );
@@ -236,7 +236,7 @@ class HandleOutOfSyncFundsTest extends TestCase
     private function getFundingUnderMatched(): CampaignFunding
     {
         $fundingUnderMatched = new CampaignFunding(
-            fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
+            fund: new Fund('GBP', 'some pledge', null, null, fundType: FundType::Pledge),
             amount: '987.65',
             amountAvailable: '487.65',
         );
@@ -248,7 +248,7 @@ class HandleOutOfSyncFundsTest extends TestCase
     private function getFundingUnderMatchedWithNothingAllocated(): CampaignFunding
     {
         $fundingUnderMatchedWithZero = new CampaignFunding(
-            fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
+            fund: new Fund('GBP', 'some pledge', null, null, fundType: FundType::Pledge),
             amount: '1000.00',
             amountAvailable: '1000.00',
         );

@@ -200,6 +200,7 @@ class CampaignRepositoryTest extends IntegrationTest
             limit: 6,
             status: 'Active',
             metaCampaignSlug: 'the-family',
+            fundSlug: null,
             jsonMatchInListConditions: [
                 'beneficiaries' => 'Lads',
                 'categories' => 'Food',
@@ -240,6 +241,7 @@ class CampaignRepositoryTest extends IntegrationTest
             limit: 6,
             status: null,
             metaCampaignSlug: null,
+            fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
         );

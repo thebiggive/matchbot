@@ -122,6 +122,7 @@ class MatchFundsRemainingServiceTest extends TestCase
         return new Fund(
             currencyCode: $currencyCode,
             name: 'fund name',
+            slug: null,
             salesforceId: Salesforce18Id::ofFund('fundid123456789012'),
             fundType: FundType::Pledge
         );

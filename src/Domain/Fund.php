@@ -55,16 +55,31 @@ class Fund extends SalesforceReadProxy
     private int $allocationOrder;
 
     /**
+     * URL identifier for a Champion Fund, used for filtered list/search views. Not currently compulsory for those
+     * funds and never set for Pledges or TopupPledges.
+     *
+     * @psalm-suppress UnusedProperty used in DQL etc.
+     */
+    #[ORM\Column(type: 'string', length: 100, nullable: true)]
+    private ?string $slug = null;
+
+    /**
      * @param Salesforce18Id<self>|null $salesforceId
      */
-    public function __construct(string $currencyCode, string $name, ?Salesforce18Id $salesforceId, FundType $fundType)
-    {
+    public function __construct(
+        string $currencyCode,
+        string $name,
+        ?string $slug,
+        ?Salesforce18Id $salesforceId,
+        FundType $fundType,
+    ) {
         $this->createdAt = new \DateTime();
         $this->updatedAt = new \DateTime();
         $this->campaignFundings = new ArrayCollection();
 
         $this->currencyCode = $currencyCode;
         $this->name = $name;
+        $this->slug = $slug;
         /** @psalm-suppress DeprecatedProperty we just constructed this so we know its not a proxy. */
         $this->salesforceId = $salesforceId?->value;
         $this->fundType = $fundType;
@@ -198,5 +213,10 @@ class Fund extends SalesforceReadProxy
     private function setAllocationOrder(int $allocationOrder): void
     {
         $this->allocationOrder = $allocationOrder;
+    }
+
+    public function setSlug(?string $slug): void
+    {
+        $this->slug = $slug;
     }
 }

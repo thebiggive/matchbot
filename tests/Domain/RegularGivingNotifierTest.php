@@ -102,7 +102,7 @@ class RegularGivingNotifierTest extends TestCase
     {
         $withdrawal = new FundingWithdrawal(
             new CampaignFunding(
-                new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
+                new Fund('GBP', 'some pledge', null, null, fundType: FundType::Pledge),
                 '100',
                 '100',
             )

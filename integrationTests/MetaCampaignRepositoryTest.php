@@ -31,6 +31,7 @@ class MetaCampaignRepositoryTest extends IntegrationTest
         $this->fund = new Fund(
             currencyCode: 'GBP',
             name: 'Test Match Fund',
+            slug: null,
             salesforceId: Salesforce18Id::ofFund(TestCase::randomString()),
             fundType: FundType::ChampionFund
         );
