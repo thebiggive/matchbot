@@ -5,7 +5,7 @@ namespace MatchBot\Application\Commands;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\CampaignStatisticsRepository;
+use MatchBot\Domain\MatchFundsService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -18,8 +18,8 @@ class UpdateCampaignDonationStats extends LockingCommand
 {
     public function __construct(
         private CampaignRepository $campaignRepository,
-        private CampaignStatisticsRepository $campaignStatisticsRepository,
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        private MatchFundsService $matchFundsService,
     ) {
         parent::__construct();
     }
@@ -42,12 +42,19 @@ class UpdateCampaignDonationStats extends LockingCommand
         // it's slower it may be a bit longer. Check 5 minutes back as standard, and there is also a mop-up task
         // to fill in all campaigns with outdated or no stats.
         $campaigns = $this->campaignRepository->findWithDonationChangesSince(new \DateTimeImmutable('-5 minutes'));
+        $numChanged = 0;
 
         foreach ($campaigns as $campaign) {
-            $this->handleCampaign($campaign, $output);
+            if ($this->handleCampaign($campaign, $output)) {
+                $numChanged++;
+            }
         }
 
-        $output->writeln(sprintf('Updated statistics for %d campaigns with recent donations', count($campaigns)));
+        $output->writeln(sprintf(
+            'Updated statistics for %d of %d campaigns with recent donations',
+            $numChanged,
+            count($campaigns),
+        ));
     }
 
     /**
@@ -58,27 +65,49 @@ class UpdateCampaignDonationStats extends LockingCommand
     {
         $oldestExpectedWithoutStats = new \DateTimeImmutable('-1 day');
         $campaigns = $this->campaignRepository->findCampaignsWithNoRecentStats($oldestExpectedWithoutStats);
+        $numChanged = 0;
 
         foreach ($campaigns as $campaign) {
-            $this->handleCampaign($campaign, $output);
+            if ($this->handleCampaign($campaign, $output)) {
+                $numChanged++;
+            }
         }
 
-        $output->writeln(sprintf('Updated statistics for %d campaigns with no recent stats', count($campaigns)));
+        $output->writeln(sprintf(
+            'Updated statistics for %d of %d campaigns with no recent stats',
+            $numChanged,
+            count($campaigns),
+        ));
     }
 
-    private function handleCampaign(Campaign $campaign, OutputInterface $output): void
+    /**
+     * Creates or finds + updates a {@see CampaignStatistics} record, via eager loading from $campaign.
+     * Doesn't flush, so callers need to when done building stats.
+     *
+     * @return bool whether or not the statistics have changed
+     */
+    private function handleCampaign(Campaign $campaign, OutputInterface $output): bool
     {
         $campaignId = $campaign->getId();
         \assert($campaignId !== null);
         $matchFundsUsed = $this->campaignRepository->totalMatchFundsUsed($campaignId);
         $donationSum = $this->campaignRepository->totalCoreDonations($campaign);
 
-        $this->campaignStatisticsRepository->updateStatistics(
-            campaign: $campaign,
+        $statistics = $campaign->getStatistics(); // New & zeroes if not done before.
+        $changed = $statistics->setTotals(
+            at: new \DateTimeImmutable('now'),
             donationSum: $donationSum,
             amountRaised: $donationSum->plus($matchFundsUsed),
             matchFundsUsed: $matchFundsUsed,
+            matchFundsTotal: $this->matchFundsService->getTotalFunds($campaign),
+            alwaysConsiderChanged: false,
         );
-        $output->writeln("Prepared statistics for campaign ID {$campaignId}, SF ID {$campaign->getSalesforceId()}");
+        $this->entityManager->persist($statistics);
+
+        if ($changed) {
+            $output->writeln("Prepared statistics for campaign ID {$campaignId}, SF ID {$campaign->getSalesforceId()}");
+        }
+
+        return $changed;
     }
 }

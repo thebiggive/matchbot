@@ -24,7 +24,7 @@ services:
 
   consumer:
     image: thebiggive/php:dev-8.3
-    command: composer run messenger:consume
+    command: composer run messenger:consume:all
     volumes:
       - .:/var/www/html
     env_file:

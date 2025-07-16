@@ -47,6 +47,8 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     ready: bool,
  *     startDate: ?string,
  *     status: 'Active'|'Expired'|'Preview'|null,
+ *     pinPosition?: int|null,
+ *     championPagePinPosition?: int|null,
  *     relatedApplicationStatus?: value-of<\MatchBot\Domain\Campaign::APPLICATION_STATUSES>|null,
  *     relatedApplicationCharityResponseToOffer?: value-of<\MatchBot\Domain\Campaign::CHARITY_RESPONSES_TO_OFFER>|null,
  *     title: ?string,
@@ -90,6 +92,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     campaignCount: ?int,
  *     alternativeFundUse: ?string,
  *     additionalImageUris: list<array{order: int, uri: string}>,
+ *     isMetaCampaign: ?bool,
  *     x_isMetaCampaign: ?bool,
  *     isEmergencyIMF: bool,
  *     slug: ?string,
@@ -142,11 +145,11 @@ class Campaign extends Common
                 );
 
                 if ($retries < $maxRetries) {
-                    $this->logger->warning($logMessage . ". Retrying...");
+                    $this->logger->info($logMessage . ". Retrying...");
                     continue;
                 }
 
-                $this->logger->error($logMessage . ". Giving up after {$maxRetries} retries.");
+                $this->logger->warning($logMessage . ". Giving up after {$maxRetries} retries.");
 
                 // Otherwise, an unknown error occurred and no retries -> re-throw
                 throw $exception;

@@ -81,6 +81,8 @@ class CampaignService
         $salesforceId = $metaCampaign->getSalesforceId();
         Assertion::notNull($salesforceId);
 
+        $bannerLayout = MetaCampaignLayoutChoices::forSlug($metaCampaign->getSlug());
+
         return new MetaCampaignHttpModel(
             id: $salesforceId,
             title: $metaCampaign->getTitle(),
@@ -98,6 +100,8 @@ class CampaignService
             matchFundsTotal: $metaCampaign->getMatchFundsTotal()->toMajorUnitFloat(),
             campaignCount: $this->campaignRepository->countCampaignsInMetaCampaign($metaCampaign),
             usesSharedFunds: $metaCampaign->usesSharedFunds(),
+            useDon1120Banner: ! \is_null($bannerLayout),
+            bannerLayout: $bannerLayout,
         );
     }
 
@@ -209,7 +213,7 @@ class CampaignService
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
             logoUri: $sfCampaignData['logoUri'],
-            matchFundsRemaining: $stats->getMatchFundsUsed()->toMajorUnitFloat(),
+            matchFundsRemaining: $stats->getMatchFundsRemaining()->toMajorUnitFloat(),
             matchFundsTotal: $stats->getMatchFundsTotal()->toMajorUnitFloat(),
             parentAmountRaised: $parentAmountRaised,
             parentDonationCount: $parentDonationCount,

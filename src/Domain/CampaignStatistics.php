@@ -24,6 +24,12 @@ class CampaignStatistics
 {
     use TimestampsTrait;
 
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastCheck = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastRealUpdate = null;
+
     #[ORM\OneToOne(inversedBy: 'campaignStatistics', fetch: 'EAGER')]
     #[ORM\Id]
     private Campaign $campaign;
@@ -74,6 +80,7 @@ class CampaignStatistics
      * $amountRaised must be equal to $matchFundsUsed + $donationSum
      */
     public function __construct(
+        \DateTimeImmutable $at,
         Campaign $campaign,
         Money $donationSum,
         Money $amountRaised,
@@ -85,18 +92,20 @@ class CampaignStatistics
         $this->campaignSalesforceId = $campaign->getSalesforceId();
 
         $this->setTotals(
+            at: $at,
             donationSum: $donationSum,
             amountRaised: $amountRaised,
             matchFundsUsed: $matchFundsUsed,
             matchFundsTotal: $matchFundsTotal,
+            alwaysConsiderChanged: true,
         );
     }
 
-    public static function zeroPlaceholder(Campaign $campaign): self
+    public static function zeroPlaceholder(Campaign $campaign, \DateTimeImmutable $at): self
     {
         $zero = Money::zero($campaign->getCurrency());
 
-        return new self($campaign, $zero, $zero, $zero, $zero);
+        return new self($at, $campaign, $zero, $zero, $zero, $zero);
     }
 
     public function getDonationSum(): Money
@@ -129,12 +138,22 @@ class CampaignStatistics
         return $this->distanceToTarget;
     }
 
+    /**
+     * We manually set $lastCheck and $lastRealUpdate, since we need the former to avoid wasting resources and
+     * changing that will cause lifecycle hooks to change $updatedAt.
+     *
+     * @param bool $alwaysConsiderChanged Hacky prop for now to avoid sa & runtime confusion about uninitialised
+     *                                    props. Constructor sets true, other callers false.
+     * @return bool Whether anything changed vs. the previously persisted stats.
+     */
     final public function setTotals(
+        \DateTimeImmutable $at,
         Money $donationSum,
         Money $amountRaised,
         Money $matchFundsUsed,
         Money $matchFundsTotal,
-    ): void {
+        bool $alwaysConsiderChanged,
+    ): bool {
         Assertion::greaterOrEqualThan(
             $matchFundsTotal->toNumericString(),
             $matchFundsUsed->toNumericString(),
@@ -146,6 +165,12 @@ class CampaignStatistics
             'Amount raised must equal donation sum plus match funds used',
         );
 
+        /** @var ?CampaignStatistics $previousStats */
+        $previousStats = null;
+        if (!$alwaysConsiderChanged) {
+            $previousStats = clone $this;
+        }
+
         $this->amountRaised = $amountRaised;
         $this->donationSum = $donationSum;
         $this->matchFundsUsed = $matchFundsUsed;
@@ -156,5 +181,24 @@ class CampaignStatistics
         $this->distanceToTarget = $target->lessThan($amountRaised)
             ? Money::zero($this->campaign->getCurrency())
             : $target->minus($amountRaised);
+
+        $didRealUpdate = (
+            $alwaysConsiderChanged
+            || $previousStats?->getAmountRaised() != $amountRaised
+            || $previousStats?->getDonationSum() != $donationSum
+            || $previousStats?->getMatchFundsUsed() != $matchFundsUsed
+            || $previousStats?->getMatchFundsTotal() != $matchFundsTotal
+            || $previousStats?->getMatchFundsRemaining() != $this->matchFundsRemaining
+            || $previousStats?->getDistanceToTarget() != $this->distanceToTarget
+        );
+
+        $this->lastCheck = $at;
+        if (!$didRealUpdate) {
+            return false;
+        }
+
+        $this->lastRealUpdate = $at;
+
+        return true;
     }
 }

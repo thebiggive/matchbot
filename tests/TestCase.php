@@ -54,8 +54,9 @@ class TestCase extends PHPUnitTestCase
     use ProphecyTrait;
 
     /** @var SFCampaignApiResponse  */
-    public const array CAMPAIGN_FROM_SALESOFRCE = [
+    public const array CAMPAIGN_FROM_SALESFORCE = [
         'id' => 'a05xxxxxxxxxxxxxxx',
+        'isMetaCampaign' => false,
         'x_isMetaCampaign' => false,
         'aims' => [0 => 'First Aim'],
         'ready' => true,
@@ -109,6 +110,10 @@ class TestCase extends PHPUnitTestCase
         'totalAdjustment' => null,
         'parentMatchFundsRemaining' => null,
         'regularGivingCollectionEnd' => null,
+        'pinPosition' => null,
+        'championPagePinPosition' => null,
+        'relatedApplicationStatus' => null,
+        'relatedApplicationCharityResponseToOffer' => null,
         'charity' => [
             'id' => 'xxxxxxxxxxxxxxxxxx',
             'name' => 'Society for the advancement of bots and matches',
@@ -140,6 +145,7 @@ class TestCase extends PHPUnitTestCase
     /** @var SFCampaignApiResponse  */
     public const array META_CAMPAIGN_FROM_SALESFORCE = [
         'id' => 'a05xxxxxxxxxxxxxxx',
+        'isMetaCampaign' => true,
         'x_isMetaCampaign' => true,
         'ready' => true,
         'title' => 'This is a meta campaign',
@@ -393,7 +399,7 @@ class TestCase extends PHPUnitTestCase
             phoneNumber: $phoneNumber,
             address: $address,
             emailAddress: $emailAddress,
-            rawData: self::CAMPAIGN_FROM_SALESOFRCE['charity'],
+            rawData: self::CAMPAIGN_FROM_SALESFORCE['charity'],
         );
     }
 
@@ -430,12 +436,14 @@ class TestCase extends PHPUnitTestCase
             totalFundingAllocation: $totalFundingAllocation ?? Money::zero(),
             amountPledged: $amountPledged ?? Money::zero(),
             isRegularGiving: $isRegularGiving,
+            pinPosition: null,
+            championPagePinPosition: null,
             relatedApplicationStatus: null,
             relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             totalFundraisingTarget: $totalFundraisingTarget ?? Money::zero(),
             thankYouMessage: $thankYouMessage,
-            rawData: self::CAMPAIGN_FROM_SALESOFRCE,
+            rawData: self::CAMPAIGN_FROM_SALESFORCE,
             hidden: false,
         );
     }

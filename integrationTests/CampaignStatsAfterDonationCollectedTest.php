@@ -7,7 +7,6 @@ use MatchBot\Application\Commands\UpdateCampaignDonationStats;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignStatisticsRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\Fund;
@@ -138,11 +137,7 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
         $output = new BufferedOutput();
         $lockFactory = new LockFactory(new AlwaysAvailableLockStore());
         $application = $this->buildMinimalApp($lockFactory);
-        $command = new UpdateCampaignDonationStats(
-            $this->getContainer()->get(CampaignRepository::class),
-            $this->getContainer()->get(CampaignStatisticsRepository::class),
-            $this->getContainer()->get(EntityManagerInterface::class),
-        );
+        $command = $this->getService(UpdateCampaignDonationStats::class);
         $command->setApplication($application);
         $command->setLockFactory($lockFactory);
 
@@ -151,8 +146,8 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
         $expectedOutput = implode(\PHP_EOL, [
             'matchbot:update-campaign-donation-stats starting!',
             "Prepared statistics for campaign ID {$this->campaign->getId()}, SF ID campaignid12345678",
-            'Updated statistics for 1 campaigns with recent donations',
-            'Updated statistics for 0 campaigns with no recent stats',
+            'Updated statistics for 1 of 1 campaigns with recent donations',
+            'Updated statistics for 0 of 0 campaigns with no recent stats',
             'matchbot:update-campaign-donation-stats complete!',
             '',
         ]);
