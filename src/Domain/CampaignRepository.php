@@ -458,7 +458,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             <<<'DQL'
             SELECT campaign FROM MatchBot\Domain\Campaign campaign
             LEFT OUTER JOIN campaign.campaignStatistics stats
-            WHERE stats.campaign IS NULL OR stats.lastCheck < :oldestExpected
+            WHERE stats.lastCheck IS NULL OR stats.lastCheck < :oldestExpected
             ORDER BY campaign.createdAt ASC
         DQL
         );
