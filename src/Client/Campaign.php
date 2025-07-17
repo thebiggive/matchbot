@@ -93,7 +93,6 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     alternativeFundUse: ?string,
  *     additionalImageUris: list<array{order: int, uri: string}>,
  *     isMetaCampaign: ?bool,
- *     x_isMetaCampaign: ?bool,
  *     isEmergencyIMF: bool,
  *     slug: ?string,
  *     campaignFamily: ?string,
@@ -133,7 +132,8 @@ class Campaign extends Common
                 return $campaignResponse;
             } catch (TransferException $exception) {
                 if ($exception instanceof RequestException && $exception->getResponse()?->getStatusCode() === 404) {
-                    // may be safely caught in sandboxes
+                    // may be safely caught in sandboxes, and when the campaign ID was sent by a client who may have an ID that doesn't exist
+                    // or isn't working.
                     throw new NotFoundException(sprintf('Campaign ID %s not found in SF', $id));
                 }
 

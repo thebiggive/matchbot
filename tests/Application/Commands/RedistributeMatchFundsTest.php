@@ -219,7 +219,7 @@ class RedistributeMatchFundsTest extends TestCase
     private function getFullyAvailableFunding(FundType $fundType): CampaignFunding
     {
         $pledgeAmount = '101.00';
-        $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: $fundType);
+        $pledge = new Fund(currencyCode: 'GBP', name: '', slug: null, salesforceId: null, fundType: $fundType);
 
         return new CampaignFunding(
             fund: $pledge,
@@ -240,7 +240,7 @@ class RedistributeMatchFundsTest extends TestCase
         $donation->setSalesforceId('sf_1244');
         $donation->setTransactionId('pi_tenPound123');
 
-        $fund = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: $fundType);
+        $fund = new Fund(currencyCode: 'GBP', name: '', slug: null, salesforceId: null, fundType: $fundType);
         $campaignFunding = new CampaignFunding(
             fund: $fund,
             amount: $donationAmount,

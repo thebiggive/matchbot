@@ -8,7 +8,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use MatchBot\Application\Matching;
 use MatchBot\Client;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\Fund;
@@ -17,7 +16,6 @@ use MatchBot\Domain\FundType;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
-use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 class FundRepositoryTest extends TestCase
@@ -31,33 +29,6 @@ class FundRepositoryTest extends TestCase
     {
         parent::setUp();
         $this->now = new \DateTimeImmutable('2020-01-01T00:00:00z'); // specific date doesn't matter for now.
-    }
-
-    public function testPull(): void
-    {
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $fundClientProphecy = $this->prophesize(Client\Fund::class);
-        $fundClientProphecy
-            ->getById(self::CAMPAIGN_SF_ID, withCache: true)
-            ->shouldBeCalledOnce()
-            ->willReturn([
-                'name' => 'API Fund Name',
-                'totalAmount' => '123.45',
-            ]);
-
-        $repo = new FundRepository($entityManagerProphecy->reveal(), new ClassMetadata(Fund::class));
-        $repo->setClient($fundClientProphecy->reveal());
-
-        $repo->setLogger($this->getContainer()->get(LoggerInterface::class));
-
-        // Setting a salesforceId is the quickest
-        // way to ensure this behaves like a newly-found Fund without having to partially mock / prophesise
-        // `FundRepository` such that `doPull()` is a real call but `pull()` doesn't try a real DB engine lookup.
-        $fund = new Fund(currencyCode: 'GBP', name: '', salesforceId: Salesforce18Id::ofFund(self::CAMPAIGN_SF_ID), fundType:FundType::ChampionFund);
-
-        $repo->updateFromSf($fund, autoSave: false); // Don't auto-save as non-DB-backed tests can't persist
-
-        $this->assertSame('API Fund Name', $fund->getName());
     }
 
     public function testPullForCampaignAllNew(): void
@@ -269,6 +240,7 @@ class FundRepositoryTest extends TestCase
         $existingFund = new Fund(
             currencyCode: 'GBP',
             name: $shared ? 'Test Shared Champion Fund 456' : 'Test Champion Fund 123',
+            slug: null,
             salesforceId: Salesforce18Id::ofFund($shared ? 'sffunDid4567890ABC' : 'sffundid1234567890'),
             fundType: FundType::ChampionFund
         );
@@ -307,6 +279,7 @@ class FundRepositoryTest extends TestCase
                 'amountForCampaign' => 500,
                 'logoUri' => 'https://httpbin.org/image/png',
                 'isShared' => false,
+                'slug' => null,
             ],
             [
                 'id' => 'sffunDid4567890ABC',
@@ -318,6 +291,7 @@ class FundRepositoryTest extends TestCase
                 'amountForCampaign' => 1500,
                 'logoUri' => 'https://httpbin.org/image/png',
                 'isShared' => true,
+                'slug' => null,
             ],
         ]);
 

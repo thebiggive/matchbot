@@ -94,7 +94,7 @@ EOT
                     $transferError = sprintf(
                         'Skipping campaign %s due to 2nd transfer error "%s"',
                         $salesforceId,
-                        $exception->getMessage(),
+                        $retryException->getMessage(),
                     );
                     $output->writeln($transferError);
                     $this->logger->warning($transferError);
@@ -103,14 +103,9 @@ EOT
         }
 
         // This task is expected to bulk change lots of campaigns + funds in some cases.
-        // After the loop is the most efficient time to clear the query result
+        // After the loop is the most efficient time to clear the result
         // cache so future processes see all the new data straight away.
-        /**
-         * @psalm-suppress DeprecatedMethod
-         * @var CacheProvider $cacheDriver
-         */
-        $cacheDriver = $this->entityManager->getConfiguration()->getResultCacheImpl();
-        $cacheDriver->deleteAll();
+        $this->entityManager->getConfiguration()->getResultCache()?->clear();
 
         return 0;
     }

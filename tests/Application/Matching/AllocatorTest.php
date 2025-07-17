@@ -98,7 +98,7 @@ class AllocatorTest extends TestCase
     public function testItAllocates1From1For1(): void
     {
         $campaignFunding = new CampaignFunding(
-            fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
+            fund: new Fund('GBP', 'some pledge', null, null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '1',
         );
@@ -177,14 +177,14 @@ class AllocatorTest extends TestCase
         string $withdrawl1AmountExpected
     ): void {
         $campaignFunding0 = new CampaignFunding(
-            fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
+            fund: new Fund('GBP', 'some pledge', null, null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: $funding0Available,
         );
         $campaignFunding0->setId(0);
 
         $campaignFunding1 = new CampaignFunding(
-            fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
+            fund: new Fund('GBP', 'some pledge', null, null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: $funding1Available,
         );
@@ -231,7 +231,7 @@ class AllocatorTest extends TestCase
     public function testItAllocates1From2For2When1AlreadyMatched(): void
     {
         $campaignFunding = new CampaignFunding(
-            fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
+            fund: new Fund('GBP', 'some pledge', null, null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '1.0',
         );
@@ -274,7 +274,7 @@ class AllocatorTest extends TestCase
     public function testItRejectsFundingInWrongCurrency(): void
     {
         $campaignFunding = new CampaignFunding(
-            fund: new Fund('USD', 'some pledge', null, fundType: FundType::Pledge),
+            fund: new Fund('USD', 'some pledge', null, null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '1',
         );

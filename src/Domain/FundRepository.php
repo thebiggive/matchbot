@@ -14,6 +14,7 @@ use MatchBot\Domain\DomainException\DisallowedFundTypeChange;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
 /**
+ * @psalm-import-type fundArray from Client\Fund
  * @template-extends SalesforceReadProxyRepository<Fund, Client\Fund>
  */
 class FundRepository extends SalesforceReadProxyRepository
@@ -145,7 +146,7 @@ class FundRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @param array{currencyCode: ?string, name: ?string, type: string, id:string, ...} $fundData
+     * @param array{currencyCode: ?string, name: ?string, slug: ?string, type: string, id:string, ...} $fundData
      */
     private function setAnyFundData(Fund $fund, array $fundData): Fund
     {
@@ -180,23 +181,29 @@ class FundRepository extends SalesforceReadProxyRepository
 
         $fund->setCurrencyCode($currencyCode);
         $fund->setName($fundData['name'] ?? '');
+        $fund->setSlug($fundData['slug']);
         $fund->setSalesforceLastPull(new DateTime('now'));
 
         return $fund;
     }
 
-    /** @param array<string, mixed> $fundData */
+    /**
+     * @param fundArray $fundData
+     */
     protected function getNewFund(array $fundData): Fund
     {
         $currencyCode = $fundData['currencyCode'] ?? 'GBP';
         $name = $fundData['name'] ?? '';
+        $slug = $fundData['slug'];
         $type = $fundData['type'];
         $id = $fundData['id'];
-        Assertion::string($currencyCode);
-        Assertion::string($name);
-        Assertion::string($type);
-        Assertion::string($id);
-        $fund = new Fund(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::ofFund($id), fundType: FundType::from($type));
+        $fund = new Fund(
+            currencyCode: $currencyCode,
+            name: $name,
+            slug: $slug,
+            salesforceId: Salesforce18Id::ofFund($id),
+            fundType: FundType::from($type),
+        );
 
         return $fund;
     }
@@ -263,6 +270,9 @@ EOT;
      * No need to `setSalesforceLastPull()`, or EM `persist()` - just populate the fields specific to the object.
      *
      * @param Fund $proxy
+     *
+     * @deprecated @todo We think this can be deleted soon, assertion added to {@see SalesforceReadProxyRepository::updateFromSf()}
+     * to be even more sure before we delete / refactor.
      */
     #[\Override]
     protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
@@ -274,5 +284,8 @@ EOT;
 
         $fundData = $this->getClient()->getById($fundId, $withCache);
         $proxy->setName($fundData['name'] ?? '');
+        // Not sure I'm entirely convinced anything but tests is using this for Funds, but mirroring what we do with
+        // 'name' for now just in case. Maybe we can make the fn throw instead? Needs more attention later ideally.
+        $proxy->setSlug($fundData['slug'] ?? '');
     }
 }

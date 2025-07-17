@@ -201,7 +201,7 @@ class DonationRepositoryTest extends IntegrationTest
             $oldPendingDonation->setDonationStatusForTest($donationStatus);
         }
 
-        $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::Pledge);
+        $pledge = new Fund(currencyCode: 'GBP', name: '', slug: null, salesforceId: null, fundType: FundType::Pledge);
         $campaignFunding = new CampaignFunding(
             fund: $pledge,
             amount: '1.0',

@@ -24,7 +24,7 @@ class ResetMatchingTest extends TestCase
 {
     public function testSinglePush(): void
     {
-        $fund = new Fund('GBP', name: 'Test Champion Fund 123', salesforceId: Salesforce18Id::ofFund('sffundid1234567890'), fundType: FundType::ChampionFund);
+        $fund = new Fund('GBP', name: 'Test Champion Fund 123', slug: null, salesforceId: Salesforce18Id::ofFund('sffundid1234567890'), fundType: FundType::ChampionFund);
         $fund->setSalesforceLastPull(new \DateTime());
 
         $campaignFunding = new CampaignFunding(

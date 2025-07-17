@@ -55,6 +55,7 @@ class MatchFundsServiceTest extends IntegrationTest
         $otherFund = new Fund(
             currencyCode: 'GBP',
             name: 'Other Test Match Fund',
+            slug: null,
             salesforceId: Salesforce18Id::ofFund(TestCase::randomString()),
             fundType: FundType::ChampionFund
         );
@@ -215,6 +216,7 @@ class MatchFundsServiceTest extends IntegrationTest
         return new Fund(
             currencyCode: $currencyCode,
             name: $name,
+            slug: null,
             salesforceId: Salesforce18Id::ofFund(TestCase::randomString()),
             fundType: FundType::ChampionFund
         );

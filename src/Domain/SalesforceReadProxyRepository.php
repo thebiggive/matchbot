@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use MatchBot\Application\Assertion;
 use MatchBot\Client;
 
 /**
@@ -34,17 +35,12 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
         bool $withCache = true,
         bool $autoSave = true,
     ): void {
+        // TODO move fn to CampaignRepository assuming nothing fails at this assertion.
+        Assertion::isInstanceOf($proxy, Campaign::class);
+
         // Make sure we update existing object if passed in a partial copy and we already have that Salesforce object
         // persisted, otherwise we'll try to insert a duplicate and get an ORM crash.
         $salesforceId = $proxy->getSalesforceId();
-        if ($salesforceId === null) {
-            $this->logWarning(
-                'Cannot update ' .
-                get_class($proxy) . ' without SF ID for internal ID ' .
-                ($proxy->getId() ?? -1)
-            );
-            return;
-        }
 
         if (
             $proxy->hasBeenPersisted() &&
