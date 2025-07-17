@@ -183,10 +183,7 @@ class DonationService
             // it is the one place outside of `UpdateCampaigns` where we clear the whole
             // result cache. It's currently the only user-invoked or single item place where
             // we do so.
-            $resultCache = $this->entityManager->getConfiguration()->getResultCache();
-            if ($resultCache) {
-                $resultCache->clear();
-            }
+            $this->entityManager->getConfiguration()->getResultCache()?->clear();
         }
 
         if ($donationData->currencyCode !== $campaign->getCurrencyCode()) {
