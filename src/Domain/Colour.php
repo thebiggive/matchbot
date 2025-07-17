@@ -9,10 +9,13 @@ use MatchBot\Application\Assertion;
  */
 readonly class Colour
 {
+    private string $hexCode;
+
     private function __construct(
-        private string $hexCode
+        string $hexCode
     ) {
-        Assertion::regex($this->hexCode, '/^#[A-F0-9]{6}$/', 'Upper case Hex color code required');
+        $this->hexCode = \strtoupper($hexCode);
+        Assertion::regex($this->hexCode, '/^#[A-F0-9]{6}$/', 'Hex color code required');
     }
 
     public static function fromHex(string $hexCode): self

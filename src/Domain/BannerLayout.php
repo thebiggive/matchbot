@@ -2,6 +2,7 @@
 
 namespace MatchBot\Domain;
 
+use Laminas\Diactoros\Uri;
 use Psr\Http\Message\UriInterface;
 
 /**
@@ -10,6 +11,8 @@ use Psr\Http\Message\UriInterface;
  */
 readonly class BannerLayout implements \JsonSerializable
 {
+    public ?UriInterface $imageUri;
+
     public function __construct(
         /** Only shown during loading and/or if an image fails to load - behind the image.
          * Should therefore be a similar colour to most of the image.
@@ -21,7 +24,13 @@ readonly class BannerLayout implements \JsonSerializable
         public Colour $textColour,
         /** Box that indicates the position of any image subject, to be preserved in crops. */
         public FocalAreaBox $focalArea,
+        /** Optional - if given overrides the image chosen in SF for this campaign. May be needed here
+         * to allow changing the image and the text colour at the same moment to make sure we always maintain
+         * readability.
+         */
+        ?string $imageUri = null,
     ) {
+        $this->imageUri = $imageUri === null ? null : new Uri($imageUri);
     }
 
     /**
