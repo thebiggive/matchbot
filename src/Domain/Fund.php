@@ -37,7 +37,7 @@ class Fund extends SalesforceReadProxy
     protected string $currencyCode;
 
     /**
-     * @var string
+     * @psalm-suppress UnusedProperty May be used in DQL etc.
      */
     #[ORM\Column(type: 'string')]
     protected string $name;
@@ -111,14 +111,6 @@ class Fund extends SalesforceReadProxy
     public function setName(string $name): void
     {
         $this->name = $name;
-    }
-
-    /**
-     * @return string
-     */
-    public function getName(): string
-    {
-        return $this->name;
     }
 
     public function setCurrencyCode(string $currencyCode): void

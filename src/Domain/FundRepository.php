@@ -270,6 +270,9 @@ EOT;
      * No need to `setSalesforceLastPull()`, or EM `persist()` - just populate the fields specific to the object.
      *
      * @param Fund $proxy
+     *
+     * @deprecated @todo We think this can be deleted soon, assertion added to {@see SalesforceReadProxyRepository::updateFromSf()}
+     * to be even more sure before we delete / refactor.
      */
     #[\Override]
     protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
