@@ -77,7 +77,7 @@ class Put extends Action
 
         Assertion::eq($campaignData['id'], $args['salesforceId']);
 
-        $isMetaCampaign = $campaignData['x_isMetaCampaign'];
+        $isMetaCampaign = $campaignData['isMetaCampaign'];
 
         if ($isMetaCampaign) {
             /** @var Salesforce18Id<MetaCampaign> $campaignSfId */

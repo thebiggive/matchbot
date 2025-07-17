@@ -197,7 +197,7 @@ class MetaCampaign extends SalesforceReadProxy
      */
     public function updateFromSfData(array $data): void
     {
-        Assertion::true($data['x_isMetaCampaign'] ?? true);
+        Assertion::true($data['isMetaCampaign'] ?? true);
 
         $bannerUri = $data['bannerUri'];
         $isRegularGiving = $data['isRegularGiving'] ?? null;

@@ -292,7 +292,7 @@ class Campaign extends SalesforceReadProxy
         }
 
         Assertion::false(
-            $campaignData['x_isMetaCampaign'] ?? false,
+            $campaignData['isMetaCampaign'] ?? false,
             'Cannot create Charity Campaign using meta campaign data'
         );
 

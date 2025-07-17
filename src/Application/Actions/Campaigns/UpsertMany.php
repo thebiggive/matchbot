@@ -88,7 +88,7 @@ class UpsertMany extends Action
                 $campaignData['id'] ?? throw new HttpBadRequestException($request)
             );
 
-            $isMetaCampaign = $campaignData['x_isMetaCampaign'];
+            $isMetaCampaign = $campaignData['isMetaCampaign'];
 
             if ($isMetaCampaign) {
                 /** @var Salesforce18Id<MetaCampaign> $campaignSfId */

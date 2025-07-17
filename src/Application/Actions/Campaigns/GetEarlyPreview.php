@@ -47,7 +47,7 @@ class GetEarlyPreview extends Action
         );
 
         $campaignData = $this->salesforceCampaignClient->getById($sfId->value, false);
-        if ($campaignData['x_isMetaCampaign']) {
+        if ($campaignData['isMetaCampaign']) {
             throw new HttpNotFoundException($request);
         }
 

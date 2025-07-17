@@ -57,7 +57,6 @@ class TestCase extends PHPUnitTestCase
     public const array CAMPAIGN_FROM_SALESFORCE = [
         'id' => 'a05xxxxxxxxxxxxxxx',
         'isMetaCampaign' => false,
-        'x_isMetaCampaign' => false,
         'aims' => [0 => 'First Aim'],
         'ready' => true,
         'title' => 'Save Matchbot',
@@ -146,7 +145,6 @@ class TestCase extends PHPUnitTestCase
     public const array META_CAMPAIGN_FROM_SALESFORCE = [
         'id' => 'a05xxxxxxxxxxxxxxx',
         'isMetaCampaign' => true,
-        'x_isMetaCampaign' => true,
         'ready' => true,
         'title' => 'This is a meta campaign',
         'video' => null,

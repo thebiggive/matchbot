@@ -49,7 +49,7 @@ class Get extends Action
 
             try {
                 $campaign = $this->salesforceCampaignClient->getById($sfId->value, false);
-                if ($campaign['x_isMetaCampaign']) {
+                if ($campaign['isMetaCampaign']) {
                     // throwing manually for now. When MAT-405 is done and we serve only from matchbot DB metcampaigns will not be in the same
                     // DB table so this sort of request will naturally generate a 404 response.
                     $this->logger->warning("Metacampaign requested by ID {$sfId->value}, should request via slug {$campaign['slug']} at dedicated metacampaign page instead");
