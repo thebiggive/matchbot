@@ -9,7 +9,6 @@ use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Environment;
 use MatchBot\Client\Campaign as SfCampaignClient;
-use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
@@ -46,7 +45,12 @@ class GetEarlyPreview extends Action
             $args['salesforceId'] ?? throw new HttpNotFoundException($request)
         );
 
-        $campaignData = $this->salesforceCampaignClient->getById($sfId->value, false);
+        try {
+            $campaignData = $this->salesforceCampaignClient->getById($sfId->value, false);
+        } catch (\MatchBot\Client\NotFoundException) {
+            $this->logger->warning("Campaign not found for preview, id: " . $sfId->value);
+            throw new HttpNotFoundException($request); // see ticket BG2-2919
+        }
         if ($campaignData['isMetaCampaign']) {
             throw new HttpNotFoundException($request);
         }
