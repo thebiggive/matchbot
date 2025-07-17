@@ -15,6 +15,7 @@ CREATE TABLE `Fund` (
   `fundType` varchar(255) NOT NULL,
   `currencyCode` varchar(3) NOT NULL,
   `allocationOrder` int NOT NULL,
+  `slug` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_7CA0912ED8961D21` (`salesforceId`),
   KEY `allocationOrder` (`allocationOrder`)

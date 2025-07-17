@@ -108,7 +108,7 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
             chargeCreationTimestamp: (new \DateTimeImmutable())->sub(new \DateInterval('PT1M'))->getTimestamp()
         );
 
-        $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::Pledge);
+        $pledge = new Fund(currencyCode: 'GBP', name: '', slug: null, salesforceId: null, fundType: FundType::Pledge);
         $campaignFunding = new CampaignFunding(
             fund: $pledge,
             amount: self::FUND_TOTAL_AMOUNT,

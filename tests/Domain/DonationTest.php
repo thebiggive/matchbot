@@ -205,7 +205,7 @@ class DonationTest extends TestCase
 
     public function testtoFrontEndApiModel(): void
     {
-        $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::Pledge);
+        $pledge = new Fund(currencyCode: 'GBP', name: '', slug: null, salesforceId: null, fundType: FundType::Pledge);
 
         $campaignFunding = new CampaignFunding(
             fund: $pledge,
@@ -1066,7 +1066,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(amount: '100.00');
 
-        $fund = new Fund('GBP', 'some champion fund', null, fundType: FundType::ChampionFund);
+        $fund = new Fund('GBP', 'some champion fund', null, null, fundType: FundType::ChampionFund);
         $campaignFunding = new CampaignFunding($fund, amount: '1000', amountAvailable: '1000');
         $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawl->setAmount('99.99');
@@ -1079,7 +1079,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(amount: '100.00');
 
-        $fund = new Fund('GBP', 'some champion fund', null, fundType: FundType::ChampionFund);
+        $fund = new Fund('GBP', 'some champion fund', null, null, fundType: FundType::ChampionFund);
         $campaignFunding = new CampaignFunding($fund, '1000', '1000');
         $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawl->setAmount('100.00');
@@ -1158,7 +1158,7 @@ class DonationTest extends TestCase
     public function createWithdrawal(FundType $fundType, string $fundAmount): FundingWithdrawal
     {
         $campaignFunding = new CampaignFunding(
-            fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: $fundType),
+            fund: new Fund(currencyCode: 'GBP', name: '', slug: null, salesforceId: null, fundType: $fundType),
             amount: '1000',
             amountAvailable: '1000',
         );

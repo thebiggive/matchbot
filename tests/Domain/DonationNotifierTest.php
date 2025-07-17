@@ -137,7 +137,7 @@ class DonationNotifierTest extends TestCase
     {
         $fundingWithdrawal = new FundingWithdrawal(
             new CampaignFunding(
-                new Fund('GBP', 'some-fund', null, $fundType),
+                new Fund('GBP', 'some-fund', null, null, $fundType),
                 amount: '100',
                 amountAvailable: '1',
             )

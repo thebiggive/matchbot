@@ -17,9 +17,10 @@ class FundTest extends TestCase
     public function testGetAmounts(Money $totalAmount, Money $amountAvailable, Money $expectedUsedAmount): void
     {
         $fund = new Fund(
-            'GBP',
-            'testGetAmounts fund',
-            Salesforce18Id::ofFund('sffunDid4567890ABC'),
+            currencyCode: 'GBP',
+            name: 'testGetAmounts fund',
+            slug: null,
+            salesforceId: Salesforce18Id::ofFund('sffunDid4567890ABC'),
             fundType: FundType::ChampionFund
         );
         $fund->addCampaignFunding(new CampaignFunding(
@@ -38,7 +39,7 @@ class FundTest extends TestCase
 
     public function testToAmountUsedUpdateModel(): void
     {
-        $fund = new Fund('GBP', 'Testfund', Salesforce18Id::ofFund('sffunDid4567890ABC'), fundType: FundType::ChampionFund);
+        $fund = new Fund('GBP', 'Testfund', null, Salesforce18Id::ofFund('sffunDid4567890ABC'), fundType: FundType::ChampionFund);
         $fund->addCampaignFunding(new CampaignFunding(
             fund: $fund,
             amount: '123.45',

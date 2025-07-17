@@ -71,7 +71,7 @@ class CreateFictionalData extends Command
         $charity = $this->charityRepository->findOneBy(['salesforceId' => self::SF_ID_ZERO]);
 
         $fund = $this->fundRepository->findOneBy(['salesforceId' => '000000000000000001']) ??
-            new Fund('GBP', 'test fund', Salesforce18Id::ofFund('000000000000000001'), FundType::Pledge);
+            new Fund('GBP', 'test fund', null, Salesforce18Id::ofFund('000000000000000001'), FundType::Pledge);
 
         $campaignFunding = new CampaignFunding($fund, '50.0', '50.0');
         $this->em->persist($fund);

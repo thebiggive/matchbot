@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Actions\Donations;
 
-use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\UnitOfWork;
 use Los\RateLimit\Exception\MissingRequirement;
@@ -33,6 +32,7 @@ use MatchBot\Tests\TestData\Identity;
 use Override;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Cache\CacheItemPoolInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
@@ -135,7 +135,7 @@ class CreateTest extends TestCase
 
         $configurationProphecy = $this->prophesize(\Doctrine\ORM\Configuration::class);
         $config = $configurationProphecy->reveal();
-        $configurationProphecy->getResultCacheImpl()->willReturn($this->createStub(CacheProvider::class));
+        $configurationProphecy->getResultCache()->willReturn($this->createStub(CacheItemPoolInterface::class));
 
         $emptyUow = $this->prophesize(UnitOfWork::class);
         $emptyUow->computeChangeSets()->willReturn(null); // void
@@ -1010,7 +1010,7 @@ class CreateTest extends TestCase
     private static function someCampaignFunding(): CampaignFunding
     {
         return new CampaignFunding(
-            fund: new FundEntity('GBP', 'some pledge', null, FundType::Pledge),
+            fund: new FundEntity('GBP', 'some pledge', null, null, FundType::Pledge),
             amount: '8.00',
             amountAvailable: '8.00',
         );

@@ -2,7 +2,6 @@
 
 namespace MatchBot\Tests\Domain;
 
-use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Driver\PDO\Exception as PDOException;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -37,6 +36,7 @@ use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestLogger;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Stripe\ConfirmationToken;
@@ -83,7 +83,7 @@ class DonationServiceTest extends TestCase
 
         $configurationProphecy = $this->prophesize(\Doctrine\ORM\Configuration::class);
         $config = $configurationProphecy->reveal();
-        $configurationProphecy->getResultCacheImpl()->willReturn($this->createStub(CacheProvider::class));
+        $configurationProphecy->getResultCache()->willReturn($this->createStub(CacheItemPoolInterface::class));
 
         $this->entityManagerProphecy->getConfiguration()->willReturn($config);
     }

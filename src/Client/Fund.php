@@ -14,6 +14,7 @@ use Psr\Log\LogLevel;
  *      currencyCode: string,
  *      id: string,
  *      name: ?string,
+ *      slug: ?string,
  *      type: string,
  *      amountForCampaign: string|null|numeric,
  *      isShared: boolean,

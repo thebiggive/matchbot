@@ -542,6 +542,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         QueryBuilder $qb,
         ?string $status,
         ?string $metaCampaignSlug,
+        ?string $fundSlug,
         array $jsonMatchInListConditions,
         ?string $termWildcarded,
         bool $filterOutTargetMet,
@@ -570,6 +571,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
         if ($metaCampaignSlug !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.metaCampaignSlug', ':metaCampaignSlug'));
             $qb->setParameter('metaCampaignSlug', $metaCampaignSlug);
+        }
+
+        if ($fundSlug !== null) {
+            $qb->andWhere($qb->expr()->eq('fund.slug', ':fundSlug'));
+            $qb->setParameter('fundSlug', $fundSlug);
         }
 
         foreach ($jsonMatchInListConditions as $field => $value) {
@@ -650,6 +656,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         int $limit,
         ?string $status,
         ?string $metaCampaignSlug,
+        ?string $fundSlug,
         array $jsonMatchInListConditions,
         ?string $term
     ): array {
@@ -677,6 +684,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             // Campaigns must have a stats record to be searched. Probably OK and worth it to keep the
             // join & sorting simple.
             ->join('campaign.campaignStatistics', 'campaignStatistics')
+            ->leftJoin('campaign.campaignFundings', 'campaignFunding')
+            ->leftJoin('campaignFunding.fund', 'fund')
             ->setFirstResult($offset)
             ->setMaxResults($limit);
 
@@ -695,6 +704,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             qb: $qb,
             status: $status,
             metaCampaignSlug: $metaCampaignSlug,
+            fundSlug: $fundSlug,
             jsonMatchInListConditions: $jsonMatchInListConditions,
             termWildcarded: $termWildcarded,
             filterOutTargetMet: $filterOutTargetMet

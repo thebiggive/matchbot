@@ -47,8 +47,6 @@ class Search extends Action
             throw new HttpBadRequestException($request, 'Unrecognised sort direction');
         }
 
-        // @todo fund slug – have to join when set, and also first start storing in Fund table?
-
         $jsonMatchInListConditions = [];
         foreach ($params as $key => $value) {
             switch ($key) {
@@ -73,6 +71,10 @@ class Search extends Action
         $parentSlug = $params['parentSlug'] ?? null;
         Assertion::nullOrString($parentSlug);
 
+        /** @var ?string $fundSlug */
+        $fundSlug = $params['fundSlug'] ?? null;
+        Assertion::nullOrString($fundSlug);
+
         // Use limit 100 if a higher value requested.
         $limit = min(100, (int) ($params['limit'] ?? 20));
         $campaigns = $this->campaignRepository->search(
@@ -82,6 +84,7 @@ class Search extends Action
             limit: $limit,
             status: $status,
             metaCampaignSlug: $parentSlug,
+            fundSlug: $fundSlug,
             jsonMatchInListConditions: $jsonMatchInListConditions,
             term: $term,
         );
