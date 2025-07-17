@@ -105,10 +105,7 @@ EOT
         // This task is expected to bulk change lots of campaigns + funds in some cases.
         // After the loop is the most efficient time to clear the result
         // cache so future processes see all the new data straight away.
-        $resultCache = $this->entityManager->getConfiguration()->getResultCache();
-        if ($resultCache) {
-            $resultCache->clear();
-        }
+        $this->entityManager->getConfiguration()->getResultCache()?->clear();
 
         return 0;
     }
