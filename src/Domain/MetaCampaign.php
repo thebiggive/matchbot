@@ -112,26 +112,36 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Embedded(columnPrefix: 'match_funds_total_')]
     private Money $matchFundsTotal;
 
+    #[ORM\Column(nullable: true)]
+    private ?string $textBackgroundColourHex;
+
+    #[ORM\Column(nullable: true)]
+    private ?string $textColourHex;
+
     /**
+     * @param string $textColourHex
+     * @param string $textBackgroundColourHex
      * @param Salesforce18Id<self> $salesforceId
      */
     public function __construct(
-        MetaCampaignSlug $slug,
-        Salesforce18Id $salesforceId,
-        string $title,
-        Currency $currency,
-        string $status,
-        string $masterCampaignStatus,
-        bool $hidden,
-        ?string $summary,
-        ?UriInterface $bannerURI,
+        MetaCampaignSlug   $slug,
+        Salesforce18Id     $salesforceId,
+        string             $title,
+        Currency           $currency,
+        string             $status,
+        string             $masterCampaignStatus,
+        bool               $hidden,
+        ?string            $summary,
+        ?UriInterface      $bannerURI,
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
-        bool $isRegularGiving,
-        bool $isEmergencyIMF,
-        Money $totalAdjustment,
-        Money $imfCampaignTargetOverride,
-        Money $matchFundsTotal,
+        bool               $isRegularGiving,
+        bool               $isEmergencyIMF,
+        Money              $totalAdjustment,
+        Money              $imfCampaignTargetOverride,
+        Money              $matchFundsTotal,
+        ?Colour $textBackgroundColourHex,
+        ?Colour $textColourHex,
     ) {
         Assertion::same($totalAdjustment->currency, $currency);
 
@@ -153,6 +163,8 @@ class MetaCampaign extends SalesforceReadProxy
         $this->totalAdjustment = $totalAdjustment;
         $this->imfCampaignTargetOverride = $imfCampaignTargetOverride;
         $this->matchFundsTotal = $matchFundsTotal;
+        $this->textBackgroundColourHex = $textBackgroundColourHex?->toHex();
+        $this->textColourHex = $textColourHex?->toHex();
     }
 
     /**
@@ -183,7 +195,7 @@ class MetaCampaign extends SalesforceReadProxy
             isEmergencyIMF: false,
             totalAdjustment: Money::zero(),
             imfCampaignTargetOverride: Money::zero(),
-            matchFundsTotal: Money::zero(),
+            matchFundsTotal: Money::zero(), textBackgroundColourHex: null, textColourHex: null,
         );
 
         $metaCampaign->updateFromSfData($data);
@@ -335,5 +347,23 @@ class MetaCampaign extends SalesforceReadProxy
     public function isEmergencyIMF(): bool
     {
         return $this->isEmergencyIMF;
+    }
+
+    public function getTextBackgroundColour(): ?Colour
+    {
+        if ($this->textBackgroundColourHex === null ) {
+            return null;
+        }
+        
+        return Colour::fromHex($this->textBackgroundColourHex);
+    }
+
+    public function getTextColour(): ?Colour
+    {
+        if ($this->textColourHex === null ) {
+            return null;
+        }
+
+        return Colour::fromHex($this->textColourHex);
     }
 }
