@@ -59,6 +59,19 @@ class CreateFictionalData extends Command
         parent::__construct(null);
     }
 
+    /**
+     * @param string $slug
+     * @return MetaCampaign
+     * @throws \Assert\AssertionFailedException
+     */
+    public function getOrCreateMetaCampaign(string $slug): MetaCampaign
+    {
+        $metaCampaignSlug = MetaCampaignSlug::of($slug);
+        $metaCampaign = $this->metaCampaignRepository->getBySlug($metaCampaignSlug) ?? $this->createMetaCampaign($metaCampaignSlug);
+        $this->em->persist($metaCampaign);
+        return $metaCampaign;
+    }
+
 
     #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -77,9 +90,11 @@ class CreateFictionalData extends Command
         $this->em->persist($fund);
         $this->em->persist($campaignFunding);
 
-        $metaCampaignSlug = MetaCampaignSlug::of('local-test');
-        $metaCampaign = $this->metaCampaignRepository->getBySlug($metaCampaignSlug) ?? $this->createMetaCampaign($metaCampaignSlug);
-        $this->em->persist($metaCampaign);
+        $metaCampaign = $this->getOrCreateMetaCampaign('local-test');
+        $this->getOrCreateMetaCampaign('women-and-girls-2024');
+        $this->getOrCreateMetaCampaign('christmas-challenge-2025');
+        $this->getOrCreateMetaCampaign('k2m25');
+        $this->getOrCreateMetaCampaign('middle-east-humanitarian-appeal-2024');
 
         if (!$charity) {
             /** @psalm-suppress ArgumentTypeCoercion */
