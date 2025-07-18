@@ -16,13 +16,25 @@ class MetaCampaignLayoutChoices
      *
      * For now all image files are just examples for testing - this is not yet used in production.
      */
-    public static function forSlug(MetaCampaignSlug $slug): ?BannerLayout
+    public static function forMetaCampaign(MetaCampaign $metaCampaign): ?BannerLayout
     {
+        $slug = $metaCampaign->getSlug();
+        
+        $grey = '#F6F6F6';
+
+        $textBackgroundColour = $metaCampaign->getTextBackgroundColour();
+        $textColour = $metaCampaign->getTextColour();
+
+        if ($textColour === null && $textBackgroundColour === null) {
+            return null;
+        }
+        
         return match ([Environment::current(), $slug->slug]) {
             [Environment::Local, 'local-test'] => new BannerLayout(
-                backgroundColour: Colour::fromHex('#F6F6F6'),
-                textBackgroundColour: Colour::fromHex('#FFE500'),
-                textColour: Colour::fromHex('#000000'),
+                backgroundColour: Colour::fromHex($grey),
+                textBackgroundColour: $textBackgroundColour,
+                textColour:
+                $textColour,
                 focalArea: new FocalAreaBox(
                     topLeftXpos: 70,
                     topLeftYpos: 47,
@@ -33,7 +45,7 @@ class MetaCampaignLayoutChoices
             ),
             [Environment::Staging, 'women-and-girls-2024'],
             [Environment::Local, 'women-and-girls-2024'], => new BannerLayout(
-                backgroundColour: Colour::fromHex('#F6F6F6'),
+                backgroundColour: Colour::fromHex($grey),
                 textBackgroundColour: Colour::fromHex('#6E0887'),
                 textColour: Colour::fromHex('#FFFFFF'),
                 focalArea: new FocalAreaBox(

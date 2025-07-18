@@ -569,7 +569,7 @@ class TestCase extends PHPUnitTestCase
             isEmergencyIMF: $isEmergencyIMF,
             totalAdjustment: Money::zero(),
             imfCampaignTargetOverride: $imfCampaignTargetOverride ?? Money::zero(),
-            matchFundsTotal: $matchFundsTotal ?? Money::zero(),
+            matchFundsTotal: $matchFundsTotal ?? Money::zero(), textBackgroundColourHex: null, textColourHex: null,
         );
     }
 }

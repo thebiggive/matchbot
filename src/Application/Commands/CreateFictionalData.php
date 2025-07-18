@@ -320,7 +320,7 @@ class CreateFictionalData extends Command
             isEmergencyIMF: false,
             totalAdjustment: Money::zero(Currency::GBP),
             imfCampaignTargetOverride: Money::zero(),
-            matchFundsTotal: Money::zero(),
+            matchFundsTotal: Money::zero(), textBackgroundColourHex: null, textColourHex: null,
         );
     }
 }
