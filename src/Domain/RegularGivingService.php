@@ -201,8 +201,6 @@ readonly class RegularGivingService
                 $this->donationService->confirmOnSessionDonation($firstDonation, $confirmationTokenId, ConfirmationToken::SETUP_FUTURE_USAGE_OFF_SESSION);
             } else {
                 \assert($donorsSavedPaymentMethod !== null);
-                // @todo-regular-giving - consider if we need to switch to sync confirmation that doesn't rely on a callback
-                // hook or something so we can avoid activating the mandate if the first donation is not collected.
                 $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod);
             }
         } catch (PaymentIntentNotSucceeded $e) {
