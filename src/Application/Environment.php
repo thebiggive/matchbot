@@ -51,7 +51,7 @@ enum Environment
 
     public function isFeatureEnabledRegularGiving(): bool
     {
-        return ! $this->isProduction();
+        return true;
     }
 
     public function isLocal(): bool

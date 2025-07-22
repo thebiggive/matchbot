@@ -83,6 +83,8 @@ class CampaignService
 
         $bannerLayout = MetaCampaignLayoutChoices::forSlug($metaCampaign->getSlug());
 
+        $bannerUri = $bannerLayout->imageUri ?? $metaCampaign->getBannerUri();
+
         return new MetaCampaignHttpModel(
             id: $salesforceId,
             title: $metaCampaign->getTitle(),
@@ -91,7 +93,7 @@ class CampaignService
             hidden: $metaCampaign->isHidden(),
             ready: true, // @todo-mat-405 - store get a copy of the `ready` value for the metacampaign from SF.
             summary: $metaCampaign->getSummary(),
-            bannerUri: $metaCampaign->getBannerUri()?->__toString(),
+            bannerUri: $bannerUri?->__toString(),
             amountRaised: $this->getAmountRaisedForMetaCampaign($metaCampaign)->toMajorUnitFloat(),
             matchFundsRemaining: $this->cachedMetaCampaignMatchFundsRemaining($metaCampaign)->toMajorUnitFloat(),
             donationCount: $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign),

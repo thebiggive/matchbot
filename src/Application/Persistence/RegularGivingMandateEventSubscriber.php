@@ -3,19 +3,18 @@
 namespace MatchBot\Application\Persistence;
 
 use Doctrine\Common\EventSubscriber;
-use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PostPersistEventArgs;
 use Doctrine\ORM\Event\PostUpdateEventArgs;
 use Doctrine\ORM\Events;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\MandateUpserted;
-use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\MandateStatus;
 use MatchBot\Domain\RegularGivingMandate;
 use Psr\Container\ContainerInterface;
-use Stripe\Mandate;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\Stamp\DelayStamp;
 
 class RegularGivingMandateEventSubscriber implements EventSubscriber
 {
@@ -73,6 +72,15 @@ class RegularGivingMandateEventSubscriber implements EventSubscriber
 
         Assertion::notNull($donor, 'Donor not found on attempt to handle persisted mandate');
 
-        $this->bus->dispatch(new Envelope(MandateUpserted::fromMandate($mandate, $donor)));
+        // 3s delay when Active to reduce SF record access issues around activation time, when we typically
+        // push for Create then Update in fairly quick succession.
+        // Slightly longer delay for Cancelled because of contention on associated Contacts. We saw a
+        // record lock issue (different from the upsert dupe one) when donor cancelled in Staging once.
+        $stamps = match ($mandate->getStatus()) {
+            MandateStatus::Active => [new DelayStamp(3_000)],
+            MandateStatus::Cancelled => [new DelayStamp(6_000)],
+            default => [],
+        };
+        $this->bus->dispatch(new Envelope(MandateUpserted::fromMandate($mandate, $donor), $stamps));
     }
 }
