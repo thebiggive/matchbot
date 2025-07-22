@@ -524,7 +524,7 @@ class Campaign extends SalesforceReadProxy
 
         if ($metaCampaignSlug !== null && \str_starts_with($metaCampaignSlug, 'a05')) {
             // needed because SF may send an ID if slug is not filled in - we don't want that in the matchbot DB.
-            throw new \RuntimeException("$metaCampaignSlug appears to be an SF ID, should be a slug");
+            throw new \RuntimeException("$metaCampaignSlug appears to be an SF ID, should be a slug, processing campaign sfid: " . $this->getSalesforceId());
         }
 
         if (! $isRegularGiving) {
