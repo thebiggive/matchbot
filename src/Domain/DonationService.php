@@ -2,10 +2,8 @@
 
 namespace MatchBot\Domain;
 
-use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use GuzzleHttp\Exception\ClientException;
@@ -424,11 +422,10 @@ class DonationService
     }
 
     private function doUpdateDonationFees(
-        CardBrand $cardBrand,
         Donation $donation,
+        CardBrand $cardBrand,
         Country $cardCountry,
     ): void {
-
         // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
@@ -461,19 +458,13 @@ class DonationService
         Donation $donation
     ): void {
         $token = $this->stripe->retrieveConfirmationToken($tokenId);
-
-        /** @var StripeObject $paymentMethodPreview */
         $paymentMethodPreview = $token->payment_method_preview;
+        \assert($paymentMethodPreview !== null);
 
-        /** @var StripeObject $card */
-        $card = $paymentMethodPreview['card'];
-
-        Assertion::string($card['brand']);
-        $cardBrand = CardBrand::from($card['brand']);
-        $cardCountry = $card['country'];
-
-        Assertion::string($cardCountry);
-        $cardCountry = Country::fromAlpha2($cardCountry);
+        ['brand' => $cardBrand, 'country' => $cardCountry] = $this->processCardType(
+            rawBrand: $paymentMethodPreview->card->brand,
+            rawCountry: $paymentMethodPreview->card->country,
+        );
 
         $this->logger->info(sprintf(
             'Donation UUID %s has card brand %s and country %s',
@@ -483,10 +474,28 @@ class DonationService
         ));
 
         $this->doUpdateDonationFees(
-            cardBrand: $cardBrand,
             donation: $donation,
+            cardBrand: $cardBrand,
             cardCountry: $cardCountry,
         );
+    }
+
+    /**
+     * @return array{brand: CardBrand, country: Country}
+     * @throws AssertionFailedException if missing brand or country
+     */
+    private function processCardType(?string $rawBrand, ?string $rawCountry): array
+    {
+        Assertion::string($rawBrand);
+        $cardBrand = CardBrand::from($rawBrand);
+
+        Assertion::string($rawCountry);
+        $cardCountry = Country::fromAlpha2($rawCountry);
+
+        return [
+            'brand' => $cardBrand,
+            'country' => $cardCountry,
+        ];
     }
 
     /**
@@ -710,14 +719,21 @@ class DonationService
     /**
      * @throws PaymentIntentNotSucceeded
      * */
-    public function confirmDonationWithSavedPaymentMethod(Donation $donation, StripePaymentMethodId $paymentMethod): void
+    public function confirmDonationWithSavedPaymentMethod(Donation $donation, StripePaymentMethodId $paymentMethodId): void
     {
         $paymentIntentId = $donation->getTransactionId();
+
+        $this->updateDonationFeesFromPaymentMethodId($donation, $paymentMethodId);
+        // We flush now to make sure the actual fees we're charging are recorded. If there's any DB error at this point
+        // we prefer to crash without collecting the donation over collecting the donation without a proper record
+        // or what we're charging.
+        $this->entityManager->flush();
+
         Assertion::notNull($paymentIntentId);
         $paymentIntent = $this->stripe->confirmPaymentIntent(
             $paymentIntentId,
             [
-                'payment_method' => $paymentMethod->stripePaymentMethodId,
+                'payment_method' => $paymentMethodId->stripePaymentMethodId,
             ]
         );
 
@@ -968,5 +984,25 @@ class DonationService
         $this->enrollNewDonation($donation, attemptMatching: true);
 
         return $donation;
+    }
+
+    private function updateDonationFeesFromPaymentMethodId(Donation $donation, StripePaymentMethodId $paymentMethodId): void
+    {
+        $customerId = $donation->getPspCustomerId();
+        Assertion::notNull($customerId);
+        $paymentMethod = $this->stripe->retrievePaymentMethod($customerId, $paymentMethodId);
+        $card = $paymentMethod->card;
+        Assertion::notNull($card);
+
+        ['brand' => $cardBrand, 'country' => $cardCountry] = $this->processCardType(
+            rawBrand: $card->brand,
+            rawCountry: $card->country,
+        );
+
+        $this->doUpdateDonationFees(
+            donation: $donation,
+            cardBrand: $cardBrand,
+            cardCountry: $cardCountry,
+        );
     }
 }
