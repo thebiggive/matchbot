@@ -458,8 +458,9 @@ class DonationService
         Donation $donation
     ): void {
         $token = $this->stripe->retrieveConfirmationToken($tokenId);
+
+        /** @var StripeObject&object{card: object{country: string, brand: string}} $paymentMethodPreview */
         $paymentMethodPreview = $token->payment_method_preview;
-        \assert($paymentMethodPreview !== null);
 
         ['brand' => $cardBrand, 'country' => $cardCountry] = $this->processCardType(
             rawBrand: $paymentMethodPreview->card->brand,
