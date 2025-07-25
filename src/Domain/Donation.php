@@ -817,6 +817,11 @@ class Donation extends SalesforceWriteProxy
         return $this->charityFee;
     }
 
+    private function hasCharityFee(): bool
+    {
+        return bccomp($this->charityFee, '0.00', 2) === 1;
+    }
+
     /**
      * @return numeric-string
      */
@@ -1619,6 +1624,7 @@ class Donation extends SalesforceWriteProxy
         $this->assertionsForConfirmOrPreAuth()
             ->that($this->transactionId)->notNull('Missing Transaction ID')
             ->that($this->getCampaign()->isOpenForFinalising($at))
+            ->that($this->hasCharityFee())
             ->verifyNow();
 
         return true;
