@@ -95,7 +95,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     isMetaCampaign: ?bool,
  *     isEmergencyIMF: bool,
  *     slug: ?string,
- *     campaignFamily: ?string,
+ *     campaignFamily: string,
  *     imfCampaignTargetOverride?: float,
  *     totalFundingAllocation?: float,
  *     amountPledged?: float,

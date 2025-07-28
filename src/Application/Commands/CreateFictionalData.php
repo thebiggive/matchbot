@@ -8,6 +8,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignFamily;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
@@ -64,7 +65,7 @@ class CreateFictionalData extends Command
      * @return MetaCampaign
      * @throws \Assert\AssertionFailedException
      */
-    public function getOrCreateMetaCampaign(string $slug, string $family): MetaCampaign
+    public function getOrCreateMetaCampaign(string $slug, CampaignFamily $family): MetaCampaign
     {
         $metaCampaignSlug = MetaCampaignSlug::of($slug);
         $metaCampaign = $this->metaCampaignRepository->getBySlug($metaCampaignSlug) ?? $this->createMetaCampaign($metaCampaignSlug, $family);
@@ -90,11 +91,11 @@ class CreateFictionalData extends Command
         $this->em->persist($fund);
         $this->em->persist($campaignFunding);
 
-        $metaCampaign = $this->getOrCreateMetaCampaign('local-test', 'emergencyMatch');
-        $this->getOrCreateMetaCampaign('women-and-girls-2024', 'womenGirls');
-        $this->getOrCreateMetaCampaign('christmas-challenge-2025', 'christmasChallenge');
-        $this->getOrCreateMetaCampaign('k2m25', 'mentalHealthFund');
-        $this->getOrCreateMetaCampaign('middle-east-humanitarian-appeal-2024', 'emergencyMatch');
+        $metaCampaign = $this->getOrCreateMetaCampaign('local-test', CampaignFamily::emergencyMatch);
+        $this->getOrCreateMetaCampaign('women-and-girls-2024', CampaignFamily::womenGirls);
+        $this->getOrCreateMetaCampaign('christmas-challenge-2025', CampaignFamily::christmasChallenge);
+        $this->getOrCreateMetaCampaign('k2m25', CampaignFamily::mentalHealthFund);
+        $this->getOrCreateMetaCampaign('middle-east-humanitarian-appeal-2024', CampaignFamily::emergencyMatch);
 
         if (!$charity) {
             /** @psalm-suppress ArgumentTypeCoercion */
@@ -297,7 +298,7 @@ class CreateFictionalData extends Command
         }
     }
 
-    private function createMetaCampaign(MetaCampaignSlug $slug, string $family): MetaCampaign
+    private function createMetaCampaign(MetaCampaignSlug $slug, CampaignFamily $family): MetaCampaign
     {
         $bannerURI = "https://picsum.photos/id/88/1700/500";
         // Fixed image, so we can set a focal position/region to ensure is always visible -  this is an overhead shot

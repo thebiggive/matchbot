@@ -9,6 +9,7 @@ use DI\ContainerBuilder;
 use Exception;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignFamily;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
@@ -94,7 +95,7 @@ class TestCase extends PHPUnitTestCase
         'isRegularGiving' => false,
         'isEmergencyIMF' => false,
         'slug' => null,
-        'campaignFamily' => null,
+        'campaignFamily' => 'summerGive',
         'matchFundsTotal' => 50.0,
         'thankYouMessage' => 'Thank you for helping us save matchbot! We will be able to match twice as many bots now!',
         'usesSharedFunds' => false,
@@ -175,7 +176,7 @@ class TestCase extends PHPUnitTestCase
         'isRegularGiving' => false,
         'isEmergencyIMF' => false,
         'slug' => 'some-slug',
-        'campaignFamily' => null,
+        'campaignFamily' => 'summerGive',
         'matchFundsTotal' => 50.0,
         'thankYouMessage' => 'Thank you for helping us save matchbot! We will be able to match twice as many bots now!',
         'usesSharedFunds' => false,
@@ -570,7 +571,7 @@ class TestCase extends PHPUnitTestCase
             totalAdjustment: Money::zero(),
             imfCampaignTargetOverride: $imfCampaignTargetOverride ?? Money::zero(),
             matchFundsTotal: $matchFundsTotal ?? Money::zero(),
-            campaignFamily: '',
+            campaignFamily: CampaignFamily::artsforImpact,
         );
     }
 }
