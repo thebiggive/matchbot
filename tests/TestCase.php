@@ -570,6 +570,7 @@ class TestCase extends PHPUnitTestCase
             totalAdjustment: Money::zero(),
             imfCampaignTargetOverride: $imfCampaignTargetOverride ?? Money::zero(),
             matchFundsTotal: $matchFundsTotal ?? Money::zero(),
+            campaignFamily: '',
         );
     }
 }

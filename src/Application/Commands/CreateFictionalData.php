@@ -64,10 +64,10 @@ class CreateFictionalData extends Command
      * @return MetaCampaign
      * @throws \Assert\AssertionFailedException
      */
-    public function getOrCreateMetaCampaign(string $slug): MetaCampaign
+    public function getOrCreateMetaCampaign(string $slug, string $family): MetaCampaign
     {
         $metaCampaignSlug = MetaCampaignSlug::of($slug);
-        $metaCampaign = $this->metaCampaignRepository->getBySlug($metaCampaignSlug) ?? $this->createMetaCampaign($metaCampaignSlug);
+        $metaCampaign = $this->metaCampaignRepository->getBySlug($metaCampaignSlug) ?? $this->createMetaCampaign($metaCampaignSlug, $family);
         $this->em->persist($metaCampaign);
         return $metaCampaign;
     }
@@ -90,11 +90,11 @@ class CreateFictionalData extends Command
         $this->em->persist($fund);
         $this->em->persist($campaignFunding);
 
-        $metaCampaign = $this->getOrCreateMetaCampaign('local-test');
-        $this->getOrCreateMetaCampaign('women-and-girls-2024');
-        $this->getOrCreateMetaCampaign('christmas-challenge-2025');
-        $this->getOrCreateMetaCampaign('k2m25');
-        $this->getOrCreateMetaCampaign('middle-east-humanitarian-appeal-2024');
+        $metaCampaign = $this->getOrCreateMetaCampaign('local-test', 'emergencyMatch');
+        $this->getOrCreateMetaCampaign('women-and-girls-2024', 'womenGirls');
+        $this->getOrCreateMetaCampaign('christmas-challenge-2025', 'christmasChallenge');
+        $this->getOrCreateMetaCampaign('k2m25', 'mentalHealthFund');
+        $this->getOrCreateMetaCampaign('middle-east-humanitarian-appeal-2024', 'emergencyMatch');
 
         if (!$charity) {
             /** @psalm-suppress ArgumentTypeCoercion */
@@ -297,7 +297,7 @@ class CreateFictionalData extends Command
         }
     }
 
-    private function createMetaCampaign(MetaCampaignSlug $slug): MetaCampaign
+    private function createMetaCampaign(MetaCampaignSlug $slug, string $family): MetaCampaign
     {
         $bannerURI = "https://picsum.photos/id/88/1700/500";
         // Fixed image, so we can set a focal position/region to ensure is always visible -  this is an overhead shot
@@ -321,6 +321,7 @@ class CreateFictionalData extends Command
             totalAdjustment: Money::zero(Currency::GBP),
             imfCampaignTargetOverride: Money::zero(),
             matchFundsTotal: Money::zero(),
+            campaignFamily: $family,
         );
     }
 }

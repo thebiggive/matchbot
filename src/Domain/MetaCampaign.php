@@ -113,6 +113,17 @@ class MetaCampaign extends SalesforceReadProxy
     private Money $matchFundsTotal;
 
     /**
+     * Machine-readable code that identifies the metacampaign as part of a series or type of campaigns, often with one member per year, e.g.
+     * Christmas Challenge, Earth Raise etc. Will be used for setting colours, in future may also be used for homepage highlight cards and
+     * perhaps other features.
+     *
+     * @psalm-suppress UnusedProperty - will be used soon.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?string $campaignFamily;
+
+    /**
+     * @param string $campaignFamily
      * @param Salesforce18Id<self> $salesforceId
      */
     public function __construct(
@@ -132,6 +143,7 @@ class MetaCampaign extends SalesforceReadProxy
         Money $totalAdjustment,
         Money $imfCampaignTargetOverride,
         Money $matchFundsTotal,
+        ?string $campaignFamily,
     ) {
         Assertion::same($totalAdjustment->currency, $currency);
 
@@ -153,6 +165,7 @@ class MetaCampaign extends SalesforceReadProxy
         $this->totalAdjustment = $totalAdjustment;
         $this->imfCampaignTargetOverride = $imfCampaignTargetOverride;
         $this->matchFundsTotal = $matchFundsTotal;
+        $this->campaignFamily = $campaignFamily;
     }
 
     /**
@@ -184,6 +197,7 @@ class MetaCampaign extends SalesforceReadProxy
             totalAdjustment: Money::zero(),
             imfCampaignTargetOverride: Money::zero(),
             matchFundsTotal: Money::zero(),
+            campaignFamily: $data['campaignFamily'],
         );
 
         $metaCampaign->updateFromSfData($data);
