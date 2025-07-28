@@ -13,11 +13,16 @@ use Assert\Assertion;
  */
 readonly class FocalAreaBox
 {
+    /**
+     * For now default position is always used - it's possible that the choosable focal position per meta-campaign
+     * was more than we needed. If that's confirmed we can get rid of this class and just hard-coded the position
+     * in the front end.
+     */
     public function __construct(
-        public int $topLeftXpos,
-        public int $topLeftYpos,
-        public int $bottomRightXpos,
-        public int $bottomRightYpos,
+        public int $topLeftXpos = 70,
+        public int $topLeftYpos = 47,
+        public int $bottomRightXpos = 70,
+        public int $bottomRightYpos = 47,
     ) {
         Assertion::allBetween(
             [$this->topLeftXpos, $this->topLeftYpos, $this->bottomRightXpos, $this->bottomRightYpos],
