@@ -11,8 +11,8 @@ enum Currency: string
 {
     case GBP = 'GBP';
     case USD = 'USD';
-    case CAD = 'CAD';
     case SEK = 'SEK';
+    case EUR = 'EUR';
 
     public static function fromIsoCode(string $isoCode): self
     {

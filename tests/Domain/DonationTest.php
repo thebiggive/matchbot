@@ -242,8 +242,8 @@ class DonationTest extends TestCase
                 'amountMatchedByPledges' => 0.0,
                 'amountPreauthorizedFromChampionFunds' => 0.0,
                 'billingPostalAddress' => null,
-                'charityFee' => 0.0,
-                'charityFeeVat' => 0.0,
+                'charityFee' => 0.35, // 20p fixed default + 1.5% of £10
+                'charityFeeVat' => 0.07,
                 'charityId' => $donation->getCampaign()->getCharity()->getSalesforceId(),
                 'charityName' => 'Charity Name',
                 'collectedTime' => '1970-01-01T00:00:00+00:00',
@@ -523,7 +523,7 @@ class DonationTest extends TestCase
     public function testIsReadyToConfirmWithRequiredFieldsSet(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
-            currencyCode: 'GBB',
+            currencyCode: 'GBP',
             donationAmount: '1',
             projectId: '123456789012345678',
             psp: 'stripe',
@@ -549,7 +549,7 @@ class DonationTest extends TestCase
     public function testIsNotReadyToConfirmWithoutBillingPostcode(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
-            currencyCode: 'GBB',
+            currencyCode: 'GBP',
             donationAmount: '1',
             projectId: '123456789012345678',
             psp: 'stripe',
@@ -575,7 +575,7 @@ class DonationTest extends TestCase
     public function testIsNotReadyToConfirmWithoutTBGComsPreference(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
-            currencyCode: 'GBB',
+            currencyCode: 'GBP',
             donationAmount: '1',
             projectId: '123456789012345678',
             psp: 'stripe',
@@ -602,7 +602,7 @@ class DonationTest extends TestCase
     public function testIsNotReadyToConfirmWithoutCharityComsPreference(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
-            currencyCode: 'GBB',
+            currencyCode: 'GBP',
             donationAmount: '1',
             projectId: '123456789012345678',
             psp: 'stripe',
@@ -630,7 +630,7 @@ class DonationTest extends TestCase
     public function testIsNotReadyToConfirmWithoutBillingCountry(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
-            currencyCode: 'GBB',
+            currencyCode: 'GBP',
             donationAmount: '1',
             projectId: '123456789012345678',
             psp: 'stripe',
@@ -648,7 +648,7 @@ class DonationTest extends TestCase
     public function testIsNotReadyToConfirmWithoutDonorName(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
-            currencyCode: 'GBB',
+            currencyCode: 'GBP',
             donationAmount: '1',
             projectId: '123456789012345678',
             psp: 'stripe',
@@ -666,7 +666,7 @@ class DonationTest extends TestCase
     public function testIsNotReadyToConfirmWithoutDonorEmail(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
-            currencyCode: 'GBB',
+            currencyCode: 'GBP',
             donationAmount: '1',
             projectId: '123456789012345678',
             psp: 'stripe',
@@ -683,7 +683,7 @@ class DonationTest extends TestCase
     public function testIsNotReadyToConfirmWhenCancelled(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
-            currencyCode: 'GBB',
+            currencyCode: 'GBP',
             donationAmount: '1',
             projectId: '123456789012345678',
             psp: 'stripe',

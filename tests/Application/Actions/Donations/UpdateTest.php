@@ -297,7 +297,7 @@ class UpdateTest extends TestCase
         $this->assertSame(0, $payloadArray['matchedAmount']);
         $this->assertSame(1, $payloadArray['tipAmount']);
         $this->assertSame(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
-        $this->assertSame(0, $payloadArray['charityFeeVat']);
+        $this->assertSame(0.41, $payloadArray['charityFeeVat']);
     }
 
     public function testCancelSuccessWithChange(): void
@@ -349,7 +349,7 @@ class UpdateTest extends TestCase
         $this->assertSame(0, $payloadArray['matchedAmount']);
         $this->assertSame(1, $payloadArray['tipAmount']);
         $this->assertSame(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
-        $this->assertSame(0, $payloadArray['charityFeeVat']);
+        $this->assertSame(0.41, $payloadArray['charityFeeVat']);
     }
 
     /**
@@ -492,7 +492,7 @@ class UpdateTest extends TestCase
         $this->assertSame(0, $payloadArray['matchedAmount']);
         $this->assertSame(2, $payloadArray['tipAmount']);
         $this->assertSame(2.57, $payloadArray['charityFee']); // 1.9% + 20p.
-        $this->assertSame(0, $payloadArray['charityFeeVat']);
+        $this->assertSame(0.41, $payloadArray['charityFeeVat']);
     }
 
     public function testAddDataAttemptWithDifferentAmount(): void

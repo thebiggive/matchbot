@@ -31,11 +31,8 @@ class Calculator
      *                  charge *us* due to special contract arrangements.
      */
     private const array FEES_FIXED = [
-        'CHF' => '0.3',
-        'DKK' => '1.8',
         'EUR' => '0.25',
         'GBP' => '0.2', // Baseline fee in pounds for recharge; not necessarily exactly what Stripe charged BG.
-        'NOK' => '1.8',
         'SEK' => '1.8',
         'USD' => '0.3',
     ];
