@@ -462,10 +462,9 @@ class DonationService
         /** @var StripeObject&object{card: object{country: string, brand: string}} $paymentMethodPreview */
         $paymentMethodPreview = $token->payment_method_preview;
 
-        ['brand' => $cardBrand, 'country' => $cardCountry] = $this->processCardType(
-            rawBrand: $paymentMethodPreview->card->brand,
-            rawCountry: $paymentMethodPreview->card->country,
-        );
+        $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception('Missing card brand');
+        $cardCountry = Country::fromAlpha2OrNull($paymentMethodPreview->card->country) ?? throw new \Exception('Missing card country');
+
 
         $this->logger->info(sprintf(
             'Donation UUID %s has card brand %s and country %s',
@@ -479,24 +478,6 @@ class DonationService
             cardBrand: $cardBrand,
             cardCountry: $cardCountry,
         );
-    }
-
-    /**
-     * @return array{brand: CardBrand, country: Country}
-     * @throws AssertionFailedException if missing brand or country
-     */
-    private function processCardType(?string $rawBrand, ?string $rawCountry): array
-    {
-        Assertion::string($rawBrand);
-        $cardBrand = CardBrand::from($rawBrand);
-
-        Assertion::string($rawCountry);
-        $cardCountry = Country::fromAlpha2($rawCountry);
-
-        return [
-            'brand' => $cardBrand,
-            'country' => $cardCountry,
-        ];
     }
 
     /**
@@ -995,10 +976,8 @@ class DonationService
         $card = $paymentMethod->card;
         Assertion::notNull($card);
 
-        ['brand' => $cardBrand, 'country' => $cardCountry] = $this->processCardType(
-            rawBrand: $card->brand,
-            rawCountry: $card->country,
-        );
+        $cardBrand = CardBrand::fromNameOrNull($card->brand) ?? throw new \Exception('Missing card brand');
+        $cardCountry = Country::fromAlpha2OrNull($card->country) ?? throw new \Exception('Missing card country');
 
         $this->doUpdateDonationFees(
             donation: $donation,
