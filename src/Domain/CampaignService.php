@@ -81,7 +81,7 @@ class CampaignService
         $salesforceId = $metaCampaign->getSalesforceId();
         Assertion::notNull($salesforceId);
 
-        $bannerLayout = MetaCampaignLayoutChoices::forSlug($metaCampaign->getSlug());
+        $bannerLayout = MetaCampaignLayoutChoices::forSlug($metaCampaign);
 
         $bannerUri = $bannerLayout->imageUri ?? $metaCampaign->getBannerUri();
 

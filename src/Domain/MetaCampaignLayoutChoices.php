@@ -16,13 +16,13 @@ class MetaCampaignLayoutChoices
      *
      * For now all image files are just examples for testing - this is not yet used in production.
      */
-    public static function forSlug(MetaCampaignSlug $slug): ?BannerLayout
+    public static function forSlug(MetaCampaign $metaCampaign): ?BannerLayout
     {
         // It may be that we don't ever need to set a specific different focal area for each campaign,
         // so sharing one object here. If confirmed we can delete this class.
         $focalArea = new FocalAreaBox();
 
-        return match ([Environment::current(), $slug->slug]) {
+        return match ([Environment::current(), $metaCampaign->getSlug()->slug]) {
             [Environment::Local, 'local-test'] => new BannerLayout(
                 backgroundColour: Colour::fromHex('#F6F6F6'),
                 textBackgroundColour: Colour::fromHex('#FFE500'),
@@ -62,7 +62,39 @@ class MetaCampaignLayoutChoices
                 focalArea: $focalArea,
                 imageUri: 'https://d1842m250x5wwk.cloudfront.net/uploads/2025/07/DEC.jpg',
             ),
-            default => null,
+            default => Environment::current()->isProduction() ? null : new BannerLayout(
+                backgroundColour: Colour::fromHex('#F6F6F6'),
+                textBackgroundColour: match ($metaCampaign->getFamily()) {
+                    // colours taken from variables.scss at https://github.com/thebiggive/components/blob/c096dcaa499ece7080a363d4157bc2e1cd1c5c92/src/globals/variables.scss#L17
+                    CampaignFamily::christmasChallenge => Colour::fromHex('#B30510'),
+                CampaignFamily::greenMatchFund => Colour::fromHex('#50B400'),
+                CampaignFamily::summerGive => Colour::fromHex('#F07D00'),
+                CampaignFamily::womenGirls => Colour::fromHex('#6E0887'),
+                CampaignFamily::artsforImpact => Colour::fromHex('#BF387D'),
+                CampaignFamily::smallCharity => Colour::fromHex('#EE2C65'),
+                CampaignFamily::emergencyMatch => Colour::fromHex('#FFE500'),
+                CampaignFamily::mentalHealthFund => Colour::fromHex('#62CFC9'),
+                CampaignFamily::multiCurrency => Colour::fromHex('#2C089B'),
+                CampaignFamily::imf => Colour::fromHex('#2C089B'),
+                null => Colour::fromHex('#2C089B'),
+                },
+                textColour: match ($metaCampaign->getFamily()) {
+                    // all white or black, chosen to contrast with colours above.
+                    CampaignFamily::christmasChallenge => Colour::fromHex('#FFFFF'),
+                CampaignFamily::greenMatchFund => Colour::fromHex('#FFFFF'),
+                CampaignFamily::summerGive => Colour::fromHex('#000000'),
+                CampaignFamily::womenGirls => Colour::fromHex('#FFFFF'),
+                CampaignFamily::artsforImpact => Colour::fromHex('#000000'),
+                CampaignFamily::smallCharity => Colour::fromHex('#FFFFF'),
+                CampaignFamily::emergencyMatch => Colour::fromHex('#000000'),
+                CampaignFamily::mentalHealthFund => Colour::fromHex('#000000'),
+                CampaignFamily::multiCurrency => Colour::fromHex('#FFFFF'),
+                CampaignFamily::imf => Colour::fromHex('#FFFFF'),
+                null => Colour::fromHex('#FFFFFF'),
+                },
+                focalArea: $focalArea,
+                imageUri: $metaCampaign->getBannerUri()?->__toString(),
+            ),
         };
     }
 }
