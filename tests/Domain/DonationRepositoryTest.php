@@ -27,6 +27,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\PaymentCard;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
@@ -115,7 +116,8 @@ class DonationRepositoryTest extends TestCase
         $donation = $this->getTestDonation('987.65');
 
         $donation->setTipAmount('10.00');
-        $donation->deriveFees(CardBrand::amex, null);
+        $donation->setPaymentCard(new PaymentCard(CardBrand::amex, Country::GB()));
+        $donation->deriveFees();
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -136,7 +138,8 @@ class DonationRepositoryTest extends TestCase
         $donation = $this->getTestDonation('987.65');
 
         $donation->setTipAmount('10.00');
-        $donation->deriveFees(CardBrand::visa, Country::fromAlpha2('US'));
+        $donation->setPaymentCard(new PaymentCard(CardBrand::visa, Country::fromAlpha2('US')));
+        $donation->deriveFees();
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -156,7 +159,7 @@ class DonationRepositoryTest extends TestCase
         $donation = $this->getTestDonation('987.65');
 
         $donation->setTipAmount('10.00');
-        $donation->deriveFees(null, null);
+        $donation->deriveFees();
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -177,7 +180,7 @@ class DonationRepositoryTest extends TestCase
 
         $donation->setTipAmount('10.00');
 
-        $donation->deriveFees(null, null);
+        $donation->deriveFees();
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -197,7 +200,7 @@ class DonationRepositoryTest extends TestCase
         $donation = $this->getTestDonation('987.65');
 
         $donation->setTipAmount('0.00');
-        $donation->deriveFees(null, null);
+        $donation->deriveFees();
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -214,7 +217,7 @@ class DonationRepositoryTest extends TestCase
         $donation = $this->getTestDonation('987.65');
         $donation->setTbgShouldProcessGiftAid(true);
         $donation->setTipAmount('0.00');
-        $donation->deriveFees(null, null);
+        $donation->deriveFees();
 
         // £987.65 *  1.5%  = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -231,7 +234,7 @@ class DonationRepositoryTest extends TestCase
     {
         $donation = $this->getTestDonation('6.25');
         $donation->setTipAmount('0.00');
-        $donation->deriveFees(null, null);
+        $donation->deriveFees();
 
         // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)
         // Fixed fee    = £ 0.20

@@ -192,7 +192,7 @@ class DonationService
         }
 
         $donation = Donation::fromApiModel($donationData, $campaign, $donorId);
-        $donation->deriveFees(null, null);
+        $donation->deriveFees();
 
         return $donation;
     }
@@ -423,13 +423,11 @@ class DonationService
 
     private function doUpdateDonationFees(
         Donation $donation,
-        CardBrand $cardBrand,
-        Country $cardCountry,
     ): void {
         // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
-        $donation->deriveFees($cardBrand, $cardCountry);
+        $donation->deriveFees();
 
         // we still need this
         $updatedIntentData = [
@@ -473,10 +471,10 @@ class DonationService
             $cardCountry,
         ));
 
+        $donation->setPaymentCard(new PaymentCard($cardBrand, $cardCountry));
+
         $this->doUpdateDonationFees(
             donation: $donation,
-            cardBrand: $cardBrand,
-            cardCountry: $cardCountry,
         );
     }
 
@@ -979,10 +977,10 @@ class DonationService
         $cardBrand = CardBrand::fromNameOrNull($card->brand) ?? throw new \Exception('Missing card brand');
         $cardCountry = Country::fromAlpha2OrNull($card->country) ?? throw new \Exception('Missing card country');
 
+        $donation->setPaymentCard(new PaymentCard($cardBrand, $cardCountry));
+
         $this->doUpdateDonationFees(
             donation: $donation,
-            cardBrand: $cardBrand,
-            cardCountry: $cardCountry,
         );
     }
 }

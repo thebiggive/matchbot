@@ -22,6 +22,7 @@ use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\DomainException\CannotRemoveGiftAid;
 use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use Messages;
+use PrinsFrank\Standards\Country\CountryAlpha2;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Stripe\Payout;
@@ -389,6 +390,22 @@ class Donation extends SalesforceWriteProxy
     private ?bool $payoutSuccessful = false;
 
     /**
+     * Payment card brand used or intended to be used for this donation. Null for historic donations (July 2025 & earlier
+     * ) for which we didn't save this info, new pending donations where a card hasn't yet been set,
+     * and for donations paid from a donor funds account.
+     */
+    #[ORM\Column(nullable: true, name: 'paymentCard_brand')]
+    private ?CardBrand $paymentCardBrand;
+
+    /**
+     * Payment card country used or intended to be used for this donation. Null for historic donations (July 2025 & earlier
+     * ) for which we didn't save this info, new pending donations where a card hasn't yet been set,
+     * and for donations paid from a donor funds account.
+     */
+    #[ORM\Column(nullable: true, name: 'paymentCard_country')]
+    private ?CountryAlpha2 $paymentCardCountry;
+
+    /**
      * @param string|null $billingPostcode
      * @psalm-param numeric-string $amount
      * @psalm-param ?numeric-string $tipAmount
@@ -415,7 +432,7 @@ class Donation extends SalesforceWriteProxy
         ?string $homePostcode = null,
         ?string $billingPostcode = null,
     ) {
-        $this->setUuid(Uuid::uuid4());
+        $this->uuid = Uuid::uuid4();
         $this->fundingWithdrawals = new ArrayCollection();
         $this->currencyCode = $currencyCode;
         $maximumAmount = self::maximumAmount($paymentMethodType);
@@ -437,7 +454,7 @@ class Donation extends SalesforceWriteProxy
         $this->paymentMethodType = $paymentMethodType;
         $this->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
         $this->setPsp('stripe');
-        $this->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+        $this->campaign = $campaign; // Charity & match expectation determined implicitly from this
         $this->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
@@ -479,6 +496,8 @@ class Donation extends SalesforceWriteProxy
 
         $this->charityFee = $fees->coreFee;
         $this->charityFeeVat = $fees->feeVat;
+        $this->paymentCardBrand = null;
+        $this->paymentCardCountry = null;
     }
 
     /**
@@ -1513,14 +1532,14 @@ class Donation extends SalesforceWriteProxy
      * the lowest possible fees will be used, and this should be called again with the details of the selected card
      * when confirming the payment.
      */
-    public function deriveFees(?CardBrand $cardBrand, ?Country $cardCountry): void
+    public function deriveFees(): void
     {
         $incursGiftAidFee = $this->hasGiftAid() && $this->hasTbgShouldProcessGiftAid();
 
         $fees = Calculator::calculate(
             $this->getPsp(),
-            $cardBrand,
-            $cardCountry,
+            $this->getPaymentCard()?->brand,
+            $this->getPaymentCard()?->country,
             $this->getAmount(),
             $this->currency()->isoCode(),
             $incursGiftAidFee,
@@ -1988,5 +2007,39 @@ class Donation extends SalesforceWriteProxy
     public function getPaidOutAt(): ?DateTimeImmutable
     {
         return $this->paidOutAt;
+    }
+
+    /**
+     * For now this just does what it says on the tin, but I'm thinking of making it also update the donation
+     * fees (and making other relavent setters do the same so that @see self::deriveFees can be
+     * privatised). In the meantime that should be called after this.
+     *
+     * @param PaymentCard $paymentCard
+     * @return void
+     */
+    public function setPaymentCard(?PaymentCard $paymentCard): void
+    {
+        if ($paymentCard === null) {
+            $this->paymentCardBrand = null;
+            $this->paymentCardCountry = null;
+        } else {
+            $this->paymentCardBrand = $paymentCard->brand;
+            $this->paymentCardCountry = $paymentCard->country->alpha2;
+        }
+    }
+
+    private function getPaymentCard(): ?PaymentCard
+    {
+        Assertion::same(
+            \is_null($this->paymentCardCountry),
+            \is_null($this->paymentCardBrand),
+            'Payment card must be fully null or non-null'
+        );
+
+        if ($this->paymentCardBrand === null || $this->paymentCardCountry === null) {
+            return null;
+        }
+
+        return new PaymentCard($this->paymentCardBrand, Country::fromEnum($this->paymentCardCountry));
     }
 }
