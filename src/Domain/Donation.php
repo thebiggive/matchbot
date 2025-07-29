@@ -150,7 +150,7 @@ class Donation extends SalesforceWriteProxy
      * @see Donation::$currencyCode
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
-    protected string $charityFee = '0.00';
+    protected string $charityFee;
 
     /**
      * Value Added Tax amount on `$charityFee`, in £. In addition to base amount
@@ -160,7 +160,7 @@ class Donation extends SalesforceWriteProxy
      * @see Donation::$currencyCode
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
-    protected string $charityFeeVat = '0.00';
+    protected string $charityFeeVat;
 
     /**
      * Fee charged to TBG by the PSP, in £. Added just for Stripe transactions from March '21.
@@ -464,6 +464,21 @@ class Donation extends SalesforceWriteProxy
         $this->mandateSequenceNumber = $mandateSequenceNumber?->number;
         $this->donorBillingPostcode = $billingPostcode;
         $this->donorUUID = $donorId->toUUID();
+
+        // Using null card details as we don't yet know what payment method will be used
+        // and we need something. We expect these will always give the cheapest fee, but will
+        // be replaced by actual card details before donation is confirmed.
+        $fees = Calculator::calculate(
+            $this->psp,
+            cardBrand: null,
+            cardCountry: null,
+            amount: $amount,
+            currencyCode: $currencyCode,
+            hasGiftAid: $giftAid && $this->tbgShouldProcessGiftAid
+        );
+
+        $this->charityFee = $fees->coreFee;
+        $this->charityFeeVat = $fees->feeVat;
     }
 
     /**

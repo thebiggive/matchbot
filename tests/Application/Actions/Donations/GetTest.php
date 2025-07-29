@@ -128,6 +128,6 @@ class GetTest extends TestCase
         $this->assertSame(0, $payloadArray['matchedAmount']);
         $this->assertSame(1, $payloadArray['tipAmount']);
         $this->assertSame(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
-        $this->assertSame(0, $payloadArray['charityFeeVat']);
+        $this->assertSame(0.41, $payloadArray['charityFeeVat']);
     }
 }
