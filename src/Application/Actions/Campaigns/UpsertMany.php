@@ -84,6 +84,12 @@ class UpsertMany extends Action
             );
 
             $isMetaCampaign = $campaignData['isMetaCampaign'];
+            
+            if ($campaignData['title'] === null) {
+                // we can't use a campaign without a title, ideally either SF should not send campaigns before they are
+                // given a title or title should be a required field.
+                continue;
+            }
 
             if ($isMetaCampaign) {
                 /** @var Salesforce18Id<MetaCampaign> $campaignSfId */
