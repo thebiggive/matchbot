@@ -107,13 +107,13 @@ class CreateTest extends TestCase
                 'donationId' => self::DONATION_UUID,
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '0.00',
-                'stripeFeeRechargeGross' => '0.51', // Includes Gift Aid processing fee
-                'stripeFeeRechargeNet' => '0.43',
+                'stripeFeeRechargeGross' => '0.46', // Includes Gift Aid processing fee
+                'stripeFeeRechargeNet' => '0.38',
                 'stripeFeeRechargeVat' => '0.08',
                 'tipAmount' => '1.11',
             ],
             'statement_descriptor' => 'Big Give Create test c',
-            'application_fee_amount' => 162,
+            'application_fee_amount' => 157,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
                 'destination' => 'unitTest_stripeAccount_123',
@@ -342,7 +342,6 @@ class CreateTest extends TestCase
     public function testSuccessWithStripeAccountIDMissingInitiallyButFoundOnRefetch(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
         $donationToReturn = $donation;
@@ -459,7 +458,6 @@ class CreateTest extends TestCase
     public function testSuccessWithMatchedCampaign(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
         $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
@@ -555,7 +553,6 @@ class CreateTest extends TestCase
     public function testSuccessWithMatchedCampaignAndPspCustomerId(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId(self::PSPCUSTOMERID);
 
         $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
@@ -655,7 +652,6 @@ class CreateTest extends TestCase
 
         // Default test Customer ID is cus_aaaaaaaaaaaa11.
         $donation = $this->getTestDonation(true, true);
-        $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatusForTest(DonationStatus::Pending);
@@ -682,7 +678,6 @@ class CreateTest extends TestCase
     public function testMatchedCampaignButWrongCustomerIdInBody(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_zzaaaaaaaaaa99');
 
         $donationToReturn = $donation;
@@ -759,7 +754,7 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
-        $this->assertSame(0.43, $payloadArray['donation']['charityFee']); // 1.9% + 20p.
+        $this->assertSame(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
         $this->assertSame(0.08, $payloadArray['donation']['charityFeeVat']);
         $this->assertSame('GB', $payloadArray['donation']['countryCode']);
         $this->assertSame(12, $payloadArray['donation']['donationAmount']);
@@ -816,7 +811,7 @@ class CreateTest extends TestCase
         $this->assertNull($payloadArray['donation']['optInCharityEmail']);
         $this->assertNull($payloadArray['donation']['optInChampionEmail']);
         $this->assertNull($payloadArray['donation']['optInTbgEmail']);
-        $this->assertSame(0.43, $payloadArray['donation']['charityFee']); // 1.9% + 20p.
+        $this->assertSame(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
         $this->assertSame(0.08, $payloadArray['donation']['charityFeeVat']);
         $this->assertSame('GB', $payloadArray['donation']['countryCode']);
         $this->assertSame(12, $payloadArray['donation']['donationAmount']);
@@ -990,7 +985,6 @@ class CreateTest extends TestCase
         $donation->setTipAmount('1.11');
         $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setPspCustomerId(self::PSPCUSTOMERID);
-        $donation->setCharityFee('0.43');
 
         return $donation;
     }
