@@ -113,7 +113,7 @@ class UpdateCampaignDonationStats extends LockingCommand
             );
         } catch (AssertionFailedException $exception) {
             $errorMessage = "Error updating statistics for campaign ID {$campaignId} ({$campaign->getSalesforceId()}): {$exception->getMessage()}";
-            $this->logger->error($errorMessage);
+            $this->logger->info($errorMessage);
             $output->writeln("<error>$errorMessage</error>");
             return false; // Not re-throwing for now so that we can get a complete list of campaigns with issues in one go.
         }
