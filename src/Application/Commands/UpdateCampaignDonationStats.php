@@ -2,10 +2,12 @@
 
 namespace MatchBot\Application\Commands;
 
+use Assert\AssertionFailedException;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\MatchFundsService;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -19,6 +21,7 @@ class UpdateCampaignDonationStats extends LockingCommand
     public function __construct(
         private CampaignRepository $campaignRepository,
         private EntityManagerInterface $entityManager,
+        private LoggerInterface $logger,
         private MatchFundsService $matchFundsService,
     ) {
         parent::__construct();
@@ -94,14 +97,23 @@ class UpdateCampaignDonationStats extends LockingCommand
         $donationSum = $this->campaignRepository->totalCoreDonations($campaign);
 
         $statistics = $campaign->getStatistics(); // New & zeroes if not done before.
-        $changed = $statistics->setTotals(
-            at: new \DateTimeImmutable('now'),
-            donationSum: $donationSum,
-            amountRaised: $donationSum->plus($matchFundsUsed),
-            matchFundsUsed: $matchFundsUsed,
-            matchFundsTotal: $this->matchFundsService->getTotalFunds($campaign),
-            alwaysConsiderChanged: false,
-        );
+
+        try {
+            $changed = $statistics->setTotals(
+                at: new \DateTimeImmutable('now'),
+                donationSum: $donationSum,
+                amountRaised: $donationSum->plus($matchFundsUsed),
+                matchFundsUsed: $matchFundsUsed,
+                matchFundsTotal: $this->matchFundsService->getTotalFunds($campaign),
+                alwaysConsiderChanged: false,
+            );
+        } catch (AssertionFailedException $exception) {
+            $errorMessage = "Error updating statistics for campaign ID {$campaignId} ({$campaign->getSalesforceId()}): {$exception->getMessage()}";
+            $this->logger->error($errorMessage);
+            $output->writeln("<error>$errorMessage</error>");
+            return false; // Not re-throwing for now so that we can get a complete list of campaigns with issues in one go.
+        }
+
         $this->entityManager->persist($statistics);
 
         if ($changed) {
