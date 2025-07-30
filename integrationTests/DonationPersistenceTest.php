@@ -99,6 +99,8 @@ class DonationPersistenceTest extends IntegrationTest
             'stripePayoutId' => null,
             'paidOutAt' => null,
             'payoutSuccessful' => 0,
+            'paymentCard_brand' => null,
+            'paymentCard_country' => null,
             'updatedAt' => '1970-01-01',
             'createdAt' => '1970-01-01'
         ];
