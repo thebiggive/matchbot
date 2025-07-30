@@ -91,6 +91,10 @@ class UpdateCampaignDonationStats extends LockingCommand
      */
     private function handleCampaign(Campaign $campaign, OutputInterface $output): bool
     {
+        if ($this->isIgnoredCampaign($campaign)) {
+            return false;
+        }
+
         $campaignId = $campaign->getId();
         \assert($campaignId !== null);
         $matchFundsUsed = $this->campaignRepository->totalMatchFundsUsed($campaignId);
@@ -121,5 +125,17 @@ class UpdateCampaignDonationStats extends LockingCommand
         }
 
         return $changed;
+    }
+
+    private function isIgnoredCampaign(Campaign $campaign): bool
+    {
+        $excludeJson = getenv('KNOWN_OVERMATCHED_CAMPAIGN_IDS');
+        $excludedCampaignIds = [];
+        if (is_string($excludeJson) && $excludeJson !== '') {
+            /** @var list<int> $excludedCampaignIds */
+            $excludedCampaignIds = json_decode($excludeJson, true, 512, \JSON_THROW_ON_ERROR);
+        }
+
+        return in_array($campaign->getId(), $excludedCampaignIds, true);
     }
 }
