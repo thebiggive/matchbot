@@ -29,6 +29,7 @@ CREATE TABLE `MetaCampaign` (
   `masterCampaignStatus` varchar(255) DEFAULT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
+  `campaignFamily` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_C36155EC989D9B62` (`slug`),
   UNIQUE KEY `UNIQ_C36155ECD8961D21` (`salesforceId`),

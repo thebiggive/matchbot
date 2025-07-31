@@ -74,8 +74,8 @@ class DonationPersistenceTest extends IntegrationTest
             'tipGiftAid' => null,
             'chargeId' => null,
             'championComms' => null,
-            'charityFee' => '0.00',
-            'charityFeeVat' => '0.00',
+            'charityFee' => '0.22',
+            'charityFeeVat' => '0.04',
             'originalPspFee' => '0.00',
             'currencyCode' => 'GBP',
             'collectedAt' => null,
@@ -99,6 +99,8 @@ class DonationPersistenceTest extends IntegrationTest
             'stripePayoutId' => null,
             'paidOutAt' => null,
             'payoutSuccessful' => 0,
+            'paymentCard_brand' => null,
+            'paymentCard_country' => null,
             'updatedAt' => '1970-01-01',
             'createdAt' => '1970-01-01'
         ];

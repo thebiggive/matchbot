@@ -7,17 +7,23 @@ namespace MatchBot\IntegrationTests;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
+use MatchBot\Client\Campaign;
 use MatchBot\Client\Mailer;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestData;
 use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\ResponseInterface;
 use MatchBot\Client\Stripe;
 use Stripe\BalanceTransaction;
+use Stripe\Card;
 use Stripe\Charge;
 use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
 use Stripe\StripeObject;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -26,6 +32,9 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 {
     private MessageBusInterface $originalMessageBus;
     private int $pencePerMonth;
+
+    /** @var ObjectProphecy<Stripe>  */
+    private ObjectProphecy $stripeProphecy;
 
     #[\Override]
     public function setUp(): void
@@ -61,7 +70,8 @@ class CreateRegularGivingMandateTest extends IntegrationTest
             'created' => 0,
         ]);
 
-        $stripeProphecy = $this->prophesize(Stripe::class);
+        $this->stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy = $this->stripeProphecy;
         $stripeProphecy->createPaymentIntent(
             Argument::that(fn(array $payload) => ($payload['amount'] === $this->pencePerMonth))
         )
@@ -86,6 +96,14 @@ class CreateRegularGivingMandateTest extends IntegrationTest
                 'fee' => 1,
             ])
         );
+        $paymentMethod = new PaymentMethod();
+        /** @psalm-suppress InvalidPropertyAssignmentValue */
+        $paymentMethod->card = new Card(); // @phpstan-ignore assign.propertyType
+        $paymentMethod->card->country = 'GB';
+        $paymentMethod->card->brand = 'visa';
+
+        $stripeProphecy->retrievePaymentMethod(StripeCustomerId::of(TestData\Identity::STRIPE_ID), StripePaymentMethodId::of('pm_x'))
+            ->willReturn($paymentMethod);
 
         $this->getContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
@@ -102,6 +120,8 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
     public function testItCreatesRegularGivingMandate(): void
     {
+        $this->stripeProphecy->updatePaymentIntent(Argument::cetera())->shouldBeCalled();
+
         // act
         $response = $this->createRegularGivingMandate(true);
 
@@ -115,6 +135,8 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
     public function testItCreatesUnMatchedRegularGivingMandate(): void
     {
+            $this->stripeProphecy->updatePaymentIntent(Argument::cetera())->shouldBeCalled();
+
             $response = $this->createRegularGivingMandate(false);
 
             // assert
