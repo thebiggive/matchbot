@@ -191,10 +191,7 @@ class DonationService
             ));
         }
 
-        $donation = Donation::fromApiModel($donationData, $campaign, $donorId);
-        $donation->deriveFees();
-
-        return $donation;
+        return Donation::fromApiModel($donationData, $campaign, $donorId);
     }
 
     /**
@@ -424,10 +421,6 @@ class DonationService
     private function doUpdateDonationFees(
         Donation $donation,
     ): void {
-        // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
-        // that, would like to find a way to make it so if its left out we get an error instead - either by having
-        // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
-        $donation->deriveFees();
 
         // we still need this
         $updatedIntentData = [

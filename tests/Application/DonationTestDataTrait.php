@@ -119,7 +119,6 @@ trait DonationTestDataTrait
             donorBillingPostcode: 'N1 1AA',
         );
 
-        $donation->setCharityFee('2.05');
         $donation->setCampaign($campaign);
         $donation->setChampionComms(false);
 
@@ -183,7 +182,6 @@ trait DonationTestDataTrait
 
         $donation = TestCase::someDonation(amount: '124.56');
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
-        $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);
         $donation->setDonationStatusForTest(DonationStatus::Pending);
         $donation->setTransactionId('pi_stripe_pending_123');
