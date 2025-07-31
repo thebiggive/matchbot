@@ -22,7 +22,7 @@ enum Currency: string
 
         // other currencies have some tests but are not fully supported. USD is also not fully tested but we have considered
         // USA a little more and have data relating to that in prod.
-        if (! defined('RUNNING_UNIT_TESTS') && ! \in_array($isoCode, ['GBP', 'USD'])) {
+        if (! defined('RUNNING_UNIT_TESTS') && ! \in_array($isoCode, ['GBP', 'USD'], true)) {
             throw new \UnexpectedValueException("Unexpected Currency ISO Code " . $isoCode);
         }
 
