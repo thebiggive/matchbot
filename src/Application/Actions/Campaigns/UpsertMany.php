@@ -51,11 +51,6 @@ class UpsertMany extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        // not yet ready for use in prod
-        if (Environment::current()->isProduction()) {
-            throw new HttpNotFoundException($request);
-        }
-
         try {
             $requestBody = json_decode(
                 $request->getBody()->getContents(),
@@ -90,6 +85,12 @@ class UpsertMany extends Action
 
             $isMetaCampaign = $campaignData['isMetaCampaign'];
 
+            if ($campaignData['title'] === null) {
+                // we can't use a campaign without a title, ideally either SF should not send campaigns before they are
+                // given a title or title should be a required field.
+                continue;
+            }
+
             if ($isMetaCampaign) {
                 /** @var Salesforce18Id<MetaCampaign> $campaignSfId */
                 $this->upsertMetaCampaign($request, $campaignData, $campaignSfId);
@@ -119,7 +120,8 @@ class UpsertMany extends Action
         $charity = $this->charityRepository->findOneBySalesforceId($charitySfId);
 
         if (!$charity) {
-            throw new \Exception("Does not have a Charity record with the details: {$charityData['name']} {$charityData['id']} Campaign Details: {$campaignData['title']} {$campaignData['id']}");
+            $this->logger->warning("Does not have a Charity record with the details: {$charityData['name']} {$charityData['id']} Campaign Details: {$campaignData['title']} {$campaignData['id']}");
+            return;
         }
         // else we DO NOT update the charity here - for efficiency and clarity a separate action should be used to send
         // charity updates when they change, instead of updating the charity every time a campaign changes.
