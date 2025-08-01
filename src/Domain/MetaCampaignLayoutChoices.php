@@ -22,6 +22,8 @@ class MetaCampaignLayoutChoices
         // so sharing one object here. If confirmed we can delete this class.
         $focalArea = new FocalAreaBox();
 
+        $campaignBannerUriFromSF = $metaCampaign->getBannerUri();
+
         return match ([Environment::current(), $metaCampaign->getSlug()->slug]) {
             [Environment::Local, 'local-test'] => new BannerLayout(
                 backgroundColour: Colour::fromHex('#F6F6F6'),
@@ -63,7 +65,7 @@ class MetaCampaignLayoutChoices
                 imageUri: 'https://d1842m250x5wwk.cloudfront.net/uploads/2025/07/DEC.jpg',
             ),
             default => Environment::current()->isProduction() ? null : new BannerLayout(
-                backgroundColour: Colour::fromHex('#F6F6F6'),
+                backgroundColour: \is_null($campaignBannerUriFromSF) ? Colour::fromHex('#2C089B') : Colour::fromHex('#F6F6F6'),
                 textBackgroundColour: match ($metaCampaign->getFamily()) {
                     // colours taken from variables.scss at https://github.com/thebiggive/components/blob/c096dcaa499ece7080a363d4157bc2e1cd1c5c92/src/globals/variables.scss#L17
                     CampaignFamily::christmasChallenge => Colour::fromHex('#B30510'),
@@ -76,6 +78,7 @@ class MetaCampaignLayoutChoices
                 CampaignFamily::mentalHealthFund => Colour::fromHex('#62CFC9'),
                 CampaignFamily::multiCurrency => Colour::fromHex('#2C089B'),
                 CampaignFamily::imf => Colour::fromHex('#2C089B'),
+                CampaignFamily::regularGiving => Colour::fromHex('#2C089B'),
                 null => Colour::fromHex('#2C089B'),
                 },
                 textColour: match ($metaCampaign->getFamily()) {
@@ -90,10 +93,11 @@ class MetaCampaignLayoutChoices
                 CampaignFamily::mentalHealthFund => Colour::fromHex('#000000'),
                 CampaignFamily::multiCurrency => Colour::fromHex('#FFFFF'),
                 CampaignFamily::imf => Colour::fromHex('#FFFFF'),
+                CampaignFamily::regularGiving => Colour::fromHex('#FFFFF'),
                 null => Colour::fromHex('#FFFFFF'),
                 },
                 focalArea: $focalArea,
-                imageUri: $metaCampaign->getBannerUri()?->__toString(),
+                imageUri: $campaignBannerUriFromSF?->__toString(),
             ),
         };
     }

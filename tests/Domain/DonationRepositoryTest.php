@@ -113,11 +113,10 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');
+        $donation = $this->getTestDonation('987.65', collected: false);
 
         $donation->setTipAmount('10.00');
         $donation->setPaymentCard(new PaymentCard(CardBrand::amex, Country::GB()));
-        $donation->deriveFees();
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -135,11 +134,10 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');
+        $donation = $this->getTestDonation('987.65', collected: false);
 
         $donation->setTipAmount('10.00');
         $donation->setPaymentCard(new PaymentCard(CardBrand::visa, Country::fromAlpha2('US')));
-        $donation->deriveFees();
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -156,10 +154,9 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');
+        $donation = $this->getTestDonation('987.65', collected: false);
 
         $donation->setTipAmount('10.00');
-        $donation->deriveFees();
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -176,11 +173,9 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');
+        $donation = $this->getTestDonation('987.65', collected: false);
 
         $donation->setTipAmount('10.00');
-
-        $donation->deriveFees();
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -197,10 +192,9 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTip(): void
     {
-        $donation = $this->getTestDonation('987.65');
+        $donation = $this->getTestDonation('987.65', collected: false);
 
         $donation->setTipAmount('0.00');
-        $donation->deriveFees();
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -214,10 +208,9 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTipWhenTbgClaimingGiftAid(): void
     {
-        $donation = $this->getTestDonation('987.65');
+        $donation = $this->getTestDonation('987.65', collected: false);
         $donation->setTbgShouldProcessGiftAid(true);
         $donation->setTipAmount('0.00');
-        $donation->deriveFees();
 
         // £987.65 *  1.5%  = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -232,9 +225,8 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
     {
-        $donation = $this->getTestDonation('6.25');
+        $donation = $this->getTestDonation('6.25', collected: false);
         $donation->setTipAmount('0.00');
-        $donation->deriveFees();
 
         // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)
         // Fixed fee    = £ 0.20

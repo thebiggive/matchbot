@@ -14,4 +14,5 @@ enum CampaignFamily: string
     case mentalHealthFund = 'mentalHealthFund';
     case multiCurrency = 'multiCurrency';
     case imf = 'imf';
+    case regularGiving = 'regularGiving';
 }

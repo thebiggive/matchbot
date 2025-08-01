@@ -149,9 +149,11 @@ class Donation extends SalesforceWriteProxy
      *
      * @var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
+     *
+     * initialised via call to deriveFees
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
-    protected string $charityFee;
+    protected string $charityFee; // @phpstan-ignore property.uninitialized
 
     /**
      * Value Added Tax amount on `$charityFee`, in £. In addition to base amount
@@ -159,9 +161,11 @@ class Donation extends SalesforceWriteProxy
      *
      * @var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
+     *
+     * initialised via call to deriveFees
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
-    protected string $charityFeeVat;
+    protected string $charityFeeVat; // @phpstan-ignore property.uninitialized
 
     /**
      * Fee charged to TBG by the PSP, in £. Added just for Stripe transactions from March '21.
@@ -455,7 +459,6 @@ class Donation extends SalesforceWriteProxy
         $this->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
         $this->setPsp('stripe');
         $this->campaign = $campaign; // Charity & match expectation determined implicitly from this
-        $this->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
         $this->setPspCustomerId($pspCustomerId);
@@ -485,19 +488,12 @@ class Donation extends SalesforceWriteProxy
         // Using null card details as we don't yet know what payment method will be used
         // and we need something. We expect these will always give the cheapest fee, but will
         // be replaced by actual card details before donation is confirmed.
-        $fees = Calculator::calculate(
-            $this->psp,
-            cardBrand: null,
-            cardCountry: null,
-            amount: $amount,
-            currencyCode: $currencyCode,
-            hasGiftAid: $giftAid && $this->tbgShouldProcessGiftAid
-        );
-
-        $this->charityFee = $fees->coreFee;
-        $this->charityFeeVat = $fees->feeVat;
         $this->paymentCardBrand = null;
         $this->paymentCardCountry = null;
+
+        $this->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
+
+        $this->deriveFees();
     }
 
     /**
@@ -708,7 +704,6 @@ class Donation extends SalesforceWriteProxy
     {
         Assertion::eq(Environment::current(), Environment::Test);
 
-        /** @psalm-suppress DeprecatedConstant */
         $this->donationStatus = match ($donationStatus) {
             DonationStatus::Refunded =>
                 throw new \Exception('Donation::recordRefundAt must be used to set refunded status'),
@@ -811,6 +806,9 @@ class Donation extends SalesforceWriteProxy
         return $this->giftAid;
     }
 
+    /**
+     * Ensure 'deriveFees' is always called after this.
+     */
     private function setGiftAid(bool $giftAid): void
     {
         $this->giftAid = $giftAid;
@@ -862,14 +860,6 @@ class Donation extends SalesforceWriteProxy
     #[Pure] public function getCharityFeeGross(): string
     {
         return bcadd($this->getCharityFee(), $this->getCharityFeeVat(), 2);
-    }
-
-    /**
-     * @param numeric-string $charityFee
-     */
-    public function setCharityFee(string $charityFee): void
-    {
-        $this->charityFee = $charityFee;
     }
 
     public function setTransactionId(string $transactionId): void
@@ -1022,6 +1012,8 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @param string $psp   Payment Service Provider short identifier, e.g. 'stripe'.
+     *
+     * Always call `deriveFees` after this.
      */
     private function setPsp(string $psp): void
     {
@@ -1100,14 +1092,6 @@ class Donation extends SalesforceWriteProxy
     public function getCharityFeeVat(): string
     {
         return $this->charityFeeVat;
-    }
-
-    /**
-     * @param numeric-string $charityFeeVat
-     */
-    public function setCharityFeeVat(string $charityFeeVat): void
-    {
-        $this->charityFeeVat = $charityFeeVat;
     }
 
     /**
@@ -1197,6 +1181,7 @@ class Donation extends SalesforceWriteProxy
     public function setTbgShouldProcessGiftAid(?bool $tbgShouldProcessGiftAid): void
     {
         $this->tbgShouldProcessGiftAid = $tbgShouldProcessGiftAid;
+        $this->deriveFees();
     }
 
     public function setTbgGiftAidRequestQueuedAt(?DateTimeImmutable $tbgGiftAidRequestQueuedAt): void
@@ -1531,9 +1516,21 @@ class Donation extends SalesforceWriteProxy
      * Updates a donation to set the appropriate fees. If card details are null then we assume for now that a card with
      * the lowest possible fees will be used, and this should be called again with the details of the selected card
      * when confirming the payment.
+     *
+     * Should be called after any time a property that matters for fees is updated.
      */
-    public function deriveFees(): void
+    private function deriveFees(): void
     {
+        $feeIsUpdateable = match ($this->donationStatus) {
+            DonationStatus::Pending, DonationStatus::PreAuthorized => true,
+            DonationStatus::Cancelled, DonationStatus::Chargedback, DonationStatus::Collected, DonationStatus::Failed, DonationStatus::Paid, DonationStatus::Refunded => false,
+        };
+
+        if (! $feeIsUpdateable) {
+            // It's too late to change the fee on this donation.
+            return;
+        }
+
         $incursGiftAidFee = $this->hasGiftAid() && $this->hasTbgShouldProcessGiftAid();
 
         $fees = Calculator::calculate(
@@ -1545,8 +1542,8 @@ class Donation extends SalesforceWriteProxy
             $incursGiftAidFee,
         );
 
-        $this->setCharityFee($fees->coreFee);
-        $this->setCharityFeeVat($fees->feeVat);
+        $this->charityFee = $fees->coreFee;
+        $this->charityFeeVat = $fees->feeVat;
     }
 
     public function collectFromStripeCharge(
@@ -1641,6 +1638,8 @@ class Donation extends SalesforceWriteProxy
         $this->setTbgComms($tbgComms);
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
+
+        $this->deriveFees();
     }
 
     /**
@@ -1951,6 +1950,8 @@ class Donation extends SalesforceWriteProxy
 
         $this->giftAid = false;
         $this->tipGiftAid = false;
+
+        $this->deriveFees();
     }
 
     public function getDonorId(): ?PersonId
@@ -2026,6 +2027,8 @@ class Donation extends SalesforceWriteProxy
             $this->paymentCardBrand = $paymentCard->brand;
             $this->paymentCardCountry = $paymentCard->country->alpha2;
         }
+
+        $this->deriveFees();
     }
 
     private function getPaymentCard(): ?PaymentCard

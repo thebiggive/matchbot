@@ -491,7 +491,7 @@ class UpdateTest extends TestCase
         $this->assertSame(124.56, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertSame(0, $payloadArray['matchedAmount']);
         $this->assertSame(2, $payloadArray['tipAmount']);
-        $this->assertSame(2.57, $payloadArray['charityFee']); // 1.9% + 20p.
+        $this->assertSame(2.07, $payloadArray['charityFee']); // 1.5% * 124.56 + 20p = 2.0684
         $this->assertSame(0.41, $payloadArray['charityFeeVat']);
     }
 
