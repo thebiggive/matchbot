@@ -76,6 +76,7 @@ class MetaCampaignLayoutChoices
                 CampaignFamily::mentalHealthFund => Colour::fromHex('#62CFC9'),
                 CampaignFamily::multiCurrency => Colour::fromHex('#2C089B'),
                 CampaignFamily::imf => Colour::fromHex('#2C089B'),
+                CampaignFamily::regularGiving => Colour::fromHex('#2C089B'),
                 null => Colour::fromHex('#2C089B'),
                 },
                 textColour: match ($metaCampaign->getFamily()) {
@@ -90,6 +91,7 @@ class MetaCampaignLayoutChoices
                 CampaignFamily::mentalHealthFund => Colour::fromHex('#000000'),
                 CampaignFamily::multiCurrency => Colour::fromHex('#FFFFF'),
                 CampaignFamily::imf => Colour::fromHex('#FFFFF'),
+                CampaignFamily::regularGiving => Colour::fromHex('#FFFFF'),
                 null => Colour::fromHex('#FFFFFF'),
                 },
                 focalArea: $focalArea,
