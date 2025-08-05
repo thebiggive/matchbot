@@ -150,6 +150,11 @@ class UpsertMany extends Action
         );
 
         if (!$metaCampaign) {
+            /** @psalm-suppress DocblockTypeContradiction */
+            if ($campaignData['campaignFamily'] === null) {
+                $this->logger->error('No campaign family on metacampaign ' . $campaignData['id']  . ' - ' . $slug->slug . ' skipping');
+                return;
+            }
             $metaCampaign = MetaCampaign::fromSfCampaignData($slug, $campaignData);
             $this->logger->info("Saving new meta campaign from SF: {$metaCampaign->getTitle()} {$metaCampaign->getSalesforceId()}");
             $this->entityManager->persist($metaCampaign);
