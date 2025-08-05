@@ -53,9 +53,4 @@ enum Environment
     {
         return true;
     }
-
-    public function isLocal(): bool
-    {
-        return $this === self::Local;
-    }
 }
