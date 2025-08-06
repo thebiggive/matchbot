@@ -43,6 +43,7 @@ use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Lock\Exception\LockConflictedException;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
@@ -405,6 +406,11 @@ class DonationService
             }
         }
 
+        // There's potential that funding withdrawls could be lost without the donor knowing, so we take a copy of the total
+        // here for them and we won't allow the donation to be confirmed if the total does not match the expectation later,
+        // e.g. in case of a front end bug that stops them seeing the notification that the withdrawls expired.
+        $donation->setExpectedMatchAmount($donation->getFundingWithdrawalTotalAsObject());
+
         $this->entityManager->commit();
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
@@ -652,6 +658,9 @@ class DonationService
      * If the matching for the donation has already been released (e.g. by another process after the donationId
      * was found but before we lock the donation here) then this should be a no-op because Donation::fundingWithdrawals
      * are eagerly loaded with the donation so will be empty.
+     *
+     * @throws LockConflictedException in case there is another process trying to deal with this donation right now,
+     * e.g. to confirm it.
      */
     public function releaseMatchFundsInTransaction(UuidInterface $donationId): void
     {

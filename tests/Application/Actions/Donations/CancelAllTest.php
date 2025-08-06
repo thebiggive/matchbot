@@ -28,6 +28,8 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Slim\Exception\HttpUnauthorizedException;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\Store\InMemoryStore;
 
 class CancelAllTest extends TestCase
 {
@@ -193,6 +195,8 @@ class CancelAllTest extends TestCase
         $container->set(CampaignRepository::class, $this->prophesize(CampaignRepository::class)->reveal());
         $container->set(DonorAccountRepository::class, $this->prophesize(DonorAccountRepository::class)->reveal());
         $container->set(FundRepository::class, $this->createStub(FundRepository::class));
+
+        $container->set(LockFactory::class, new LockFactory(new InMemoryStore()));
 
         if ($stripeProphecy !== null) {
             $container->set(Stripe::class, $stripeProphecy->reveal());
