@@ -39,7 +39,7 @@ class MetaCampaignLayoutChoices
                 focalArea: $focalArea,
                 imageUri: 'https://d1842m250x5wwk.cloudfront.net/uploads/2025/07/WGMF-Campaign.jpg',
             ),
-            'christmas-challeng-2025' => new BannerLayout(
+            'christmas-challenge-2025' => new BannerLayout(
                 backgroundColour: Colour::fromHex('#000000'),
                 textBackgroundColour: Colour::fromHex('#B30510'),
                 textColour: Colour::fromHex('#FFFFFF'),
