@@ -28,9 +28,6 @@ class Search extends Action
 
     #[\Override] protected function action(Request $request, Response $response, array $args): Response
     {
-        // @todo Possibly not safe to expose yet.
-        Assertion::notSame(Environment::current(), Environment::Production);
-
         $params = $request->getQueryParams();
         $sortField = $params['sortField'] ?? 'distanceToTarget';
         $sortDirection = $params['sortDirection'] ?? 'desc';
