@@ -24,47 +24,43 @@ class MetaCampaignLayoutChoices
 
         $campaignBannerUriFromSF = $metaCampaign->getBannerUri();
 
-        return match ([Environment::current(), $metaCampaign->getSlug()->slug]) {
-            [Environment::Local, 'local-test'] => new BannerLayout(
+        return match ($metaCampaign->getSlug()->slug) {
+            'local-test' => new BannerLayout(
                 backgroundColour: Colour::fromHex('#F6F6F6'),
                 textBackgroundColour: Colour::fromHex('#FFE500'),
                 textColour: Colour::fromHex('#000000'),
                 focalArea: $focalArea,
                 imageUri: 'https://picsum.photos/id/88/1700/500',
             ),
-            [Environment::Staging, 'women-and-girls-2024'],
-            [Environment::Local, 'women-and-girls-2024'], => new BannerLayout(
+            'women-an-girls-2024' => new BannerLayout(
                 backgroundColour: Colour::fromHex('#F6F6F6'),
                 textBackgroundColour: Colour::fromHex('#6E0887'),
                 textColour: Colour::fromHex('#FFFFFF'),
                 focalArea: $focalArea,
                 imageUri: 'https://d1842m250x5wwk.cloudfront.net/uploads/2025/07/WGMF-Campaign.jpg',
             ),
-            [Environment::Staging, 'christmas-challenge-2025'],
-            [Environment::Local, 'christmas-challenge-2025'], => new BannerLayout(
+            'christmas-challeng-2025' => new BannerLayout(
                 backgroundColour: Colour::fromHex('#000000'),
                 textBackgroundColour: Colour::fromHex('#B30510'),
                 textColour: Colour::fromHex('#FFFFFF'),
                 focalArea: $focalArea,
                 imageUri: 'https://d1842m250x5wwk.cloudfront.net/uploads/2025/07/double-santa.jpg',
             ),
-            [Environment::Staging, 'k2m25'],
-            [Environment::Local, 'k2m25'], => new BannerLayout(
+            'k2m25' => new BannerLayout(
                 backgroundColour: Colour::fromHex('#000000'),
                 textBackgroundColour: Colour::fromHex('#62CFC9'),
                 textColour: Colour::fromHex('#000000'),
                 focalArea: $focalArea,
                 imageUri: 'https://d1842m250x5wwk.cloudfront.net/uploads/2025/07/K2M.png',
             ),
-            [Environment::Staging, 'middle-east-humanitarian-appeal-2024'],
-            [Environment::Local, 'middle-east-humanitarian-appeal-2024'], => new BannerLayout(
+            'middle-eas-humanitarian-appeal-2024' => new BannerLayout(
                 backgroundColour: Colour::fromHex('#000000'),
                 textBackgroundColour: Colour::fromHex('#FFE500'),
                 textColour: Colour::fromHex('#000000'),
                 focalArea: $focalArea,
                 imageUri: 'https://d1842m250x5wwk.cloudfront.net/uploads/2025/07/DEC.jpg',
             ),
-            default => Environment::current()->isProduction() ? null : new BannerLayout(
+            default => new BannerLayout(
                 backgroundColour: \is_null($campaignBannerUriFromSF) ? Colour::fromHex('#2C089B') : Colour::fromHex('#F6F6F6'),
                 textBackgroundColour: match ($metaCampaign->getFamily()) {
                     // colours taken from variables.scss at https://github.com/thebiggive/components/blob/c096dcaa499ece7080a363d4157bc2e1cd1c5c92/src/globals/variables.scss#L17
