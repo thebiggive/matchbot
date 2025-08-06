@@ -317,60 +317,6 @@ class CampaignService
         };
     }
 
-    /**
-     * @param Salesforce18Id<Campaign> $sfId
-     * @param SFCampaignApiResponse $campaignData
-     * @return void
-     *
-     * Checks that the matchbot domain model and renderer would be able to correctly handle the given campaign
-     * - i.e. that if and when SF goes down and we have to serve from the matchbot DB, or we switch the system
-     * over to always serving from the matchbot DB the output will be compatible with this input.
-     *
-     * If the check fails in prod just logs an error, in other environments throws an exception which should not
-     * be handled.
-     */
-    public function checkCampaignCanBeHandledByMatchbotDB(array $campaignData, Salesforce18Id $sfId): void
-    {
-        $mbDomainCharity = null;
-        $mbDomainCampaign = null;
-
-        try {
-            /** Im-memory only matchbot domain model of charity and campaign, used just to check that our rendering matches
-             * what SF would do.
-             */
-            $mbDomainCharity = $this->campaignRepository->newCharityFromCampaignData($campaignData);
-            $mbDomainCampaign = Campaign::fromSfCampaignData(
-                campaignData: $campaignData,
-                salesforceId: $sfId,
-                charity: $mbDomainCharity,
-                fillInDefaultValues: true,
-            );
-            $campaignName = $mbDomainCampaign->getCampaignName();
-            $campaignStatus = $mbDomainCampaign->getStatus() ?? 'NULL';
-
-            $renderedCampaign = $this->renderCampaign($mbDomainCampaign, metaCampaign: null);
-
-            /** @var list<string> $errors */
-            $errors = $renderedCampaign['errors'] ?? [];
-        } catch (\Throwable $t) {
-            $campaignName = $campaignData['title'] ?? 'no-title';
-            $campaignStatus = $campaignData['status'] ?? 'NULL';
-            $errors = [$t->__toString()];
-        }
-
-        if (($errors) !== []) {
-            $errorList = \implode(',', $errors);
-
-            $this->log->error(
-                "(MAT-405 NOT emergency) Campaign {$campaignName} {$sfId->value} status {$campaignStatus} not compatible: {$errorList}"
-            );
-        }
-
-        // these models are only in memory, never persisted.
-        Assertion::null($mbDomainCampaign?->getId());
-        Assertion::null($mbDomainCharity?->getId());
-    }
-
     private function cachedMetaCampaignMatchFundsRemaining(MetaCampaign $metaCampaign): Money
     {
         $id = $metaCampaign->getId();

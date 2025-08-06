@@ -26,11 +26,6 @@ class Get extends Action
 
     #[\Override] protected function action(Request $request, Response $response, array $args): Response
     {
-        if (Environment::current()->isProduction()) {
-            // not ready for prod use yet - see renderMetaCampaign implementation.
-            throw new HttpNotFoundException($request);
-        }
-
         try {
             $slug = MetaCampaignSlug::of(
                 $args['slug'] ?? throw new HttpNotFoundException($request)

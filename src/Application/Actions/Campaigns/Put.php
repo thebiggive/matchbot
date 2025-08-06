@@ -26,6 +26,9 @@ use Slim\Exception\HttpNotFoundException;
 use MatchBot\Client;
 
 /**
+ *
+ * todo - delete entire class as has been replaced by UpsertMany
+ *
  * @psalm-import-type SFCampaignApiResponse from Client\Campaign
  *
  * TODO:: Can be deleted later as we already created a {@see \MatchBot\Application\Actions\Campaigns\UpsertMany} POST method to accept multiple campaigns from SF.
