@@ -548,6 +548,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         bool $filterOutTargetMet,
     ): void {
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
+        $qb->andWhere($qb->expr()->eq('campaign.isMatched', '1'));
 
         if ($status !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.status', ':status'));
