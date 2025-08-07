@@ -124,7 +124,8 @@ class Campaign extends SalesforceReadProxy
     protected DateTimeInterface $endDate;
 
     /**
-     * @var bool    Whether the Campaign has any match funds
+     * @var bool    Whether the Campaign was launched as a match-funded type of campaign. This does not
+     * mean there are necessarily match funds remaining.
      */
     #[ORM\Column(type: 'boolean')]
     protected bool $isMatched;
