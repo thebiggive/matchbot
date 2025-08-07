@@ -40,6 +40,8 @@ use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\Store\InMemoryStore;
 
 class UpdateTest extends TestCase
 {
@@ -1634,6 +1636,8 @@ class UpdateTest extends TestCase
         $container->set(CampaignRepository::class, $this->prophesize(CampaignRepository::class)->reveal());
         $container->set(DonorAccountRepository::class, $this->prophesize(DonorAccountRepository::class)->reveal());
         $container->set(ClockInterface::class, new MockClock());
+
+        $container->set(LockFactory::class, new LockFactory(new InMemoryStore()));
     }
 
     /**
@@ -1652,6 +1656,9 @@ class UpdateTest extends TestCase
             ->will(function (array $args): mixed {
                 return $args[0]();
             });
+
+        // We don't need to mock the connection for LockFactory anymore
+        // since we're providing an InMemoryStore directly
 
         $entityManagerProphecy->getRepository(CampaignFunding::class)->willReturn($this->createStub(CampaignFundingRepository::class));
 

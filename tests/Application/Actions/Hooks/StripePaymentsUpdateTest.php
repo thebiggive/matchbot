@@ -31,6 +31,8 @@ use Ramsey\Uuid\Uuid;
 use Stripe\BalanceTransaction;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\StripeClient;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\Store\InMemoryStore;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
 use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
@@ -615,6 +617,8 @@ class StripePaymentsUpdateTest extends StripeTest
         $container = parent::getContainer();
         \assert($container instanceof Container);
         $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
+
+        $container->set(LockFactory::class, new LockFactory(new InMemoryStore()));
 
         return $container;
     }

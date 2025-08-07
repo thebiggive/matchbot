@@ -24,6 +24,10 @@ use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Lock\Exception\LockAcquiringException;
+use Symfony\Component\Lock\Exception\LockConflictedException;
+use Symfony\Component\Lock\Lock;
+use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -36,8 +40,14 @@ class Confirm extends Action
         private MessageBusInterface $bus,
         private DonationService $donationService,
         private ClockInterface $clock,
+        private LockFactory $lockFactory,
     ) {
         parent::__construct($logger);
+    }
+
+    public static function donationConfirmLockKey(Donation $donation): string
+    {
+        return 'donation-confirm-lock-' . $donation->getUuid()->toString();
     }
 
     /**
@@ -92,6 +102,23 @@ EOF
 
 
         \assert($paymentMethodId !== ""); // required to call updatePaymentMethodBillingDetail
+
+
+        // AssertIsReadyToConfirm is going to check that the donation has all the match funds expected. We aquire a lock to make sure those funds
+        // can't be released after we've checked.
+        $lock = $this->lockFactory->createLock($this->donationConfirmLockKey($donation), autoRelease: true);
+        try {
+            $lock->acquire(blocking: true);
+        } catch (LockConflictedException | LockAcquiringException) {
+            // may be impossible or only happen if the confirmation is at exactly the same time as the funds
+            //auto-release, or there are simultaneous confirmation requests for the same donation.
+            return new JsonResponse([
+                'error' => [
+                    'message' => 'Could not lock donation to check match funds still withdrawn',
+                    'code' => 'donation-not-locked',
+                ],
+            ], 400);
+        }
 
         try {
             $donation->assertIsReadyToConfirm($this->clock->now());
