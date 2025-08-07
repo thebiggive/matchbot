@@ -555,7 +555,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('status', $status);
         } elseif ($metaCampaignSlug === null) {
             $qb->andWhere('campaign.status IN (:nonExpired)');
+            // we can't rely on the status being updated when the campaign expires, so also check that the end-date is not past:
+            $qb->andWhere($qb->expr()->gt('campaign.endDate', ':now'));
             $qb->setParameter('nonExpired', ['Active', 'Preview']);
+            $qb->setParameter('now', $this->clock->now());
         } else {
             $qb->andWhere('campaign.status IS NOT NULL');
         }

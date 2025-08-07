@@ -510,7 +510,7 @@ abstract class IntegrationTest extends TestCase
             metaCampaignSlug: null,
             charity: $charity ?? \MatchBot\Tests\TestCase::someCharity(),
             startDate: new \DateTimeImmutable('now'),
-            endDate: new \DateTimeImmutable('now'),
+            endDate: (new \DateTimeImmutable('now'))->modify('+1 minute'),
             isMatched: true,
             ready: true,
             status: $status,
