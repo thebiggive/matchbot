@@ -42,28 +42,30 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     {
         $cutoff = $now->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
 
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('d.uuid')
-            ->from(Donation::class, 'd')
-            // Only select donations with 1+ FWs. We don't need any further info about the FWs.
-            ->innerJoin('d.fundingWithdrawals', 'fw')
-            ->where('d.donationStatus IN (:expireWithStatuses)')
-            ->andWhere('d.createdAt < :expireBefore')
-            // First of a regular giving series is Pending during 3DS. If we ever make the timeout for
-            // that longer than the timeout for matching, we still want to ensure matching can't be
-            // lost while 3DS is in progress.
-            ->andWhere('d.mandate is null')
-            ->groupBy('d.id')
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT d.uuid FROM MatchBot\Domain\Donation d
+
+            -- Only select donations with 1+ FWs. We don't need any further info about the FWs.
+            INNER JOIN d.fundingWithdrawals fw
+            WHERE d.donationStatus IN (:expireWithStatuses)
+            AND d.createdAt < :expireBefore
+
+            -- First of a regular giving series is Pending during 3DS. If we ever make the timeout for
+            -- that longer than the timeout for matching, we still want to ensure matching can't be
+            -- lost while 3DS is in progress.
+            AND d.mandate is null
+            GROUP BY d.id
+            DQL
+        )
             ->setParameter('expireWithStatuses', [DonationStatus::Pending->value, DonationStatus::Cancelled->value])
-            ->setParameter('expireBefore', $cutoff)
-        ;
+            ->setParameter('expireBefore', $cutoff);
 
         // As this is used by the only regular task working with donations,
         // `ExpireMatchFunds`, it makes more sense to opt it out of result caching
         // here rather than take the performance hit of a full query cache clear
         // after every single persisted donation.
         /** @var list<array{uuid: UuidInterface}> $rows */
-        $rows = $qb->getQuery()
+        $rows = $query
             ->disableResultCache()
             ->getResult();
 
