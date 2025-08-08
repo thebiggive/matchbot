@@ -40,7 +40,18 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     #[\Override]
     public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
-        $cutoff = $now->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
+        // we only expire donations that were created before this point.
+        $expireBefore = $now->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
+
+        // and we only need to expire donations that were create AFTER this point, because if they were created at
+        // before it we would have already expired them in a previous run.
+        $expireAfter = $expireBefore->sub(new \DateInterval('PT120S'));
+
+        if ((int) $now->format('i') % 30 === 0) {
+            // once every 30 minutes, try expiring any older donations just in case they were missed, but it shouldn't
+            // really be necassary unless this stopped running for some reason.
+            $expireAfter = new \DateTimeImmutable('2025-08-05T00:00:00z');
+        }
 
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
             SELECT d.uuid FROM MatchBot\Domain\Donation d
@@ -49,6 +60,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             INNER JOIN d.fundingWithdrawals fw
             WHERE d.donationStatus IN (:expireWithStatuses)
             AND d.createdAt < :expireBefore
+            AND d.createdAt > :expireAfter
 
             -- First of a regular giving series is Pending during 3DS. If we ever make the timeout for
             -- that longer than the timeout for matching, we still want to ensure matching can't be
@@ -58,7 +70,8 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             DQL
         )
             ->setParameter('expireWithStatuses', [DonationStatus::Pending->value, DonationStatus::Cancelled->value])
-            ->setParameter('expireBefore', $cutoff);
+            ->setParameter('expireBefore', $expireBefore)
+            ->setParameter('expireAfter', $expireAfter);
 
         // As this is used by the only regular task working with donations,
         // `ExpireMatchFunds`, it makes more sense to opt it out of result caching
