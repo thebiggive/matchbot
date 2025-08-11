@@ -40,21 +40,28 @@ class RemoveMatchingExpecation extends Action
     protected function action(Request $request, Response $response, array $args): Response
     {
         \assert(isset($args['donationId']));
-        $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($args['donationId']));
-        if (!$donation) {
-            throw new NotFoundException();
-        }
 
-        $donation->setExpectedMatchAmount(Money::zero($donation->currency()));
+        $donation = null;
 
-        $this->entityManager->flush();
+        $this->entityManager->wrapInTransaction(function () use (&$donation, $args) {
+            $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($args['donationId']));
+            if (!$donation) {
+                throw new NotFoundException();
+            }
 
-        $this->logger->info(
-            sprintf(
-                'Removed matching expectation for donation %s',
-                $donation->getUuid()->toString()
-            )
-        );
+            $donation->setExpectedMatchAmount(Money::zero($donation->currency()));
+
+            $this->entityManager->flush();
+
+            $this->logger->info(
+                sprintf(
+                    'Removed matching expectation for donation %s',
+                    $donation->getUuid()->toString()
+                )
+            );
+        });
+
+        \assert($donation !== null);
 
         return new JsonResponse([
             'status' => 'success',
