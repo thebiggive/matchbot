@@ -64,8 +64,6 @@ jobs:
 
       - run: composer run docs:all # Generate and merge OpenAPI documentation
 
-      - run: mkdir -p docs && cp docs/openapi.yaml docs/
-
       - run: composer run test
 
       - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
