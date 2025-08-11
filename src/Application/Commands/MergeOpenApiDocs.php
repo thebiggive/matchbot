@@ -108,8 +108,8 @@ class MergeOpenApiDocs extends Command
                             continue;
                         }
 
-                        if (!isset($result['paths'][$path][$method])) {
-                            $result['paths'][$path][$method] = $methodData;
+                        if (!isset($result['paths'][$path][$method])) { // @phpstan-ignore offsetAccess.nonOffsetAccessible
+                            $result['paths'][$path][$method] = $methodData; // @phpstan-ignore offsetAccess.nonOffsetAccessible
                         }
                     }
                 }
