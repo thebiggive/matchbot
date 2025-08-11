@@ -79,6 +79,8 @@ jobs:
 
       - run: composer run integration-test
 
+      - run: cd docs && apt update && apt install -y npm && npm i swagger-ui-dist
+
       - store_test_results:
           path: reports
 
