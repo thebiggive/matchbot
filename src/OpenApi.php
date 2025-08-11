@@ -3,6 +3,8 @@
 namespace MatchBot;
 
 /**
+ * @psalm-suppress UnusedClass
+ *
  * @OA\Info(
  *     title="MatchBot API",
  *     version="1.0.0",
