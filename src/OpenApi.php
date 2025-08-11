@@ -17,39 +17,39 @@ namespace MatchBot;
  *         url="https://github.com/thebiggive/matchbot/blob/main/LICENSE"
  *     )
  * )
- * 
+ *
  * @OA\Server(
  *     url="https://matchbot.thebiggive.org.uk",
  *     description="Production server"
  * )
- * 
+ *
  * @OA\Server(
  *     url="https://matchbot-staging.thebiggive.org.uk",
  *     description="Staging server"
  * )
- * 
+ *
  * @OA\SecurityScheme(
  *     securityScheme="bearerAuth",
  *     type="http",
  *     scheme="bearer",
  *     bearerFormat="JWT"
  * )
- * 
+ *
  * @OA\Tag(
  *     name="donations",
  *     description="Donation operations"
  * )
- * 
+ *
  * @OA\Tag(
  *     name="campaigns",
  *     description="Campaign operations"
  * )
- * 
+ *
  * @OA\Tag(
  *     name="charities",
  *     description="Charity operations"
  * )
- * 
+ *
  * @OA\PathItem(
  *     path="/placeholder"
  * )
