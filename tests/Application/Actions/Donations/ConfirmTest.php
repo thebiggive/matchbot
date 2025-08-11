@@ -37,6 +37,7 @@ use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
@@ -84,6 +85,7 @@ class ConfirmTest extends TestCase
             entityManager: $this->entityManagerProphecy->reveal(),
             bus: $messageBusStub,
             clock: new MockClock('2025-01-01'),
+            lockFactory: $this->createStub(LockFactory::class),
             donationService: new DonationService(
                 allocator: $this->createStub(Allocator::class),
                 donationRepository: $this->getDonationRepository(),
