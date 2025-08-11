@@ -9,17 +9,21 @@ servers:
     url: https://thebiggive--full.sandbox.my.salesforce-sites.com/donations/services/apexrest/v2.0
 info:
   description: |
-    The Big Give Donations APIs.
+    The Big Give Donations and Campaigns APIs.
 
     This contract aims to cover all endpoints except
     `/ping` and integration webhooks. Most webhooks' structures are defined by Stripe
     with us choosing just the endpoint.
 
-    As Salesforce & MatchBot share a Donation schema, endpoints for both are documented here
+    As Salesforce & MatchBot share Donation and Campaign schemas, endpoints for both are documented here
     together; however operation `salesforceUpsert` is implemented only in Salesforce
     and all others are implemented only in MatchBot.
+
+    Note that what was previously known as a 'Campaign' in Salesforce has now been split into two separate concepts:
+    - Campaign (aka Charity Campaign): An individual fundraising campaign run by a charity
+    - MetaCampaign (aka parent or master campaign): A parent campaign that groups multiple charity campaigns
   version: 1.0.13
-  title: Donations
+  title: Donations and Campaigns
   contact:
     email: tech@thebiggive.org.uk
   license:
@@ -417,6 +421,203 @@ paths:
                   salesforceId:
                     type: string
 
+  /campaigns:
+    get:
+      summary: Search for campaigns
+      operationId: searchCampaigns
+      description: |
+        Search for campaigns by any combination of keyword, filters and
+        parent campaign constraints. A parent campaign can be a 'meta-campaign'
+        like the Christmas Challenge.
+      tags: [Campaigns]
+      parameters:
+        - in: query
+          name: term
+          description: Search term to look for in campaign name and details
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: parent
+          description: |
+            Case-insensitive Salesforce ID for a master Campaign. Limits
+            results to children of this Campaign.
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: parentSlug
+          description: |
+            URL slug for a master Campaign. Limits results to children of this
+            Campaign.
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: fundSlug
+          description: |
+            URL slug for a master Campaign's Champion Funding. Limits results
+            to children funded by this Funding.
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: beneficiary
+          description: One beneficiary to whom campaigns must contribute
+          schema:
+            type: string
+        - in: query
+          name: category
+          description: One category in which campaigns must be classified
+          schema:
+            type: string
+        - in: query
+          name: country
+          description: One country in which campaigns must operate
+          schema:
+            type: string
+        - in: query
+          name: status
+          description: Status that campaigns must be in
+          schema:
+            type: string
+            enum: ['Active', 'Expired', 'Preview']
+        - in: query
+          name: sortField
+          description: Field to order results based upon
+          schema:
+            type: string
+            enum: ['amountRaised', 'charity.name', 'endDate', 'matchFundsRemaining', 'startDate']
+        - in: query
+          name: sortDirection
+          description: Whether sortField applied in ascending or descending order
+          schema:
+            type: string
+            enum: ['asc', 'desc']
+        - in: query
+          name: limit
+          description: Maximum number of campaigns to return
+          schema:
+            type: integer
+            format: int32
+            default: 20
+            minimum: 1
+            maximum: 100
+          required: false
+        - in: query
+          name: offset
+          description: Offset at which to start when determining which campaigns to return
+          schema:
+            type: integer
+            format: int32
+            default: 0
+          required: false
+      responses:
+        '200':
+          description: search results matching criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CampaignSummary'
+        '400':
+          description: bad input parameter
+
+  /campaigns/{campaignId}:
+    parameters:
+      - name: campaignId
+        in: path
+        schema:
+          type: string
+        description: Case-insensitive Salesforce ID for a Campaign
+        required: true
+    get:
+      summary: Get detail about a single campaign, by ID
+      operationId: getCampaignById
+      tags: [Campaigns]
+      responses:
+        '200':
+          description: Campaign returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          description: Campaign not found
+
+  /campaigns/{campaignId}/funds:
+    parameters:
+      - name: campaignId
+        in: path
+        schema:
+          type: string
+        description: Case-insensitive Salesforce ID for a Campaign
+        required: true
+    get:
+      summary: Get details of all funds linked to the Campaign
+      operationId: getCampaignFunds
+      tags: [Campaigns]
+      responses:
+        '200':
+          description: Funds returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fund'
+        '404':
+          description: Campaign not found
+
+  /campaigns/slug/{slug}:
+    parameters:
+      - name: slug
+        in: path
+        schema:
+          type: string
+        description: URL slug for a Campaign
+        required: true
+    get:
+      summary: Get detail about a single campaign, by URL slug
+      operationId: getCampaignBySlug
+      tags: [Campaigns]
+      responses:
+        '200':
+          description: Campaign returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          description: Campaign not found
+
+  /charities/{charityId}/campaigns:
+    parameters:
+      - name: charityId
+        in: path
+        schema:
+          type: string
+        description: Case-insensitive Salesforce ID for a charity Account
+        required: true
+    get:
+      summary: Get campaigns for a specific charity
+      operationId: getCharityCampaigns
+      tags: [Campaigns]
+      responses:
+        '200':
+          description: Planned, current and past campaigns for the charity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CampaignSummary'
+        '400':
+          description: Bad ID
+        '404':
+          description: Charity not found
+
 components:
   schemas:
     DonationCreatedResponse:
@@ -703,6 +904,540 @@ components:
       properties:
         donation:
           $ref: '#/components/schemas/Donation'
+          
+    # Campaign-related schemas
+    CampaignSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: |
+            Unique ID for a campaign, in Salesforce case-insensitive format.
+          example: '01I400000009Sds3e2'
+        amountRaised:
+          type: number
+          format: float
+          example: 1000.01
+          description: |
+            Total raised by the campaign so far. This includes match commitments 
+            secured and no fees are deducted. Gift Aid is excluded.
+        beneficiaries:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        championName:
+          type: string
+        charity:
+          $ref: '#/components/schemas/CharitySummary'
+        currencyCode:
+          type: string
+          description: ISO 4217 code for the currency of all monetary fields
+        defaultForCountries:
+          type: array
+          items:
+            type: string
+            description: |
+              ISO 3166-1 alpha-2 for a country *or* 'Other'.
+            example: GB
+        endDate:
+          type: string
+          format: date-time
+          example: '2020-01-12T08:07:06.005Z'
+        imageUri:
+          type: string
+          format: uri
+          description: URI for a thumbnail image
+        isMatched:
+          type: boolean
+        matchFundsRemaining:
+          type: number
+          format: float
+          example: 500
+          description: Amount of match funds in given `currencyCode` that are not yet claimed.
+        ready:
+          type: boolean
+          description: Whether Campaign is or was ready to accept donations.
+        startDate:
+          type: string
+          format: date-time
+          example: '2020-01-11T08:07:06.005Z'
+        target:
+          type: number
+          format: float
+          example: 1000.01
+        title:
+          type: string
+          
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: string
+          description: |
+            Unique ID for a Campaign, in Salesforce case-insensitive format.
+          example: '01I400000009Sds3e2'
+        amountRaised:
+          type: number
+          format: float
+          example: 1000.01
+          description: |
+            Total raised by the campaign so far. This includes match commitments 
+            secured and no fees are deducted. Gift Aid is excluded.
+        additionalImageUris:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        aims:
+          type: array
+          items:
+            type: string
+            example: "Achieve lasting world peace"
+        alternativeFundUse:
+          type: string
+          description: |
+            Details of what happens to funds if the campaign target is missed
+            or exceeded, or the purpose of the campaign becomes invalid.
+        bannerUri:
+          type: string
+          format: uri
+          description: URI for a full size banner image
+        budgetDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/BudgetLine'
+        beneficiaries:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        championName:
+          type: string
+        championOptInStatement:
+          type: string
+          description: |
+            Copy for champion communications opt-in, if there
+            should be one. Question is not asked if blank.
+        championRef:
+          type: string
+          description: Slug (if available) or ID (otherwise) of the champion fund, if applicable
+        charity:
+          $ref: '#/components/schemas/CharityDetail'
+        countries:
+          type: array
+          items:
+            type: string
+        currencyCode:
+          type: string
+          description: ISO 4217 code for the currency of all monetary fields
+        donationCount:
+          type: integer
+          description: Number of completed donations
+        endDate:
+          type: string
+          format: date-time
+          example: '2020-01-12T08:07:06.005Z'
+        feePercentage:
+          type: number
+          description: |
+            A standard fee % agreed with the charity for this campaign.
+            This is in percent rather than a ratio and up to 1
+            decimal place is expected, e.g. a numeric value of
+            5.1 means £0.51 for every £10 of core donation will be
+            charged in all cases.
+        hidden:
+          type: boolean
+          example: false
+        impactReporting:
+          type: string
+          description: How the campaign's impact will be measured and reported on
+        impactSummary:
+          type: string
+          description: Overview of the campaign's expected impact
+        isMatched:
+          type: boolean
+        logoUri:
+          type: string
+          format: uri
+          description: |
+            Optional URI for a thumbnail logo image relating
+            to a master campaign, which should be used in
+            place of the campaign title if set.
+        matchFundsRemaining:
+          type: number
+          format: float
+          example: 500
+          description: Amount of match funds in given `currencyCode` that are not yet claimed.
+        matchFundsTotal:
+          type: number
+          format: float
+          example: 800
+          description: |
+            Total amount of match funds for the campaign, including any already
+            used or reserved.
+        parentAmountRaised:
+          type: number
+          format: float
+          example: 501
+          description: |
+            If applicable, the amount the parent campaign has
+            raised so far, in `currencyCode`.
+        parentDonationCount:
+          type: integer
+          description: Number of completed donations to the parent campaign, if any.
+        parentRef:
+          type: string
+          description: Slug (if available) or ID (otherwise) of the parent master campaign, if applicable
+        parentTarget:
+          type: number
+          format: float
+          example: 10001
+          description: |
+            If applicable, the target for the parent campaign, in `currencyCode`.
+        parentUsesSharedFunds:
+          type: boolean
+          description: |
+            Whether the parent campaign, if any, mostly uses funds
+            that are not ringfenced and can be allocated to any child
+            campaign.
+        problem:
+          type: string
+          description: What situation the campaign aims to improve
+        quotes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Quote'
+        ready:
+          type: boolean
+          description: Whether Campaign is or was ready to accept donations.
+        solution:
+          type: string
+          description: How the campaign aims to improve the situation
+        startDate:
+          type: string
+          format: date-time
+          example: '2020-01-11T08:07:06.005Z'
+        status:
+          type: string
+          enum: ['Active', 'Expired', 'Preview']
+        summary:
+          type: string
+        surplusDonationInfo:
+          type: string
+          description: |
+            Details about donations beyond any target, e.g.
+            info about Awards for a Christmas Challenge, which
+            can be shown to donors in contexts where they are
+            about to make an unmatched or partially matched
+            donation.
+        target:
+          type: number
+          format: float
+          example: 1000.01
+        thankYouMessage:
+          type: string
+        title:
+          type: string
+        updates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Update'
+        usesSharedFunds:
+          type: boolean
+          description: |
+            Whether this campaign, if it had children, mostly uses funds
+            that are not ringfenced and can be allocated to any of them.
+        video:
+          $ref: '#/components/schemas/Video'
+          
+    MetaCampaign:
+      type: object
+      description: Meta Campaign (parent/master campaign) information
+      properties:
+        id:
+          type: string
+          description: Salesforce ID of the meta campaign
+          example: "a1b2c3d4e5f6"
+        title:
+          type: string
+          description: Title of the meta campaign
+          example: "Big Give Christmas Challenge 2025"
+        currencyCode:
+          type: string
+          description: Currency code for the meta campaign
+          example: "GBP"
+        status:
+          type: string
+          description: Status of the meta campaign
+          example: "Active"
+          enum: ["Active", "Expired", "Preview"]
+        hidden:
+          type: boolean
+          description: Whether the meta campaign is hidden from public view
+          example: false
+        ready:
+          type: boolean
+          description: Whether the meta campaign is ready for donations
+          example: true
+        summary:
+          type: string
+          description: Summary description of the meta campaign
+          example: "Our annual match funding campaign"
+        bannerUri:
+          type: string
+          format: uri
+          description: URI for the meta campaign's banner image
+          example: "https://example.com/banner.jpg"
+        amountRaised:
+          type: number
+          format: float
+          description: Total amount raised in the meta campaign
+          example: 1000000.50
+        matchFundsRemaining:
+          type: number
+          format: float
+          description: Amount of match funds remaining in the meta campaign
+          example: 500000.25
+        donationCount:
+          type: integer
+          description: Number of donations made to the meta campaign
+          example: 5000
+        startDate:
+          type: string
+          format: date-time
+          description: Start date of the meta campaign in ISO 8601 format
+          example: "2025-11-30T12:00:00Z"
+        endDate:
+          type: string
+          format: date-time
+          description: End date of the meta campaign in ISO 8601 format
+          example: "2025-12-07T12:00:00Z"
+        matchFundsTotal:
+          type: number
+          format: float
+          description: Total match funds allocated to the meta campaign
+          example: 1000000.00
+        campaignCount:
+          type: integer
+          description: Number of approved participating campaigns
+          example: 500
+        usesSharedFunds:
+          type: boolean
+          description: Whether the meta campaign uses shared funds across campaigns
+          example: true
+        bannerLayout:
+          $ref: '#/components/schemas/BannerLayout'
+          
+    CharitySummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: |
+            Unique ID for an Account, in Salesforce case-insensitive format.
+        name:
+          type: string
+          
+    CharityDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          description: |
+            Unique ID for an Account, in Salesforce case-insensitive format.
+        name:
+          type: string
+        optInStatement:
+          type: string
+          description: Custom prompt for charity communications question
+        facebook:
+          type: string
+          description: URL to charity's Facebook Page
+        giftAidOnboardingStatus:
+          type: string
+          enum: ['Invited to Onboard', 'Onboarded', 'Onboarded & Data Sent to HMRC']
+          example: 'Onboarded & Data Sent to HMRC'
+        hmrcReferenceNumber:
+          type: string
+          example: 'AB12345'
+        instagram:
+          type: string
+          description: URL to charity's Instagram profile
+        linkedin:
+          type: string
+          description: URL to charity's LinkedIn profile
+        logoUri:
+          type: string
+          format: uri
+        regulatorNumber:
+          type: string
+          description: |
+            Number under which the charity is registered with their
+            regulator, if any.
+        regulatorRegion:
+          type: string
+          description: Brief description of the regulator's geographic region
+        stripeAccountId:
+          type: string
+          description: ID of connected Stripe Account for payment routing
+        twitter:
+          type: string
+          description: URL to charity's Twitter profile
+        website:
+          type: string
+          description: URL to charity's own website. May exclude protocol, for the moment.
+          
+    Fund:
+      type: object
+      required:
+        - id
+        - type
+        - name
+        - currencyCode
+        - amountForCampaign
+        - isShared
+      properties:
+        id:
+          type: string
+          description: Unique ID, in Salesforce case-insensitive format.
+          example: '01I400000009Sds3e2'
+        type:
+          type: string
+          enum: ['championFund', 'pledge']
+        name:
+          type: string
+        currencyCode:
+          type: string
+          description: ISO 4217 code for the currency of all monetary fields
+        amountRaised:
+          type: number
+          format: float
+          example: 1000.01
+          description: Total raised in relation to the fund.
+        totalAmount:
+          type: number
+          format: float
+          example: 500.00
+          description: Original amount of the fund itself.
+        amountForCampaign:
+          type: number
+          format: float
+          example: 300.00
+          description: Funding allocated to the given campaign.
+        isShared:
+          type: boolean
+          example: false
+          description: Whether fund may be claimed by multiple campaigns.
+        logoUri:
+          type: string
+          format: uri
+          description: URI for a thumbnail logo image relating to the fund
+          
+    BudgetLine:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: float
+          example: 1000.01
+        description:
+          type: string
+          
+    Image:
+      type: object
+      properties:
+        uri:
+          type: string
+        order:
+          type: number
+          example: 5
+          description: Order in which to show the image, lowest values first
+          
+    Quote:
+      type: object
+      properties:
+        person:
+          type: string
+        quote:
+          type: string
+          
+    Update:
+      type: object
+      description: |
+        Update from the charity about this campaign's progress
+      properties:
+        content:
+          type: string
+        modifiedDate:
+          type: string
+          format: date-time
+          
+    Video:
+      type: object
+      properties:
+        provider:
+          type: string
+          description: Which service the video is embedded from
+        key:
+          type: string
+          description: Embed key or ID to use for the embed
+          
+    BannerLayout:
+      type: object
+      description: Banner layout configuration for campaign display
+      properties:
+        backgroundColour:
+          $ref: '#/components/schemas/Colour'
+        textBackgroundColour:
+          $ref: '#/components/schemas/Colour'
+        textColour:
+          $ref: '#/components/schemas/Colour'
+        focalArea:
+          $ref: '#/components/schemas/FocalAreaBox'
+        imageUri:
+          type: string
+          format: uri
+          
+    Colour:
+      type: string
+      format: hex-color
+      description: Represents a 24-bit color in the sRGB color space
+      example: "#B30510"
+      
+    FocalAreaBox:
+      type: object
+      description: Defines the position of focal area within an image that should be preserved during cropping
+      properties:
+        topLeftXpos:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: X position of the top-left corner as percentage from left (0-100)
+          example: 70
+        topLeftYpos:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Y position of the top-left corner as percentage from top (0-100)
+          example: 47
+        bottomRightXpos:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: X position of the bottom-right corner as percentage from left (0-100)
+          example: 70
+        bottomRightYpos:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Y position of the bottom-right corner as percentage from top (0-100)
+          example: 47
 
   securitySchemes:
     JWT:

@@ -3,9 +3,17 @@
 namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
+use OpenApi\Annotations as OA;
 
 /**
  * Represents a 24 bit colour in the sRGB colour space.
+ *
+ * @OA\Schema(
+ *   description="Represents a 24-bit color in the sRGB color space",
+ *   type="string",
+ *   format="hex-color",
+ *   example="#B30510"
+ * )
  */
 readonly class Colour
 {
