@@ -2,10 +2,10 @@
 
 /**
  * Merge OpenAPI Documentation Script
- * 
+ *
  * This script merges the manually written OpenAPI documentation in api.yaml
  * with the documentation generated from PHP annotations.
- * 
+ *
  * Usage:
  * php bin/merge-openapi-docs.php
  */
@@ -69,7 +69,7 @@ function mergeOpenApiArrays(array $manual, array $annotations): array
                 $result['components']['schemas'][$schema] = $schemaData;
             }
         }
-    } else if (isset($annotations['components']['schemas']) && !isset($result['components']['schemas'])) {
+    } elseif (isset($annotations['components']['schemas']) && !isset($result['components']['schemas'])) {
         $result['components']['schemas'] = $annotations['components']['schemas'];
     }
 
@@ -113,7 +113,7 @@ try {
     if (!is_dir($outputDir)) {
         mkdir($outputDir, 0755, true);
     }
-    
+
     $outputPath = $outputDir . '/openapi.yaml';
     file_put_contents($outputPath, Yaml::dump($mergedArray, 10, 2));
     $logger->info('Merged documentation saved successfully to ' . $outputPath);

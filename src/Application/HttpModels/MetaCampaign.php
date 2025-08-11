@@ -26,7 +26,6 @@ readonly class MetaCampaign
          * )
          */
         public string $id,
-        
         /**
          * @OA\Property(
          *   property="title",
@@ -35,7 +34,6 @@ readonly class MetaCampaign
          * )
          */
         public string $title,
-        
         /**
          * @OA\Property(
          *   property="currencyCode",
@@ -44,7 +42,6 @@ readonly class MetaCampaign
          * )
          */
         public string $currencyCode,
-        
         /**
          * @OA\Property(
          *   property="status",
@@ -54,7 +51,6 @@ readonly class MetaCampaign
          * )
          */
         public ?string $status,
-        
         /**
          * @OA\Property(
          *   property="hidden",
@@ -63,7 +59,6 @@ readonly class MetaCampaign
          * )
          */
         public bool $hidden,
-        
         /**
          * @OA\Property(
          *   property="ready",
@@ -72,7 +67,6 @@ readonly class MetaCampaign
          * )
          */
         public bool $ready,
-        
         /**
          * @OA\Property(
          *   property="summary",
@@ -81,7 +75,6 @@ readonly class MetaCampaign
          * )
          */
         public ?string $summary,
-        
         /**
          * @OA\Property(
          *   property="bannerUri",
@@ -90,7 +83,6 @@ readonly class MetaCampaign
          * )
          */
         public ?string $bannerUri,
-        
         /**
          * @OA\Property(
          *   property="amountRaised",
@@ -99,7 +91,6 @@ readonly class MetaCampaign
          * )
          */
         public float $amountRaised,
-        
         /**
          * @OA\Property(
          *   property="matchFundsRemaining",
@@ -108,7 +99,6 @@ readonly class MetaCampaign
          * )
          */
         public float $matchFundsRemaining,
-        
         /**
          * @OA\Property(
          *   property="donationCount",
@@ -117,7 +107,6 @@ readonly class MetaCampaign
          * )
          */
         public int $donationCount,
-        
         /**
          * @OA\Property(
          *   property="startDate",
@@ -126,7 +115,6 @@ readonly class MetaCampaign
          * )
          */
         public string $startDate,
-        
         /**
          * @OA\Property(
          *   property="endDate",
@@ -135,7 +123,6 @@ readonly class MetaCampaign
          * )
          */
         public string $endDate,
-        
         /**
          * @OA\Property(
          *   property="matchFundsTotal",
@@ -144,7 +131,6 @@ readonly class MetaCampaign
          * )
          */
         public float $matchFundsTotal,
-        
         /**
          * @OA\Property(
          *   property="campaignCount",
@@ -153,7 +139,6 @@ readonly class MetaCampaign
          * )
          */
         public int $campaignCount,
-        
         /**
          * @OA\Property(
          *   property="usesSharedFunds",
@@ -162,7 +147,6 @@ readonly class MetaCampaign
          * )
          */
         public bool $usesSharedFunds,
-        
         /**
          * @OA\Property(
          *   property="useDon1120Banner",
@@ -171,7 +155,6 @@ readonly class MetaCampaign
          * )
          */
         public bool $useDon1120Banner = false,
-        
         /**
          * @OA\Property(
          *   property="bannerLayout",

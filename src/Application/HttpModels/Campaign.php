@@ -46,7 +46,6 @@ readonly class Campaign
          * )
          */
         public string $id,
-        
         /**
          * @OA\Property(
          *   property="amountRaised",
@@ -55,7 +54,6 @@ readonly class Campaign
          * )
          */
         public float $amountRaised,
-        
         /**
          * @OA\Property(
          *   property="additionalImageUris",
@@ -69,7 +67,6 @@ readonly class Campaign
          * )
          */
         public array $additionalImageUris,
-        
         /**
          * @OA\Property(
          *   property="aims",
@@ -79,7 +76,6 @@ readonly class Campaign
          * )
          */
         public array $aims,
-        
         /**
          * @OA\Property(
          *   property="alternativeFundUse",
@@ -88,7 +84,6 @@ readonly class Campaign
          * )
          */
         public ?string $alternativeFundUse,
-        
         /**
          * @OA\Property(
          *   property="bannerUri",
@@ -97,7 +92,6 @@ readonly class Campaign
          * )
          */
         public ?string $bannerUri,
-        
         /**
          * @OA\Property(
          *   property="beneficiaries",
@@ -107,7 +101,6 @@ readonly class Campaign
          * )
          */
         public array $beneficiaries,
-        
         /**
          * @OA\Property(
          *   property="budgetDetails",
@@ -121,7 +114,6 @@ readonly class Campaign
          * )
          */
         public array $budgetDetails,
-        
         /**
          * @OA\Property(
          *   property="campaignCount",
@@ -130,7 +122,6 @@ readonly class Campaign
          * )
          */
         public ?int $campaignCount,
-        
         /**
          * @OA\Property(
          *   property="categories",
@@ -140,7 +131,6 @@ readonly class Campaign
          * )
          */
         public array $categories,
-        
         /**
          * @OA\Property(
          *   property="championName",
@@ -149,7 +139,6 @@ readonly class Campaign
          * )
          */
         public ?string $championName,
-        
         /**
          * @OA\Property(
          *   property="championOptInStatement",
@@ -158,7 +147,6 @@ readonly class Campaign
          * )
          */
         public ?string $championOptInStatement,
-        
         /**
          * @OA\Property(
          *   property="championRef",
@@ -167,7 +155,6 @@ readonly class Campaign
          * )
          */
         public ?string $championRef,
-        
         /**
          * @OA\Property(
          *   property="charity",
@@ -176,7 +163,6 @@ readonly class Campaign
          * )
          */
         public Charity $charity,
-        
         /**
          * @OA\Property(
          *   property="countries",
@@ -186,7 +172,6 @@ readonly class Campaign
          * )
          */
         public array $countries,
-        
         /**
          * @OA\Property(
          *   property="currencyCode",
@@ -195,7 +180,6 @@ readonly class Campaign
          * )
          */
         public string $currencyCode,
-        
         /**
          * @OA\Property(
          *   property="donationCount",
@@ -204,7 +188,6 @@ readonly class Campaign
          * )
          */
         public ?int $donationCount,
-        
         /**
          * @OA\Property(
          *   property="endDate",
@@ -213,7 +196,6 @@ readonly class Campaign
          * )
          */
         public /* \DateTimeImmutable */ string $endDate,
-        
         /**
          * @OA\Property(
          *   property="hidden",
@@ -222,7 +204,6 @@ readonly class Campaign
          * )
          */
         public bool $hidden,
-        
         /**
          * @OA\Property(
          *   property="impactReporting",
@@ -231,7 +212,6 @@ readonly class Campaign
          * )
          */
         public ?string $impactReporting,
-        
         /**
          * @OA\Property(
          *   property="impactSummary",
@@ -240,7 +220,6 @@ readonly class Campaign
          * )
          */
         public ?string $impactSummary,
-        
         /**
          * @OA\Property(
          *   property="isMatched",
@@ -249,7 +228,6 @@ readonly class Campaign
          * )
          */
         public bool $isMatched,
-        
         /**
          * @OA\Property(
          *   property="logoUri",
@@ -258,7 +236,6 @@ readonly class Campaign
          * )
          */
         public ?string $logoUri,
-        
         /**
          * @OA\Property(
          *   property="matchFundsRemaining",
@@ -267,7 +244,6 @@ readonly class Campaign
          * )
          */
         public ?float $matchFundsRemaining,
-        
         /**
          * @OA\Property(
          *   property="matchFundsTotal",
@@ -276,7 +252,6 @@ readonly class Campaign
          * )
          */
         public ?float $matchFundsTotal,
-        
         /**
          * @OA\Property(
          *   property="parentAmountRaised",
@@ -285,7 +260,6 @@ readonly class Campaign
          * )
          */
         public ?float $parentAmountRaised,
-        
         /**
          * @OA\Property(
          *   property="parentDonationCount",
@@ -294,7 +268,6 @@ readonly class Campaign
          * )
          */
         public ?int $parentDonationCount,
-        
         /**
          * @OA\Property(
          *   property="parentMatchFundsRemaining",
@@ -303,7 +276,6 @@ readonly class Campaign
          * )
          */
         public ?float $parentMatchFundsRemaining,
-        
         /**
          * @OA\Property(
          *   property="parentRef",
@@ -312,7 +284,6 @@ readonly class Campaign
          * )
          */
         public ?string $parentRef,
-        
         /**
          * @OA\Property(
          *   property="parentTarget",
@@ -321,7 +292,6 @@ readonly class Campaign
          * )
          */
         public ?float $parentTarget,
-        
         /**
          * @OA\Property(
          *   property="parentUsesSharedFunds",
@@ -330,7 +300,6 @@ readonly class Campaign
          * )
          */
         public ?bool $parentUsesSharedFunds,
-        
         /**
          * @OA\Property(
          *   property="problem",
@@ -339,7 +308,6 @@ readonly class Campaign
          * )
          */
         public ?string $problem,
-        
         /**
          * @OA\Property(
          *   property="quotes",
@@ -353,7 +321,6 @@ readonly class Campaign
          * )
          */
         public array $quotes,
-        
         /**
          * @OA\Property(
          *   property="ready",
@@ -362,7 +329,6 @@ readonly class Campaign
          * )
          */
         public ?bool $ready,
-        
         /**
          * @OA\Property(
          *   property="solution",
@@ -371,7 +337,6 @@ readonly class Campaign
          * )
          */
         public ?string $solution,
-        
         /**
          * @OA\Property(
          *   property="startDate",
@@ -380,7 +345,6 @@ readonly class Campaign
          * )
          */
         public /* \DateTimeImmutable */  string $startDate,
-        
         /**
          * @OA\Property(
          *   property="status",
@@ -390,7 +354,6 @@ readonly class Campaign
          * )
          */
         public ?string $status,
-        
         /**
          * @OA\Property(
          *   property="isRegularGiving",
@@ -399,7 +362,6 @@ readonly class Campaign
          * )
          */
         public bool $isRegularGiving,
-        
         /**
          * @OA\Property(
          *   property="regularGivingCollectionEnd",
@@ -408,7 +370,6 @@ readonly class Campaign
          * )
          */
         public /* \DateTimeImmutable */ ?string $regularGivingCollectionEnd,
-        
         /**
          * @OA\Property(
          *   property="summary",
@@ -417,7 +378,6 @@ readonly class Campaign
          * )
          */
         public ?string $summary,
-        
         /**
          * @OA\Property(
          *   property="surplusDonationInfo",
@@ -426,7 +386,6 @@ readonly class Campaign
          * )
          */
         public ?string $surplusDonationInfo,
-        
         /**
          * @OA\Property(
          *   property="target",
@@ -435,7 +394,6 @@ readonly class Campaign
          * )
          */
         public ?float $target,
-        
         /**
          * @OA\Property(
          *   property="thankYouMessage",
@@ -444,7 +402,6 @@ readonly class Campaign
          * )
          */
         public string $thankYouMessage,
-        
         /**
          * @OA\Property(
          *   property="title",
@@ -453,7 +410,6 @@ readonly class Campaign
          * )
          */
         public string $title,
-        
         /**
          * @OA\Property(
          *   property="updates",
@@ -467,7 +423,6 @@ readonly class Campaign
          * )
          */
         public array $updates,
-        
         /**
          * @OA\Property(
          *   property="usesSharedFunds",
@@ -476,7 +431,6 @@ readonly class Campaign
          * )
          */
         public bool $usesSharedFunds,
-        
         /**
          * @OA\Property(
          *   property="video",

@@ -38,7 +38,6 @@ readonly class BannerLayout implements \JsonSerializable
          * Should therefore be a similar colour to most of the image.
          */
         public Colour $backgroundColour,
-        
         /**
          * @OA\Property(
          *   property="textBackgroundColour",
@@ -48,7 +47,6 @@ readonly class BannerLayout implements \JsonSerializable
          * Should contrast with the image
          */
         public Colour $textBackgroundColour,
-        
         /**
          * @OA\Property(
          *   property="textColour",
@@ -58,7 +56,6 @@ readonly class BannerLayout implements \JsonSerializable
          * Should contrast with the text background - typically expected to be black or white
          */
         public Colour $textColour,
-        
         /**
          * @OA\Property(
          *   property="focalArea",
@@ -68,8 +65,7 @@ readonly class BannerLayout implements \JsonSerializable
          * Box that indicates the position of any image subject, to be preserved in crops.
          */
         public FocalAreaBox $focalArea,
-        
-        /** 
+        /**
          * Optional - if given overrides the image chosen in SF for this campaign. May be needed here
          * to allow changing the image and the text colour at the same moment to make sure we always maintain
          * readability.

@@ -35,7 +35,6 @@ readonly class FocalAreaBox
          * )
          */
         public int $topLeftXpos = 70,
-        
         /**
          * @OA\Property(
          *   property="topLeftYpos",
@@ -47,7 +46,6 @@ readonly class FocalAreaBox
          * )
          */
         public int $topLeftYpos = 47,
-        
         /**
          * @OA\Property(
          *   property="bottomRightXpos",
@@ -59,7 +57,6 @@ readonly class FocalAreaBox
          * )
          */
         public int $bottomRightXpos = 70,
-        
         /**
          * @OA\Property(
          *   property="bottomRightYpos",

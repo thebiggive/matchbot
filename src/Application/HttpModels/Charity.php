@@ -26,7 +26,6 @@ readonly class Charity
          * )
          */
         public string $id,
-        
         /**
          * @OA\Property(
          *   property="name",
@@ -35,7 +34,6 @@ readonly class Charity
          * )
          */
         public ?string $name,
-        
         /**
          * @OA\Property(
          *   property="optInStatement",
@@ -44,7 +42,6 @@ readonly class Charity
          * )
          */
         public ?string $optInStatement,
-        
         /**
          * @OA\Property(
          *   property="facebook",
@@ -53,7 +50,6 @@ readonly class Charity
          * )
          */
         public ?string $facebook,
-        
         /**
          * @OA\Property(
          *   property="giftAidOnboardingStatus",
@@ -62,7 +58,6 @@ readonly class Charity
          * )
          */
         public ?string $giftAidOnboardingStatus,
-        
         /**
          * @OA\Property(
          *   property="hmrcReferenceNumber",
@@ -71,7 +66,6 @@ readonly class Charity
          * )
          */
         public ?string $hmrcReferenceNumber,
-        
         /**
          * @OA\Property(
          *   property="instagram",
@@ -80,7 +74,6 @@ readonly class Charity
          * )
          */
         public ?string $instagram,
-        
         /**
          * @OA\Property(
          *   property="linkedin",
@@ -89,7 +82,6 @@ readonly class Charity
          * )
          */
         public ?string $linkedin,
-        
         /**
          * @OA\Property(
          *   property="twitter",
@@ -98,7 +90,6 @@ readonly class Charity
          * )
          */
         public ?string $twitter,
-        
         /**
          * @OA\Property(
          *   property="website",
@@ -107,7 +98,6 @@ readonly class Charity
          * )
          */
         public ?string $website,
-        
         /**
          * @OA\Property(
          *   property="phoneNumber",
@@ -116,7 +106,6 @@ readonly class Charity
          * )
          */
         public ?string $phoneNumber,
-        
         /**
          * @OA\Property(
          *   property="emailAddress",
@@ -125,7 +114,6 @@ readonly class Charity
          * )
          */
         public ?string $emailAddress,
-        
         /**
          * @OA\Property(
          *   property="regulatorNumber",
@@ -134,7 +122,6 @@ readonly class Charity
          * )
          */
         public ?string $regulatorNumber,
-        
         /**
          * @OA\Property(
          *   property="regulatorRegion",
@@ -143,7 +130,6 @@ readonly class Charity
          * )
          */
         public ?string $regulatorRegion,
-        
         /**
          * @OA\Property(
          *   property="logoUri",
@@ -152,7 +138,6 @@ readonly class Charity
          * )
          */
         public ?string $logoUri,
-        
         /**
          * @OA\Property(
          *   property="stripeAccountId",
