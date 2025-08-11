@@ -1865,7 +1865,7 @@ class Donation extends SalesforceWriteProxy
         if (! Environment::current()->isProduction()) {
             // we can't assert this in prod just yet because we have to deploy and update to FE to have it tell us when the donor no longer
             // expects their donation to be matched, and give time for any pending donations from before then to be confirmed or cancelled.
-            $assertion->that($this->matchedAmount()->amountInPence, 'matchedAmount')->greaterOrEqualThan($this->expectedMatchAmount->amountInPence);
+            $assertion->that($this->getFundingWithdrawalTotalAsObject()->amountInPence, 'matchedAmount')->greaterOrEqualThan($this->expectedMatchAmount->amountInPence);
         }
 
         return $assertion;
