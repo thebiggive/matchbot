@@ -115,7 +115,7 @@
     },
     "scripts": {
         "docs": "openapi --output docs/openapi.yaml src",
-        "docs:merge": "php bin/merge-openapi-docs.php",
+        "docs:merge": "./matchbot matchbot:merge-openapi-docs",
         "docs:all": [
             "@docs",
             "@docs:merge"
