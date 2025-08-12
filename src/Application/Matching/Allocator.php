@@ -135,7 +135,7 @@ class Allocator
             // to release its match funds. Lets do nothing and let them confirm. Although this shouldn't happen as the
             // FE should have predicted that the lock would expire.
             $this->logError(
-                'Match release error: ID ' . $donation->getUuid()->toString() . 'attempting to release funds while confirmation in progress'
+                'Match release error: UUID ' . $donation->getUuid()->toString() . ' attempting to release funds while confirmation in progress'
             );
             throw $conflictedException;
         }
