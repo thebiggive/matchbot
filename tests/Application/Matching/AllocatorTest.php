@@ -21,6 +21,7 @@ use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
+use Symfony\Component\Lock\LockFactory;
 
 class AllocatorTest extends TestCase
 {
@@ -56,10 +57,11 @@ class AllocatorTest extends TestCase
         );
 
         $this->sut = new Allocator(
-            $matchingAdapter,
-            $this->emProphecy->reveal(),
-            new NullLogger(),
-            $this->campaignFundingsRepositoryProphecy->reveal(),
+            adapter: $matchingAdapter,
+            entityManager: $this->emProphecy->reveal(),
+            logger: new NullLogger(),
+            campaignFundingRepository: $this->campaignFundingsRepositoryProphecy->reveal(),
+            lockFactory: $this->createStub(LockFactory::class),
         );
 
         $this->campaign = \MatchBot\Tests\TestCase::someCampaign();
@@ -320,10 +322,11 @@ class AllocatorTest extends TestCase
         $donation = $this->getTestDonation();
 
         $sut = new Allocator(
-            $matchingAdapterProphecy->reveal(),
-            $this->emProphecy->reveal(),
-            new NullLogger(),
-            $this->campaignFundingsRepositoryProphecy->reveal(),
+            adapter: $matchingAdapterProphecy->reveal(),
+            entityManager: $this->emProphecy->reveal(),
+            logger: new NullLogger(),
+            campaignFundingRepository: $this->campaignFundingsRepositoryProphecy->reveal(),
+            lockFactory: $this->createStub(LockFactory::class)
         );
 
         /** @psalm-suppress InternalMethod */

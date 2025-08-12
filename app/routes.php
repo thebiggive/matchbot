@@ -42,6 +42,7 @@ return function (App $app) {
             $group->get('', Donations\Get::class);
             $group->put('', Donations\Update::class); // Includes cancelling.
             $group->post('/confirm', Donations\Confirm::class);
+            $group->post('/remove-matching-expectation', Donations\RemoveMatchingExpecation::class);
         })
             ->add(DonationPublicAuthMiddleware::class);
 

@@ -690,6 +690,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             ->join('campaign.campaignStatistics', 'campaignStatistics')
             ->leftJoin('campaign.campaignFundings', 'campaignFunding')
             ->leftJoin('campaignFunding.fund', 'fund')
+            ->groupBy('campaign.id')
             ->setFirstResult($offset)
             ->setMaxResults($limit);
 

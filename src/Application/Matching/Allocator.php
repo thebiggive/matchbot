@@ -6,12 +6,15 @@ namespace MatchBot\Application\Matching;
 
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Actions\Donations\Confirm;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\FundingWithdrawal;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Lock\Exception\LockConflictedException;
+use Symfony\Component\Lock\LockFactory;
 
 class Allocator
 {
@@ -20,6 +23,7 @@ class Allocator
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
         private CampaignFundingRepository $campaignFundingRepository,
+        private LockFactory $lockFactory,
     ) {
     }
 
@@ -102,11 +106,14 @@ class Allocator
      * @psalm-internal MatchBot\Domain
      * @param Donation $donation
      * @throws TerminalLockException
+     * @throws LockConflictedException in case there is a confirmation or pre-auth attempt happening at the same time.
      */
     public function releaseMatchFunds(Donation $donation): void
     {
         $startTime = microtime(true);
         try {
+            $lock = $this->lockFactory->createLock(Confirm::donationConfirmLockKey($donation), autoRelease: true);
+            $lock->acquire(blocking: false);
             $totalAmountReleased = $this->adapter->releaseAllFundsForDonation($donation);
             $this->entityManager->flush();
             $endTime = microtime(true);
@@ -123,6 +130,14 @@ class Allocator
                 " after {$waitTime}s: {$exception->getMessage()}"
             );
             throw $exception; // Re-throw exception after logging the details if not recoverable
+        } catch (LockConflictedException $conflictedException) {
+            // presumably a conflict because someone is trying to confirm the donation at the same moment we're trying
+            // to release its match funds. Lets do nothing and let them confirm. Although this shouldn't happen as the
+            // FE should have predicted that the lock would expire.
+            $this->logError(
+                'Match release error: UUID ' . $donation->getUuid()->toString() . ' attempting to release funds while confirmation in progress'
+            );
+            throw $conflictedException;
         }
 
         $this->logInfo("Taking from ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");

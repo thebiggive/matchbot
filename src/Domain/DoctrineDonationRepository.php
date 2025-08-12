@@ -40,30 +40,45 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     #[\Override]
     public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
-        $cutoff = $now->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
+        // we only expire donations that were created before this point.
+        $expireBefore = $now->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
 
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('d.uuid')
-            ->from(Donation::class, 'd')
-            // Only select donations with 1+ FWs. We don't need any further info about the FWs.
-            ->innerJoin('d.fundingWithdrawals', 'fw')
-            ->where('d.donationStatus IN (:expireWithStatuses)')
-            ->andWhere('d.createdAt < :expireBefore')
-            // First of a regular giving series is Pending during 3DS. If we ever make the timeout for
-            // that longer than the timeout for matching, we still want to ensure matching can't be
-            // lost while 3DS is in progress.
-            ->andWhere('d.mandate is null')
-            ->groupBy('d.id')
+        // and we only need to expire donations that were create AFTER this point, because if they were created at
+        // before it we would have already expired them in a previous run.
+        $expireAfter = $now->sub(new \DateInterval('PT1H'));
+
+        if ((int) $now->format('i') % 30 === 0) {
+            // once every 30 minutes, try expiring any older donations just in case they were missed, but it shouldn't
+            // really be necassary unless this stopped running for some reason.
+            $expireAfter = new \DateTimeImmutable('2025-08-05T00:00:00z');
+        }
+
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT d.uuid FROM MatchBot\Domain\Donation d
+
+            -- Only select donations with 1+ FWs. We don't need any further info about the FWs.
+            INNER JOIN d.fundingWithdrawals fw
+            WHERE d.donationStatus IN (:expireWithStatuses)
+            AND d.createdAt < :expireBefore
+            AND d.createdAt > :expireAfter
+
+            -- First of a regular giving series is Pending during 3DS. If we ever make the timeout for
+            -- that longer than the timeout for matching, we still want to ensure matching can't be
+            -- lost while 3DS is in progress.
+            AND d.mandate is null
+            GROUP BY d.id
+            DQL
+        )
             ->setParameter('expireWithStatuses', [DonationStatus::Pending->value, DonationStatus::Cancelled->value])
-            ->setParameter('expireBefore', $cutoff)
-        ;
+            ->setParameter('expireBefore', $expireBefore)
+            ->setParameter('expireAfter', $expireAfter);
 
         // As this is used by the only regular task working with donations,
         // `ExpireMatchFunds`, it makes more sense to opt it out of result caching
         // here rather than take the performance hit of a full query cache clear
         // after every single persisted donation.
         /** @var list<array{uuid: UuidInterface}> $rows */
-        $rows = $qb->getQuery()
+        $rows = $query
             ->disableResultCache()
             ->getResult();
 
