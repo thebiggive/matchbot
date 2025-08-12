@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Actions\Charities\UpdateCharityFromSalesforce;
 use MatchBot\Application\Actions\DeletePaymentMethod;
+use MatchBot\Application\Actions\Sitemap;
 use MatchBot\Application\Actions\UpdatePaymentMethod;
 use MatchBot\Application\Actions\Donations;
 use MatchBot\Application\Actions\DonorAccount;
@@ -26,6 +27,8 @@ use MatchBot\Application\Actions\RegularGivingMandate;
 
 return function (App $app) {
     $app->get('/ping', Status::class);
+
+    $app->get('/sitemap', Sitemap::class);
 
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
         // Provides real IP for e.g. rate limiter
