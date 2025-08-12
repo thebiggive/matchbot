@@ -368,6 +368,188 @@ paths:
                     items:
                       $ref: '#/components/schemas/RegularGivingMandate'
 
+  /campaigns/{salesforceId}:
+    parameters:
+      - name: salesforceId
+        in: path
+        schema:
+          type: string
+          pattern: '^[a-zA-Z0-9]{18}$'
+        description: Salesforce ID of the campaign
+        required: true
+    get:
+      operationId: getCampaign
+      summary: Get details of a campaign
+      tags: [Campaigns]
+      responses:
+        '200':
+          description: Campaign details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          description: Campaign not found
+
+  /campaigns/early-preview/{salesforceId}:
+    parameters:
+      - name: salesforceId
+        in: path
+        schema:
+          type: string
+          pattern: '^[a-zA-Z0-9]{18}$'
+        description: Salesforce ID of the campaign
+        required: true
+    get:
+      operationId: getCampaignEarlyPreview
+      summary: Get preview of a campaign that is being edited
+      tags: [Campaigns]
+      responses:
+        '200':
+          description: Campaign preview details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          description: Campaign not found
+
+  /campaigns:
+    get:
+      operationId: searchCampaigns
+      summary: Search for campaigns with various filters
+      tags: [Campaigns]
+      parameters:
+        - name: sortField
+          in: query
+          schema:
+            type: string
+            default: distanceToTarget
+          description: Field to sort results by
+        - name: sortDirection
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Direction to sort results
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Active, Expired, Preview]
+          description: Filter by campaign status
+        - name: term
+          in: query
+          schema:
+            type: string
+          description: Search term to filter campaigns
+        - name: beneficiary
+          in: query
+          schema:
+            type: string
+          description: Filter by beneficiary
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category
+        - name: country
+          in: query
+          schema:
+            type: string
+          description: Filter by country
+        - name: parentSlug
+          in: query
+          schema:
+            type: string
+          description: Filter by meta-campaign slug
+        - name: fundSlug
+          in: query
+          schema:
+            type: string
+          description: Filter by fund slug
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Maximum number of results to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of results to skip
+      responses:
+        '200':
+          description: List of campaign summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaignSummaries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CampaignSummary'
+        '400':
+          description: Invalid search parameters
+
+  /meta-campaigns/{slug}:
+    parameters:
+      - name: slug
+        in: path
+        schema:
+          type: string
+          pattern: '^[a-zA-Z0-9-]{2,100}$'
+        description: Slug of the meta-campaign
+        required: true
+    get:
+      operationId: getMetaCampaign
+      summary: Get details of a meta-campaign
+      tags: [Campaigns]
+      responses:
+        '200':
+          description: Meta-campaign details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaCampaign'
+        '404':
+          description: Meta-campaign not found
+
+  /charities/{charitySalesforceId}/campaigns:
+    parameters:
+      - name: charitySalesforceId
+        in: path
+        schema:
+          type: string
+          pattern: '^[a-zA-Z0-9]{18}$'
+        description: Salesforce ID of the charity
+        required: true
+    get:
+      operationId: getCampaignsForCharity
+      summary: Get campaigns for a specific charity
+      tags: [Charities]
+      responses:
+        '200':
+          description: List of campaigns for the charity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  charityName:
+                    type: string
+                  campaigns:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CampaignSummary'
+        '404':
+          description: Charity not found
+
   /donations/{donationUuid}:
     parameters:
       - in: path
@@ -419,6 +601,277 @@ paths:
 
 components:
   schemas:
+    Campaign:
+      type: object
+      description: Detailed campaign information
+      properties:
+        id:
+          type: string
+          description: Salesforce ID of the campaign
+        title:
+          type: string
+          description: Title of the campaign
+        amountRaised:
+          type: number
+          description: Amount raised so far
+        additionalImageUris:
+          type: array
+          items:
+            type: string
+          description: Additional images for the campaign
+        aims:
+          type: string
+          description: Campaign aims
+        alternativeFundUse:
+          type: string
+          description: Alternative fund use information
+        bannerUri:
+          type: string
+          description: URI of the campaign banner image
+        beneficiaries:
+          type: array
+          items:
+            type: string
+          description: Beneficiaries of the campaign
+        budgetDetails:
+          type: string
+          description: Budget details
+        campaignCount:
+          type: integer
+          description: Number of campaigns (for meta-campaigns)
+        categories:
+          type: array
+          items:
+            type: string
+          description: Categories of the campaign
+        championName:
+          type: string
+          description: Name of the campaign champion
+        charity:
+          $ref: '#/components/schemas/Charity'
+        countries:
+          type: array
+          items:
+            type: string
+          description: Countries involved in the campaign
+        currencyCode:
+          type: string
+          description: ISO currency code
+        donationCount:
+          type: integer
+          description: Number of donations to the campaign
+        endDate:
+          type: string
+          format: date-time
+          description: End date of the campaign
+        hidden:
+          type: boolean
+          description: Whether the campaign is hidden
+        isMatched:
+          type: boolean
+          description: Whether the campaign is matched
+        matchFundsRemaining:
+          type: number
+          description: Amount of match funds remaining
+        matchFundsTotal:
+          type: number
+          description: Total match funds available
+        startDate:
+          type: string
+          format: date-time
+          description: Start date of the campaign
+        status:
+          type: string
+          enum: [Active, Expired, Preview]
+          description: Status of the campaign
+        isRegularGiving:
+          type: boolean
+          description: Whether the campaign accepts regular giving
+        summary:
+          type: string
+          description: Summary of the campaign
+        target:
+          type: number
+          description: Target amount for the campaign
+        thankYouMessage:
+          type: string
+          description: Thank you message for donors
+
+    CampaignSummary:
+      type: object
+      description: Summary information about a campaign
+      properties:
+        charity:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Salesforce ID of the charity
+            name:
+              type: string
+              description: Name of the charity
+        isRegularGiving:
+          type: boolean
+          description: Whether the campaign accepts regular giving
+        id:
+          type: string
+          description: Salesforce ID of the campaign
+        amountRaised:
+          type: number
+          description: Amount raised so far
+        currencyCode:
+          type: string
+          description: ISO currency code
+        endDate:
+          type: string
+          format: date-time
+          description: End date of the campaign
+        isMatched:
+          type: boolean
+          description: Whether the campaign is matched
+        matchFundsRemaining:
+          type: number
+          description: Amount of match funds remaining
+        startDate:
+          type: string
+          format: date-time
+          description: Start date of the campaign
+        status:
+          type: string
+          enum: [Active, Expired, Preview]
+          description: Status of the campaign
+        title:
+          type: string
+          description: Title of the campaign
+        beneficiaries:
+          type: array
+          items:
+            type: string
+          description: Beneficiaries of the campaign
+        categories:
+          type: array
+          items:
+            type: string
+          description: Categories of the campaign
+        championName:
+          type: string
+          description: Name of the campaign champion
+        imageUri:
+          type: string
+          description: URI of the campaign image
+        target:
+          type: number
+          description: Target amount for the campaign
+
+    MetaCampaign:
+      type: object
+      description: Meta-campaign information
+      properties:
+        id:
+          type: string
+          description: Salesforce ID of the meta-campaign
+        title:
+          type: string
+          description: Title of the meta-campaign
+        currencyCode:
+          type: string
+          description: ISO currency code
+        status:
+          type: string
+          enum: [Active, Expired, Preview]
+          description: Status of the meta-campaign
+        hidden:
+          type: boolean
+          description: Whether the meta-campaign is hidden
+        ready:
+          type: boolean
+          description: Whether the meta-campaign is ready
+        summary:
+          type: string
+          description: Summary of the meta-campaign
+        bannerUri:
+          type: string
+          description: URI of the meta-campaign banner image
+        amountRaised:
+          type: number
+          description: Amount raised so far
+        matchFundsRemaining:
+          type: number
+          description: Amount of match funds remaining
+        donationCount:
+          type: integer
+          description: Number of donations to the meta-campaign
+        startDate:
+          type: string
+          format: date-time
+          description: Start date of the meta-campaign
+        endDate:
+          type: string
+          format: date-time
+          description: End date of the meta-campaign
+        matchFundsTotal:
+          type: number
+          description: Total match funds available
+        campaignCount:
+          type: integer
+          description: Number of campaigns in the meta-campaign
+        usesSharedFunds:
+          type: boolean
+          description: Whether the meta-campaign uses shared funds
+
+    Charity:
+      type: object
+      description: Charity information
+      properties:
+        id:
+          type: string
+          description: Salesforce ID of the charity
+        name:
+          type: string
+          description: Name of the charity
+        optInStatement:
+          type: string
+          description: Opt-in statement for the charity
+        facebook:
+          type: string
+          description: Facebook page URL
+        giftAidOnboardingStatus:
+          type: string
+          description: Gift Aid onboarding status
+        hmrcReferenceNumber:
+          type: string
+          description: HMRC reference number
+        instagram:
+          type: string
+          description: Instagram profile URL
+        linkedin:
+          type: string
+          description: LinkedIn profile URL
+        twitter:
+          type: string
+          description: Twitter profile URL
+        website:
+          type: string
+          description: Website URL
+        phoneNumber:
+          type: string
+          description: Phone number
+        emailAddress:
+          type: string
+          description: Email address
+        regulatorNumber:
+          type: string
+          description: Regulator number
+        regulatorRegion:
+          type: string
+          description: Regulator region
+        logoUri:
+          type: string
+          description: URI of the charity logo
+        stripeAccountId:
+          type: string
+          description: Stripe account ID
+
     DonationCreatedResponse:
       type: object
       required:
