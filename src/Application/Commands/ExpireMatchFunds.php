@@ -9,6 +9,7 @@ use MatchBot\Domain\DonationService;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Lock\Exception\LockConflictedException;
 
 /**
  * Expire match funding allocations, by hard-deleting `FundingWithdrawals` for donations that have been
@@ -39,7 +40,13 @@ class ExpireMatchFunds extends LockingCommand
         $toRelease = $this->donationRepository->findWithExpiredMatching(new \DateTimeImmutable('now'));
 
         foreach ($toRelease as $donationUUID) {
-            $this->donationService->releaseMatchFundsInTransaction($donationUUID);
+            try {
+                $this->donationService->releaseMatchFundsInTransaction($donationUUID);
+            } catch (LockConflictedException $conflictedException) {
+                // It's OK, we won't release the funds now on this donation which seems to be in the process of being
+                // confirmed. Either it will be confirmed right now, or we can try again to releaese funds when this runs
+                // again next minute if the confirmation fails.
+            }
         }
 
         $numberExpired = count($toRelease);

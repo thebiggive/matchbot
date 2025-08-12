@@ -47,6 +47,13 @@ class Get extends Action
             throw new HttpNotFoundException($request);
         }
 
+        /** @psalm-suppress DocblockTypeContradiction */
+        if ($campaign->getSalesforceData() === []) {
+            // it's not possible to render a campaign without having this data filled in. There's at least one
+            // campaign missing it in prod, possibly because it was deleted from Salesforce.
+            throw new HttpNotFoundException($request);
+        }
+
         $slug = $campaign->getMetaCampaignSlug();
         if ($slug !== null) {
             $metaCampaign = $this->metaCampaignRepository->getBySlug($slug);

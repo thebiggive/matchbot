@@ -127,6 +127,17 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected readonly string $amount;
 
+    /**
+     * @var Money Amount of match funds the donor expects to be allocated to this donation. Can vary between zero
+     * and the donation amount. (And perhaps more in future if any funders want to match on a more-generous-than-121
+     * basis.) If the matchFundsReserved is less than this then the donation should not be confirmed.
+     *
+     * Ignore values on donations from before August 2025 deployment.
+     *
+     * @psalm-suppress UnusedProperty - will be used soon.
+     */
+    #[ORM\Embedded()]
+    private Money $expectedMatchAmount;
 
     /**
      * Total amount paid by donor - recorded from the Stripe charge, and reduced to reflect the new total
@@ -455,6 +466,11 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->amount = $amount;
+
+        /** The donor shouldn't definitively expect any match funds unless we actually reserve funds for them which will be done after
+         * the donation is constructed but before its first returned to the browser */
+        $this->expectedMatchAmount = Money::zero($this->currency());
+
         $this->paymentMethodType = $paymentMethodType;
         $this->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
         $this->setPsp('stripe');
@@ -1831,7 +1847,7 @@ class Donation extends SalesforceWriteProxy
      */
     private function assertionsForConfirmOrPreAuth(): \Assert\LazyAssertion
     {
-        return Assert::lazy()
+        $assertion = Assert::lazy()
             ->that($this->donorFirstName, 'donorFirstName')->notNull('Missing Donor First Name')
             ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
             ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
@@ -1845,6 +1861,14 @@ class Donation extends SalesforceWriteProxy
                 "Donation status is '{$this->donationStatus->value}', must be " .
                 "'Pending' or 'PreAuthorized' to confirm payment"
             );
+
+        if (! Environment::current()->isProduction()) {
+            // we can't assert this in prod just yet because we have to deploy and update to FE to have it tell us when the donor no longer
+            // expects their donation to be matched, and give time for any pending donations from before then to be confirmed or cancelled.
+            $assertion->that($this->getFundingWithdrawalTotalAsObject()->amountInPence, 'matchedAmount')->greaterOrEqualThan($this->expectedMatchAmount->amountInPence);
+        }
+
+        return $assertion;
     }
 
     /**
@@ -2044,5 +2068,10 @@ class Donation extends SalesforceWriteProxy
         }
 
         return new PaymentCard($this->paymentCardBrand, Country::fromEnum($this->paymentCardCountry));
+    }
+
+    public function setExpectedMatchAmount(Money $expectedMatchAmount): void
+    {
+        $this->expectedMatchAmount = $expectedMatchAmount;
     }
 }
