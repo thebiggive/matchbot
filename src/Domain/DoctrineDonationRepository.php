@@ -45,7 +45,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
 
         // and we only need to expire donations that were create AFTER this point, because if they were created at
         // before it we would have already expired them in a previous run.
-        $expireAfter = $expireBefore->sub(new \DateInterval('PT120S'));
+        $expireAfter = $now->sub(new \DateInterval('PT1H'));
 
         if ((int) $now->format('i') % 30 === 0) {
             // once every 30 minutes, try expiring any older donations just in case they were missed, but it shouldn't
