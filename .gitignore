@@ -9,3 +9,7 @@
 stripe_cli.env
 /.build-commit-id.php
 /reports
+
+# Ignored so that PHP annotations and api.yaml remain the source of truth.
+# Run `composer run docs:all` to generate.
+docs/openapi.yaml

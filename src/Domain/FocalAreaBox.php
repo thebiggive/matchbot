@@ -3,6 +3,7 @@
 namespace MatchBot\Domain;
 
 use Assert\Assertion;
+use OpenApi\Attributes as OA;
 
 /**
  * Defines the position of focal area within an image, which should be preserved and if necessary enlarged
@@ -11,6 +12,7 @@ use Assert\Assertion;
  * All numbers are given as percentage of image dimensions, measured as displacement right and down from the top left
  * corner. We use four numbers to define two opposite corners of the box.
  */
+#[OA\Schema(description: "Defines the position of focal area within an image that should be preserved during cropping")]
 readonly class FocalAreaBox
 {
     /**
@@ -19,9 +21,41 @@ readonly class FocalAreaBox
      * in the front end.
      */
     public function __construct(
+        #[OA\Property(
+            property: "topLeftXpos",
+            description: "X position of the top-left corner as percentage from left (0-100)",
+            type: "integer",
+            minimum: 0,
+            maximum: 100,
+            example: 70
+        )]
         public int $topLeftXpos = 70,
+        #[OA\Property(
+            property: "topLeftYpos",
+            description: "Y position of the top-left corner as percentage from top (0-100)",
+            type: "integer",
+            minimum: 0,
+            maximum: 100,
+            example: 47
+        )]
         public int $topLeftYpos = 47,
+        #[OA\Property(
+            property: "bottomRightXpos",
+            description: "X position of the bottom-right corner as percentage from left (0-100)",
+            type: "integer",
+            minimum: 0,
+            maximum: 100,
+            example: 70
+        )]
         public int $bottomRightXpos = 70,
+        #[OA\Property(
+            property: "bottomRightYpos",
+            description: "Y position of the bottom-right corner as percentage from top (0-100)",
+            type: "integer",
+            minimum: 0,
+            maximum: 100,
+            example: 47
+        )]
         public int $bottomRightYpos = 47,
     ) {
         Assertion::allBetween(
