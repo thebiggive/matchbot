@@ -54,7 +54,7 @@ enum Environment
         return match ($this) {
             self::Production => 'https://donate.biggive.org/',
             self::Regression => 'https://donate-regression.thebiggivetest.org.uk/',
-            self::Staging => 'https://donate-staging.thebiggivetest.org.uk',
+            self::Staging => 'https://donate-staging.thebiggivetest.org.uk/',
             self::Local => 'http://localhost:4200/',
             self::Test => 'http://example.com/',
         };
