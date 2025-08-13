@@ -1,15 +1,12 @@
 openapi: 3.0.0
 servers:
-  # Added by API Auto Mocking Plugin
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/Noel/TBG-Donations/1.0.13
   - description: "MatchBot staging"
     url: https://matchbot-staging.thebiggivetest.org.uk/v1
   - description: "Salesforce Full (staging)"
     url: https://thebiggive--full.sandbox.my.salesforce-sites.com/donations/services/apexrest/v2.0
 info:
   description: |
-    The Big Give Donations APIs.
+    The Big Give MatchBot APIs: for Donations in + out, Campaigns etc.
 
     This contract aims to cover all endpoints except
     `/ping` and integration webhooks. Most webhooks' structures are defined by Stripe
@@ -18,13 +15,10 @@ info:
     As Salesforce & MatchBot share a Donation schema, endpoints for both are documented here
     together; however operation `salesforceUpsert` is implemented only in Salesforce
     and all others are implemented only in MatchBot.
-  version: 1.0.13
-  title: Donations
+  version: 1.1.0
+  title: MatchBot
   contact:
-    email: tech@thebiggive.org.uk
-  license:
-    name: Apache 2.0
-    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+    email: tech@biggive.org
 paths:
   /people/{personId}/donations:
     parameters:

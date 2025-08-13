@@ -6,49 +6,18 @@ use OpenApi\Attributes as OA;
 
 /**
  * @psalm-suppress UnusedClass
+ *
+ * Merging code docs with hard-coded requires some global OA attributes but we mostly want to ignore or replace them.
  */
 #[OA\Info(
-    title: "MatchBot API",
-    version: "1.0.0",
-    description: "Microservice providing donation matching and related APIs",
-    contact: new OA\Contact(
-        name: "The Big Give",
-        url: "https://www.thebiggive.org.uk",
-        email: "tech@thebiggive.org.uk"
-    ),
-)]
-#[OA\Server(
-    url: "https://matchbot.thebiggive.org.uk",
-    description: "Production server"
+    title: "API (dummy title)",
+    version: "0.0.0" // Dummy version number
 )]
 #[OA\Server(
     url: "https://matchbot-staging.thebiggive.org.uk",
-    description: "Staging server"
+    description: "Dummy path staging server"
 )]
-#[OA\SecurityScheme(
-    securityScheme: "bearerAuth",
-    type: "http",
-    scheme: "bearer",
-    bearerFormat: "JWT"
-)]
-#[OA\Tag(
-    name: "Core donation journey"
-)]
-#[OA\Tag(
-    name: "Past donations"
-)]
-#[OA\Tag(
-    name: "Future donation management"
-)]
-#[OA\Tag(
-    name: "Regular giving"
-)]
-#[OA\Tag(
-    name: "Charities"
-)]
-#[OA\Tag(
-    name: "Salesforce integration"
-)]
+#[OA\PathItem(path: "/dummy-path")]
 class OpenApi
 {
     // This class exists solely to hold OpenAPI attributes
