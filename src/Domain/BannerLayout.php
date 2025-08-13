@@ -3,65 +3,60 @@
 namespace MatchBot\Domain;
 
 use Laminas\Diactoros\Uri;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 use Psr\Http\Message\UriInterface;
 
 /**
  * Details of how the banner should be layed out for a given meta-campaign. Only includes details that
  * we don't already have in SF, as initially will be hard-coded.
- *
- * @OA\Schema(
- *   description="Banner layout configuration for campaign display",
- * )
  */
+#[OA\Schema(description: "Banner layout configuration for campaign display")]
 readonly class BannerLayout implements \JsonSerializable
 {
-    /**
-     * @OA\Property(
-     *   property="imageUri",
-     *   description="URI for the banner image",
-     *   type="string",
-     *   format="uri",
-     *   example="https://example.com/banner.jpg"
-     * )
-     */
+    #[OA\Property(
+        property: "imageUri",
+        description: "URI for the banner image",
+        type: "string",
+        format: "uri",
+        example: "https://example.com/banner.jpg"
+    )]
     public ?UriInterface $imageUri;
 
     public function __construct(
+        #[OA\Property(
+            property: "backgroundColour",
+            description: "Background color shown during loading or if image fails to load. Should be similar to the image color.",
+            ref: "#/components/schemas/Colour"
+        )]
         /**
-         * @OA\Property(
-         *   property="backgroundColour",
-         *   description="Background color shown during loading or if image fails to load. Should be similar to the image color.",
-         *   ref="#/components/schemas/Colour"
-         * )
          * Only shown during loading and/or if an image fails to load - behind the image.
          * Should therefore be a similar colour to most of the image.
          */
         public Colour $backgroundColour,
+        #[OA\Property(
+            property: "textBackgroundColour",
+            description: "Color for the text background, should contrast with the image",
+            ref: "#/components/schemas/Colour"
+        )]
         /**
-         * @OA\Property(
-         *   property="textBackgroundColour",
-         *   description="Color for the text background, should contrast with the image",
-         *   ref="#/components/schemas/Colour"
-         * )
          * Should contrast with the image
          */
         public Colour $textBackgroundColour,
+        #[OA\Property(
+            property: "textColour",
+            description: "Color for the text, should contrast with the text background (typically black or white)",
+            ref: "#/components/schemas/Colour"
+        )]
         /**
-         * @OA\Property(
-         *   property="textColour",
-         *   description="Color for the text, should contrast with the text background (typically black or white)",
-         *   ref="#/components/schemas/Colour"
-         * )
          * Should contrast with the text background - typically expected to be black or white
          */
         public Colour $textColour,
+        #[OA\Property(
+            property: "focalArea",
+            description: "Box that indicates the position of any image subject, to be preserved in crops",
+            ref: "#/components/schemas/FocalAreaBox"
+        )]
         /**
-         * @OA\Property(
-         *   property="focalArea",
-         *   description="Box that indicates the position of any image subject, to be preserved in crops",
-         *   ref="#/components/schemas/FocalAreaBox"
-         * )
          * Box that indicates the position of any image subject, to be preserved in crops.
          */
         public FocalAreaBox $focalArea,
