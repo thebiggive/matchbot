@@ -10,7 +10,6 @@ use MatchBot\Domain\CampaignRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Safe\DateTimeImmutable;
 use SimpleXMLElement;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -76,7 +75,7 @@ class Sitemap extends Action
                 $this->addUrl(
                     xml: $xml,
                     url: $this->environment->publicDonateURLPrefix() . 'campaign/' . $campaign->getSalesforceId(),
-                    updatedAt: DateTimeImmutable::createFromInterface($campaign->getUpdatedDate()),
+                    updatedAt: \DateTimeImmutable::createFromInterface($campaign->getUpdatedDate()),
                     changeFreq: $changeFreq,
                     priority: $endsInFuture ? '0.5' : '0.25',
                 );
@@ -87,7 +86,7 @@ class Sitemap extends Action
                     $this->addUrl(
                         xml: $xml,
                         url: $this->environment->publicDonateURLPrefix() . 'donate/' . $campaign->getSalesforceId(),
-                        updatedAt: DateTimeImmutable::createFromInterface($campaign->getUpdatedDate()),
+                        updatedAt: \DateTimeImmutable::createFromInterface($campaign->getUpdatedDate()),
                         changeFreq: $changeFreq,
                         priority: '0.5'
                     );
