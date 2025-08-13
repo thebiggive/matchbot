@@ -336,6 +336,7 @@ paths:
         required: true
     post:
       description: Create a regular giving mandate
+      tags: [Regular giving]
       requestBody:
         content:
           application/json:
