@@ -601,7 +601,7 @@ paths:
 
 components:
   schemas:
-    # Campaign schema is defined in \MatchBot\Application\HttpModels\Campaign class as annotations
+    # Campaign schema is defined in \MatchBot\Application\HttpModels\Campaign class as attributes
 
     CampaignSummary:
       type: object
