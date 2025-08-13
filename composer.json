@@ -21,6 +21,7 @@
         "ext-pdo": "*",
         "ext-pdo_mysql": "*",
         "ext-redis": "*",
+        "ext-simplexml": "*",
         "aws/aws-sdk-php": "^3.322",
         "beberlei/assert": "^3.3",
         "cweagans/composer-patches": "^1.7",
