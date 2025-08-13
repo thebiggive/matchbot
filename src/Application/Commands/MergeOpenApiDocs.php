@@ -13,11 +13,11 @@ use Symfony\Component\Yaml\Yaml;
 
 /**
  * Merges the manually written OpenAPI documentation in api.yaml
- * with the documentation generated from PHP annotations.
+ * with the documentation generated from PHP attributes.
  */
 #[AsCommand(
     name: 'matchbot:merge-openapi-docs',
-    description: 'Merges manually written API docs with annotation-generated docs',
+    description: 'Merges manually written API docs with attribute-generated docs',
 )]
 class MergeOpenApiDocs extends Command
 {
@@ -28,19 +28,19 @@ class MergeOpenApiDocs extends Command
         $io->title('OpenAPI Documentation Merger');
 
         try {
-            // Step 1: Generate OpenAPI documentation from PHP annotations
-            $io->section('Generating OpenAPI documentation from PHP annotations');
+            // Step 1: Generate OpenAPI documentation from PHP attributes
+            $io->section('Generating OpenAPI documentation from PHP attributes');
             $generator = new Generator();
-            $annotationsOpenApi = $generator->generate([__DIR__ . '/../../../src']);
+            $attributtesOpenApi = $generator->generate([__DIR__ . '/../../../src']);
 
-            if ($annotationsOpenApi === null) {
-                throw new \RuntimeException('Failed to generate OpenAPI documentation from annotations');
+            if ($attributtesOpenApi === null) {
+                throw new \RuntimeException('Failed to generate OpenAPI documentation from attritributes');
             }
 
             // Convert to array for easier manipulation
-            $annotationsJson = $annotationsOpenApi->toJson();
-            $annotationsArray = json_decode($annotationsJson, true);
-            if (!is_array($annotationsArray)) {
+            $attritributesJson = $attributtesOpenApi->toJson();
+            $attritributesArray = json_decode($attritributesJson, true);
+            if (!is_array($attritributesArray)) {
                 throw new \RuntimeException('Failed to decode OpenAPI JSON to array');
             }
 
@@ -54,7 +54,7 @@ class MergeOpenApiDocs extends Command
 
             // Step 3: Merge the two documentation sources
             $io->section('Merging documentation sources');
-            $mergedArray = $this->mergeOpenApiArrays($manualArray, $annotationsArray);
+            $mergedArray = $this->mergeOpenApiArrays($manualArray, $attritributesArray);
 
             // Step 4: Save the merged documentation
             $io->section('Saving merged documentation');
@@ -81,20 +81,20 @@ class MergeOpenApiDocs extends Command
      * @psalm-suppress MixedArrayAssignment
      *
      * @param array<array-key, mixed> $manual The manually written API documentation
-     * @param array<array-key, mixed> $annotations The documentation generated from annotations
+     * @param array<array-key, mixed> $attritributes The documentation generated from attritributes
      * @return array<array-key, mixed> The merged documentation
      */
-    private function mergeOpenApiArrays(array $manual, array $annotations): array
+    private function mergeOpenApiArrays(array $manual, array $attritributes): array
     {
         $result = $manual;
 
         // Special handling for paths
-        if (isset($annotations['paths']) && is_array($annotations['paths'])) {
+        if (isset($attritributes['paths']) && is_array($attritributes['paths'])) {
             if (!isset($result['paths']) || !is_array($result['paths'])) {
                 $result['paths'] = [];
             }
 
-            foreach ($annotations['paths'] as $path => $pathData) {
+            foreach ($attritributes['paths'] as $path => $pathData) {
                 if (!is_string($path) || !is_array($pathData)) {
                     continue;
                 }
@@ -117,7 +117,7 @@ class MergeOpenApiDocs extends Command
         }
 
         // Special handling for components/schemas
-        if (isset($annotations['components']['schemas']) && is_array($annotations['components']['schemas'])) {
+        if (isset($attritributes['components']['schemas']) && is_array($attritributes['components']['schemas'])) {
             if (!isset($result['components'])) {
                 $result['components'] = [];
             }
@@ -126,7 +126,7 @@ class MergeOpenApiDocs extends Command
                 $result['components']['schemas'] = [];
             }
 
-            foreach ($annotations['components']['schemas'] as $schema => $schemaData) {
+            foreach ($attritributes['components']['schemas'] as $schema => $schemaData) {
                 if (!is_string($schema) || !is_array($schemaData)) {
                     continue;
                 }
@@ -139,19 +139,19 @@ class MergeOpenApiDocs extends Command
 
         // Handle other components sections
         $componentSections = ['responses', 'parameters', 'examples', 'requestBodies', 'headers', 'securitySchemes', 'links', 'callbacks'];
-        if (isset($annotations['components']) && is_array($annotations['components'])) {
+        if (isset($attritributes['components']) && is_array($attritributes['components'])) {
             if (!isset($result['components']) || !is_array($result['components'])) {
                 $result['components'] = [];
             }
 
             foreach ($componentSections as $section) {
-                if (isset($annotations['components'][$section]) && is_array($annotations['components'][$section])) {
+                if (isset($attritributes['components'][$section]) && is_array($attritributes['components'][$section])) {
                     if (!isset($result['components'][$section]) || !is_array($result['components'][$section])) {
-                        $result['components'][$section] = $annotations['components'][$section];
+                        $result['components'][$section] = $attritributes['components'][$section];
                     } else {
                         $result['components'][$section] = array_merge(
                             $result['components'][$section],
-                            $annotations['components'][$section]
+                            $attritributes['components'][$section]
                         );
                     }
                 }
@@ -159,14 +159,14 @@ class MergeOpenApiDocs extends Command
         }
 
         // Handle tags
-        if (isset($annotations['tags']) && is_array($annotations['tags'])) {
+        if (isset($attritributes['tags']) && is_array($attritributes['tags'])) {
             if (!isset($result['tags']) || !is_array($result['tags'])) {
-                $result['tags'] = $annotations['tags'];
+                $result['tags'] = $attritributes['tags'];
             } else {
                 // Merge tags by name
                 $existingTagNames = array_column($result['tags'], 'name');
 
-                foreach ($annotations['tags'] as $tag) {
+                foreach ($attritributes['tags'] as $tag) {
                     if (!is_array($tag) || !isset($tag['name']) || !is_string($tag['name'])) {
                         continue;
                     }
