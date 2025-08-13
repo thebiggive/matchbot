@@ -35,13 +35,19 @@ use OpenApi\Attributes as OA;
     name: "Core donation journey"
 )]
 #[OA\Tag(
+    name: "Past donations"
+)]
+#[OA\Tag(
+    name: "Future donation management"
+)]
+#[OA\Tag(
     name: "Regular giving"
 )]
 #[OA\Tag(
     name: "Charities"
 )]
-#[OA\PathItem(
-    path: "/placeholder"
+#[OA\Tag(
+    name: "Salesforce integration"
 )]
 class OpenApi
 {
