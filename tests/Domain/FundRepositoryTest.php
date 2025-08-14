@@ -263,7 +263,8 @@ class FundRepositoryTest extends TestCase
      * Currently, all test cases covering set up of funds w.r.t campaigns can use the same simulated single-fund
      * response from the Campaign API's `getFunds` endpoint.
      *
-     * @link https://app.swaggerhub.com/apis/Noel/TBG-Campaigns/#/default/getFunds
+     * The HTTP model for each fund is the same as the single fund response Schema in
+     * @link https://app.swaggerhub.com/apis/thebiggive/Funds
      */
     private function getFundClientForPerCampaignLookup(string $currencyCode = 'GBP'): Client\Fund
     {
