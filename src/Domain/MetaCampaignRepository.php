@@ -125,4 +125,15 @@ class MetaCampaignRepository
     {
         return $this->doctrineRepository->findOneBy(['salesforceId' => $sfId->value]);
     }
+
+    /**
+     * Returns a full list of our metacampaigns, other than any that we have chosen to hide. Used as part of our
+     * sitemap.
+     *
+     * @return list<MetaCampaign>
+     */
+    public function allNonHidden(): array
+    {
+        return $this->doctrineRepository->findBy(['hidden' => false]);
+    }
 }
