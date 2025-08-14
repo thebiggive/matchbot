@@ -552,10 +552,10 @@ class TestCase extends PHPUnitTestCase
         return hash_hmac('sha256', $body, $salesforceSecretKey);
     }
 
-    public static function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF, ?Money $imfCampaignTargetOverride = null, ?Money $matchFundsTotal = null, ?MetaCampaignSlug $slug = null): MetaCampaign
+    public static function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF, ?Money $imfCampaignTargetOverride = null, ?Money $matchFundsTotal = null): MetaCampaign
     {
         return new MetaCampaign(
-            slug: $slug ?? MetaCampaignSlug::of('not-relevant-' . TestCase::randomHex()),
+            slug: MetaCampaignSlug::of('not-relevant-' . TestCase::randomHex()),
             salesforceId: IntegrationTest::randomSalesForce18Id(MetaCampaign::class),
             title: 'not relevant ' . TestCase::randomHex(),
             currency: Currency::GBP,
