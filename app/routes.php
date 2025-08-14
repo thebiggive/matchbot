@@ -28,7 +28,7 @@ use MatchBot\Application\Actions\RegularGivingMandate;
 return function (App $app) {
     $app->get('/ping', Status::class);
 
-    $app->get('/sitemap', Sitemap::class);
+    $app->get('/sitemap', Sitemap::class)->add(CacheableResponseMiddleware::class);
 
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
         // Provides real IP for e.g. rate limiter
