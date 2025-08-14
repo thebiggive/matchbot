@@ -15,6 +15,7 @@ use MatchBot\Application\Auth\DonationPublicAuthMiddleware;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Auth\SalesforceAuthMiddleware;
+use MatchBot\Application\CacheableResponseMiddleware;
 use Middlewares\ClientIp;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -63,7 +64,7 @@ return function (App $app) {
         $versionGroup->get(
             '/campaigns/{salesforceId:[a-zA-Z0-9]{18}}',
             \MatchBot\Application\Actions\Campaigns\Get::class
-        );
+        )->add(CacheableResponseMiddleware::class);
 
         // preview of a campaign intended for use only by the person at the charity who is in the process of
         // editing the campaign and wants to check their work - not intended for public use although not
@@ -76,7 +77,7 @@ return function (App $app) {
         $versionGroup->get(
             '/meta-campaigns/{slug:[a-zA-Z0-9-]{2,100}}',
             \MatchBot\Application\Actions\MetaCampaigns\Get::class,
-        );
+        )->add(CacheableResponseMiddleware::class);
 
         $versionGroup->put(
             '/campaigns/{salesforceId:[a-zA-Z0-9]{18}}',
@@ -102,9 +103,10 @@ return function (App $app) {
         $versionGroup->get(
             '/charities/{charitySalesforceId:[a-zA-Z0-9]{18}}/campaigns',
             \MatchBot\Application\Actions\Campaigns\GetSummariesForCharity::class
-        );
+        )->add(CacheableResponseMiddleware::class);
 
-        $versionGroup->get('/campaigns', \MatchBot\Application\Actions\Campaigns\Search::class);
+        $versionGroup->get('/campaigns', \MatchBot\Application\Actions\Campaigns\Search::class)
+            ->add(CacheableResponseMiddleware::class);
 
         /**
          * Cancel *all* pending donations for the current Donor with the specified query param criteria,
