@@ -352,4 +352,9 @@ class MetaCampaign extends SalesforceReadProxy
     {
         return $this->campaignFamily;
     }
+
+    public function isOpen(\DateTimeImmutable $at): bool
+    {
+        return $at >= $this->startDate && $at <= $this->endDate;
+    }
 }
