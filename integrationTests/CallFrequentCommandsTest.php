@@ -5,6 +5,7 @@ namespace MatchBot\IntegrationTests;
 use Aws\CloudWatch\CloudWatchClient;
 use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\CancelStaleDonationFundTips;
+use MatchBot\Application\Commands\DeleteOldTestFunds;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\ExpirePendingMandates;
 use MatchBot\Application\Commands\SendStatistics;
@@ -59,6 +60,8 @@ class CallFrequentCommandsTest extends IntegrationTest
             'Updated statistics for 0 of 0 campaigns with recent donations',
             'Updated statistics for 0 of 0 campaigns with no recent stats',
             'matchbot:update-campaign-donation-stats complete!',
+            'matchbot:delete-old-test-funds starting!',
+            'matchbot:delete-old-test-funds complete!',
             'matchbot:tick complete!',
             '',
         ]);
@@ -80,6 +83,7 @@ class CallFrequentCommandsTest extends IntegrationTest
                 $this->getService(DonationRepository::class),
                 $this->getService(Environment::class),
             ),
+            $this->getService(DeleteOldTestFunds::class),
             $this->getService(ExpireMatchFunds::class),
             $this->getService(CancelStaleDonationFundTips::class),
             $this->getService(ExpirePendingMandates::class),
