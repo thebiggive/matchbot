@@ -6,9 +6,7 @@ namespace MatchBot\Application\Actions;
 
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Environment;
-use MatchBot\Application\HttpModels\MetaCampaign;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\MetaCampaignRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -23,8 +21,8 @@ class Sitemap extends Action
 {
     #[Pure]
     public function __construct(
+        private CacheInterface $cache,
         private CampaignRepository $campaignRepository,
-        private MetaCampaignRepository $metaCampaignRepository,
         private Environment $environment,
         private \DateTimeImmutable $now,
         LoggerInterface $logger,
@@ -42,73 +40,61 @@ class Sitemap extends Action
 
         // @todo:
         // - add charity pages as well as campaigns.
+        // - add metacampaigns
         // - add some of the most important other pages, e.g. static content. But afaik its not essential for
         //   a sitemap to be comprehensive to be useful
         // - consider if the 100k limit is appropriate.
         // - increase cache duration, maybe explicitly expire cache when content changes. Consider persisting
         // - something that would be cheaper to access than this to make additions to when we add a campaign.
+        // - add integration test
         // - submit sitemap to search engines and/or list in robots.txt
+        $sitemapXml = $this->cache->get('sitemap', function (ItemInterface $cacheItem) {
+            $cacheItem->expiresAfter(60 * 10); // ten minutes
 
-        $xml = new SimpleXMLElement('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
-        $campaigns = $this->campaignRepository->search(
-            sortField: 'amountRaised',
-            sortDirection:  'asc',
-            offset: 0,
-            limit: 100_000,
-            status: null,
-            metaCampaignSlug: null,
-            fundSlug: null,
-            jsonMatchInListConditions: [],
-            term:null,
-        );
-
-        foreach ($campaigns as $campaign) {
-            $endsInFuture = $campaign->getEndDate() > $this->now;
-
-            $changeFreq = $endsInFuture ? 'daily' : 'monthly';
-            if ($campaign->isOpen($this->now)) {
-                $changeFreq = 'hourly';
-            }
-
-            $this->addUrl(
-                xml: $xml,
-                url: $this->environment->publicDonateURLPrefix() . 'campaign/' . $campaign->getSalesforceId(),
-                changeFreq: $changeFreq,
-                priority: $endsInFuture ? '0.5' : '0.25',
+            $xml = new SimpleXMLElement('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+            $campaigns = $this->campaignRepository->search(
+                sortField: 'amountRaised',
+                sortDirection:  'asc',
+                offset: 0,
+                limit: 100_000,
+                status: null,
+                metaCampaignSlug: null,
+                fundSlug: null,
+                jsonMatchInListConditions: [],
+                term:null,
             );
 
-            if ($campaign->isOpen($this->now) && ! $campaign->isRegularGiving()) {
-                // regular giving donate pages are at a different address and in any case behind a login-wall,
-                // so not worth listing in sitemap.
+            foreach ($campaigns as $campaign) {
+                $endsInFuture = $campaign->getEndDate() > $this->now;
+
+                $changeFreq = $endsInFuture ? 'daily' : 'monthly';
+                if ($campaign->isOpen($this->now)) {
+                    $changeFreq = 'hourly';
+                }
+
                 $this->addUrl(
                     xml: $xml,
-                    url: $this->environment->publicDonateURLPrefix() . 'donate/' . $campaign->getSalesforceId(),
+                    url: $this->environment->publicDonateURLPrefix() . 'campaign/' . $campaign->getSalesforceId(),
+                    updatedAt: \DateTimeImmutable::createFromInterface($campaign->getUpdatedDate()),
                     changeFreq: $changeFreq,
-                    priority: '0.5'
+                    priority: $endsInFuture ? '0.5' : '0.25',
                 );
+
+                if ($campaign->isOpen($this->now) && ! $campaign->isRegularGiving()) {
+                    // regular giving donate pages are at a different address and in any case behind a login-wall,
+                    // so not worth listing in sitemap.
+                    $this->addUrl(
+                        xml: $xml,
+                        url: $this->environment->publicDonateURLPrefix() . 'donate/' . $campaign->getSalesforceId(),
+                        updatedAt: \DateTimeImmutable::createFromInterface($campaign->getUpdatedDate()),
+                        changeFreq: $changeFreq,
+                        priority: '0.5'
+                    );
+                }
             }
-        }
 
-        $metaCampaigns = $this->metaCampaignRepository->allNonHidden();
-
-        foreach ($metaCampaigns as $metaCampaign) {
-            if ($metaCampaign->isOpen($this->now)) {
-                $changeFreq = 'always';
-            } elseif ($metaCampaign->getEndDate() > $this->now->sub(new \DateInterval("P1D"))) {
-                $changeFreq = 'hourly';
-            } else {
-                $changeFreq = 'monthly';
-            }
-
-            $this->addUrl(
-                xml: $xml,
-                url: $this->environment->publicDonateURLPrefix() . $metaCampaign->getSlug()->slug,
-                changeFreq: $changeFreq,
-                priority: ($metaCampaign->getEndDate() > $this->now->add(new \DateInterval("P14D"))) ? '0.75' : '0.5',
-            );
-        }
-
-        $sitemapXml =  $xml->asXML();
+            return $xml->asXML();
+        });
 
         \assert(\is_string($sitemapXml));
 
@@ -117,11 +103,12 @@ class Sitemap extends Action
         return $response->withHeader('Content-Type', 'application/xml');
     }
 
-    private function addUrl(SimpleXMLElement $xml, string $url, string $changeFreq, string $priority): void
+    private function addUrl(SimpleXMLElement $xml, string $url, \DateTimeImmutable $updatedAt, string $changeFreq, string $priority): void
     {
         $urlElement = $xml->addChild('url') ?? throw new \LogicException('Expected child element not returned');
 
         $urlElement->addChild('loc', $url);
+        $urlElement->addChild('lastmod', $updatedAt->format('c'));
         $urlElement->addChild('changeFreq', $changeFreq); // options: always, hourly, daily, weekly, monthly, yearly, never
         $urlElement->addChild('priority', $priority); // value betweeon 0 and 1 sets relative priority to other content on same site.
     }
