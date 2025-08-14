@@ -212,6 +212,9 @@ class Fund extends SalesforceReadProxy
         $this->slug = $slug;
     }
 
+    /**
+     * @return Collection<int, CampaignFunding>
+     */
     public function getCampaignFundings(): Collection
     {
         return $this->campaignFundings;

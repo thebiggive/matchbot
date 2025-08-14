@@ -68,6 +68,7 @@ class CampaignFunding extends Model
 
     /**
      * @var Collection<int, FundingWithdrawal>
+     * @psalm-suppress UnusedProperty Used for its mapping with ORM.
      * We set cascade-remove for easier clearing of test data; Production should never remove a CampaignFunding via Doctrine.
      */
     #[ORM\OneToMany(mappedBy: 'campaignFunding', targetEntity: FundingWithdrawal::class, cascade: ['remove'])]
@@ -87,6 +88,7 @@ class CampaignFunding extends Model
         $this->amount = $amount;
         $this->amountAvailable = $amountAvailable;
         $this->campaigns = new ArrayCollection();
+        $this->fundingWithdrawals = new ArrayCollection();
         $this->createdNow();
     }
 
