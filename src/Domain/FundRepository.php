@@ -266,6 +266,27 @@ EOT;
     }
 
     /**
+     * @return Fund[]
+     */
+    public function findOldTestPledges(DateTimeImmutable $olderThan): array
+    {
+        $query = <<<DQL
+            SELECT fund FROM MatchBot\Domain\Fund fund
+            WHERE
+                fund.createdAt < :olderThan AND
+                fund.fundType IN (:fundTypes)
+        DQL;
+
+        /** @var Fund[] $result */
+        $result = $this->getEntityManager()->createQuery($query)
+            ->setParameter('olderThan', $olderThan)
+            ->setParameter('fundTypes', [FundType::Pledge, FundType::TopupPledge])
+            ->getResult();
+
+        return $result;
+    }
+
+    /**
      * Get live data for the object (which might be empty apart from the Salesforce ID) and return a full object.
      * No need to `setSalesforceLastPull()`, or EM `persist()` - just populate the fields specific to the object.
      *

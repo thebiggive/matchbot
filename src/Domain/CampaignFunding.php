@@ -67,6 +67,13 @@ class CampaignFunding extends Model
     protected string $amountAvailable;
 
     /**
+     * @var Collection<int, FundingWithdrawal>
+     * We set cascade-remove for easier clearing of test data; Production should never remove a CampaignFunding via Doctrine.
+     */
+    #[ORM\OneToMany(mappedBy: 'campaignFunding', targetEntity: FundingWithdrawal::class, cascade: ['remove'])]
+    private Collection $fundingWithdrawals;
+
+    /**
      * @param numeric-string $amountAvailable
      * @param numeric-string $amount
      */

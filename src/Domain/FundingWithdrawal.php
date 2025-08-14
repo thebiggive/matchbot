@@ -33,7 +33,7 @@ class FundingWithdrawal extends Model
      * @var CampaignFunding
      * phpstan error below ignored, consider migrating DB to make column non-null if possible.
      */
-    #[ORM\ManyToOne(targetEntity: CampaignFunding::class, fetch: 'EAGER')]
+    #[ORM\ManyToOne(targetEntity: CampaignFunding::class, fetch: 'EAGER', inversedBy: 'fundingWithdrawals')]
     private readonly CampaignFunding $campaignFunding; // @phpstan-ignore doctrine.associationType
 
     public function __construct(CampaignFunding $campaignFunding)
