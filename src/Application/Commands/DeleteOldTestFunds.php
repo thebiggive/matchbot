@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'matchbot:delete-old-test-funds',
-    description: 'In suitable environments, removes Funds & associated data older than 1st of last month'
+    description: 'In regression environment only, removes Funds & associated data older than 1st of last month'
 )]
 class DeleteOldTestFunds extends LockingCommand
 {
