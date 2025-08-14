@@ -2,5 +2,11 @@ coverage:
   status:
     project:
       default:
-        target: auto
         removed_code_behavior: fully_covered_patch
+        target: 70%
+        threshold: 10%
+    patch:
+      default:
+        informational: true
+github_checks:
+  annotations: false

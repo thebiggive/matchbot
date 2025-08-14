@@ -309,14 +309,11 @@ pattern to ensure this remains true.
 
 ## APIs
 
-The API contract which the app fulfils (along with Salesforce) is currently kept on SwaggerHub at [TBG-Donations](https://app.swaggerhub.com/apis/Noel/TBG-Donations).
-It uses OpenAPI 3.
+The OpenAPI contract which the app fulfils (along with Salesforce) is mostly kept in this repo – via a mix of hard-coded schemas in [api.yaml](./api.yaml) and Openapi library attributes. We'll probably incrementally move to the latter so that definitions live near their code.
 
-The app also implements *clients* for some endpoints defined in these and some other API
-contracts, including:
+Operations covered in APIs we document largely map to the donor-facing responsibilities of MatchBot. They cover the most important calls relating to Donations and Campaigns.
 
-* [TBG-Campaigns](https://app.swaggerhub.com/apis/Noel/TBG-Campaigns)
-* [TBG-Funds](https://app.swaggerhub.com/apis/Noel/TBG-Funds)
+The app also implements a *client* for some endpoints including for Funds, with a hard-coded API doc online at [TBG-Funds](https://app.swaggerhub.com/apis/Noel/TBG-Funds). (Technically this is missing the most important endpoint, `/campaign/{id}/funds`, which returns a list of the Scheme defined here. SwaggerHub is currently unusable on a free plan and this didn't seem worth migrating away right now.)
 
 ## Rate limits
 
