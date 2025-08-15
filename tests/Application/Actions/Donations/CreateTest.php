@@ -8,7 +8,6 @@ use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\UnitOfWork;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Messenger\DonationUpserted;
 use Doctrine\ORM\EntityManagerInterface;
@@ -95,9 +94,8 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'always',
+                'allow_redirects' => 'never',
             ],
-            'return_url' => Environment::current()->publicDonateURLPrefix() . 'thanks/' . self::DONATION_UUID . '?from=bank',
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
             'capture_method' => 'automatic_async',
@@ -377,9 +375,8 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'always',
+                'allow_redirects' => 'never',
             ],
-            'return_url' => Environment::current()->publicDonateURLPrefix() . 'thanks/' . self::DONATION_UUID . '?from=bank',
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
             'capture_method' => 'automatic_async',
@@ -482,9 +479,8 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'always',
+                'allow_redirects' => 'never',
             ],
-            'return_url' => Environment::current()->publicDonateURLPrefix() . 'thanks/' . self::DONATION_UUID . '?from=bank',
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
@@ -581,9 +577,8 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'always',
+                'allow_redirects' => 'never',
             ],
-            'return_url' => Environment::current()->publicDonateURLPrefix() . 'thanks/' . self::DONATION_UUID . '?from=bank',
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
             'capture_method' => 'automatic_async',
