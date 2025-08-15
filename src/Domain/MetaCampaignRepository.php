@@ -125,4 +125,27 @@ class MetaCampaignRepository
     {
         return $this->doctrineRepository->findOneBy(['salesforceId' => $sfId->value]);
     }
+
+    /**
+     * Returns a full list of our metacampaigns, other than any that we have chosen to hide. Used as part of our
+     * sitemap.
+     *
+     * @return list<MetaCampaign>
+     */
+    public function allToIncludeInSitemap(\DateTimeImmutable $at): array
+    {
+        $query = $this->em->createQuery(<<<'DQL'
+            SELECT mc FROM MatchBot\Domain\MetaCampaign mc
+            WHERE mc.hidden = false
+            AND mc.startDate > :indexOldFrom -- old campaigns have innacurate data
+            AND mc.startDate < :indexNewFrom -- new campaigns that don't open soon may not yet have complete copy or anything of interest on their pages
+        DQL);
+
+        $query->setParameter('indexOldFrom', new \DateTimeImmutable(MetaCampaign::INDEX_FROM));
+        $query->setParameter('indexNewFrom', $at->add(new \DateInterval(MetaCampaign::INDEX_NEW_INTERVAL)));
+
+        /** @var list<MetaCampaign> */
+        $result = $query->getResult();
+        return $result;
+    }
 }

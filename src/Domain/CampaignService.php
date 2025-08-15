@@ -107,6 +107,7 @@ class CampaignService
             matchFundsTotal: $metaCampaign->getMatchFundsTotal()->toMajorUnitFloat(),
             campaignCount: $this->campaignRepository->countCampaignsInMetaCampaign($metaCampaign),
             usesSharedFunds: $metaCampaign->usesSharedFunds(),
+            shouldBeIndexed: $metaCampaign->shouldBeIndexed($this->clock->now()),
             useDon1120Banner: ! \is_null($bannerLayout),
             bannerLayout: $bannerLayout,
         );
