@@ -533,6 +533,7 @@ class DonationTest extends TestCase
         ), TestCase::someCampaign(), PersonId::nil());
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: false,
             donorBillingPostcode: 'SW1 1AA',
             donorName: DonorName::of('Charlie', 'The Charitable'),
@@ -559,6 +560,7 @@ class DonationTest extends TestCase
         ), TestCase::someCampaign(), PersonId::nil());
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: false,
             donorBillingPostcode: null,
             donorName: DonorName::of('Charlie', 'The Charitable'),
@@ -585,6 +587,7 @@ class DonationTest extends TestCase
         ), TestCase::someCampaign(), PersonId::nil());
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: false,
             donorBillingPostcode: 'SW1A 1AA',
             donorName: DonorName::of('Charlie', 'The Charitable'),
@@ -612,6 +615,7 @@ class DonationTest extends TestCase
         ), TestCase::someCampaign(), PersonId::nil());
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: false,
             donorBillingPostcode: 'SW1A 1AA',
             donorName: DonorName::of('Charlie', 'The Charitable'),
@@ -884,6 +888,7 @@ class DonationTest extends TestCase
         $this->expectExceptionMessage('Cannot Claim Gift Aid Without Home Address');
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: null,
         );
@@ -906,6 +911,7 @@ class DonationTest extends TestCase
         $this->expectExceptionMessage('Cannot Claim Gift Aid Without Home Address');
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: '   ',
         );
@@ -937,6 +943,7 @@ class DonationTest extends TestCase
 
         // act
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: 'Updated home address',
         );
@@ -948,6 +955,7 @@ class DonationTest extends TestCase
 
         $this->expectExceptionMessage('too long, it should have no more than 255 characters, but has 256 characters');
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: false,
             donorHomeAddressLine1: str_repeat('a', 256),
         );
@@ -959,6 +967,7 @@ class DonationTest extends TestCase
 
         $this->expectExceptionMessage('too long, it should have no more than 8 characters, but has 43 characters');
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: 'a pretty how town',
             donorHomePostcode: 'This is too long to be a plausible postcode'

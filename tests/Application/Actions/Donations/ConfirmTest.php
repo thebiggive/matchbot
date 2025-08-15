@@ -20,6 +20,7 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Tests\TestCase;
@@ -489,6 +490,7 @@ class ConfirmTest extends TestCase
                 $donation->setUuid($testCase->donationId);
 
                 $donation->update(
+                    paymentMethodType: PaymentMethodType::Card,
                     giftAid: false,
                     donorBillingPostcode: 'SW1 1AA',
                     donorName: DonorName::of('Charlie', 'The Charitable'),

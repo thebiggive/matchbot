@@ -26,6 +26,7 @@ readonly class Donation
      */
     public function __construct(
         public float $donationAmount,
+        public string $pspMethodType,
         public ?string $status = null,
         /** @var bool|null Used only to tell credit donations to complete; not persisted. */
         public ?bool $autoConfirmFromCashBalance = null,

@@ -74,7 +74,7 @@ trait DonationTestDataTrait
         );
 
         $donation = Donation::fromApiModel($data, $campaign, PersonId::nil());
-        $this->setMinimumFieldsSetOnFirstPersist($donation);
+        $this->setMinimumFieldsSetOnFirstPersist($donation, PaymentMethodType::CustomerBalance);
 
         return $donation;
     }
@@ -110,9 +110,10 @@ trait DonationTestDataTrait
         );
         $donation->setCampaign(TestCase::getMinimalCampaign());
 
-        $this->setMinimumFieldsSetOnFirstPersist($donation);
+        $this->setMinimumFieldsSetOnFirstPersist($donation, $pspMethodType);
 
         $donation->update(
+            paymentMethodType: $pspMethodType,
             giftAid: true,
             donorHomeAddressLine1: '1 Main St, London',  // Frontend typically includes town for now
             charityComms: $charityComms,
@@ -191,10 +192,11 @@ trait DonationTestDataTrait
         return $donation;
     }
 
-    private function setMinimumFieldsSetOnFirstPersist(Donation $donation): void
+    private function setMinimumFieldsSetOnFirstPersist(Donation $donation, PaymentMethodType $paymentMethodType): void
     {
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->update(
+            paymentMethodType: $paymentMethodType,
             giftAid: true,
             donorHomeAddressLine1: 'Home Address'
         );

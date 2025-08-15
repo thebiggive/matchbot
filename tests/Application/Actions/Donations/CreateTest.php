@@ -25,6 +25,7 @@ use MatchBot\Domain\Fund as FundEntity;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
@@ -973,7 +974,7 @@ class CreateTest extends TestCase
         $donation->setCampaign(TestCase::getMinimalCampaign());
 
         if (!$minimalSetupData) {
-            $donation->update(giftAid: false);
+            $donation->update(paymentMethodType: PaymentMethodType::Card, giftAid: false);
             $donation->setCharityComms(true);
             $donation->setChampionComms(false);
             $donation->setTbgComms(false);

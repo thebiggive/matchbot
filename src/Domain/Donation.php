@@ -363,7 +363,8 @@ class Donation extends SalesforceWriteProxy
     /**
      * Until a Donation is confirmed, we mostly try to avoid restricting switches between 'card' and
      * 'pay_by_bank' as they both behave similarly except that `pay_by_bank` cannot be set up for
-     * future off-session usage.
+     * future off-session usage. Update will try to change the method to the latest received from the
+     * frontend.
      */
     #[ORM\Column(nullable: true)]
     protected ?PaymentMethodType $paymentMethodType = PaymentMethodType::Card;
@@ -1311,19 +1312,12 @@ class Donation extends SalesforceWriteProxy
             ],
             // in these cases we want to use the Stripe Payment Element, so we can't specify card explicitly, we
             // need to turn on automatic methods instead and let the element decide what methods to show.
-            PaymentMethodType::Card => [
-                'automatic_payment_methods' => [
-                    'enabled' => true,
-                    'allow_redirects' => 'always',
-                ],
-            ],
+            PaymentMethodType::Card,
             PaymentMethodType::PayByBank => [
                 'automatic_payment_methods' => [
                     'enabled' => true,
                     'allow_redirects' => 'always',
                 ],
-                'return_url' => $this->getReturnUrl(),
-                'confirm' => true,
             ],
             null => throw new \RuntimeException(
                 'Cannot get stripe method properties, no stripe method for donation ' . $this->uuid->toString()
@@ -1617,6 +1611,7 @@ class Donation extends SalesforceWriteProxy
      * Updates a pending donation to reflect changes made in the donation form.
      */
     public function update(
+        PaymentMethodType $paymentMethodType,
         bool $giftAid,
         ?bool $tipGiftAid = null,
         ?string $donorHomeAddressLine1 = null,
@@ -1631,6 +1626,14 @@ class Donation extends SalesforceWriteProxy
         if ($this->donationStatus !== DonationStatus::Pending) {
             throw new \UnexpectedValueException("Update only allowed for pending donation");
         }
+
+        if ($this->paymentMethodType && $this->paymentMethodType->usesPaymentElement() !== $paymentMethodType->usesPaymentElement()) {
+            throw new \UnexpectedValueException(
+                "Cannot change payment method type from {$this->paymentMethodType->value} to {$paymentMethodType->value}"
+            );
+        }
+
+        $this->paymentMethodType = $paymentMethodType;
 
         if (trim($donorHomeAddressLine1 ?? '') === '') {
             $donorHomeAddressLine1 = null;
