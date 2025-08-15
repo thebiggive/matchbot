@@ -346,6 +346,7 @@ class Update extends Action
         // method every time they `addData()`.
         try {
             $donation->update(
+                paymentMethodType: PaymentMethodType::fromString($donationData->pspMethodType),
                 giftAid: $donationData->giftAid ?? false,
                 tipGiftAid: $donationData->tipGiftAid ?? $donationData->giftAid,
                 donorHomeAddressLine1: $donationData->homeAddress,
@@ -355,7 +356,7 @@ class Update extends Action
                 tbgComms: $donationData->optInTbgEmail,
                 charityComms: $donationData->optInCharityEmail,
                 championComms: $donationData->optInChampionEmail,
-                donorBillingPostcode: $donationData->billingPostalAddress
+                donorBillingPostcode: $donationData->billingPostalAddress,
             );
         } catch (\UnexpectedValueException $exception) {
             return $this->validationError(

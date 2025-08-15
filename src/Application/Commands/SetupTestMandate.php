@@ -222,6 +222,7 @@ class SetupTestMandate extends LockingCommand
         );
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: $mandate->hasGiftAid(),
             donorHomeAddressLine1: 'donor home address',
             donorEmailAddress: $donor->emailAddress,
