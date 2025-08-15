@@ -1322,7 +1322,7 @@ class Donation extends SalesforceWriteProxy
                     'enabled' => true,
                     'allow_redirects' => 'always',
                 ],
-                'return_url' => Environment::current()->publicDonateURLPrefix() . 'thanks/' . $this->uuid->toString() . '?from=bank',
+                'return_url' => $this->getReturnUrl(),
                 'confirm' => true,
             ],
             null => throw new \RuntimeException(
