@@ -456,7 +456,7 @@ class DonationTest extends TestCase
         $expectedPaymentMethodProperties = [
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'always',
+                'allow_redirects' => 'never',
             ],
         ];
 

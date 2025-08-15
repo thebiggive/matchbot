@@ -40,7 +40,7 @@ interface Stripe
     public function updatePaymentIntent(string $paymentIntentId, array $updateData): void;
 
     /**
-     * @param array{confirmation_token?: string, payment_method?: string} $params
+     * @param array{confirmation_token?: string, payment_method?: string, return_url?: string} $params
      * @throws ApiErrorException
      */
     public function confirmPaymentIntent(string $paymentIntentId, array $params): PaymentIntent;

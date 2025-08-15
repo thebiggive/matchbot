@@ -296,6 +296,7 @@ class DonationService
             $paymentIntentId, // May have changed just above, if setup_future_usage did.
             [
                 'confirmation_token' => $tokenId->stripeConfirmationTokenId,
+                'return_url' => $donation->getReturnUrl(),
             ]
         );
 
@@ -723,6 +724,7 @@ class DonationService
             $paymentIntentId,
             [
                 'payment_method' => $paymentMethodId->stripePaymentMethodId,
+                'return_url' => $donation->getReturnUrl(),
             ]
         );
 
