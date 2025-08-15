@@ -1308,8 +1308,9 @@ class Donation extends SalesforceWriteProxy
         $autoMethodProperties = [
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'never',
+                'allow_redirects' => 'always',
             ],
+            'return_url' => Environment::current()->publicDonateURLPrefix() . 'thanks/' . $this->uuid->toString() . '?from=bank',
         ];
         $properties = match ($this->paymentMethodType) {
             PaymentMethodType::CustomerBalance => [

@@ -8,7 +8,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Matching\Allocator;
@@ -456,21 +455,31 @@ class DonationService
     ): void {
         $token = $this->stripe->retrieveConfirmationToken($tokenId);
 
-        /** @var StripeObject&object{card: object{country: string, brand: string}} $paymentMethodPreview */
+        /** @var StripeObject&object{
+         *     card: null|object{country: string, brand: string},
+         *     pay_by_bank: null|StripeObject
+         * } $paymentMethodPreview
+         */
         $paymentMethodPreview = $token->payment_method_preview;
 
-        $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception('Missing card brand');
-        $cardCountry = Country::fromAlpha2OrNull($paymentMethodPreview->card->country) ?? throw new \Exception('Missing card country');
+        if ($paymentMethodPreview->card !== null) {
+            $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception('Missing card brand');
+            $cardCountry = Country::fromAlpha2OrNull($paymentMethodPreview->card->country) ?? throw new \Exception('Missing card country');
 
+            $this->logger->info(sprintf(
+                'Donation UUID %s has card brand %s and country %s',
+                $donation->getUuid(),
+                $cardBrand->value,
+                $cardCountry,
+            ));
 
-        $this->logger->info(sprintf(
-            'Donation UUID %s has card brand %s and country %s',
-            $donation->getUuid(),
-            $cardBrand->value,
-            $cardCountry,
-        ));
-
-        $donation->setPaymentCard(new PaymentCard($cardBrand, $cardCountry));
+            $donation->setPaymentCard(new PaymentCard($cardBrand, $cardCountry));
+        } else {
+            // if we had a ctoken at all we're not using Donation Funds so must be using Pay By Bank, which
+            // has no card / default fees.
+            \assert($paymentMethodPreview->pay_by_bank !== null);
+            $donation->setPaymentCard(null);
+        }
 
         $this->doUpdateDonationFees(
             donation: $donation,

@@ -282,6 +282,7 @@ class DonationServiceTest extends TestCase
                         'brand' => 'visa',
                         'country' => 'gb',
                     ],
+                    'pay_by_bank' => null,
                 ];
                 return $confirmationToken;
             });
