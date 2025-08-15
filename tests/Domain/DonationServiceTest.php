@@ -278,13 +278,14 @@ class DonationServiceTest extends TestCase
             ->will(function () {
                 $confirmationToken = new ConfirmationToken();
                 /** @psalm-suppress InvalidPropertyAssignmentValue */
-                $confirmationToken->payment_method_preview = new StripeObject([
-                    'card' => [
-                        'brand' => 'visa',
-                        'country' => 'gb',
-                    ],
-                    'pay_by_bank' => null,
-                ]);
+                $confirmationToken->payment_method_preview = new StripeObject();
+                /** @psalm-suppress InvalidPropertyAssignmentValue */
+                $confirmationToken->payment_method_preview['type'] = 'card';
+                /** @psalm-suppress InvalidPropertyAssignmentValue */
+                $confirmationToken->payment_method_preview['card'] = ['brand' => 'visa', 'country' => 'GB'];
+                /** @psalm-suppress InvalidPropertyAssignmentValue */
+                $confirmationToken->payment_method_preview['pay_by_bank'] = null;
+
                 return $confirmationToken;
             });
 
