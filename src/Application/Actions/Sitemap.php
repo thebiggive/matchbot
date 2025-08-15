@@ -89,7 +89,7 @@ class Sitemap extends Action
             }
         }
 
-        $metaCampaigns = $this->metaCampaignRepository->allNonHidden();
+        $metaCampaigns = $this->metaCampaignRepository->allToIncludeInSitemap($this->now);
 
         foreach ($metaCampaigns as $metaCampaign) {
             if ($metaCampaign->isOpen($this->now)) {

@@ -23,6 +23,7 @@ class SitemapTest extends TestCase
     public function testItGeneratesASitemap(): void
     {
         // arrange
+        $now = new \DateTimeImmutable('2025-01-01');
         $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
         $metaCampaignRepositoryProphecy = $this->prophesize(MetaCampaignRepository::class);
 
@@ -41,7 +42,7 @@ class SitemapTest extends TestCase
             self::someCampaign(sfId: Salesforce18Id::ofCampaign('000000000000000000')),
         ]);
 
-        $metaCampaignRepositoryProphecy->allNonHidden()->willReturn([
+        $metaCampaignRepositoryProphecy->allToIncludeInSitemap($now)->willReturn([
             $this->someMetaCampaign(false, false, slug: MetaCampaignSlug::of('this-is-the-metacampaign-slug')),
         ]);
 
@@ -49,7 +50,7 @@ class SitemapTest extends TestCase
             $campaignRepositoryProphecy->reveal(),
             $metaCampaignRepositoryProphecy->reveal(),
             Environment::Test,
-            new \DateTimeImmutable('2025-01-01'),
+            $now,
             new NullLogger(),
         );
 

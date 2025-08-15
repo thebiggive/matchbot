@@ -552,7 +552,7 @@ class TestCase extends PHPUnitTestCase
         return hash_hmac('sha256', $body, $salesforceSecretKey);
     }
 
-    public static function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF, ?Money $imfCampaignTargetOverride = null, ?Money $matchFundsTotal = null, ?MetaCampaignSlug $slug = null): MetaCampaign
+    public static function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF, ?Money $imfCampaignTargetOverride = null, ?Money $matchFundsTotal = null, ?MetaCampaignSlug $slug = null, ?\DateTimeImmutable $startDate = null): MetaCampaign
     {
         return new MetaCampaign(
             slug: $slug ?? MetaCampaignSlug::of('not-relevant-' . TestCase::randomHex()),
@@ -564,7 +564,7 @@ class TestCase extends PHPUnitTestCase
             hidden: false,
             summary: 'not relevant',
             bannerURI: null,
-            startDate: new \DateTimeImmutable('1970'),
+            startDate: $startDate ?? new \DateTimeImmutable('1970'),
             endDate: new \DateTimeImmutable('1970'),
             isRegularGiving: $isRegularGiving,
             isEmergencyIMF: $isEmergencyIMF,

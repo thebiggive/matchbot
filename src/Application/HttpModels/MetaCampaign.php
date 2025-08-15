@@ -113,6 +113,12 @@ readonly class MetaCampaign
         )]
         public bool $usesSharedFunds,
         #[OA\Property(
+            property: "shouldBeIndexed",
+            description: "Whether we should ask search engines to index the page for this metacampaign",
+            example: true
+        )]
+        public bool $shouldBeIndexed,
+        #[OA\Property(
             property: "useDon1120Banner",
             description: "Whether the page for this campaign uses the new style of banner display created in ticket DON-1120",
             example: false

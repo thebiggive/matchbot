@@ -28,6 +28,15 @@ class MetaCampaign extends SalesforceReadProxy
     use TimestampsTrait;
 
     public const string STATUS_VIEW_CAMPAIGN = 'View campaign';
+
+    /** Metacampaigns from before this date may not have accurate data so should not be indexed */
+    public const string INDEX_FROM = '2020-01-01T00:00:00z';
+
+    /** Metacampaigns that don't open soon may also have incomplete data so again not yet useful to ask
+     * search engines to index.
+     */
+    public const string INDEX_NEW_INTERVAL = 'P4W'; // i.e. four weeks.
+
     #[ORM\Column(length: 64, unique: true, nullable: false)]
     private string $slug;
 
@@ -356,5 +365,14 @@ class MetaCampaign extends SalesforceReadProxy
     public function isOpen(\DateTimeImmutable $at): bool
     {
         return $at >= $this->startDate && $at <= $this->endDate;
+    }
+
+    /**
+     * Whether to include in e.g. a sitemap for google search or publish *without* a noindex tag.
+     */
+    public function shouldBeIndexed(\DateTimeImmutable $at): bool
+    {
+        return $this->startDate > new \DateTimeImmutable(self::INDEX_FROM) &&
+            $this->startDate < $at->add(new \DateInterval(self::INDEX_NEW_INTERVAL));
     }
 }
