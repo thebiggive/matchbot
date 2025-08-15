@@ -21,9 +21,11 @@
         "ext-pdo": "*",
         "ext-pdo_mysql": "*",
         "ext-redis": "*",
+        "ext-simplexml": "*",
         "aws/aws-sdk-php": "^3.322",
         "beberlei/assert": "^3.3",
         "cweagans/composer-patches": "^1.7",
+        "doctrine/annotations": "^2.0",
         "doctrine/cache": "^2.0",
         "doctrine/collections": "^2.2",
         "doctrine/common": "^3.4",
@@ -86,7 +88,8 @@
         "roave/security-advisories": "dev-latest",
         "squizlabs/php_codesniffer": "^3.10",
         "vimeo/psalm": "6.10.3",
-        "weirdan/doctrine-psalm-plugin": "^2.10"
+        "weirdan/doctrine-psalm-plugin": "^2.10",
+        "zircote/swagger-php": "^5.2"
     },
     "config": {
         "allow-plugins": {
@@ -113,6 +116,12 @@
         }
     },
     "scripts": {
+        "docs": "openapi --output docs/openapi.yaml src",
+        "docs:merge": "./matchbot matchbot:merge-openapi-docs",
+        "docs:all": [
+            "@docs",
+            "@docs:merge"
+        ],
         "doctrine:cache:clear:live": [
             "vendor/bin/doctrine orm:clear-cache:metadata",
             "vendor/bin/doctrine orm:clear-cache:query",

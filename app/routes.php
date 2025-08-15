@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use Los\RateLimit\RateLimitMiddleware;
-use MatchBot\Application\Actions\Charities\UpdateCharityFromSalesforce;
 use MatchBot\Application\Actions\DeletePaymentMethod;
+use MatchBot\Application\Actions\Sitemap;
 use MatchBot\Application\Actions\UpdatePaymentMethod;
 use MatchBot\Application\Actions\Donations;
 use MatchBot\Application\Actions\DonorAccount;
@@ -15,6 +15,7 @@ use MatchBot\Application\Auth\DonationPublicAuthMiddleware;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Auth\SalesforceAuthMiddleware;
+use MatchBot\Application\CacheableResponseMiddleware;
 use Middlewares\ClientIp;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -26,6 +27,8 @@ use MatchBot\Application\Actions\RegularGivingMandate;
 
 return function (App $app) {
     $app->get('/ping', Status::class);
+
+    $app->get('/sitemap', Sitemap::class)->add(CacheableResponseMiddleware::class);
 
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
         // Provides real IP for e.g. rate limiter
@@ -61,7 +64,7 @@ return function (App $app) {
         $versionGroup->get(
             '/campaigns/{salesforceId:[a-zA-Z0-9]{18}}',
             \MatchBot\Application\Actions\Campaigns\Get::class
-        );
+        )->add(CacheableResponseMiddleware::class);
 
         // preview of a campaign intended for use only by the person at the charity who is in the process of
         // editing the campaign and wants to check their work - not intended for public use although not
@@ -74,7 +77,7 @@ return function (App $app) {
         $versionGroup->get(
             '/meta-campaigns/{slug:[a-zA-Z0-9-]{2,100}}',
             \MatchBot\Application\Actions\MetaCampaigns\Get::class,
-        );
+        )->add(CacheableResponseMiddleware::class);
 
         $versionGroup->put(
             '/campaigns/{salesforceId:[a-zA-Z0-9]{18}}',
@@ -100,9 +103,10 @@ return function (App $app) {
         $versionGroup->get(
             '/charities/{charitySalesforceId:[a-zA-Z0-9]{18}}/campaigns',
             \MatchBot\Application\Actions\Campaigns\GetSummariesForCharity::class
-        );
+        )->add(CacheableResponseMiddleware::class);
 
-        $versionGroup->get('/campaigns', \MatchBot\Application\Actions\Campaigns\Search::class);
+        $versionGroup->get('/campaigns', \MatchBot\Application\Actions\Campaigns\Search::class)
+            ->add(CacheableResponseMiddleware::class);
 
         /**
          * Cancel *all* pending donations for the current Donor with the specified query param criteria,
@@ -161,14 +165,6 @@ return function (App $app) {
     // Authenticated through Stripe's SDK signature verification
     $app->post('/hooks/stripe', Hooks\StripePaymentsUpdate::class);
     $app->post('/hooks/stripe-connect', Hooks\StripePayoutUpdate::class);
-
-    // Requests from Salesforce
-
-    $app->post(
-        '/hooks/charities/{salesforceId:[a-zA-Z0-9]{18}}/update-required',
-        UpdateCharityFromSalesforce::class
-    )
-        ->add(SalesforceAuthMiddleware::class);
 
     $app->options(
         '/{routes:.+}',

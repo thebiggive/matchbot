@@ -24,6 +24,7 @@ class CallFrequentTasks extends LockingCommand
         ExpirePendingMandates::class,
         CancelStaleDonationFundTips::class,
         UpdateCampaignDonationStats::class,
+        DeleteOldTestFunds::class,
     ];
 
     #[\Override]

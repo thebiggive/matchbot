@@ -676,7 +676,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         };
 
         if ($term === null && $safeSortField === 'relevance') {
-            throw new \Exception('Please provide a term to sort by relevance');
+            throw new \InvalidArgumentException('Please provide a term to sort by relevance');
         }
 
         $qb->select(<<<SELECT

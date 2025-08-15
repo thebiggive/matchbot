@@ -1,15 +1,12 @@
 openapi: 3.0.0
 servers:
-  # Added by API Auto Mocking Plugin
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/Noel/TBG-Donations/1.0.13
   - description: "MatchBot staging"
     url: https://matchbot-staging.thebiggivetest.org.uk/v1
   - description: "Salesforce Full (staging)"
     url: https://thebiggive--full.sandbox.my.salesforce-sites.com/donations/services/apexrest/v2.0
 info:
   description: |
-    The Big Give Donations APIs.
+    The Big Give MatchBot APIs: for Donations in + out, Campaigns etc.
 
     This contract aims to cover all endpoints except
     `/ping` and integration webhooks. Most webhooks' structures are defined by Stripe
@@ -18,13 +15,10 @@ info:
     As Salesforce & MatchBot share a Donation schema, endpoints for both are documented here
     together; however operation `salesforceUpsert` is implemented only in Salesforce
     and all others are implemented only in MatchBot.
-  version: 1.0.13
-  title: Donations
+  version: 1.1.0
+  title: MatchBot
   contact:
-    email: tech@thebiggive.org.uk
-  license:
-    name: Apache 2.0
-    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+    email: tech@biggive.org
 paths:
   /people/{personId}/donations:
     parameters:
@@ -336,6 +330,7 @@ paths:
         required: true
     post:
       description: Create a regular giving mandate
+      tags: [Regular giving]
       requestBody:
         content:
           application/json:
@@ -367,6 +362,188 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/RegularGivingMandate'
+
+  /campaigns/{salesforceId}:
+    parameters:
+      - name: salesforceId
+        in: path
+        schema:
+          type: string
+          pattern: '^[a-zA-Z0-9]{18}$'
+        description: Salesforce ID of the campaign
+        required: true
+    get:
+      operationId: getCampaign
+      summary: Get details of a campaign
+      tags: [Campaigns]
+      responses:
+        '200':
+          description: Campaign details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          description: Campaign not found
+
+  /campaigns/early-preview/{salesforceId}:
+    parameters:
+      - name: salesforceId
+        in: path
+        schema:
+          type: string
+          pattern: '^[a-zA-Z0-9]{18}$'
+        description: Salesforce ID of the campaign
+        required: true
+    get:
+      operationId: getCampaignEarlyPreview
+      summary: Get preview of a campaign that is being edited
+      tags: [Campaigns]
+      responses:
+        '200':
+          description: Campaign preview details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          description: Campaign not found
+
+  /campaigns:
+    get:
+      operationId: searchCampaigns
+      summary: Search for campaigns with various filters
+      tags: [Campaigns]
+      parameters:
+        - name: sortField
+          in: query
+          schema:
+            type: string
+            default: distanceToTarget
+          description: Field to sort results by
+        - name: sortDirection
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Direction to sort results
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Active, Expired, Preview]
+          description: Filter by campaign status
+        - name: term
+          in: query
+          schema:
+            type: string
+          description: Search term to filter campaigns
+        - name: beneficiary
+          in: query
+          schema:
+            type: string
+          description: Filter by beneficiary
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category
+        - name: country
+          in: query
+          schema:
+            type: string
+          description: Filter by country
+        - name: parentSlug
+          in: query
+          schema:
+            type: string
+          description: Filter by meta-campaign slug
+        - name: fundSlug
+          in: query
+          schema:
+            type: string
+          description: Filter by fund slug
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Maximum number of results to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of results to skip
+      responses:
+        '200':
+          description: List of campaign summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaignSummaries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CampaignSummary'
+        '400':
+          description: Invalid search parameters
+
+  /meta-campaigns/{slug}:
+    parameters:
+      - name: slug
+        in: path
+        schema:
+          type: string
+          pattern: '^[a-zA-Z0-9-]{2,100}$'
+        description: Slug of the meta-campaign
+        required: true
+    get:
+      operationId: getMetaCampaign
+      summary: Get details of a meta-campaign
+      tags: [Campaigns]
+      responses:
+        '200':
+          description: Meta-campaign details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaCampaign'
+        '404':
+          description: Meta-campaign not found
+
+  /charities/{charitySalesforceId}/campaigns:
+    parameters:
+      - name: charitySalesforceId
+        in: path
+        schema:
+          type: string
+          pattern: '^[a-zA-Z0-9]{18}$'
+        description: Salesforce ID of the charity
+        required: true
+    get:
+      operationId: getCampaignsForCharity
+      summary: Get campaigns for a specific charity
+      tags: [Charities]
+      responses:
+        '200':
+          description: List of campaigns for the charity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  charityName:
+                    type: string
+                  campaigns:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CampaignSummary'
+        '404':
+          description: Charity not found
 
   /donations/{donationUuid}:
     parameters:
@@ -419,6 +596,84 @@ paths:
 
 components:
   schemas:
+    # Campaign schema is defined in \MatchBot\Application\HttpModels\Campaign class as attributes
+
+    CampaignSummary:
+      type: object
+      description: Summary information about a campaign
+      properties:
+        charity:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Salesforce ID of the charity
+            name:
+              type: string
+              description: Name of the charity
+        isRegularGiving:
+          type: boolean
+          description: Whether the campaign accepts regular giving
+        id:
+          type: string
+          description: Salesforce ID of the campaign
+        amountRaised:
+          type: number
+          description: Amount raised so far
+        currencyCode:
+          type: string
+          description: ISO currency code
+        endDate:
+          type: string
+          format: date-time
+          description: End date of the campaign
+        isMatched:
+          type: boolean
+          description: Whether the campaign is matched
+        parentUsesSharedFunds:
+          type: boolean
+          description: Whether the campaign is part of a metacampaign that has shared funds
+        parentRef:
+          type: string
+          description: slug of related metacampaign, if any
+        matchFundsRemaining:
+          type: number
+          description: Amount of match funds remaining
+        startDate:
+          type: string
+          format: date-time
+          description: Start date of the campaign
+        status:
+          type: string
+          enum: [Active, Expired, Preview]
+          description: Status of the campaign
+        title:
+          type: string
+          description: Title of the campaign
+        beneficiaries:
+          type: array
+          items:
+            type: string
+          description: Beneficiaries of the campaign
+        categories:
+          type: array
+          items:
+            type: string
+          description: Categories of the campaign
+        championName:
+          type: string
+          description: Name of the campaign champion
+        imageUri:
+          type: string
+          description: URI of the campaign image
+        target:
+          type: number
+          description: Target amount for the campaign
+
+    # MetaCampaign schema is defined in \MatchBot\Application\HttpModels\MetaCampaign class as annotations
+
+    # Charigty schema is defined in \MatchBot\Application\HttpModels\Charity class as annotations
+
     DonationCreatedResponse:
       type: object
       required:

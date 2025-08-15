@@ -42,6 +42,9 @@ class CampaignService
         $sfCampaignData = $campaign->getSalesforceData();
         $stats = $campaign->getStatistics();
 
+        $slug = $campaign->getMetaCampaignSlug();
+        $metaCampaign = $slug ? $this->metaCampaignRepository->getBySlug($slug) : null;
+
         return [
             'charity' => [
                 'id' => $campaign->getCharity()->getSalesforceId(),
@@ -64,6 +67,8 @@ class CampaignService
             'championName' => $sfCampaignData['championName'],
             'imageUri' => $sfCampaignData['bannerUri'],
             'target' => $sfCampaignData['target'],
+            'parentUsesSharedFunds' => $metaCampaign && $metaCampaign->usesSharedFunds(),
+            'parentRef' => $metaCampaign?->getSlug()->slug,
 
             // FE model also currently has a key-optional 'percentRaised' field, but SF never sends it and nothing in FE
             // runtime touches it - SF is currently doing its own division to calculate percent raised in
@@ -97,6 +102,7 @@ class CampaignService
             matchFundsTotal: $metaCampaign->getMatchFundsTotal()->toMajorUnitFloat(),
             campaignCount: $this->campaignRepository->countCampaignsInMetaCampaign($metaCampaign),
             usesSharedFunds: $metaCampaign->usesSharedFunds(),
+            shouldBeIndexed: $metaCampaign->shouldBeIndexed($this->clock->now()),
             useDon1120Banner: ! \is_null($bannerLayout),
             bannerLayout: $bannerLayout,
         );

@@ -77,11 +77,18 @@ jobs:
 
       - run: composer run integration-test
 
+      - run: composer run docs:all # Generate and merge OpenAPI documentation
+
+      - run: cd docs && apt update && apt install -y npm && npm i swagger-ui-dist
+
       - store_test_results:
           path: reports
 
       - store_artifacts:
           path: reports
+
+      - store_artifacts:
+          path: docs
 
       - codecov/upload:
           files: 'coverage.xml,coverage-integration.xml'
