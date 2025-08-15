@@ -458,7 +458,6 @@ class DonationTest extends TestCase
                 'enabled' => true,
                 'allow_redirects' => 'always',
             ],
-            'return_url' => Environment::current()->publicDonateURLPrefix() . 'thanks/' . $donation->getUuid()->toString() . '?from=bank',
         ];
 
         $expectedOnBehalfOfProperties = [

@@ -1310,7 +1310,6 @@ class Donation extends SalesforceWriteProxy
                 'enabled' => true,
                 'allow_redirects' => 'always',
             ],
-            'return_url' => Environment::current()->publicDonateURLPrefix() . 'thanks/' . $this->uuid->toString() . '?from=bank',
         ];
         $properties = match ($this->paymentMethodType) {
             PaymentMethodType::CustomerBalance => [
@@ -1319,7 +1318,11 @@ class Donation extends SalesforceWriteProxy
             // in these cases we want to use the Stripe Payment Element, so we can't specify card explicitly, we
             // need to turn on automatic methods instead and let the element decide what methods to show.
             PaymentMethodType::Card => $autoMethodProperties,
-            PaymentMethodType::PayByBank => $autoMethodProperties,
+            PaymentMethodType::PayByBank => [
+                ...$autoMethodProperties,
+                'return_url' => Environment::current()->publicDonateURLPrefix() . 'thanks/' . $this->uuid->toString() . '?from=bank',
+                'confirm' => true,
+            ],
             null => throw new \RuntimeException(
                 'Cannot get stripe method properties, no stripe method for donation ' . $this->uuid->toString()
             ),
