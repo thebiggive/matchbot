@@ -630,6 +630,12 @@ components:
         isMatched:
           type: boolean
           description: Whether the campaign is matched
+        parentUsesSharedFunds:
+          type: boolean
+          description: Whether the campaign is part of a metacampaign that has shared funds
+        parentRef:
+          type: string
+          description: slug of related metacampaign, if any
         matchFundsRemaining:
           type: number
           description: Amount of match funds remaining
