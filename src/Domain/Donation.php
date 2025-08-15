@@ -2055,9 +2055,8 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * For now this just does what it says on the tin, but I'm thinking of making it also update the donation
-     * fees (and making other relavent setters do the same so that @see self::deriveFees can be
-     * privatised). In the meantime that should be called after this.
+     * Sets or clears payment card and updates applicable fees accordingly. Callers should typically
+     * persist the changes and push metadata to Stripe after a change.
      *
      * @param PaymentCard $paymentCard
      * @return void

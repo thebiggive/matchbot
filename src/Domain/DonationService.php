@@ -426,8 +426,6 @@ class DonationService
     private function doUpdateDonationFees(
         Donation $donation,
     ): void {
-
-        // we still need this
         $updatedIntentData = [
             // only setting things that may need to be updated at this point.
             'metadata' => [
