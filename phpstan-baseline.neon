@@ -277,12 +277,6 @@ parameters:
 			path: tests/Application/Messenger/Handler/StripePayoutHandlerTest.php
 
 		-
-			message: '#^Property Stripe\\ConfirmationToken\:\:\$payment_method_preview \(Stripe\\StripeObject\|null\) does not accept array\<string, array\<string, string\>\>\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: tests/Domain/DonationServiceTest.php
-
-		-
 			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1

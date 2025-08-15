@@ -7,9 +7,9 @@ namespace MatchBot\Tests\Domain;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use MatchBot\Application\AssertionFailedException;
+use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\DomainException\CannotRemoveGiftAid;
@@ -24,7 +24,6 @@ use MatchBot\Domain\FundType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
-use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
@@ -457,8 +456,9 @@ class DonationTest extends TestCase
         $expectedPaymentMethodProperties = [
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'never',
+                'allow_redirects' => 'always',
             ],
+            'return_url' => Environment::current()->publicDonateURLPrefix() . 'thanks/' . $donation->getUuid()->toString() . '?from=bank',
         ];
 
         $expectedOnBehalfOfProperties = [
