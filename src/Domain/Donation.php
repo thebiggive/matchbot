@@ -1847,7 +1847,7 @@ class Donation extends SalesforceWriteProxy
      */
     private function assertionsForConfirmOrPreAuth(): \Assert\LazyAssertion
     {
-        $assertion = Assert::lazy()
+        return Assert::lazy()
             ->that($this->donorFirstName, 'donorFirstName')->notNull('Missing Donor First Name')
             ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
             ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
@@ -1856,19 +1856,12 @@ class Donation extends SalesforceWriteProxy
             ->that($this->tbgComms)->notNull('Missing tbgComms preference')
             ->that($this->charityComms)->notNull('Missing charityComms preference')
             ->that($this->donationStatus, 'donationStatus')
+            ->that($this->getFundingWithdrawalTotalAsObject()->amountInPence, 'matchedAmount')->greaterOrEqualThan($this->expectedMatchAmount->amountInPence)
             ->that($this->donationStatus)->inArray(
                 [DonationStatus::Pending, DonationStatus::PreAuthorized],
                 "Donation status is '{$this->donationStatus->value}', must be " .
                 "'Pending' or 'PreAuthorized' to confirm payment"
             );
-
-        if (! Environment::current()->isProduction()) {
-            // we can't assert this in prod just yet because we have to deploy and update to FE to have it tell us when the donor no longer
-            // expects their donation to be matched, and give time for any pending donations from before then to be confirmed or cancelled.
-            $assertion->that($this->getFundingWithdrawalTotalAsObject()->amountInPence, 'matchedAmount')->greaterOrEqualThan($this->expectedMatchAmount->amountInPence);
-        }
-
-        return $assertion;
     }
 
     /**
