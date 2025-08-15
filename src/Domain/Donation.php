@@ -1314,7 +1314,7 @@ class Donation extends SalesforceWriteProxy
             PaymentMethodType::Card => [
                 'automatic_payment_methods' => [
                     'enabled' => true,
-                    'allow_redirects' => 'never',
+                    'allow_redirects' => 'always',
                 ],
             ],
             PaymentMethodType::PayByBank => [
