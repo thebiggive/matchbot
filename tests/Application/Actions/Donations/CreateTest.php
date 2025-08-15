@@ -95,7 +95,7 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'always',
+                'allow_redirects' => 'never',
             ],
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
@@ -376,7 +376,7 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'always',
+                'allow_redirects' => 'never',
             ],
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
@@ -480,7 +480,7 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'always',
+                'allow_redirects' => 'never',
             ],
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'amount' => 1311, // Pence including tip
@@ -578,7 +578,7 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'always',
+                'allow_redirects' => 'never',
             ],
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',

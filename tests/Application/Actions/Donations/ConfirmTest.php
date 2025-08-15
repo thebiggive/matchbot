@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Donations\Confirm;
+use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\Allocator;
@@ -403,11 +404,14 @@ class ConfirmTest extends TestCase
             $expectedMetadataUpdate
         )->shouldBeCalled();
 
+        $returnUrl = Environment::current()->publicDonateURLPrefix() . 'thanks/' . $this->donationId->toString();
+
         if (is_string($confirmationTokenId)) {
             $confirmation = $this->stripeProphecy->confirmPaymentIntent(
                 $paymentIntentId,
                 [
-                    "confirmation_token" => $confirmationTokenId,
+                    'confirmation_token' => $confirmationTokenId,
+                    'return_url' => $returnUrl,
                 ]
             )->willReturn($updatedPaymentIntent);
 
@@ -415,6 +419,7 @@ class ConfirmTest extends TestCase
                 $paymentIntentRecreateExpected ? 'pi_new-id-for-test' : self::PAYMENT_INTENT_ID,
                 [
                     "confirmation_token" => $confirmationTokenId,
+                    'return_url' => $returnUrl,
                 ]
             )->willReturn($updatedPaymentIntent);
             $confirmationRetryWhichSucceeds->shouldBeCalled();
@@ -422,7 +427,8 @@ class ConfirmTest extends TestCase
             $confirmation = $this->stripeProphecy->confirmPaymentIntent(
                 $paymentIntentId,
                 [
-                    "payment_method" => $paymentMethodId,
+                    'payment_method' => $paymentMethodId,
+                    'return_url' => $returnUrl,
                 ]
             )->willReturn($updatedPaymentIntent);
         }
