@@ -17,6 +17,7 @@ use MatchBot\Domain\StripeConfirmationTokenId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
 use Stripe\ConfirmationToken;
@@ -124,7 +125,10 @@ EOF
             $donation->assertIsReadyToConfirm($this->clock->now());
         } catch (LazyAssertionException $exception) {
             $message = $exception->getMessage();
-            $this->logger->warning($message);
+
+            $level = \str_contains(haystack: $message, needle: 'matchedAmount') ? LogLevel::ERROR : LogLevel::WARNING;
+
+            $this->logger->log(level: $level, message: $message);
 
             throw new HttpBadRequestException($request, $message);
         }
