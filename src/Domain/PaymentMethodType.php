@@ -8,5 +8,4 @@ enum PaymentMethodType: string
 {
     case Card = 'card';
     case CustomerBalance = 'customer_balance';
-    case PayByBank = 'pay_by_bank';
 }

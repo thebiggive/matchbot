@@ -42,7 +42,6 @@ use Psr\Log\NullLogger;
 use Stripe\ConfirmationToken;
 use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
-use Stripe\StripeObject;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Message\ChatMessage;
@@ -278,14 +277,12 @@ class DonationServiceTest extends TestCase
             ->will(function () {
                 $confirmationToken = new ConfirmationToken();
                 /** @psalm-suppress InvalidPropertyAssignmentValue */
-                $confirmationToken->payment_method_preview = new StripeObject();
-                /** @psalm-suppress InvalidPropertyAssignmentValue */
-                $confirmationToken->payment_method_preview['type'] = 'card';
-                /** @psalm-suppress InvalidPropertyAssignmentValue */
-                $confirmationToken->payment_method_preview['card'] = ['brand' => 'visa', 'country' => 'GB'];
-                /** @psalm-suppress InvalidPropertyAssignmentValue */
-                $confirmationToken->payment_method_preview['pay_by_bank'] = null;
-
+                $confirmationToken->payment_method_preview = [
+                    'card' => [
+                        'brand' => 'visa',
+                        'country' => 'gb',
+                    ],
+                ];
                 return $confirmationToken;
             });
 
