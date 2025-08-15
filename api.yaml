@@ -85,7 +85,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: ["card", "customer_balance"]
+            enum: ["card", "customer_balance", "pay_by_bank"]
           description: Type of payment method
       security:
         - JWT: []
@@ -803,7 +803,7 @@ components:
           enum: ['stripe']
         pspMethodType:
           type: string
-          enum: ["card", "customer_balance"]
+          enum: ["card", "customer_balance", "pay_by_bank"]
           default: "card"
         status:
           description: See comments in \MatchBot\Domain\DonationStatus for semantics
