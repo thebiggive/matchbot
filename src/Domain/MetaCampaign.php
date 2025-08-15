@@ -30,7 +30,7 @@ class MetaCampaign extends SalesforceReadProxy
     public const string STATUS_VIEW_CAMPAIGN = 'View campaign';
 
     /** Metacampaigns from before this date may not have accurate data so should not be indexed */
-    public const string INDEX_FROM = '2020-01-01T00:00:00z';
+    public const string INDEX_FROM = '2019-12-01T00:00:00z';
 
     /** Metacampaigns that don't open soon may also have incomplete data so again not yet useful to ask
      * search engines to index.
