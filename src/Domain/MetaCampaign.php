@@ -372,6 +372,10 @@ class MetaCampaign extends SalesforceReadProxy
      */
     public function shouldBeIndexed(\DateTimeImmutable $at): bool
     {
+        if ($this->hidden) {
+            return false;
+        }
+
         return $this->startDate > new \DateTimeImmutable(self::INDEX_FROM) &&
             $this->startDate < $at->add(new \DateInterval(self::INDEX_NEW_INTERVAL));
     }
