@@ -373,6 +373,8 @@ readonly class RegularGivingService
                 dispatchUpdateMessage: false,
             );
             if (!$donation->isFullyMatched() && $mandate->isMatched()) {
+                /** @psalm-suppress RedundantCondition - not redundant for PHPStan */
+                \assert($donations !== []);
                 $maxMatchable = RegularGivingMandate::averageMatched($donations);
 
                 throw new NotFullyMatched(
