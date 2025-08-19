@@ -279,8 +279,9 @@ class CreateFictionalData extends Command
                     'country' => 'GB',
                     'email' => 'dev-test-stripe-account@biggive.org',
                     'capabilities' => [
-                        'transfers' => ['requested' => true],
                         'card_payments' => ['requested' => true],
+                        'pay_by_bank_payments' => ['requested' => true],
+                        'transfers' => ['requested' => true],
                     ],
                 ]);
 
