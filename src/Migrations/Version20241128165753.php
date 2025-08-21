@@ -21,7 +21,7 @@ final class Version20241128165753 extends AbstractMigration
     public function up(Schema $schema): void
     {
         /** @var array{array{campaignId: int, campaignFundingId: int, fundId: int, amount: float}} $deleteSets */
-        $deleteSets = [
+        $deleteSets = [ // @phpstan-ignore varTag.nativeType
             [
                 'campaignId' => 8289, // SF a056900002TPSp9AAH
                 'campaignFundingId' => 36212,

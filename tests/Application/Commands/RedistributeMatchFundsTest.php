@@ -247,8 +247,8 @@ class RedistributeMatchFundsTest extends TestCase
             amountAvailable: '0',
         );
 
-        $championFundWithdrawal = new FundingWithdrawal($campaignFunding);
-        $championFundWithdrawal->setAmount($donationAmount);
+        $championFundWithdrawal = new FundingWithdrawal($campaignFunding, $donation, $donationAmount);
+
         $donation->addFundingWithdrawal($championFundWithdrawal);
 
         return $donation;

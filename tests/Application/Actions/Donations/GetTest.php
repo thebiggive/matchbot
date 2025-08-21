@@ -103,7 +103,6 @@ class GetTest extends TestCase
     public function testSuccess(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
 
         $testDonation = $this->getTestDonation(charityComms: true, uuid: self::DONATION_UUID);
         $this->donationRepository->store($testDonation);

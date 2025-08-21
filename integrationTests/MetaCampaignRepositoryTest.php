@@ -96,9 +96,7 @@ class MetaCampaignRepositoryTest extends IntegrationTest
     {
         $donation = TestCase::someDonation(amount: '47.00', giftAid: false, campaign: $this->campaign, collected: true);
 
-        $fundingWithdrawal = new FundingWithdrawal($this->campaignFunding);
-        $fundingWithdrawal->setDonation($donation);
-        $fundingWithdrawal->setAmount('10.00');
+        $fundingWithdrawal = new FundingWithdrawal($this->campaignFunding, $donation, '10.00');
 
         $this->em->persist($donation);
         $this->em->persist($fundingWithdrawal);

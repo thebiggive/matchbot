@@ -38,6 +38,11 @@
                 <directory name="src/Application/Messenger/Handler"/>
             </errorLevel>
         </PossiblyUnusedMethod>
+        <PossiblyInvalidArgument>
+            <errorLevel type="suppress">
+                <file name="tests/Application/Fees/WebsiteExamplesCalculatorTest.php" />
+            </errorLevel>
+        </PossiblyInvalidArgument>
         <ClassMustBeFinal>
             <errorLevel type="suppress">
                 <!-- newly introduced psalm issue, not sure if we want to respect this rule yet -->

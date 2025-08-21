@@ -36,25 +36,18 @@ class FundingWithdrawal extends Model
     #[ORM\ManyToOne(targetEntity: CampaignFunding::class, fetch: 'EAGER', inversedBy: 'fundingWithdrawals')]
     private readonly CampaignFunding $campaignFunding; // @phpstan-ignore doctrine.associationType
 
-    public function __construct(CampaignFunding $campaignFunding)
-    {
-        $this->campaignFunding = $campaignFunding;
-    }
-
     /**
+     * @param CampaignFunding $campaignFunding
      * @param Donation $donation
-     */
-    public function setDonation(Donation $donation): void
-    {
-        $this->donation = $donation;
-    }
-
-    /**
      * @param numeric-string $amount
      */
-    public function setAmount(string $amount): void
+    public function __construct(CampaignFunding $campaignFunding, Donation $donation, string $amount)
     {
+        $this->campaignFunding = $campaignFunding;
+        $this->donation = $donation;
         $this->amount = $amount;
+
+        $this->createdNow();
     }
 
     /**

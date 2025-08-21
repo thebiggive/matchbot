@@ -55,7 +55,7 @@ class AdapterTest extends TestCase
         // amount returned in the getAmountAvailable call has to be from the realtime storage.
         $funding->setAmountAvailable('3');
 
-        \assert(50.0 + 12.53 === 62.53);
+        \assert(50.0 + 12.53 === 62.53); // @phpstan-ignore identical.alwaysTrue, function.alreadyNarrowedType
         $this->assertSame('62.53', $this->sut->getAmountAvailable($funding));
     }
 
@@ -71,7 +71,7 @@ class AdapterTest extends TestCase
 
         $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
 
-        \assert(50.0 - 10.10 === 39.9);
+        \assert(50.0 - 10.10 === 39.9); // @phpstan-ignore identical.alwaysTrue, function.alreadyNarrowedType
         $this->assertSame('39.90', $this->sut->getAmountAvailable($funding));
         $this->assertSame('39.90', $fundBalanceReturned);
     }
@@ -108,7 +108,7 @@ class AdapterTest extends TestCase
         // after each time we increase it by 30 pounds – via `subtractAmountWithoutSavingToDB()`
         // recovery calling `incrBy()` with overspent amount.
         $this->storage->setPreIncrCallBack(function (string $key) {
-            return $this->storage->decrBy($key, 40_00);
+            $this->storage->decrBy($key, 40_00);
         });
 
         $funding = new CampaignFunding(
@@ -141,7 +141,7 @@ class AdapterTest extends TestCase
         // fund started with 50, we successfully removed 30, and the callback removed 40 six times. We cleared up after
         // our unsuccessful attempts to withdraw more, not cleared up after the callback as would be the responsibility
         // of the other process.
-        \assert(50 - 30 - 40 * 6 === -220);
+        \assert(50 - 30 - 40 * 6 === -220); // @phpstan-ignore identical.alwaysTrue, function.alreadyNarrowedType
         $this->assertSame('-220.00', $this->sut->getAmountAvailable($funding));
     }
 

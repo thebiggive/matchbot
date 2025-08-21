@@ -14,7 +14,7 @@ use PrinsFrank\Standards\Country\CountryAlpha2;
  * Testing the fee calculator using the specific worked examples shown at https://biggive.org/our-fees/, currently
  * using examples from draft new version of that page.
  *
- * Many Psalm issues are suppressed here to make avoid verbosity and hopefully make the worked examples easy to edit.
+ * Some Psalm issues are suppressed here to make avoid verbosity and hopefully make the worked examples easy to edit.
  *
  * @psalm-suppress MixedReturnStatement
  */
@@ -87,12 +87,21 @@ class WebsiteExamplesCalculatorTest extends TestCase
 
     /**
      * @dataProvider getFeeWorkedExamples
-     * @psalm-suppress PossiblyUnusedParam
-     * @psalm-suppress MixedArgument
-     * @psalm-suppress MixedAssignment
      * @psalm-suppress ArgumentTypeCoercion
+     * @param array{
+     *     card_brand: string,
+     *     country: string,
+     *     donation_amount: string,
+     *     with_gift_aid: boolean,
+     *     processing_fee: string,
+     *     gift_aid_fee?: string,
+     *     total_fee: string,
+     *     fee_vat: string,
+     *     processing_fee_subtotal: string,
+     *     total_transferred_to_charity: string
+     * } $args
      */
-    public function testItCalculatesFeesAsShownOnWebsite(array $args): void // @phpstan-ignore missingType.iterableValue
+    public function testItCalculatesFeesAsShownOnWebsite(array $args): void
     {
         extract($args);
 
