@@ -38,18 +38,8 @@ class Sitemap extends Action
         // initial implementation of sitemap - following spec from https://www.sitemaps.org/protocol.html#prioritydef
         // which is what Google uses.
 
-        // For now just listing up to 100k campaign and (if open) donate pages.
-
-        // @todo:
-        // - add charity pages as well as campaigns.
-        // - add some of the most important other pages, e.g. static content. But afaik its not essential for
-        //   a sitemap to be comprehensive to be useful
-        // - consider if the 100k limit is appropriate.
-        // - increase cache duration, maybe explicitly expire cache when content changes. Consider persisting
-        // - something that would be cheaper to access than this to make additions to when we add a campaign.
-        // - submit sitemap to search engines and/or list in robots.txt
-
         $xml = new SimpleXMLElement('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+
         $campaigns = $this->campaignRepository->search(
             sortField: 'amountRaised',
             sortDirection:  'asc',

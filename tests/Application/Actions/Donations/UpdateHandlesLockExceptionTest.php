@@ -21,6 +21,7 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -79,7 +80,10 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $updateAction = $this->makeUpdateAction();
 
-        $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Pending"));
+        $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(
+            newStatus: 'Pending',
+            paymentMethodType: PaymentMethodType::Card,
+        ));
 
         // act
         $response = $updateAction($request, new Response(), ['donationId' => $donationId]);
@@ -101,10 +105,15 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $updateAction = $this->makeUpdateAction();
 
-        $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Cancelled"));
+        $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(
+            newStatus: "Cancelled",
+            paymentMethodType: PaymentMethodType::Card,
+        ));
 
         // act
         $response = $updateAction($request, new Response(), ['donationId' => $donationId]);
+
+//        $this->assertSame('asdf', (string) $response->getBody()->getContents());
 
         // assert
         $this->assertSame(200, $response->getStatusCode());
@@ -131,7 +140,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         return $donation;
     }
 
-    private function putRequestBody(string $newStatus): string
+    private function putRequestBody(string $newStatus, PaymentMethodType $paymentMethodType): string
     {
         // props in alphabetical order
         return <<<JSON
@@ -150,6 +159,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
           "optInChampionEmail": false,
           "optInCharityEmail": false,
           "optInTbgEmail": false,
+          "pspMethodType": "{$paymentMethodType->value}",
           "status": "$newStatus",
           "tipAmount": null,
           "tipGiftAid": null,

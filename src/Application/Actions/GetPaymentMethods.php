@@ -44,7 +44,7 @@ class GetPaymentMethods extends Action
 
         $nonRegularGivingMethods = array_values(array_filter(
             $paymentMethodArray,
-            static function (array $paymentMethod) use ($donor, &$regularGivingPaymentMethod) {
+            static function (array $paymentMethod) use ($donor, &$regularGivingPaymentMethod): bool {
                 if ($paymentMethod['id'] === $donor->getRegularGivingPaymentMethod()?->stripePaymentMethodId) {
                     $regularGivingPaymentMethod = $paymentMethod;
                     return false;

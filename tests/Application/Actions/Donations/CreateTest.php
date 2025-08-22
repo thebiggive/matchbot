@@ -8,6 +8,7 @@ use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\UnitOfWork;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Messenger\DonationUpserted;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,6 +25,7 @@ use MatchBot\Domain\Fund as FundEntity;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
@@ -94,7 +96,7 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'never',
+                'allow_redirects' => 'always',
             ],
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
@@ -375,7 +377,7 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'never',
+                'allow_redirects' => 'always',
             ],
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
@@ -479,7 +481,7 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'never',
+                'allow_redirects' => 'always',
             ],
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'amount' => 1311, // Pence including tip
@@ -577,7 +579,7 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'never',
+                'allow_redirects' => 'always',
             ],
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
@@ -972,7 +974,7 @@ class CreateTest extends TestCase
         $donation->setCampaign(TestCase::getMinimalCampaign());
 
         if (!$minimalSetupData) {
-            $donation->update(giftAid: false);
+            $donation->update(paymentMethodType: PaymentMethodType::Card, giftAid: false);
             $donation->setCharityComms(true);
             $donation->setChampionComms(false);
             $donation->setTbgComms(false);

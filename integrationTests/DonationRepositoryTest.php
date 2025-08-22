@@ -86,6 +86,7 @@ class DonationRepositoryTest extends IntegrationTest
         ), $campaign, PersonId::nil());
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::CustomerBalance,
             giftAid: true,
             donorHomeAddressLine1: "home address",
         );

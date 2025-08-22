@@ -7,9 +7,9 @@ namespace MatchBot\Tests\Domain;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use MatchBot\Application\AssertionFailedException;
+use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\DomainException\CannotRemoveGiftAid;
@@ -24,7 +24,6 @@ use MatchBot\Domain\FundType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
-use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
@@ -457,7 +456,7 @@ class DonationTest extends TestCase
         $expectedPaymentMethodProperties = [
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'never',
+                'allow_redirects' => 'always',
             ],
         ];
 
@@ -534,6 +533,7 @@ class DonationTest extends TestCase
         ), TestCase::someCampaign(), PersonId::nil());
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: false,
             donorBillingPostcode: 'SW1 1AA',
             donorName: DonorName::of('Charlie', 'The Charitable'),
@@ -560,6 +560,7 @@ class DonationTest extends TestCase
         ), TestCase::someCampaign(), PersonId::nil());
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: false,
             donorBillingPostcode: null,
             donorName: DonorName::of('Charlie', 'The Charitable'),
@@ -586,6 +587,7 @@ class DonationTest extends TestCase
         ), TestCase::someCampaign(), PersonId::nil());
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: false,
             donorBillingPostcode: 'SW1A 1AA',
             donorName: DonorName::of('Charlie', 'The Charitable'),
@@ -613,6 +615,7 @@ class DonationTest extends TestCase
         ), TestCase::someCampaign(), PersonId::nil());
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: false,
             donorBillingPostcode: 'SW1A 1AA',
             donorName: DonorName::of('Charlie', 'The Charitable'),
@@ -885,6 +888,7 @@ class DonationTest extends TestCase
         $this->expectExceptionMessage('Cannot Claim Gift Aid Without Home Address');
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: null,
         );
@@ -907,6 +911,7 @@ class DonationTest extends TestCase
         $this->expectExceptionMessage('Cannot Claim Gift Aid Without Home Address');
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: '   ',
         );
@@ -938,6 +943,7 @@ class DonationTest extends TestCase
 
         // act
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: 'Updated home address',
         );
@@ -949,6 +955,7 @@ class DonationTest extends TestCase
 
         $this->expectExceptionMessage('too long, it should have no more than 255 characters, but has 256 characters');
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: false,
             donorHomeAddressLine1: str_repeat('a', 256),
         );
@@ -960,6 +967,7 @@ class DonationTest extends TestCase
 
         $this->expectExceptionMessage('too long, it should have no more than 8 characters, but has 43 characters');
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: 'a pretty how town',
             donorHomePostcode: 'This is too long to be a plausible postcode'

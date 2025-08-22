@@ -701,6 +701,7 @@ class UpdateTest extends TestCase
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: '99 Updated St',
         );
@@ -774,6 +775,7 @@ class UpdateTest extends TestCase
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: '99 Updated St',
         );
@@ -852,6 +854,7 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: '99 Updated St',
         );
@@ -939,6 +942,7 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: '99 Updated St',
         );
@@ -1016,6 +1020,7 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: '99 Updated St'
         );
@@ -1097,6 +1102,7 @@ class UpdateTest extends TestCase
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: '99 Updated St'
         );
@@ -1174,6 +1180,7 @@ class UpdateTest extends TestCase
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
             donorHomeAddressLine1: '99 Updated St',
             donorBillingPostcode: 'Y1 1YX',
