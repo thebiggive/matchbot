@@ -155,7 +155,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
         // code, and may get mutation tests working again.
-        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();  // @phpstan-ignore property.notFound
 
         $this->mailerClientProphecy->send(Argument::type(EmailMessage::class))->shouldBeCalledOnce();
 
@@ -214,7 +214,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldBeCalledOnce()
             ->willReturn(BalanceTransaction::constructFrom((array) json_decode($balanceTxnResponse, associative: true)));
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();  // @phpstan-ignore property.notFound
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());

@@ -140,10 +140,10 @@ class DonationNotifierTest extends TestCase
                 new Fund('GBP', 'some-fund', null, null, $fundType),
                 amount: '100',
                 amountAvailable: '1',
-            )
+            ),
+            $donation,
+            $amount
         );
-
-        $fundingWithdrawal->setAmount($amount);
 
         $donation->addFundingWithdrawal(
             $fundingWithdrawal

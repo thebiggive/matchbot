@@ -9,7 +9,7 @@ use Firebase\JWT\Key;
 use JetBrains\PhpStorm\Pure;
 use Psr\Log\LoggerInterface;
 
-class DonationToken
+final class DonationToken
 {
     /**
      * @link https://stackoverflow.com/questions/39239051/rs256-vs-hs256-whats-the-difference has info on hash

@@ -554,6 +554,7 @@ class DonationService
      * Call this from inside a transaction and with a locked donation to avoid double releasing funds associated with
      * the donation.
      * @throws CouldNotCancelStripePaymentIntent
+     * @throws DonationAlreadyFinalised
      */
     public function cancel(Donation $donation): void
     {
@@ -924,7 +925,7 @@ class DonationService
     }
 
     /**
-     * @param null|Closure():Donation $fakeDonationProviderForTestUseOnly = null;
+     * @param null|\Closure():Donation $fakeDonationProviderForTestUseOnly = null;
      */
     public function setFakeDonationProviderForTestUseOnly(?\Closure $fakeDonationProviderForTestUseOnly): void
     {

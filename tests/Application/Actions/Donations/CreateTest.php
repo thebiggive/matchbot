@@ -62,9 +62,7 @@ class CreateTest extends TestCase
 
     /** @var ObjectProphecy<RoutableMessageBus> */
     private ObjectProphecy $messageBusProphecy;
-    /**
-     * @var mixed|object|ClockInterface
-     */
+
     private ClockInterface $previousClock;
     private \DateTimeImmutable $now;
     private ?Campaign $campaign = null;
@@ -91,7 +89,7 @@ class CreateTest extends TestCase
 
         $this->now = new \DateTimeImmutable('2024-12-24'); // specific date doesn't matter.
 
-        static::$somePaymentIntentArgs = [
+        self::$somePaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
             'automatic_payment_methods' => [
@@ -122,7 +120,7 @@ class CreateTest extends TestCase
             ],
         ];
 
-        static::$somePaymentIntentResult = new PaymentIntent([
+        self::$somePaymentIntentResult = new PaymentIntent([
             'id' => 'pi_dummyIntent_id',
             'object' => 'payment_intent',
             'amount' => 1311,
@@ -461,9 +459,7 @@ class CreateTest extends TestCase
     {
         $donation = $this->getTestDonation(true, true);
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
+        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding(), $donation, '8.00' /* partial match */);
 
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatusForTest(DonationStatus::Pending);
@@ -556,10 +552,6 @@ class CreateTest extends TestCase
     {
         $donation = $this->getTestDonation(true, true);
         $donation->setPspCustomerId(self::PSPCUSTOMERID);
-
-        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatusForTest(DonationStatus::Pending);
@@ -996,11 +988,7 @@ class CreateTest extends TestCase
      */
     private static function someWithdrawal(Donation $donation): FundingWithdrawal
     {
-        $withdrawal = new FundingWithdrawal(self::someCampaignFunding());
-        $withdrawal->setAmount('8.00');
-        $withdrawal->setDonation($donation);
-
-        return $withdrawal;
+        return new FundingWithdrawal(self::someCampaignFunding(), $donation, '8.00');
     }
 
     private static function someCampaignFunding(): CampaignFunding

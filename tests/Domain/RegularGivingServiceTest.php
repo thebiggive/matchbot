@@ -116,8 +116,7 @@ class RegularGivingServiceTest extends TestCase
              * @param Donation[] $args
              */
                 function ($args) use ($testCase) {
-                    $withdrawal = new FundingWithdrawal($testCase->campaignFunding);
-                    $withdrawal->setAmount('42.00');
+                    $withdrawal = new FundingWithdrawal($testCase->campaignFunding, $args[0], '42.00');
                     $args[0]->addFundingWithdrawal($withdrawal);
 
                     $testCase->donations[] = $args[0];
@@ -356,8 +355,11 @@ class RegularGivingServiceTest extends TestCase
              * @param Donation[] $args
              */
                 function ($args) use ($testCase, &$donations) {
-                    $withdrawal = new FundingWithdrawal($testCase->campaignFunding);
-                    $withdrawal->setAmount($args[0]->getMandateSequenceNumber()?->number == 3 ? '42.99' : '42.00');
+                    $withdrawal = new FundingWithdrawal(
+                        campaignFunding: $testCase->campaignFunding,
+                        donation: $args[0],
+                        amount: $args[0]->getMandateSequenceNumber()?->number == 3 ? '42.99' : '42.00'
+                    );
                     $args[0]->addFundingWithdrawal($withdrawal);
 
                     $donations[] = $args[0];

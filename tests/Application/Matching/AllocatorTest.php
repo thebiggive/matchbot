@@ -225,7 +225,7 @@ class AllocatorTest extends TestCase
         $this->assertSame($campaignFunding0, $fundingWithdrawals[0]->getCampaignFunding());
 
         $this->assertInstanceOf(FundingWithdrawal::class, $fundingWithdrawals[1]);
-        \assert(10 - 6 == 4);
+        \assert(10 - 6 === 4); // @phpstan-ignore identical.alwaysTrue, function.alreadyNarrowedType
         $this->assertSame($withdrawl1AmountExpected, $fundingWithdrawals[1]->getAmount());
         $this->assertSame($campaignFunding1, $fundingWithdrawals[1]->getCampaignFunding());
     }
@@ -255,8 +255,8 @@ class AllocatorTest extends TestCase
             $this->campaign,
             PersonId::nil(),
         );
-        $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
-        $fundingWithdrawal->setAmount('1.00');
+        $fundingWithdrawal = new FundingWithdrawal($campaignFunding, $donation, '1.00');
+
         $donation->addFundingWithdrawal($fundingWithdrawal);
 
         $this->emProphecy->flush()->shouldBeCalled();

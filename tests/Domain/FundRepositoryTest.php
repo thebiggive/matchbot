@@ -79,7 +79,6 @@ class FundRepositoryTest extends TestCase
         $repo->pullForCampaign($campaign, $this->now);
 
         $this->assertInstanceOf(CampaignFunding::class, $campaignFunding);
-        $this->assertInstanceOf(\DateTime::class, $campaignFunding->getCreatedDate());
         $this->assertSame('1500', $campaignFunding->getAmount());
         $this->assertSame('GBP', $campaignFunding->getCurrencyCode());
         $this->assertSame('1500', $campaignFunding->getAmountAvailable());
@@ -332,6 +331,7 @@ class FundRepositoryTest extends TestCase
             ->willReturnCallback(fn(array $constraint) => match ($constraint) {
                 ['salesforceId' => 'sffundid1234567890'] => $existingFundNonShared,
                 ['salesforceId' => 'sffunDid4567890ABC'] => $existingFundShared,
+                default => throw new \Exception('Unexpected findOneBy arguments'),
             });
 
         $repo->setCampaignFundingRepository($campaignFundingRepo);

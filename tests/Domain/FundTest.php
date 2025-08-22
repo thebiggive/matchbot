@@ -67,7 +67,7 @@ class FundTest extends TestCase
      *     totalAmount: Money,
      * }}
      */
-    private function amountsToSummarise(): array
+    public function amountsToSummarise(): array
     {
         /**
          * @var list{array{
@@ -76,7 +76,7 @@ class FundTest extends TestCase
          *  totalAmount: Money,
          * }} $dataSets
          */
-        $dataSets = [
+        $dataSets = [ // @phpstan-ignore varTag.nativeType
             [
                 'totalAmount' => Money::fromNumericStringGBP('123.45'),
                 'amountAvailable' => Money::fromNumericStringGBP('100.00'),

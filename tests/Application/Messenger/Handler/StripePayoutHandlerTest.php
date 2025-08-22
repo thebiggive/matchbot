@@ -104,8 +104,8 @@ class StripePayoutHandlerTest extends TestCase
         $stripeClientProphecy = $this->getStripeClient(withRetriedPayout: false);
         // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
         // code, and may get mutation tests working again.
-        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
-        @$stripeClientProphecy->charges = $this->getStripeChargeList($chargeResponse);
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();  // @phpstan-ignore property.notFound
+        @$stripeClientProphecy->charges = $this->getStripeChargeList($chargeResponse);  // @phpstan-ignore property.notFound
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -158,8 +158,8 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
 
         $stripeClientProphecy = $this->getStripeClient(withRetriedPayout: false);
-        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
-        @$stripeClientProphecy->charges = $this->getStripeChargeList($chargeResponse);
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();  // @phpstan-ignore property.notFound
+        @$stripeClientProphecy->charges = $this->getStripeChargeList($chargeResponse);  // @phpstan-ignore property.notFound
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -224,8 +224,8 @@ class StripePayoutHandlerTest extends TestCase
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripeClientProphecy = $this->getStripeClient(withRetriedPayout: true);
-        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
-        @$stripeClientProphecy->charges = $this->getStripeChargeList($chargeResponse);
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();  // @phpstan-ignore property.notFound
+        @$stripeClientProphecy->charges = $this->getStripeChargeList($chargeResponse);  // @phpstan-ignore property.notFound
 
         $container->set(DonationRepository::class, $donationRepository);
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -269,7 +269,7 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
 
         $stripeClientProphecy = $this->getStripeClient(withRetriedPayout: false, withPayoutSuccess: false);
-        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal(); // @phpstan-ignore property.notFound
 
         $container->set(DonationRepository::class, $this->prophesize(DonationRepository::class)->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -321,7 +321,7 @@ class StripePayoutHandlerTest extends TestCase
 
         // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
         // code, and may get mutation tests working again.
-        @$stripeClientProphecy->payouts = $stripePayoutProphecy->reveal();
+        @$stripeClientProphecy->payouts = $stripePayoutProphecy->reveal(); // @phpstan-ignore property.notFound
 
         return $stripeClientProphecy;
     }

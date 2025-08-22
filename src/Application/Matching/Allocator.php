@@ -193,9 +193,7 @@ class Allocator
             $amountLeftToMatch = bcsub($amountLeftToMatch, $amountAllocated, 2);
 
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
-                $withdrawal = new FundingWithdrawal($funding);
-                $withdrawal->setDonation($donation);
-                $withdrawal->setAmount($amountAllocated);
+                $withdrawal = new FundingWithdrawal($funding, $donation, $amountAllocated);
                 $newWithdrawals[] = $withdrawal;
                 $this->logInfo("Successfully withdrew $amountAllocated from funding ID {$funding->getId()} for UUID {$donation->getUuid()}");
                 $this->logInfo("New fund total for {$funding->getId()}: $newTotal");
