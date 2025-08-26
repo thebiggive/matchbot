@@ -21,6 +21,7 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 class FundRepository extends SalesforceReadProxyRepository
 {
     private ?CampaignFundingRepository $campaignFundingRepository = null;
+    // @phpstan-ignore property.onlyWritten
     private ?Matching\Adapter $matchingAdapter = null;
 
     public function setCampaignFundingRepository(CampaignFundingRepository $repository): void
@@ -39,7 +40,6 @@ class FundRepository extends SalesforceReadProxyRepository
     /**
      * @param Campaign  $campaign
      * @param DateTimeImmutable $at
-     * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @psalm-suppress PossiblyUnusedParam
      * @psalm-suppress UnevaluatedCode
      */
@@ -47,6 +47,7 @@ class FundRepository extends SalesforceReadProxyRepository
     {
         return; // TODO Turn back on later on 26/8/25.
 
+        // @phpstan-ignore deadCode.unreachable
         $client = $this->getClient();
 
         $campaignSFId = $campaign->getSalesforceId();
@@ -153,6 +154,7 @@ class FundRepository extends SalesforceReadProxyRepository
     /**
      * @param array{currencyCode: ?string, name: ?string, slug: ?string, type: string, id:string, ...} $fundData
      */
+    // @phpstan-ignore method.unused
     private function setAnyFundData(Fund $fund, array $fundData): Fund
     {
         $currencyCode = $fundData['currencyCode'] ?? 'GBP';
@@ -266,6 +268,7 @@ EOT;
         return $result;
     }
 
+    // @phpstan-ignore method.unused
     private function getCampaignFundingRepository(): CampaignFundingRepository
     {
         return $this->campaignFundingRepository ?? throw new \Exception('CampaignFundingRepository not set');
