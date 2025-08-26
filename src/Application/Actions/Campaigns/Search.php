@@ -74,17 +74,21 @@ class Search extends Action
 
         // Use limit 100 if a higher value requested.
         $limit = min(100, (int) ($params['limit'] ?? 20));
-        $campaigns = $this->campaignRepository->search(
-            sortField: $sortField,
-            sortDirection: $sortDirection,
-            offset: (int) ($params['offset'] ?? 0),
-            limit: $limit,
-            status: $status,
-            metaCampaignSlug: $parentSlug,
-            fundSlug: $fundSlug,
-            jsonMatchInListConditions: $jsonMatchInListConditions,
-            term: $term,
-        );
+        try {
+            $campaigns = $this->campaignRepository->search(
+                sortField: $sortField,
+                sortDirection: $sortDirection,
+                offset: (int)($params['offset'] ?? 0),
+                limit: $limit,
+                status: $status,
+                metaCampaignSlug: $parentSlug,
+                fundSlug: $fundSlug,
+                jsonMatchInListConditions: $jsonMatchInListConditions,
+                term: $term,
+            );
+        } catch (\InvalidArgumentException $exception) {
+            throw new HttpBadRequestException($request, $exception->getMessage(), $exception);
+        }
 
         /**
          * Some campaigns have SF data {} when they were last synced before we saved full SF data. If we try
