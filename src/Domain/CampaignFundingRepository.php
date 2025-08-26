@@ -92,6 +92,9 @@ class CampaignFundingRepository extends EntityRepository
         return Money::fromNumericString($result[0]['sum'], Currency::fromIsoCode($result[0]['currencyCode']));
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function getFunding(Fund $fund): ?CampaignFunding
     {
         $query = $this->getEntityManager()->createQuery('
@@ -107,6 +110,9 @@ class CampaignFundingRepository extends EntityRepository
         return $result;
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function getFundingForCampaign(Campaign $campaign, Fund $fund): ?CampaignFunding
     {
         $query = $this->getEntityManager()->createQuery('
