@@ -57,7 +57,6 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
     {
         $logger->warning('Unauthorised');
 
-        /** @var ResponseInterface $response */
         $response = new Response(StatusCodeInterface::STATUS_UNAUTHORIZED);
         $response->getBody()->write(json_encode(['error' => 'Unauthorized'], JSON_THROW_ON_ERROR));
 

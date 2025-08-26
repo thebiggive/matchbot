@@ -86,6 +86,7 @@ class DonationRepositoryTest extends IntegrationTest
         ), $campaign, PersonId::nil());
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::CustomerBalance,
             giftAid: true,
             donorHomeAddressLine1: "home address",
         );
@@ -207,10 +208,8 @@ class DonationRepositoryTest extends IntegrationTest
             amount: '1.0',
             amountAvailable: '1.0',
         );
-        $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
+        $fundingWithdrawal = new FundingWithdrawal($campaignFunding, $oldPendingDonation, '1');
         $oldPendingDonation->addFundingWithdrawal($fundingWithdrawal);
-        $fundingWithdrawal->setAmount('1');
-        $fundingWithdrawal->setDonation($oldPendingDonation);
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($pledge);

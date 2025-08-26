@@ -330,6 +330,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         );
 
         $donation->update(
+            paymentMethodType: PaymentMethodType::Card,
             giftAid: $this->giftAid,
             tipGiftAid: false,
             donorHomeAddressLine1: $donor->getHomeAddressLine1(),

@@ -121,7 +121,6 @@ class StripePaymentsUpdate extends Stripe
 
         $this->entityManager->beginTransaction();
 
-        /** @var Donation $donation */
         if (is_string($intentId)) {
             $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
         } else {

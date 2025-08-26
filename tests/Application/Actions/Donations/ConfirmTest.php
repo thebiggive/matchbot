@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Donations\Confirm;
+use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\Allocator;
@@ -19,6 +20,7 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Tests\TestCase;
@@ -385,6 +387,9 @@ class ConfirmTest extends TestCase
             /** @psalm-suppress InvalidPropertyAssignmentValue */
             $confirmationToken->payment_method_preview['card'] = $cardDetails;
 
+            /** @psalm-suppress InvalidPropertyAssignmentValue */
+            $confirmationToken->payment_method_preview['pay_by_bank'] = null;
+
             $confirmationToken->setup_future_usage = ConfirmationToken::SETUP_FUTURE_USAGE_ON_SESSION; // Simulate box checked in Donate on 1st attempt
 
             $this->stripeProphecy->retrieveConfirmationToken(StripeConfirmationTokenId::of($confirmationTokenId))
@@ -400,11 +405,14 @@ class ConfirmTest extends TestCase
             $expectedMetadataUpdate
         )->shouldBeCalled();
 
+        $returnUrl = Environment::current()->publicDonateURLPrefix() . 'thanks/' . $this->donationId->toString();
+
         if (is_string($confirmationTokenId)) {
             $confirmation = $this->stripeProphecy->confirmPaymentIntent(
                 $paymentIntentId,
                 [
-                    "confirmation_token" => $confirmationTokenId,
+                    'confirmation_token' => $confirmationTokenId,
+                    'return_url' => $returnUrl,
                 ]
             )->willReturn($updatedPaymentIntent);
 
@@ -412,6 +420,7 @@ class ConfirmTest extends TestCase
                 $paymentIntentRecreateExpected ? 'pi_new-id-for-test' : self::PAYMENT_INTENT_ID,
                 [
                     "confirmation_token" => $confirmationTokenId,
+                    'return_url' => $returnUrl,
                 ]
             )->willReturn($updatedPaymentIntent);
             $confirmationRetryWhichSucceeds->shouldBeCalled();
@@ -419,7 +428,8 @@ class ConfirmTest extends TestCase
             $confirmation = $this->stripeProphecy->confirmPaymentIntent(
                 $paymentIntentId,
                 [
-                    "payment_method" => $paymentMethodId,
+                    'payment_method' => $paymentMethodId,
+                    'return_url' => $returnUrl,
                 ]
             )->willReturn($updatedPaymentIntent);
         }
@@ -480,6 +490,7 @@ class ConfirmTest extends TestCase
                 $donation->setUuid($testCase->donationId);
 
                 $donation->update(
+                    paymentMethodType: PaymentMethodType::Card,
                     giftAid: false,
                     donorBillingPostcode: 'SW1 1AA',
                     donorName: DonorName::of('Charlie', 'The Charitable'),

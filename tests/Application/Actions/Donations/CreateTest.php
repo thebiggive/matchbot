@@ -8,6 +8,7 @@ use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\UnitOfWork;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Messenger\DonationUpserted;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,6 +25,7 @@ use MatchBot\Domain\Fund as FundEntity;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
@@ -60,9 +62,7 @@ class CreateTest extends TestCase
 
     /** @var ObjectProphecy<RoutableMessageBus> */
     private ObjectProphecy $messageBusProphecy;
-    /**
-     * @var mixed|object|ClockInterface
-     */
+
     private ClockInterface $previousClock;
     private \DateTimeImmutable $now;
     private ?Campaign $campaign = null;
@@ -89,12 +89,12 @@ class CreateTest extends TestCase
 
         $this->now = new \DateTimeImmutable('2024-12-24'); // specific date doesn't matter.
 
-        static::$somePaymentIntentArgs = [
+        self::$somePaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'never',
+                'allow_redirects' => 'always',
             ],
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
@@ -120,7 +120,7 @@ class CreateTest extends TestCase
             ],
         ];
 
-        static::$somePaymentIntentResult = new PaymentIntent([
+        self::$somePaymentIntentResult = new PaymentIntent([
             'id' => 'pi_dummyIntent_id',
             'object' => 'payment_intent',
             'amount' => 1311,
@@ -375,7 +375,7 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'never',
+                'allow_redirects' => 'always',
             ],
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
@@ -459,9 +459,7 @@ class CreateTest extends TestCase
     {
         $donation = $this->getTestDonation(true, true);
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
+        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding(), $donation, '8.00' /* partial match */);
 
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatusForTest(DonationStatus::Pending);
@@ -479,7 +477,7 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'never',
+                'allow_redirects' => 'always',
             ],
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'amount' => 1311, // Pence including tip
@@ -555,10 +553,6 @@ class CreateTest extends TestCase
         $donation = $this->getTestDonation(true, true);
         $donation->setPspCustomerId(self::PSPCUSTOMERID);
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
-
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatusForTest(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
@@ -577,7 +571,7 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
-                'allow_redirects' => 'never',
+                'allow_redirects' => 'always',
             ],
             'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
@@ -972,7 +966,7 @@ class CreateTest extends TestCase
         $donation->setCampaign(TestCase::getMinimalCampaign());
 
         if (!$minimalSetupData) {
-            $donation->update(giftAid: false);
+            $donation->update(paymentMethodType: PaymentMethodType::Card, giftAid: false);
             $donation->setCharityComms(true);
             $donation->setChampionComms(false);
             $donation->setTbgComms(false);
@@ -994,11 +988,7 @@ class CreateTest extends TestCase
      */
     private static function someWithdrawal(Donation $donation): FundingWithdrawal
     {
-        $withdrawal = new FundingWithdrawal(self::someCampaignFunding());
-        $withdrawal->setAmount('8.00');
-        $withdrawal->setDonation($donation);
-
-        return $withdrawal;
+        return new FundingWithdrawal(self::someCampaignFunding(), $donation, '8.00');
     }
 
     private static function someCampaignFunding(): CampaignFunding

@@ -8,4 +8,23 @@ enum PaymentMethodType: string
 {
     case Card = 'card';
     case CustomerBalance = 'customer_balance';
+    case PayByBank = 'pay_by_bank';
+
+    public static function fromString(string $pspMethodType): self
+    {
+        return match ($pspMethodType) {
+            'card' => self::Card,
+            'customer_balance' => self::CustomerBalance,
+            'pay_by_bank' => self::PayByBank,
+            default => throw new \InvalidArgumentException("Unknown payment method type: $pspMethodType"),
+        };
+    }
+
+    public function usesPaymentElement(): bool
+    {
+        return match ($this) {
+            self::Card, self::PayByBank => true,
+            self::CustomerBalance => false,
+        };
+    }
 }

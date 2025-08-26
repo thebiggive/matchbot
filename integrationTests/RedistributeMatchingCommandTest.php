@@ -168,9 +168,8 @@ class RedistributeMatchingCommandTest extends IntegrationTest
             chargeCreationTimestamp: time(),
         );
 
-        $championFundWithdrawal = new FundingWithdrawal($championFundCampaignFunding);
-        $championFundWithdrawal->setAmount('250.00');
-        $championFundWithdrawal->setDonation($donation);
+        $championFundWithdrawal = new FundingWithdrawal($championFundCampaignFunding, $donation, (string)$amount);
+
         // Not really sure why fixture has to do this both ways around, but re-loading the object
         // and doing just one both seemed to cause problems.
         $donation->addFundingWithdrawal($championFundWithdrawal);

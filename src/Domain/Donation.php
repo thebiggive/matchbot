@@ -44,7 +44,8 @@ class Donation extends SalesforceWriteProxy
     use TimestampsTrait;
 
     /**
-     * @see Donation::$currencyCode
+     * @see self::$currencyCode
+     * Also currently the limit for Pay By Bank.
      */
     public const int MAXIMUM_CARD_DONATION = 25_000;
 
@@ -359,6 +360,12 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(nullable: true)]
     protected ?string $pspCustomerId = null;
 
+    /**
+     * Until a Donation is confirmed, we mostly try to avoid restricting switches between 'card' and
+     * 'pay_by_bank' as they both behave similarly except that `pay_by_bank` cannot be set up for
+     * future off-session usage. Update will try to change the method to the latest received from the
+     * frontend.
+     */
     #[ORM\Column(nullable: true)]
     protected ?PaymentMethodType $paymentMethodType = PaymentMethodType::Card;
 
@@ -554,6 +561,7 @@ class Donation extends SalesforceWriteProxy
         return match ($paymentMethodType) {
             PaymentMethodType::CustomerBalance => self::MAXIMUM_CUSTOMER_BALANCE_DONATION,
             PaymentMethodType::Card => self::MAXIMUM_CARD_DONATION,
+            PaymentMethodType::PayByBank => self::MAXIMUM_CARD_DONATION,
         };
     }
 
@@ -1287,7 +1295,7 @@ class Donation extends SalesforceWriteProxy
      * We want to ensure each Payment Intent is set up to be settled a specific way, so
      * we get this from an on-create property of the Donation instead of using
      * `automatic_payment_methods`.
-     * "card" includes wallets and is the method for the vast majority of donations.
+     * "card" includes wallets and is the method for the majority of donations.
      * "customer_balance" is used when a previous bank transfer means a donor already
      * has credits to use for platform charities, *and* for Big Give tips set up when
      * preparing to make a bank transfer. In the latter case we rely on
@@ -1302,13 +1310,14 @@ class Donation extends SalesforceWriteProxy
             PaymentMethodType::CustomerBalance => [
                 'payment_method_types' => ['customer_balance'],
             ],
-            PaymentMethodType::Card => [
-                // in this case we want to use the Stripe Payment Element, so we can't specify card explicitly, we
-                // need to turn on automatic methods instead and let the element decide what methods to show.
+            // in these cases we want to use the Stripe Payment Element, so we can't specify card explicitly, we
+            // need to turn on automatic methods instead and let the element decide what methods to show.
+            PaymentMethodType::Card,
+            PaymentMethodType::PayByBank => [
                 'automatic_payment_methods' => [
                     'enabled' => true,
-                    'allow_redirects' => 'never',
-                ]
+                    'allow_redirects' => 'always',
+                ],
             ],
             null => throw new \RuntimeException(
                 'Cannot get stripe method properties, no stripe method for donation ' . $this->uuid->toString()
@@ -1330,6 +1339,16 @@ class Donation extends SalesforceWriteProxy
                     'bank_transfer' => [
                         'type' => 'gb_bank_transfer',
                     ],
+                ],
+            ];
+        }
+
+        // https://docs.stripe.com/api/payment_intents/object#payment_intent_object-payment_method_options-pay_by_bank
+        if ($this->paymentMethodType === PaymentMethodType::PayByBank) {
+            $properties['payment_method_options'] = [
+                'pay_by_bank' => [
+                    'country' => $this->donorCountryCode,
+                    'statement_descriptor' => $this->getCampaign()->getCharity()->getStatementDescriptor(),
                 ],
             ];
         }
@@ -1592,6 +1611,7 @@ class Donation extends SalesforceWriteProxy
      * Updates a pending donation to reflect changes made in the donation form.
      */
     public function update(
+        PaymentMethodType $paymentMethodType,
         bool $giftAid,
         ?bool $tipGiftAid = null,
         ?string $donorHomeAddressLine1 = null,
@@ -1606,6 +1626,14 @@ class Donation extends SalesforceWriteProxy
         if ($this->donationStatus !== DonationStatus::Pending) {
             throw new \UnexpectedValueException("Update only allowed for pending donation");
         }
+
+        if ($this->paymentMethodType && $this->paymentMethodType->usesPaymentElement() !== $paymentMethodType->usesPaymentElement()) {
+            throw new \UnexpectedValueException(
+                "Cannot change payment method type from {$this->paymentMethodType->value} to {$paymentMethodType->value}"
+            );
+        }
+
+        $this->paymentMethodType = $paymentMethodType;
 
         if (trim($donorHomeAddressLine1 ?? '') === '') {
             $donorHomeAddressLine1 = null;
@@ -2028,9 +2056,8 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * For now this just does what it says on the tin, but I'm thinking of making it also update the donation
-     * fees (and making other relavent setters do the same so that @see self::deriveFees can be
-     * privatised). In the meantime that should be called after this.
+     * Sets or clears payment card and updates applicable fees accordingly. Callers should typically
+     * persist the changes and push metadata to Stripe after a change.
      *
      * @param PaymentCard $paymentCard
      * @return void
@@ -2066,5 +2093,11 @@ class Donation extends SalesforceWriteProxy
     public function setExpectedMatchAmount(Money $expectedMatchAmount): void
     {
         $this->expectedMatchAmount = $expectedMatchAmount;
+    }
+
+    public function getReturnUrl(): string
+    {
+        $url = Environment::current()->publicDonateURLPrefix() . 'thanks/' . $this->uuid->toString();
+        return ($this->paymentMethodType === PaymentMethodType::PayByBank) ? "$url?from=bank" : $url;
     }
 }
