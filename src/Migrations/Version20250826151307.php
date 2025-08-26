@@ -19,14 +19,18 @@ final class Version20250826151307 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
+        // creating temporary table to work around MySQL limitation that we can't update the same table that we're
+        // selecting from in a query. The temp table will automatically be garbaged when the connection ends.
+
         $this->addSql(<<<SQL
+           CREATE TEMPORARY TABLE new_Fund SELECT * FROM Fund;
             DELETE FROM Fund WHERE id IN
             (
-                SELECT Fund.id FROM Fund
-                LEFT OUTER JOIN CampaignFunding ON CampaignFunding.fund_id = Fund.id
+                SELECT new_Fund.id FROM new_Fund
+                LEFT OUTER JOIN CampaignFunding ON CampaignFunding.fund_id = new_Fund.id
                 HAVING COUNT(CampaignFunding.id) = 0
             )
-            ORDER BY Fund.id LIMIT 27
+            ORDER BY new_Fund.id LIMIT 27
         SQL
         );
     }

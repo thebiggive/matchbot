@@ -49,11 +49,17 @@ final class Version20250826145606 extends AbstractMigration
             ['Shiloh Rotherham', 'a09WS000009OmBBYA0'],
         ];
 
+        // creating temporary table to work around MySQL limitation that we can't update the same table that we're
+        // selecting from in a query. The temp table will automatically be garbaged when the connection ends.
+        $this->addSql(<<<SQL
+                CREATE TEMPORARY TABLE new_CampaignFunding SELECT * FROM CampaignFunding;
+        SQL);
+
         foreach ($charitiesWithNewFundingIds as [$charityName, $newFundID]) {
             $this->addSql(<<<SQL
                 UPDATE CampaignFunding SET fund_id = (SELECT id from Fund WHERE Fund.salesforceId = '$newFundID')
                 WHERE (CampaignFunding.id) IN (SELECT ccf2.campaignfunding_id
-                    FROM Campaign_CampaignFunding ccf2, CampaignFunding cf2, Fund f2
+                    FROM Campaign_CampaignFunding ccf2, new_CampaignFunding cf2, Fund f2
                     WHERE
                         ccf2.campaignfunding_id = cf2.id AND
                         cf2.fund_id = f2.id AND
