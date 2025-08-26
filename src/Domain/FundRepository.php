@@ -15,7 +15,6 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
 /**
  * @psalm-import-type fundArray from Client\Fund
- * @psalm-suppress UnusedProperty
  * @template-extends SalesforceReadProxyRepository<Fund, Client\Fund>
  */
 class FundRepository extends SalesforceReadProxyRepository
@@ -40,13 +39,9 @@ class FundRepository extends SalesforceReadProxyRepository
      * @param Campaign  $campaign
      * @param DateTimeImmutable $at
      * @throws Client\NotFoundException if Campaign not found on Salesforce
-     * @psalm-suppress PossiblyUnusedParam
-     * @psalm-suppress UnevaluatedCode
      */
     public function pullForCampaign(Campaign $campaign, \DateTimeImmutable $at): void
     {
-        return; // TODO Turn back on later on 26/8/25.
-
         $client = $this->getClient();
 
         $campaignSFId = $campaign->getSalesforceId();
@@ -194,7 +189,6 @@ class FundRepository extends SalesforceReadProxyRepository
 
     /**
      * @param fundArray $fundData
-     * @psalm-suppress PossiblyUnusedMethod
      */
     protected function getNewFund(array $fundData): Fund
     {

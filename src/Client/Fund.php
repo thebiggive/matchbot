@@ -47,7 +47,6 @@ class Fund extends Common
      * @param string $campaignId
      * @return array<fundArray> funds
      * @throws NotFoundException if Campaign with given ID not found
-     * @psalm-suppress PossiblyUnusedMethod
      */
     public function getForCampaign(string $campaignId): array
     {
