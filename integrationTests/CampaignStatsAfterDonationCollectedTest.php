@@ -116,10 +116,12 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
         );
         $campaignFunding->addCampaign($campaign);
 
-        $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
+        $fundingWithdrawal = new FundingWithdrawal(
+            $campaignFunding,
+            $donation,
+            self::DONATION_AMOUNT // Fully matched donation.
+        );
         $donation->addFundingWithdrawal($fundingWithdrawal);
-        $fundingWithdrawal->setAmount(self::DONATION_AMOUNT); // Fully matched donation.
-        $fundingWithdrawal->setDonation($donation);
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($pledge);

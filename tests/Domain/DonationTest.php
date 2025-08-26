@@ -212,9 +212,8 @@ class DonationTest extends TestCase
             amountAvailable: '1.23',
         );
 
-        $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
-        $fundingWithdrawal->setAmount('1.23');
         $donation = $this->getTestDonation();
+        $fundingWithdrawal = new FundingWithdrawal($campaignFunding, $donation, '1.23');
         $donation->addFundingWithdrawal($fundingWithdrawal);
 
         $donationData = $donation->toFrontEndApiModel();
@@ -386,7 +385,7 @@ class DonationTest extends TestCase
 
         $amountMatchedByPledges = $donation->getFundingWithdrawalTotal();
 
-        \assert(1 + 2 === 3);
+        \assert(1 + 2 === 3); // @phpstan-ignore identical.alwaysTrue, function.alreadyNarrowedType
         $this->assertSame('3.00', $amountMatchedByPledges);
     }
 
@@ -543,7 +542,8 @@ class DonationTest extends TestCase
 
         $donation->setTransactionId('any-string');
 
-        $this->assertTrue($donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01')));
+        // @phpstan-ignore staticMethod.alreadyNarrowedType
+        self::assertTrue(($donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'))));
     }
 
     public function testIsNotReadyToConfirmWithoutBillingPostcode(): void
@@ -1076,8 +1076,7 @@ class DonationTest extends TestCase
 
         $fund = new Fund('GBP', 'some champion fund', null, null, fundType: FundType::ChampionFund);
         $campaignFunding = new CampaignFunding($fund, amount: '1000', amountAvailable: '1000');
-        $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
-        $fundingWithdrawl->setAmount('99.99');
+        $fundingWithdrawl = new FundingWithdrawal($campaignFunding, $donation, '99.99');
         $donation->addFundingWithdrawal($fundingWithdrawl);
 
         $this->assertFalse($donation->isFullyMatched());
@@ -1089,8 +1088,7 @@ class DonationTest extends TestCase
 
         $fund = new Fund('GBP', 'some champion fund', null, null, fundType: FundType::ChampionFund);
         $campaignFunding = new CampaignFunding($fund, '1000', '1000');
-        $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
-        $fundingWithdrawl->setAmount('100.00');
+        $fundingWithdrawl = new FundingWithdrawal($campaignFunding, $donation, '100.00');
         $donation->addFundingWithdrawal($fundingWithdrawl);
 
         $isFullyMatched = $donation->isFullyMatched();
@@ -1170,8 +1168,7 @@ class DonationTest extends TestCase
             amount: '1000',
             amountAvailable: '1000',
         );
-        $withdrawal = new FundingWithdrawal($campaignFunding);
-        $withdrawal->setAmount($fundAmount);
+        $withdrawal = new FundingWithdrawal($campaignFunding, self::someDonation(), $fundAmount);
 
         return $withdrawal;
     }

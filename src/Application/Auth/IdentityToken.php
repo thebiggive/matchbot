@@ -11,9 +11,9 @@ use MatchBot\Domain\PersonId;
 use Psr\Log\LoggerInterface;
 
 /**
- * @psalm-type IdentityJWT object{sub: object{person_id: string, psp_id: ?string, complete?: boolean|null}}
+ * @psalm-type IdentityJWT object{sub: object{person_id: string, psp_id: ?string, complete?: boolean|null}}&\stdClass
  */
-class IdentityToken
+final class IdentityToken
 {
     public function __construct(private string $baseUri)
     {

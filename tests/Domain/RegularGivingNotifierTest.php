@@ -105,9 +105,10 @@ class RegularGivingNotifierTest extends TestCase
                 new Fund('GBP', 'some pledge', null, null, fundType: FundType::Pledge),
                 '100',
                 '100',
-            )
+            ),
+            $donation,
+            $amount,
         );
-        $withdrawal->setAmount($amount);
 
         $reflectionClass = new \ReflectionClass($donation);
         $property = $reflectionClass->getProperty('fundingWithdrawals');

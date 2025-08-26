@@ -164,7 +164,7 @@ class Update extends Action
                     $this->entityManager->rollback();
 
                     // Log a warning to more easily spot occurrences in dashboards.
-                    $methodSummary = $donation->getPaymentMethodType()?->value ?? '[null]';
+                    $methodSummary = $donation->getPaymentMethodType()->value ?? '[null]';
                     $this->logger->warning(
                         "Donation ID {$donationUUID} auto-confirm attempted with '$methodSummary' payment method",
                     );
@@ -223,8 +223,9 @@ class Update extends Action
                         needle: "This PaymentIntent's amount could not be updated because it has a status of canceled",
                     )
                 ) {
+                    // @phpstan-ignore function.alreadyNarrowedType
                     \assert(
-                        isset($donation),
+                        isset($donation), //@phpstan-ignore isset.variable
                         "If we've got as far as Stripe throwing an exception we must have a Donation"
                     );
 
@@ -420,7 +421,7 @@ class Update extends Action
                     $nextActionType = null;
                     if ($confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
                         $nextAction = $confirmedIntent->next_action;
-                        $nextActionType = (string) $nextAction?->type;
+                        $nextActionType = (string) $nextAction?->type; //@phpstan-ignore property.notFound
                     }
 
                     $isDonationToBGRequiringBankTransfer =
