@@ -814,8 +814,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $this->logInfo('Creating campaign ' . $salesforceId);
         }
 
-        $client = $this->getClient();
-        $campaignData = $client->getById($campaign->getSalesforceId(), $withCache);
+        $campaignData = $this->getClient()->getById($campaign->getSalesforceId(), $withCache);
 
         $this->updateCampaignFromSFData($campaign, $campaignData);
 
