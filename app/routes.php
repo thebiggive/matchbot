@@ -80,11 +80,6 @@ return function (App $app) {
         )->add(CacheableResponseMiddleware::class);
 
         $versionGroup->put(
-            '/campaigns/{salesforceId:[a-zA-Z0-9]{18}}',
-            \MatchBot\Application\Actions\Campaigns\Put::class
-        )->add(SalesforceAuthMiddleware::class);
-
-        $versionGroup->put(
             '/charities/{salesforceId:[a-zA-Z0-9]{18}}',
             \MatchBot\Application\Actions\Charities\Put::class
         )->add(SalesforceAuthMiddleware::class);

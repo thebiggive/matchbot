@@ -20,38 +20,6 @@ use MatchBot\Client;
  */
 class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\IntegrationTest
 {
-    public function testItAcceptsAPushOfANewCampaignFromSf(): void
-    {
-        $campaignData = TestCase::CAMPAIGN_FROM_SALESFORCE;
-
-        // randomise IDs to prevent duplicate issues
-        $campaignSfId = Salesforce18Id::ofCampaign(self::randomString());
-        $charitySfId = Salesforce18Id::ofCampaign(self::randomString());
-
-        $campaignData['id'] = $campaignSfId->value;
-        $campaignData['charity']['id'] = $charitySfId->value;
-
-        $this->persistCharityToDb($campaignData);
-
-        $body = \json_encode(['campaign' => $campaignData], JSON_THROW_ON_ERROR);
-
-        $response = $this->getApp()->handle(new ServerRequest(
-            method: 'PUT',
-            uri: '/v1/campaigns/' . $campaignSfId->value,
-            headers: [
-                SalesforceAuthMiddleware::HEADER_NAME => TestCase::getSalesforceAuthValue($body),
-            ],
-            body: $body
-        ));
-        $this->assertSame(200, $response->getStatusCode());
-
-        $campaign = $this->getContainer()->get(CampaignRepository::class)->findOneBySalesforceId($campaignSfId);
-        $this->assertNotNull($campaign);
-
-        $this->assertSame('Save Matchbot', $campaign->getCampaignName());
-        $this->assertSame('Society for the advancement of bots and matches', $campaign->getCharity()->getName());
-    }
-
     public function testItAcceptsAPushOfANewMetaCampaignFromSf(): void
     {
         $metaCampaignData = TestCase::META_CAMPAIGN_FROM_SALESFORCE;
@@ -63,11 +31,11 @@ class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\Integratio
 
         $metaCampaignData['id'] = $metaCampaignSfId->value;
 
-        $body = \json_encode(['campaign' => $metaCampaignData], JSON_THROW_ON_ERROR);
+        $body = \json_encode(['campaigns' => [$metaCampaignData]], JSON_THROW_ON_ERROR);
 
         $response = $this->getApp()->handle(new ServerRequest(
-            method: 'PUT',
-            uri: '/v1/campaigns/' . $metaCampaignSfId->value,
+            method: 'POST',
+            uri: '/v1/campaigns/upsert-many',
             headers: [
                 SalesforceAuthMiddleware::HEADER_NAME => TestCase::getSalesforceAuthValue($body),
             ],
@@ -81,7 +49,7 @@ class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\Integratio
         $this->assertSame('This is a meta campaign', $campaign->getTitle());
     }
 
-    public function testItAcceptsAPushOfANewCampaignsFromSf(): void
+    public function testItAcceptsAPushOfNewCampaignsFromSf(): void
     {
         $campaignData = ['campaigns' => [
             TestCase::CAMPAIGN_FROM_SALESFORCE,
