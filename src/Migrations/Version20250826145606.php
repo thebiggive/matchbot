@@ -1,0 +1,83 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MatchBot\Migrations;
+
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\Migrations\AbstractMigration;
+
+/**
+ * BG2-2907 Move subset of SCW25 Champion Fundings.
+ */
+final class Version20250826145606 extends AbstractMigration
+{
+    public function getDescription(): string
+    {
+        return 'BG2-2907 Move subset of SCW25 Champion Fundings.';
+    }
+
+    public function up(Schema $schema): void
+    {
+        $charitiesWithNewFundingIds = [
+            ['Teen Action', 'a09WS000009eqqnYAA'],
+            ['Community Money Advice', 'a09WS000009eqqnYAA'],
+            ['Soundabout', 'a09WS000009gVqDYAU'],
+            ['Living Paintings', 'a09WS000009gVqDYAU'],
+            ['Angel Shed Theatre Company', 'a09WS000009gVqDYAU'],
+            ['The Katie Piper Foundation', 'a09WS000009gVqDYAU'],
+            ['Yes Futures', 'a09WS000009eqqnYAA'],
+            ['Stem4', 'a09WS000009eqqnYAA'],
+            ['Mindout Lgb&t Mental Health Project', 'a09WS000009gVqDYAU'],
+            ['Small Steps', 'a09WS000009eqqnYAA'],
+            ['No.5 Young People', 'a09WS000009OmBBYA0'],
+            ['Sister Circle', 'a09WS000009eqqnYAA'],
+            ['Home-Start Essex', 'a09WS000009OmBBYA0'],
+            ['Beauty Banks', 'a09WS000009OmBBYA0'],
+            ['Dementia Carers Count', 'a09WS000009OmBBYA0'],
+            ['The Log Cabin Charity', 'a09WS000009gVqDYAU'],
+            ['FEAST WITH US', 'a09WS000009gVqDYAU'],
+            ['THE NEW NORMAL', 'a09WS000009eqqnYAA'],
+            ['BRIGHTON PEOPLE\'S THEATRE CIO', 'a09WS000009gVqDYAU'],
+            ['CORINNE BURTON MEMORIAL TRUST', 'a09WS000009gVqDYAU'],
+            ['LATCH WELSH CHILDREN\'S CANCER CHARITY', 'a09WS000009OmBBYA0'],
+            ['IT GETS BETTER UK', 'a09WS000009OmBBYA0'],
+            ['FOREVER COLOURS CHILDREN\'S HOSPICE', 'a09WS000009gVqDYAU'],
+            ['FRIENDS OF NETTLEBED SCHOOL', 'a09WS000009gVqDYAU'],
+            ['SNAPS Yorkshire CIO', 'a09WS000009OmBBYA0'],
+            ['NATIONAL NETWORK FOR THE EDUCATION OF CARE LEAVERS', 'a09WS000009eqqnYAA'],
+            ['Shiloh Rotherham', 'a09WS000009OmBBYA0'],
+        ];
+
+        // creating temporary table to work around MySQL limitation that we can't update the same table that we're
+        // selecting from in a query. The temp table will automatically be garbaged when the connection ends.
+        $this->addSql(<<<SQL
+                CREATE TEMPORARY TABLE new_CampaignFunding SELECT * FROM CampaignFunding;
+        SQL);
+
+        foreach ($charitiesWithNewFundingIds as [$charityName, $newFundID]) {
+            $this->addSql(<<<SQL
+                UPDATE CampaignFunding SET fund_id = (SELECT id from Fund WHERE Fund.salesforceId = '$newFundID')
+                WHERE (CampaignFunding.id) IN (SELECT ccf2.campaignfunding_id
+                    FROM Campaign_CampaignFunding ccf2, new_CampaignFunding cf2, Fund f2
+                    WHERE
+                        ccf2.campaignfunding_id = cf2.id AND
+                        cf2.fund_id = f2.id AND
+                        f2.fundType = 'championFund' AND
+                        campaign_id IN (SELECT Campaign.id
+                        FROM Campaign
+                        JOIN Charity on Campaign.charity_id = Charity.id
+                        WHERE Charity.name = :charityName
+                        AND Campaign.metaCampaignSlug = 'small-charity-week-2025'))
+                LIMIT 1
+            SQL,
+                ['charityName' => $charityName]
+            );
+        }
+    }
+
+    public function down(Schema $schema): void
+    {
+        // no going back.
+    }
+}

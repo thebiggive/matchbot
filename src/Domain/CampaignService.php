@@ -172,23 +172,6 @@ class CampaignService
             $parentMatchFundsRemaining = null;
         }
 
-        $greggsCampaignIds = [
-            'a05WS000004MEy5YAG',
-            'a05WS000004HasnYAC',
-            'a05WS000004PumJYAS',
-            'a05WS000004GkCfYAK',
-            'a05WS000004aiMnYAI',
-            'a05WS000004EqZ7YAK',
-            'a05WS000004ZLAXYA4',
-            'a05WS000004P41JYAS',
-        ];
-
-        if (in_array($sfCampaignData['id'], $greggsCampaignIds, true)) {
-            // we also do this in \MatchBot\Application\Actions\Campaigns\Get::action but that line
-            // will be deleted when MAT-405 is done.
-            $sfCampaignData['championName'] = 'Greggs Foundation';
-        }
-
         $stats = $campaign->getStatistics();
 
         $campaignHttpModel = new CampaignHttpModel(
