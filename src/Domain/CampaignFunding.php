@@ -108,7 +108,6 @@ class CampaignFunding extends Model
 
     /**
      * @param numeric-string $amount
-     * @psalm-suppress PossiblyUnusedMethod
      */
     public function setAmount(string $amount): void
     {
