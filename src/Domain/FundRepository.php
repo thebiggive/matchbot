@@ -285,28 +285,4 @@ EOT;
 
         return $result;
     }
-
-    /**
-     * Get live data for the object (which might be empty apart from the Salesforce ID) and return a full object.
-     * No need to `setSalesforceLastPull()`, or EM `persist()` - just populate the fields specific to the object.
-     *
-     * @param Fund $proxy
-     *
-     * @deprecated @todo We think this can be deleted soon, assertion added to {@see SalesforceReadProxyRepository::updateFromSf()}
-     * to be even more sure before we delete / refactor.
-     */
-    #[\Override]
-    protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
-    {
-        $fundId = $proxy->getSalesforceId();
-        if ($fundId == null) {
-            throw new \Exception("Missing ID on fund, cannot update from SF");
-        }
-
-        $fundData = $this->getClient()->getById($fundId, $withCache);
-        $proxy->setName($fundData['name'] ?? '');
-        // Not sure I'm entirely convinced anything but tests is using this for Funds, but mirroring what we do with
-        // 'name' for now just in case. Maybe we can make the fn throw instead? Needs more attention later ideally.
-        $proxy->setSlug($fundData['slug'] ?? '');
-    }
 }

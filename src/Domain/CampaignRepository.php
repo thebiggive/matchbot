@@ -732,27 +732,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return $result;
     }
 
-    /**
-     * @throws Client\NotFoundException if Campaign not found on Salesforce
-     * @throws \Exception if start or end dates' formats are invalid
-     */
-    #[\Override]
-    protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
-    {
-        $campaign = $proxy;
-
-        /** @psalm-suppress RedundantConditionGivenDocblockType - redundant for Psalm but useful for PHPStorm
-         **/
-        \assert($campaign instanceof Campaign);
-
-        $client = $this->getClient();
-        $campaignData = $client->getById($campaign->getSalesforceId(), $withCache);
-
-        $this->updateCampaignFromSFData($campaign, $campaignData);
-
-        $this->getEntityManager()->flush();
-    }
-
     public static function getRegulatorHMRCIdentifier(string $regulatorName): ?string
     {
         return match ($regulatorName) {
@@ -811,5 +790,42 @@ class CampaignRepository extends SalesforceReadProxyRepository
             postalCode: $postalAddress['postalCode'],
             country: $postalAddress['country'],
         );
+    }
+
+    /**
+     * @throws Client\NotFoundException
+     */
+    public function updateFromSf(
+        Campaign $campaign,
+        bool $withCache = true,
+        bool $autoSave = true,
+    ): void {
+        // Make sure we update existing object if passed in a partial copy and we already have that Salesforce object
+        // persisted, otherwise we'll try to insert a duplicate and get an ORM crash.
+        $salesforceId = $campaign->getSalesforceId();
+
+        if (
+            $campaign->hasBeenPersisted() &&
+            ($existingCampaign = $this->findOneBy(['salesforceId' => $salesforceId]))
+        ) {
+            $this->logInfo('Updating campaign ' . $salesforceId . '...');
+            $campaign = $existingCampaign;
+        } else {
+            $this->logInfo('Creating campaign ' . $salesforceId);
+        }
+
+        $campaignData = $this->getClient()->getById($campaign->getSalesforceId(), $withCache);
+
+        $this->updateCampaignFromSFData($campaign, $campaignData);
+
+        $this->getEntityManager()->flush();
+
+        $campaign->setSalesforceLastPull(new DateTime('now'));
+        $this->getEntityManager()->persist($campaign);
+        if ($autoSave) {
+            $this->getEntityManager()->flush();
+        }
+
+        $this->logInfo('Done persisting ' . get_class($campaign) . ' ' . $salesforceId);
     }
 }
