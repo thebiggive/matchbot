@@ -95,7 +95,6 @@ class DonationNotifier
 
             'charityPhoneNumber' => $charity->getPhoneNumber(),
             'charityEmailAddress' => $charity->getEmailAddress()?->email,
-            'charityPostalAddress' => $charity->getPostalAddress()->format(),
         ]);
     }
 

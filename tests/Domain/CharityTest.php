@@ -27,7 +27,6 @@ class CharityTest extends TestCase
             rawData: [],
             time: new \DateTime(),
             phoneNumber: null,
-            address: PostalAddress::null(),
             emailAddress: null,
         );
 
@@ -49,7 +48,6 @@ class CharityTest extends TestCase
             rawData: [],
             time: new \DateTime(),
             phoneNumber: null,
-            address: PostalAddress::null(),
             emailAddress: null
         );
 
@@ -72,7 +70,6 @@ class CharityTest extends TestCase
             rawData: [],
             time: new \DateTime(),
             phoneNumber: null,
-            address: PostalAddress::null(),
             emailAddress: null
         );
 
@@ -121,7 +118,6 @@ class CharityTest extends TestCase
             websiteUri: null,
             logoUri: null,
             phoneNumber: null,
-            address: null,
             emailAddress: null
         );
     }
@@ -147,7 +143,6 @@ class CharityTest extends TestCase
             rawData: [],
             time: new \DateTime(),
             phoneNumber: null,
-            address: PostalAddress::null(),
             emailAddress: null,
         );
 
