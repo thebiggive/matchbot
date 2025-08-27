@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use Assert\AssertionFailedException;
 use DateTime;
 use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
@@ -12,7 +11,6 @@ use MatchBot\Application\Assertion;
 use MatchBot\Client;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Clock\ClockInterface;
 
 use function is_string;
@@ -223,7 +221,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charityData = $campaignData['charity'];
         Assertion::notNull($charityData, 'Charity must not be null for charity campaign');
 
-        $address = self::arrayToPostalAddress($charityData['postalAddress'] ?? null, $this->getLogger());
         $emailString = $charityData['emailAddress'] ?? null;
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
 
@@ -240,7 +237,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             websiteUri: $charityData['website'],
             logoUri: $charityData['logoUri'],
             phoneNumber: $charityData['phoneNumber'] ?? null,
-            address: $address,
             emailAddress: $emailAddress,
         );
     }
@@ -252,8 +248,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
     {
         $charityData = $campaignData['charity'];
         Assertion::notNull($charityData, 'Charity date should not be null for charity campaign');
-
-        $address = self::arrayToPostalAddress($charityData['postalAddress'] ?? null, $this->getLogger());
 
         $emailString = $charityData['emailAddress'] ?? null;
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
@@ -270,7 +264,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             rawData: $charityData,
             time: new \DateTime('now'),
             phoneNumber: $charityData['phoneNumber'] ?? null,
-            address: $address,
             emailAddress: $emailAddress,
         );
     }
@@ -740,56 +733,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             'Scotland' => 'OSCR',
             default => null,
         };
-    }
-
-    /**
-     * @param ?array{
-     *           city: ?string,
-     *           line1: ?string,
-     *           line2: ?string,
-     *           country: ?string,
-     *           postalCode: ?string} $postalAddress
-     */
-    public static function arrayToPostalAddress(?array $postalAddress, LoggerInterface $logger): PostalAddress
-    {
-        if (is_null($postalAddress)) {
-            return PostalAddress::null();
-        }
-
-        $postalAddress = array_map(
-            static function (?string $string) {
-                return is_null($string) || trim($string) === '' ? null : $string;
-            },
-            $postalAddress
-        );
-
-        // For now, treat whole address as null if there's no `line1`. This can happen with allowed
-        // Salesforce addresses for now. For example, a charity may fill in just a country in the
-        // portal and save that as their own address. We're better off omitting it from donor emails
-        // if that happens.
-        //
-        // Happening more now that this runs for early preview campaigns where the charity may not have finished
-        // filling in all fields.
-        if (is_null($postalAddress['line1'])) {
-            try {
-                Assertion::allNull($postalAddress);
-            } catch (AssertionFailedException $e) {
-                // If this happens more than a couple of times in late April 2025, probaby reduce to warning
-                // level. If it happens a lot more, build stronger Salesforce validation to stop it at
-                // source.
-                $logger->warning('Postal address from Salesforce is missing line1 but had other parts; treating as all-null');
-            }
-
-            return PostalAddress::null();
-        }
-
-        return PostalAddress::of(
-            line1: $postalAddress['line1'],
-            line2: $postalAddress['line2'],
-            city: $postalAddress['city'],
-            postalCode: $postalAddress['postalCode'],
-            country: $postalAddress['country'],
-        );
     }
 
     /**

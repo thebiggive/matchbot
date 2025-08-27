@@ -35,9 +35,6 @@ parameters:
 	editorUrlTitle: '%%file%%:%%line%%'
 	editorUrl: '//'
 	ignoreErrors:
-#	     see https://github.com/phpstan/phpstan/issues/10#issuecomment-264988090 :
-		- '#Call to an undefined static method MatchBot\\Application\\Assertion::[a-zA-Z0-9_]+\(\)#'
-
 #        we use beberlei/assert not webmozart but this must be similar to https://github.com/phpstan/phpstan-webmozart-assert/issues/32
 		- '#Call to static method Assert\\Assertion::integerish\(\) with float will always evaluate to true#'
 

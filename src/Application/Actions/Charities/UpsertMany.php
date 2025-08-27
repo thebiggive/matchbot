@@ -9,18 +9,15 @@ use JetBrains\PhpStorm\Pure;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Environment;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\EmailAddress;
-use MatchBot\Domain\PostalAddress;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
-use Slim\Exception\HttpNotFoundException;
 use Symfony\Component\Clock\Clock;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\Exception\LockConflictedException;
@@ -101,9 +98,6 @@ class UpsertMany extends Action
         $logoUri = self::nullOrStringValue($charityData, 'logoUri');
         $phoneNumber = self::nullOrStringValue($charityData, 'phoneNumber');
 
-        // Get postal address data
-        $address = CampaignRepository::arrayToPostalAddress($charityData['postalAddress'] ?? null, $this->logger);
-
         $emailRaw = $charityData['emailAddress'] ?? null;
         $emailString = is_string($emailRaw) ? $emailRaw : null;
         $emailAddress = $emailString !== null && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
@@ -124,7 +118,6 @@ class UpsertMany extends Action
                 websiteUri: $website,
                 logoUri: $logoUri,
                 phoneNumber: $phoneNumber,
-                address: $address,
                 emailAddress: $emailAddress,
             );
             $this->entityManager->persist($charity);
@@ -143,7 +136,6 @@ class UpsertMany extends Action
                 rawData: $charityData,
                 time: new \DateTime('now'),
                 phoneNumber: $phoneNumber,
-                address: $address,
                 emailAddress: $emailAddress,
             );
             $this->logger->info("Updating charity {$charity->getSalesforceId()} from SF: {$charity->getName()}");

@@ -80,9 +80,6 @@ class Charity extends SalesforceReadProxy
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $emailAddress;
 
-    #[ORM\Embedded(columnPrefix: 'address_')]
-    protected PostalAddress $postalAddress;
-
     #[ORM\Column(length: 255, unique: true, nullable: true)]
     protected ?string $stripeAccountId = null;
 
@@ -132,7 +129,6 @@ class Charity extends SalesforceReadProxy
         ?string $websiteUri = null,
         ?string $logoUri = null,
         ?string $phoneNumber = null,
-        ?PostalAddress $address = null,
         array $rawData = [],
     ) {
         $this->updatedAt = $time;
@@ -152,7 +148,6 @@ class Charity extends SalesforceReadProxy
             rawData: $rawData,
             time: new \DateTime('now'),
             phoneNumber: $phoneNumber,
-            address: $address ?? PostalAddress::null(),
             emailAddress: $emailAddress,
         );
     }
@@ -280,7 +275,6 @@ class Charity extends SalesforceReadProxy
         array $rawData,
         DateTime $time,
         ?string $phoneNumber,
-        PostalAddress $address,
         ?EmailAddress $emailAddress,
     ): void {
         $statusUnexpected = !is_null($giftAidOnboardingStatus)
@@ -324,8 +318,6 @@ class Charity extends SalesforceReadProxy
         $this->salesforceData = $rawData;
 
         $this->setSalesforceLastPull($time);
-
-        $this->postalAddress = $address;
 
         $this->emailAddress = $emailAddress?->email;
     }
@@ -427,11 +419,6 @@ class Charity extends SalesforceReadProxy
             $string = null;
         }
         return $string;
-    }
-
-    public function getPostalAddress(): PostalAddress
-    {
-        return $this->postalAddress;
     }
 
     public function getEmailAddress(): ?EmailAddress
