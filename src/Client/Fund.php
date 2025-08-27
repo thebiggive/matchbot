@@ -28,6 +28,8 @@ class Fund extends Common
      * @param string $fundId    Salesforce ID for Champion Funding or Pledge
      * @return fundArray Single Fund, as associative array
      * @throws NotFoundException if Fund with given ID not found
+     *
+     * @psalm-suppress PossiblyUnusedMethod - been unuesed for some time, may be wanted in future.
      */
     public function getById(string $fundId, bool $withCache): array
     {
@@ -47,7 +49,6 @@ class Fund extends Common
      * @param string $campaignId
      * @return array<fundArray> funds
      * @throws NotFoundException if Campaign with given ID not found
-     * @psalm-suppress PossiblyUnusedMethod
      */
     public function getForCampaign(string $campaignId): array
     {
