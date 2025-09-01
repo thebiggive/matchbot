@@ -87,9 +87,6 @@ class Put extends Action
         $logoUri = self::nullOrStringValue($charityData, 'logoUri');
         $phoneNumber = self::nullOrStringValue($charityData, 'phoneNumber');
 
-        // Get postal address data
-        $address = CampaignRepository::arrayToPostalAddress($charityData['postalAddress'] ?? null, $this->logger);
-
         $emailRaw = $charityData['emailAddress'] ?? null;
         $emailString = is_string($emailRaw) ? $emailRaw : null;
         $emailAddress = $emailString !== null && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
@@ -110,7 +107,6 @@ class Put extends Action
                 websiteUri: $website,
                 logoUri: $logoUri,
                 phoneNumber: $phoneNumber,
-                address: $address,
                 emailAddress: $emailAddress,
             );
             $this->entityManager->persist($charity);
@@ -129,7 +125,6 @@ class Put extends Action
                 rawData: $charityData,
                 time: new \DateTime('now'),
                 phoneNumber: $phoneNumber,
-                address: $address,
                 emailAddress: $emailAddress,
             );
             $this->logger->info("Updating charity {$charity->getSalesforceId()} from SF: {$charity->getName()}");

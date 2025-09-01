@@ -14,6 +14,7 @@ enum PaymentMethodType: string
     {
         return match ($pspMethodType) {
             'card' => self::Card,
+            'apple_pay', 'google_pay' => self::Card, // from Matchbot's perspective apple and google payments work like card payments.
             'customer_balance' => self::CustomerBalance,
             'pay_by_bank' => self::PayByBank,
             default => throw new \InvalidArgumentException("Unknown payment method type: $pspMethodType"),

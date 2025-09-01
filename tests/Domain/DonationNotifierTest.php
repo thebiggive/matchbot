@@ -71,7 +71,6 @@ class DonationNotifierTest extends TestCase
 
                     'charityPhoneNumber' => '0191 498 0000',
                     'charityEmailAddress' => 'charity@charitiesareus.com',
-                    'charityPostalAddress' => 'anyone, pretty how town, (with up so floating many bells down), SSAU, sun moon stars rain',
                 ]
             ],
             [$emailCommand->templateKey, $emailCommand->emailAddress->email, $emailCommand->params]
@@ -87,13 +86,6 @@ class DonationNotifierTest extends TestCase
         $charity = self::someCharity(
             phoneNumber: '0191 498 0000',
             emailAddress: EmailAddress::of('charity@charitiesareus.com'),
-            address: PostalAddress::of(
-                'anyone',
-                'pretty how town',
-                '(with up so floating many bells down)',
-                'SSAU',
-                'sun moon stars rain'
-            ),
         );
 
         $campaign = self::someCampaign(

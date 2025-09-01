@@ -256,13 +256,6 @@ class CreateFictionalData extends Command
             'instagram' => 'https://www.instagram.com/botsAndMatches',
             'phoneNumber' => null,
             'emailAddress' => 'bots-and-matches@example.com',
-            'postalAddress' => [
-                'city' => 'London',
-                'line1' => 'Matchbot Street',
-                'line2' => 'Near Donate-Frontend',
-                'country' => 'United Kingdom',
-                'postalCode' => 'WC2B 5LX'
-            ],
             'optInStatement' => null,
             'regulatorNumber' => '1000000',
             'regulatorRegion' => 'England and Wales',

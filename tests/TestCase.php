@@ -20,7 +20,6 @@ use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
-use MatchBot\Domain\PostalAddress;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
@@ -131,13 +130,6 @@ class TestCase extends PHPUnitTestCase
             'stripeAccountId' => 'acc_123456',
             'hmrcReferenceNumber' => null,
             'giftAidOnboardingStatus' => 'Invited to Onboard',
-            'postalAddress' => [
-                'line1' => 'example address line 1',
-                'line2' => 'example address line 1',
-                'city' => 'some city',
-                'postalCode' => 'some postalCode',
-                'country' => 'some country',
-            ],
         ]
     ];
 
@@ -381,7 +373,6 @@ class TestCase extends PHPUnitTestCase
         ?Salesforce18Id $salesforceId = null,
         string $name = 'Charity Name',
         ?string $phoneNumber = null,
-        ?PostalAddress $address = null,
         ?EmailAddress $emailAddress = null,
     ): Charity {
         return new Charity(
@@ -396,7 +387,6 @@ class TestCase extends PHPUnitTestCase
             websiteUri: 'https://charityname.com',
             logoUri: 'https://some-logo-host/charityname/logo.png',
             phoneNumber: $phoneNumber,
-            address: $address,
             emailAddress: $emailAddress,
             rawData: self::CAMPAIGN_FROM_SALESFORCE['charity'],
         );
