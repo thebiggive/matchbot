@@ -67,21 +67,42 @@ class CampaignFundingRepository extends EntityRepository
     }
 
     /**
+     * Get the total amount available for a meta-campaign, ensuring that shared fundings
+     * are only counted once even if they're linked to multiple campaigns.
      */
     public function getAmountAvailableForMetaCampaign(MetaCampaign $metaCampaign): Money
     {
-        $query = $this->getEntityManager()->createQuery(dql: <<<'DQL'
-            SELECT COALESCE(SUM(cf.amountAvailable), 0) as sum, cf.currencyCode FROM MatchBot\Domain\CampaignFunding cf
-            JOIN cf.campaigns campaign
+        // First, get all unique CampaignFunding IDs for the meta-campaign
+        $idQuery = $this->getEntityManager()->createQuery(dql: <<<'DQL'
+            SELECT DISTINCT cf.id FROM MatchBot\Domain\CampaignFunding cf
+            LEFT JOIN cf.campaigns campaign
             WHERE campaign.metaCampaignSlug = :slug
+        DQL
+        );
+        $idQuery->setParameter('slug', $metaCampaign->getSlug()->slug);
+
+        /** @var list<array{id: int}> $ids */
+        $ids = $idQuery->getResult();
+
+        if (empty($ids)) {
+            return Money::zero(currency: $metaCampaign->getCurrency());
+        }
+
+        // Extract just the IDs into a flat array
+        $fundingIds = array_map(fn($row) => $row['id'], $ids);
+
+        // Then, sum the amounts for these unique IDs
+        $sumQuery = $this->getEntityManager()->createQuery(dql: <<<'DQL'
+            SELECT COALESCE(SUM(cf.amountAvailable), 0) as sum, cf.currencyCode 
+            FROM MatchBot\Domain\CampaignFunding cf
+            WHERE cf.id IN (:ids)
             GROUP BY cf.currencyCode
         DQL
         );
-
-        $query->setParameter('slug', $metaCampaign->getSlug()->slug);
+        $sumQuery->setParameter('ids', $fundingIds);
 
         /** @var list<array{sum: numeric-string, currencyCode: string}> $result */
-        $result = $query->getResult();
+        $result = $sumQuery->getResult();
 
         Assertion::maxCount($result, 1, 'Campaign Fundings in multiple currencies found for same metacampaign');
 
