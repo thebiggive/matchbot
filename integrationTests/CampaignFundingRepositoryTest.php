@@ -60,9 +60,8 @@ class CampaignFundingRepositoryTest extends IntegrationTest
         $amountAvailableForMetaCampaign = $this->sut->getAmountAvailableForMetaCampaign($this->metaCampaign);
 
         // assert
-        // this is a bug - it should be 20_000 since they are all sharing the same funding.
         $this->assertEquals(
-            Money::fromPoundsGBP(100_000),
+            Money::fromPoundsGBP(20_000),
             $amountAvailableForMetaCampaign
         );
     }
