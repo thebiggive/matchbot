@@ -532,7 +532,7 @@ readonly class RegularGivingService
         foreach ($mandatesToCancel as $mandate) {
             $this->cancelMandate(
                 $mandate,
-                'Cancelled from to make way for new mandate',
+                'Cancelled to make way for new mandate',
                 MandateCancellationType::ReplacedByNewMandate,
             );
         }
