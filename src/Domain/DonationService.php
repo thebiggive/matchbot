@@ -487,6 +487,7 @@ class DonationService
 
     /**
      * Creates a payment intent at Stripe and records the PI ID against the donation.
+     * @throws RegularGivingDonationToOldToCollect
      */
     public function createAndAssociatePaymentIntent(Donation $donation): void
     {

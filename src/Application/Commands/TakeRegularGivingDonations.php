@@ -16,6 +16,7 @@ use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
@@ -41,7 +42,7 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 )]
 class TakeRegularGivingDonations extends LockingCommand
 {
-    private const int MAXBATCHSIZE = 20;
+    private const int MAXBATCHSIZE = 500;
 
     private bool $reportableEventHappened = false;
 
@@ -167,6 +168,15 @@ class TakeRegularGivingDonations extends LockingCommand
                 $this->donationService->createAndAssociatePaymentIntent($donation);
                 $io->writeln("setting payment intent on donation {$donation->getUuid()}");
             } catch (RegularGivingDonationToOldToCollect $e) {
+                if ($this->environment === Environment::Regression) {
+                    $mandate = $donation->getMandate();
+                    \assert($mandate instanceof RegularGivingMandate);
+                    $mandate->cancel(
+                        'Donation too old to collect, cancelling mandate - special regression environment behaviour',
+                        $now,
+                        MandateCancellationType::BigGiveCancelled,
+                    );
+                }
                 $this->logger->error($e->getMessage());
                 $io->error($e->getMessage());
             }
@@ -204,11 +214,11 @@ class TakeRegularGivingDonations extends LockingCommand
                     $io->info($exception->getMessage());
                     continue;
                 } catch (PaymentIntentNotSucceeded $exception) {
-                    $io->error('PaymentIntentNotSucceeded, skipping donation: ' . $exception->getMessage());
+                    $this->logger->error('PaymentIntentNotSucceeded, skipping donation: ' . $exception->getMessage());
                     continue;
                 }
             } catch (\Exception $exception) {
-                $io->error('Exception, skipping donation: ' . $exception->getMessage());
+                $this->logger->error('Exception, skipping donation: ' . $exception->getMessage());
                 continue;
             }
         }
