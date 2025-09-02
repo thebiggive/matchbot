@@ -121,6 +121,7 @@ class RegularGivingMandateRepository
     public function findMandatesWithDonationsToCreateOn(\DateTimeImmutable $now, int $limit): array
     {
         $active = MandateStatus::Active->value;
+        // r.donationsCreatedUpTo is only set after a cron creation i.e. usually 3ish months after mandate setup.
         $query = $this->em->createQuery(<<<"DQL"
             SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r 
             LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
