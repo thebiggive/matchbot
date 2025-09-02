@@ -127,6 +127,7 @@ class RegularGivingMandateRepository
             LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
             WHERE r.status = '{$active}'
             AND (r.donationsCreatedUpTo IS NULL OR r.donationsCreatedUpTo <= :now)
+            ORDER BY r.createdAt ASC
         DQL
         );
 
