@@ -46,7 +46,7 @@ class ExpirePendingMandates extends LockingCommand
             try {
                 $this->regularGivingService->cancelMandate(
                     $mandate,
-                    'pending mandate expired at ' . $now->format('c') . ", donor may have walked away from 3DS",
+                    'Pending mandate expired at ' . $now->format('c') . ", donor may have walked away from 3DS",
                     MandateCancellationType::FirstDonationUnsuccessful
                 );
             } catch (CouldNotCancelStripePaymentIntent $e) {
