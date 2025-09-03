@@ -67,17 +67,17 @@ class SitemapTest extends TestCase
             <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
                 <url>
                     <loc>http://example.com/campaign/000000000000000000</loc>
-                    <changeFreq>hourly</changeFreq>
+                    <changefreq>hourly</changefreq>
                     <priority>0.5</priority>
                 </url>
                 <url>
                     <loc>http://example.com/donate/000000000000000000</loc>
-                    <changeFreq>hourly</changeFreq>
+                    <changefreq>hourly</changefreq>
                     <priority>0.5</priority>
                 </url>
                 <url>
                     <loc>http://example.com/this-is-the-metacampaign-slug</loc>
-                    <changeFreq>monthly</changeFreq>
+                    <changefreq>monthly</changefreq>
                     <priority>0.5</priority>
                 </url>
             </urlset> 

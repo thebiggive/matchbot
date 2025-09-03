@@ -55,15 +55,15 @@ class Sitemap extends Action
         foreach ($campaigns as $campaign) {
             $endsInFuture = $campaign->getEndDate() > $this->now;
 
-            $changeFreq = $endsInFuture ? 'daily' : 'monthly';
+            $changefreq = $endsInFuture ? 'daily' : 'monthly';
             if ($campaign->isOpen($this->now)) {
-                $changeFreq = 'hourly';
+                $changefreq = 'hourly';
             }
 
             $this->addUrl(
                 xml: $xml,
                 url: $this->environment->publicDonateURLPrefix() . 'campaign/' . $campaign->getSalesforceId(),
-                changeFreq: $changeFreq,
+                changefreq: $changefreq,
                 priority: $endsInFuture ? '0.5' : '0.25',
             );
 
@@ -73,7 +73,7 @@ class Sitemap extends Action
                 $this->addUrl(
                     xml: $xml,
                     url: $this->environment->publicDonateURLPrefix() . 'donate/' . $campaign->getSalesforceId(),
-                    changeFreq: $changeFreq,
+                    changefreq: $changefreq,
                     priority: '0.5'
                 );
             }
@@ -83,17 +83,17 @@ class Sitemap extends Action
 
         foreach ($metaCampaigns as $metaCampaign) {
             if ($metaCampaign->isOpen($this->now)) {
-                $changeFreq = 'always';
+                $changefreq = 'always';
             } elseif ($metaCampaign->getEndDate() > $this->now->sub(new \DateInterval("P1D"))) {
-                $changeFreq = 'hourly';
+                $changefreq = 'hourly';
             } else {
-                $changeFreq = 'monthly';
+                $changefreq = 'monthly';
             }
 
             $this->addUrl(
                 xml: $xml,
                 url: $this->environment->publicDonateURLPrefix() . $metaCampaign->getSlug()->slug,
-                changeFreq: $changeFreq,
+                changefreq: $changefreq,
                 priority: ($metaCampaign->getEndDate() > $this->now->add(new \DateInterval("P14D"))) ? '0.75' : '0.5',
             );
         }
@@ -107,12 +107,12 @@ class Sitemap extends Action
         return $response->withHeader('Content-Type', 'application/xml');
     }
 
-    private function addUrl(SimpleXMLElement $xml, string $url, string $changeFreq, string $priority): void
+    private function addUrl(SimpleXMLElement $xml, string $url, string $changefreq, string $priority): void
     {
         $urlElement = $xml->addChild('url') ?? throw new \LogicException('Expected child element not returned');
 
         $urlElement->addChild('loc', $url);
-        $urlElement->addChild('changeFreq', $changeFreq); // options: always, hourly, daily, weekly, monthly, yearly, never
+        $urlElement->addChild('changefreq', $changefreq); // options: always, hourly, daily, weekly, monthly, yearly, never
         $urlElement->addChild('priority', $priority); // value betweeon 0 and 1 sets relative priority to other content on same site.
     }
 }

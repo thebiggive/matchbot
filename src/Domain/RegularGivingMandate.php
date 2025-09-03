@@ -82,6 +82,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
     private ?\DateTimeImmutable $activeFrom = null;
 
     /**
+     * Only set by scheduled monthly jobs. Null after initial mandate creation, even when 3 matched months' donations
+     * are created up-front.
+     *
      * @psalm-suppress UnusedProperty - used in DQL
      */
     #[ORM\Column(nullable: true)]

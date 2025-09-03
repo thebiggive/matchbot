@@ -118,6 +118,11 @@ class FundRepository extends SalesforceReadProxyRepository
                         "Funding ID {$campaignFunding->getId()} balance could not be negative-increased by " .
                         "£{$increaseInAmount}. Salesforce Fund ID {$fundData['id']} as campaign {$campaignSFId} opened in past"
                     );
+                } else {
+                    $this->getLogger()->info(
+                        "Funding ID {$campaignFunding->getId()} balance set to £{$amountForCampaign} " .
+                        "for campaign {$campaignSFId} and fund SF ID {$fundData['id']}"
+                    );
                 }
             } else {
                 // Not a previously existing campaign -> create one and set balances without checking for existing ones.
