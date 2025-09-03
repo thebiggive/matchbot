@@ -176,11 +176,14 @@ class TakeRegularGivingDonations extends LockingCommand
                         $now,
                         MandateCancellationType::BigGiveCancelled,
                     );
+                    $this->donationService->cancel($donation);
                 }
                 $this->logger->error($e->getMessage());
                 $io->error($e->getMessage());
             }
         }
+
+        $this->em->flush();
     }
 
     private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(
