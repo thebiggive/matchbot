@@ -282,7 +282,7 @@ return function (ContainerBuilder $containerBuilder) {
             $alarmChannelName = match (getenv('APP_ENV')) {
                 'production' => 'production-alarms',
                 'staging' => 'staging-alarms',
-                'regression' => 'regression-alarms',
+//                'regression' => 'regression-alarms', // TODO reinstate once dubious RG mandates are cancelled
                 default => null,
             };
 
