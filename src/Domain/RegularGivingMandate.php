@@ -255,20 +255,22 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     public function firstPaymentDayAfter(\DateTimeImmutable $currentDateTime): \DateTimeImmutable
     {
-        // We only operate in UK market so all timestamps should be for this TZ:
-        // Not sure why some timestamps generated in tests are having TZ names BST or GMT rather than London,
-        // but that's also OK.
-        Assertion::inArray($currentDateTime->getTimezone()->getName(), ['Europe/London', 'BST', 'GMT', 'UTC']);
+        // Convert to Europe/London timezone for all business logic calculations
+        // This ensures consistent behavior regardless of input timezone
+        $londonTimezone = new \DateTimeZone('Europe/London');
+        $londonDateTime = $currentDateTime->setTimezone($londonTimezone);
 
-        $nextPaymentDayIsNextMonth = $currentDateTime->format('d') >= $this->dayOfMonth->value;
+        // Now perform all date calculations using London time
+        $nextPaymentDayIsNextMonth = (int)$londonDateTime->format('d') >= $this->dayOfMonth->value;
 
         $todayOrNextMonth = $nextPaymentDayIsNextMonth ?
-            $currentDateTime->add(new \DateInterval("P1M")) :
-            $currentDateTime;
+            $londonDateTime->add(new \DateInterval("P1M")) :
+            $londonDateTime;
 
+        // Create the result in London timezone, then return it
         return new \DateTimeImmutable(
             $todayOrNextMonth->format('Y-m-' . $this->dayOfMonth->value . 'T06:00:00'),
-            $currentDateTime->getTimezone()
+            $londonTimezone
         );
     }
 
