@@ -714,7 +714,7 @@ class DonationService
     public function confirmDonationWithSavedPaymentMethod(
         Donation $donation,
         StripePaymentMethodId $paymentMethodId,
-        bool $offSession = false,
+        bool $offSession,
     ): void {
         $paymentIntentId = $donation->getTransactionId();
 
