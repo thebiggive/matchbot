@@ -201,7 +201,7 @@ readonly class RegularGivingService
                 $this->donationService->confirmOnSessionDonation($firstDonation, $confirmationTokenId, ConfirmationToken::SETUP_FUTURE_USAGE_OFF_SESSION);
             } else {
                 \assert($donorsSavedPaymentMethod !== null);
-                $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod);
+                $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod, false);
             }
         } catch (PaymentIntentNotSucceeded $e) {
             $this->entityManager->flush();
