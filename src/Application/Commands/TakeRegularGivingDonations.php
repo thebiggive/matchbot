@@ -11,7 +11,7 @@ use MatchBot\Application\Environment;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
-use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
+use MatchBot\Domain\DomainException\RegularGivingDonationTooOldToCollect;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -33,7 +33,6 @@ use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
 use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
 use Symfony\Component\Notifier\ChatterInterface;
-use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 #[AsCommand(
@@ -111,7 +110,7 @@ class TakeRegularGivingDonations extends LockingCommand
         $now = $this->container->get(\DateTimeImmutable::class);
 
         $this->createNewDonationsAccordingToRegularGivingMandates($now, $io);
-        $this->setPaymentIntentWhenReachedPaymentDate($now, $io);
+        $this->createPaymentIntentWhenReachedPaymentDate($now, $io);
         $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($now, $io);
 
         $outputText = $bufferedOutput->fetch();
@@ -155,7 +154,10 @@ class TakeRegularGivingDonations extends LockingCommand
         }
     }
 
-    private function setPaymentIntentWhenReachedPaymentDate(
+    /**
+     * Make any needed Stripe Payment Intents and associate them with Donations.
+     */
+    private function createPaymentIntentWhenReachedPaymentDate(
         \DateTimeImmutable $now,
         SymfonyStyle $io
     ): void {
@@ -167,7 +169,7 @@ class TakeRegularGivingDonations extends LockingCommand
             try {
                 $this->donationService->createAndAssociatePaymentIntent($donation);
                 $io->writeln("setting payment intent on donation {$donation->getUuid()}");
-            } catch (RegularGivingDonationToOldToCollect $e) {
+            } catch (RegularGivingDonationTooOldToCollect $e) {
                 if ($this->environment === Environment::Regression) {
                     $mandate = $donation->getMandate();
                     \assert($mandate instanceof RegularGivingMandate);
@@ -219,6 +221,20 @@ class TakeRegularGivingDonations extends LockingCommand
                 } catch (PaymentIntentNotSucceeded $exception) {
                     $this->logger->error('PaymentIntentNotSucceeded, skipping donation: ' . $exception->getMessage());
                     continue;
+                } catch (RegularGivingDonationTooOldToCollect $exception) {
+                    // Copied code from the other place we catch this, as it's only temporary.
+                    if ($this->environment === Environment::Regression) {
+                        $mandate = $donation->getMandate();
+                        \assert($mandate instanceof RegularGivingMandate);
+                        $mandate->cancel(
+                            'Donation too old to collect, cancelling mandate - special regression environment behaviour',
+                            $now,
+                            MandateCancellationType::BigGiveCancelled,
+                        );
+                        $this->donationService->cancel($donation);
+                    } else {
+                        throw $exception;
+                    }
                 }
             } catch (\Exception $exception) {
                 $this->logger->error('Exception, skipping donation: ' . $exception->getMessage());

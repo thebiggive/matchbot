@@ -20,7 +20,7 @@ use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\DomainException\CannotRemoveGiftAid;
-use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
+use MatchBot\Domain\DomainException\RegularGivingDonationTooOldToCollect;
 use Messages;
 use PrinsFrank\Standards\Country\CountryAlpha2;
 use Ramsey\Uuid\Uuid;
@@ -1893,13 +1893,13 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @throws RegularGivingDonationToOldToCollect if PreAuthDate is more than one month in the past.
+     * @throws RegularGivingDonationTooOldToCollect if PreAuthDate is more than one month in the past.
      * @throws \Assert\AssertionFailedException if PreAuthDate is null or in the future.
      */
     public function checkPreAuthDateAllowsCollectionAt(\DateTimeImmutable $now): void
     {
         if (!($this->thisIsInDateRangeToConfirm($now))) {
-            throw new RegularGivingDonationToOldToCollect(
+            throw new RegularGivingDonationTooOldToCollect(
                 "Donation ID {$this->getId()} should have been collected at " .
                 "{$this->getPreAuthorizationDate()?->format('Y-m-d')}, will not at this time",
             );

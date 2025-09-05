@@ -28,7 +28,7 @@ use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
-use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
+use MatchBot\Domain\DomainException\RegularGivingDonationTooOldToCollect;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
@@ -249,7 +249,7 @@ class DonationService
      *
      * @param null|'on_session'|'off_session' $confirmationTokenSetupFutureUsage
      * @throws ApiErrorException
-     * @throws RegularGivingDonationToOldToCollect
+     * @throws RegularGivingDonationTooOldToCollect
      * @throws PaymentIntentNotSucceeded
      */
     public function confirmOnSessionDonation(
@@ -487,7 +487,7 @@ class DonationService
 
     /**
      * Creates a payment intent at Stripe and records the PI ID against the donation.
-     * @throws RegularGivingDonationToOldToCollect
+     * @throws RegularGivingDonationTooOldToCollect
      */
     public function createAndAssociatePaymentIntent(Donation $donation): void
     {
