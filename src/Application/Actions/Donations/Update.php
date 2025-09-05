@@ -613,7 +613,7 @@ class Update extends Action
         $this->entityManager->flush();
 
         $this->logger->warning(
-            "Cancelled funded donation #{$donation->getId()} due to non-success on confirmation attempt status " .
+            "Cancelled funded donation ID {$donation->getId()} due to non-success on confirmation attempt status " .
             "{$confirmedPaymentIntent->status}. May be insufficent funds in donor account."
         );
     }

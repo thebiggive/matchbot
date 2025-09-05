@@ -123,7 +123,7 @@ class StripePayoutHandler
 
                 $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
 
-                $this->logger->info("Marked donation #{$donation->getId()} paid based on stripe payout #{$payoutId}");
+                $this->logger->info("Marked donation ID {$donation->getId()} paid based on stripe payout #{$payoutId}");
 
                 $count++;
                 continue;
