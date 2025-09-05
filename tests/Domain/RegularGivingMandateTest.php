@@ -348,6 +348,7 @@ class RegularGivingMandateTest extends TestCase
             ['2024-08-23T17:30:00Z', 23, '2024-09-23T06:00:00+0100'],
             ['2024-12-23T17:30:00Z', 23, '2025-01-23T06:00:00+0000'], // TZ is +0 because its winter
             ['2024-08-22T17:30:00Z', 23, '2024-08-23T06:00:00+0100'],
+            ['2024-08-22T23:30:00Z', 23, '2024-09-23T06:00:00+0100'], // Near midnight UTC; sign up is 23 Aug UK time
         ];
     }
 
