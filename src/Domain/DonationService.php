@@ -360,7 +360,7 @@ class DonationService
             );
         }
 
-        $this->confirmDonationWithSavedPaymentMethod($donation, $paymentMethod);
+        $this->confirmDonationWithSavedPaymentMethod(donation: $donation, paymentMethodId: $paymentMethod, offSession: true);
     }
 
     /**
@@ -711,8 +711,11 @@ class DonationService
     /**
      * @throws PaymentIntentNotSucceeded
      * */
-    public function confirmDonationWithSavedPaymentMethod(Donation $donation, StripePaymentMethodId $paymentMethodId): void
-    {
+    public function confirmDonationWithSavedPaymentMethod(
+        Donation $donation,
+        StripePaymentMethodId $paymentMethodId,
+        bool $offSession = false,
+    ): void {
         $paymentIntentId = $donation->getTransactionId();
 
         $this->updateDonationFeesFromPaymentMethodId($donation, $paymentMethodId);
@@ -727,6 +730,7 @@ class DonationService
             [
                 'payment_method' => $paymentMethodId->stripePaymentMethodId,
                 'return_url' => $donation->getReturnUrl(),
+                'off_session' => $offSession,
             ]
         );
 
