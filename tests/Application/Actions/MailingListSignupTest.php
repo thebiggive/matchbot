@@ -19,6 +19,7 @@ class MailingListSignupTest extends TestCase
 {
     /**
      * Create a request with proper headers for JSON content
+     * @param array<string,string> $data
      */
     private function createJsonRequest(string $method, string $path, array $data): \Psr\Http\Message\ServerRequestInterface
     {
@@ -105,12 +106,12 @@ class MailingListSignupTest extends TestCase
         $response = $app->handle($request);
         $payload = (string) $response->getBody();
 
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         /** @var array{success: bool, message: string} $responseData */
         $responseData = json_decode($payload, true);
         $this->assertTrue($responseData['success']);
-        $this->assertEquals('Successfully signed up to mailing list', $responseData['message']);
+        $this->assertSame('Successfully signed up to mailing list', $responseData['message']);
     }
 
     public function testSuccessfulCharitySignup(): void
@@ -154,12 +155,12 @@ class MailingListSignupTest extends TestCase
         $response = $app->handle($request);
         $payload = (string) $response->getBody();
 
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
 
         /** @var array{success: bool, message: string} $responseData */
         $responseData = json_decode($payload, true);
         $this->assertTrue($responseData['success']);
-        $this->assertEquals('Successfully signed up to mailing list', $responseData['message']);
+        $this->assertSame('Successfully signed up to mailing list', $responseData['message']);
     }
 
     public function testMissingRequiredField(): void
@@ -186,12 +187,12 @@ class MailingListSignupTest extends TestCase
         $response = $app->handle($request);
 
         // Check for 400 response with appropriate error message
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame(400, $response->getStatusCode());
 
         /** @var array{success: bool, message: string} $payload */
         $payload = json_decode((string) $response->getBody(), true);
         $this->assertFalse($payload['success']);
-        $this->assertEquals('Job title is required for charity mailing list', $payload['message']);
+        $this->assertSame('Job title is required for charity mailing list', $payload['message']);
     }
 
     public function testInvalidMailingListType(): void
@@ -220,12 +221,12 @@ class MailingListSignupTest extends TestCase
         $response = $app->handle($request);
 
         // Check for 400 response with appropriate error message
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame(400, $response->getStatusCode());
 
         /** @var array{success: bool, message: string} $payload */
         $payload = json_decode((string) $response->getBody(), true);
         $this->assertFalse($payload['success']);
-        $this->assertEquals('Mailing list must be either "donor" or "charity"', $payload['message']);
+        $this->assertSame('Mailing list must be either "donor" or "charity"', $payload['message']);
     }
 
     public function testClientError(): void
@@ -275,9 +276,9 @@ class MailingListSignupTest extends TestCase
         /** @var array{success: bool, message: string} $payload */
         $payload = json_decode((string) $response->getBody(), true);
 
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertSame(400, $response->getStatusCode());
         $this->assertFalse($payload['success']);
-        $this->assertEquals('Failed to sign up to mailing list', $payload['message']);
+        $this->assertSame('Failed to sign up to mailing list', $payload['message']);
     }
 
     public function testServerError(): void
@@ -322,8 +323,8 @@ class MailingListSignupTest extends TestCase
         /** @var array{success: bool, message: string} $payload */
         $payload = json_decode((string) $response->getBody(), true);
 
-        $this->assertEquals(500, $response->getStatusCode());
+        $this->assertSame(500, $response->getStatusCode());
         $this->assertFalse($payload['success']);
-        $this->assertEquals('Failed to sign up to mailing list', $payload['message']);
+        $this->assertSame('Failed to sign up to mailing list', $payload['message']);
     }
 }
