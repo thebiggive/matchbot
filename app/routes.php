@@ -103,7 +103,7 @@ return function (App $app) {
         $versionGroup->get('/campaigns', \MatchBot\Application\Actions\Campaigns\Search::class)
             ->add(CacheableResponseMiddleware::class);
 
-        $versionGroup->post('/mailing-list-signup', \MatchBot\Application\Actions\Campaigns\MailingListSignup::class)
+        $versionGroup->post('/mailing-list-signup', \MatchBot\Application\Actions\MailingListSignup::class)
             ->add(\MatchBot\Application\Auth\CaptchaMiddleware::class);
 
         /**

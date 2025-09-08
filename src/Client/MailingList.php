@@ -14,6 +14,7 @@ use MatchBot\Application\Settings;
 class MailingList extends Common
 {
     use HashTrait;
+
     public function __construct(
         Settings $settings,
         LoggerInterface $logger
@@ -44,22 +45,22 @@ class MailingList extends Common
         ?string $organisationName = null
     ): bool {
         $uri = $this->sfApiBaseUrl . '/mailing-list-signup';
-        
+
         $payload = [
             'mailingList' => $mailingList,
             'firstName' => $firstName,
             'lastName' => $lastName,
             'emailAddress' => $emailAddress,
         ];
-        
+
         if ($jobTitle !== null) {
             $payload['jobTitle'] = $jobTitle;
         }
-        
+
         if ($organisationName !== null) {
             $payload['organisationName'] = $organisationName;
         }
-        
+
         try {
             $response = $this->getHttpClient()->post(
                 $uri,
@@ -68,7 +69,7 @@ class MailingList extends Common
                     'headers' => $this->getVerifyHeaders(json_encode($payload, \JSON_THROW_ON_ERROR)),
                 ]
             );
-            
+
             return $response->getStatusCode() === 200 || $response->getStatusCode() === 201;
         } catch (GuzzleException $ex) {
             $this->logger->error(sprintf(
@@ -76,7 +77,7 @@ class MailingList extends Common
                 get_class($ex),
                 $ex->getMessage()
             ));
-            
+
             throw $ex;
         }
     }

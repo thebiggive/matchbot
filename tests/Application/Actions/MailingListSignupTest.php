@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MatchBot\Tests\Application\Actions\Campaigns;
+namespace MatchBot\Tests\Application\Actions;
 
 use DI\Container;
 use GuzzleHttp\Client;
