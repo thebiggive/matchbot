@@ -203,6 +203,10 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Mailer($c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
+        Client\MailingList::class => function (ContainerInterface $c): Client\MailingList {
+            return new Client\MailingList($c->get(Settings::class), $c->get(LoggerInterface::class));
+        },
+
         Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {
             $isLoadTest = getenv('APP_ENV') !== 'production' && isset($_SERVER['HTTP_X_IS_LOAD_TEST']);
             if ($isLoadTest) {

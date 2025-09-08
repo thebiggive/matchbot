@@ -103,6 +103,9 @@ return function (App $app) {
         $versionGroup->get('/campaigns', \MatchBot\Application\Actions\Campaigns\Search::class)
             ->add(CacheableResponseMiddleware::class);
 
+        $versionGroup->post('/mailing-list-signup', \MatchBot\Application\Actions\Campaigns\MailingListSignup::class)
+            ->add(\MatchBot\Application\Auth\CaptchaMiddleware::class);
+
         /**
          * Cancel *all* pending donations for the current Donor with the specified query param criteria,
          * currently taking one campaign ID and most useful for Donation Funds tips.
