@@ -14,15 +14,11 @@ use Psr\Log\LogLevel;
 use Slim\Exception\HttpUnauthorizedException;
 use Symfony\Component\Serializer\SerializerInterface;
 
-/**
- * @psalm-suppress UnusedClass - will be used soon
- */
 class CaptchaMiddleware implements MiddlewareInterface
 {
     #[Pure]
     public function __construct(
         private readonly LoggerInterface $logger,
-        protected SerializerInterface $serializer,
         private FriendlyCaptchaVerifier $friendlyCaptchaVerifier,
         private bool $bypassCaptcha = false,
     ) {

@@ -7,9 +7,6 @@ use Psr\Log\LoggerInterface;
 
 class FriendlyCaptchaVerifier
 {
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - constructor called by frameework
-     */
     public function __construct(
         private Client $client,
         private string $secret,

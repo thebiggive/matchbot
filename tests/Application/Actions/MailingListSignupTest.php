@@ -14,7 +14,6 @@ use MatchBot\Client\MailingList;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Serializer\SerializerInterface;
 
 class MailingListSignupTest extends TestCase
 {
@@ -45,7 +44,6 @@ class MailingListSignupTest extends TestCase
     {
         // Mock the dependencies for CaptchaMiddleware
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
-        $serializerProphecy = $this->prophesize(SerializerInterface::class);
         $clientProphecy = $this->prophesize(Client::class);
 
         // Create a FriendlyCaptchaVerifier with mocked dependencies
@@ -59,7 +57,6 @@ class MailingListSignupTest extends TestCase
         // Create a CaptchaMiddleware with bypass enabled
         $captchaMiddleware = new CaptchaMiddleware(
             $loggerProphecy->reveal(),
-            $serializerProphecy->reveal(),
             $friendlyCaptchaVerifier,
             true // bypass captcha for tests
         );
