@@ -13,9 +13,6 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 
-/**
- * Handle mailing list signup requests
- */
 class MailingListSignup extends Action
 {
     public function __construct(
@@ -34,93 +31,140 @@ class MailingListSignup extends Action
 
         try {
             $data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
-
-            if (!is_array($data)) {
-                throw new \InvalidArgumentException('Request body must be a JSON object');
-            }
-
-            // Validate and extract required fields
-            if (!isset($data['mailinglist'])) {
-                throw new \InvalidArgumentException('Mailing list type is required');
-            }
-
-            if (!isset($data['firstName'])) {
-                throw new \InvalidArgumentException('First name is required');
-            }
-
-            if (!isset($data['lastName'])) {
-                throw new \InvalidArgumentException('Last name is required');
-            }
-
-            if (!isset($data['emailAddress'])) {
-                throw new \InvalidArgumentException('Email address is required');
-            }
-
-            $mailingList = $data['mailinglist'];
-            if (!is_string($mailingList)) {
-                throw new \InvalidArgumentException('Mailing list type must be a string');
-            }
-
-            if ($mailingList !== 'donor' && $mailingList !== 'charity') {
-                throw new \InvalidArgumentException('Mailing list must be either "donor" or "charity"');
-            }
-
-            $firstName = $data['firstName'];
-            if (!is_string($firstName)) {
-                throw new \InvalidArgumentException('First name must be a string');
-            }
-
-            $lastName = $data['lastName'];
-            if (!is_string($lastName)) {
-                throw new \InvalidArgumentException('Last name must be a string');
-            }
-
-            $emailAddress = $data['emailAddress'];
-            if (!is_string($emailAddress)) {
-                throw new \InvalidArgumentException('Email address must be a string');
-            }
-
-            if (!filter_var($emailAddress, FILTER_VALIDATE_EMAIL)) {
-                throw new \InvalidArgumentException('Invalid email address format');
-            }
-
-            // Job title is required for charity mailing list
-            $jobTitle = null;
-            if ($mailingList === 'charity') {
-                if (!isset($data['jobTitle'])) {
-                    throw new \InvalidArgumentException('Job title is required for charity mailing list');
-                }
-
-                /** @var mixed $rawJobTitle */
-                $rawJobTitle = $data['jobTitle'];
-                if (!is_string($rawJobTitle) || empty($rawJobTitle)) {
-                    throw new \InvalidArgumentException('Job title must be a non-empty string for charity mailing list');
-                }
-                $jobTitle = $rawJobTitle;
-            } elseif (isset($data['jobTitle'])) {
-                /** @var mixed $rawJobTitle */
-                $rawJobTitle = $data['jobTitle'];
-                if (!is_string($rawJobTitle)) {
-                    throw new \InvalidArgumentException('Job title must be a string');
-                }
-                $jobTitle = $rawJobTitle;
-            }
-
-            // Optional organisation name
-            $organisationName = null;
-            if (isset($data['organisationName'])) {
-                /** @var mixed $rawOrgName */
-                $rawOrgName = $data['organisationName'];
-                if (!is_string($rawOrgName)) {
-                    throw new \InvalidArgumentException('Organisation name must be a string');
-                }
-                $organisationName = $rawOrgName;
-            }
         } catch (\JsonException $e) {
             $this->logger->info("Mailing list signup non-serialisable payload was: $body");
-            throw new HttpBadRequestException($request, 'Invalid JSON in request body');
-        } catch (\InvalidArgumentException $e) {
-            throw new HttpBadRequestException($request, $e->getMessage());
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Invalid JSON in request body',
+            ], 400);
+        }
+
+        // Validate request body is an array
+        if (!is_array($data)) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Request body must be a JSON object',
+            ], 400);
+        }
+
+        // Validate required fields
+        if (!isset($data['mailinglist'])) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Mailing list type is required',
+            ], 400);
+        }
+
+        if (!isset($data['firstName'])) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'First name is required',
+            ], 400);
+        }
+
+        if (!isset($data['lastName'])) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Last name is required',
+            ], 400);
+        }
+
+        if (!isset($data['emailAddress'])) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Email address is required',
+            ], 400);
+        }
+
+        $mailingList = $data['mailinglist'];
+        if (!is_string($mailingList)) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Mailing list type must be a string',
+            ], 400);
+        }
+
+        if ($mailingList !== 'donor' && $mailingList !== 'charity') {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Mailing list must be either "donor" or "charity"',
+            ], 400);
+        }
+
+        $firstName = $data['firstName'];
+        if (!is_string($firstName)) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'First name must be a string',
+            ], 400);
+        }
+
+        $lastName = $data['lastName'];
+        if (!is_string($lastName)) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Last name must be a string',
+            ], 400);
+        }
+
+        $emailAddress = $data['emailAddress'];
+        if (!is_string($emailAddress)) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Email address must be a string',
+            ], 400);
+        }
+
+        if (!filter_var($emailAddress, FILTER_VALIDATE_EMAIL)) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Invalid email address format',
+            ], 400);
+        }
+
+        // Job title is required for charity mailing list
+        $jobTitle = null;
+        if ($mailingList === 'charity') {
+            if (!isset($data['jobTitle'])) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Job title is required for charity mailing list',
+                ], 400);
+            }
+
+            /** @var mixed $rawJobTitle */
+            $rawJobTitle = $data['jobTitle'];
+            if (!is_string($rawJobTitle) || empty($rawJobTitle)) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Job title must be a non-empty string for charity mailing list',
+                ], 400);
+            }
+            $jobTitle = $rawJobTitle;
+        } elseif (isset($data['jobTitle'])) {
+            /** @var mixed $rawJobTitle */
+            $rawJobTitle = $data['jobTitle'];
+            if (!is_string($rawJobTitle)) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Job title must be a string',
+                ], 400);
+            }
+            $jobTitle = $rawJobTitle;
+        }
+
+        // Optional organisation name
+        $organisationName = null;
+        if (isset($data['organisationName'])) {
+            /** @var mixed $rawOrgName */
+            $rawOrgName = $data['organisationName'];
+            if (!is_string($rawOrgName)) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Organisation name must be a string',
+                ], 400);
+            }
+            $organisationName = $rawOrgName;
         }
 
         try {

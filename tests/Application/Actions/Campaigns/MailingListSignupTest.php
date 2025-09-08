@@ -183,11 +183,15 @@ class MailingListSignupTest extends TestCase
             ]
         );
 
-        // We expect an exception to be thrown for missing required field
-        $this->expectException(\Slim\Exception\HttpBadRequestException::class);
-        $this->expectExceptionMessage('Job title is required for charity mailing list');
+        $response = $app->handle($request);
 
-        $app->handle($request);
+        // Check for 400 response with appropriate error message
+        $this->assertEquals(400, $response->getStatusCode());
+
+        /** @var array{success: bool, message: string} $payload */
+        $payload = json_decode((string) $response->getBody(), true);
+        $this->assertFalse($payload['success']);
+        $this->assertEquals('Job title is required for charity mailing list', $payload['message']);
     }
 
     public function testInvalidMailingListType(): void
@@ -213,11 +217,15 @@ class MailingListSignupTest extends TestCase
             ]
         );
 
-        // We expect an exception to be thrown for invalid mailing list type
-        $this->expectException(\Slim\Exception\HttpBadRequestException::class);
-        $this->expectExceptionMessage('Mailing list must be either "donor" or "charity"');
+        $response = $app->handle($request);
 
-        $app->handle($request);
+        // Check for 400 response with appropriate error message
+        $this->assertEquals(400, $response->getStatusCode());
+
+        /** @var array{success: bool, message: string} $payload */
+        $payload = json_decode((string) $response->getBody(), true);
+        $this->assertFalse($payload['success']);
+        $this->assertEquals('Mailing list must be either "donor" or "charity"', $payload['message']);
     }
 
     public function testClientError(): void
