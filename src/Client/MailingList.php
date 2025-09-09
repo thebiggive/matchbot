@@ -70,7 +70,7 @@ class MailingList extends Common
                 ]
             );
 
-            return $response->getStatusCode() === 200 || $response->getStatusCode() === 201;
+            return $response->getStatusCode() === 200;
         } catch (GuzzleException $ex) {
             $this->logger->error(sprintf(
                 'Mailing list signup exception: %s: %s',
