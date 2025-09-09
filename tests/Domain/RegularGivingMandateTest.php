@@ -349,6 +349,10 @@ class RegularGivingMandateTest extends TestCase
             ['2024-12-23T17:30:00Z', 23, '2025-01-23T06:00:00+0000'], // TZ is +0 because its winter
             ['2024-08-22T17:30:00Z', 23, '2024-08-23T06:00:00+0100'],
             ['2024-08-22T23:30:00Z', 23, '2024-09-23T06:00:00+0100'], // Near midnight UTC; sign up is 23 Aug UK time
+            ['2024-08-21T12:00:00Z', 22, '2024-09-22T06:00:00+0100'], // Assume Browser is in e.g. Kiritimati UTC+14 land, so asks for donations to be taken monthly on the 22nd not 21st.
+            // line above current fails with Failed asserting that two DateTime objects are equal.
+            //Expected :2024-09-22T06:00:00.000000+0100
+            //Actual   :2024-08-22T06:00:00.000000+0100"
         ];
     }
 
