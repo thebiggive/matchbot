@@ -47,6 +47,8 @@
     <env name="MYSQL_HOST" value="dummy-mysql-hostname" force="true"/>
     <env name="REDIS_HOST" value="dummy-redis-hostname" force="true"/>
     <env name="SALESFORCE_SECRET_KEY" value="topsecret" force="true"/>
+    <env name="FRIENDLY_CAPTCHA_SITE_KEY" value="dummy_site_key" force="true" />
+    <env name="FRIENDLY_CAPTCHA_SECRET_KEY" value="dummy_secret_key" force="true"/>
     <env name="SALESFORCE_CLIENT_TIMEOUT" value="" force="false"/>
     <env name="MAILER_BASE_URI" value="" force="false"/>
     <env name="MAILER_SEND_SECRET" value="" force="false"/>
