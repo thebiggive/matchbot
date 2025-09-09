@@ -6,6 +6,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -97,9 +98,7 @@ class Search extends Action
          * Have to then pass through array_values to make sure it produces a JSON array as needed by FE not a JSON
          * object - any missing keys (other than at the end of the list) will make PHP output it as an object.
          */
-        $campaignsWithSfData = \array_values(array_filter($campaigns, static function ($campaign) {
-            return ! $campaign->isSfDataMissing();
-        }));
+        $campaignsWithSfData = \array_values(\array_filter($campaigns, static fn(Campaign $c) => ! $c->isSfDataMissing()));
 
         $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData);
 
