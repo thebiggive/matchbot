@@ -608,6 +608,16 @@ return function (ContainerBuilder $containerBuilder) {
                     bus: $c->get(RoutableMessageBus::class),
                     donationNotifier: $c->get(DonationNotifier::class),
                 );
-            }
+            },
+
+        Auth\FriendlyCaptchaVerifier::class => static function (ContainerInterface $c): Auth\FriendlyCaptchaVerifier {
+            $FCSettings = $c->get(Settings::class)->friendlyCaptchaSettings;
+            return new Auth\FriendlyCaptchaVerifier(
+                client: $c->get(GuzzleHttp\Client::class),
+                secret: $FCSettings['secret_key'],
+                siteKey: $FCSettings['site_key'],
+                logger: $c->get(LoggerInterface::class)
+            );
+        }
     ]);
 };
