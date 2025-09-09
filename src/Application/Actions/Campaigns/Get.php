@@ -47,12 +47,7 @@ class Get extends Action
             throw new HttpNotFoundException($request);
         }
 
-        $salesforceData = $campaign->getSalesforceData();
-        unset($salesforceData['charity']);
-        /** @psalm-suppress TypeDoesNotContainType */
-        if ($salesforceData === []) {
-            // it's not possible to render a campaign without having this data filled in. There's at least one
-            // campaign missing it in prod, possibly because it was deleted from Salesforce.
+        if ($campaign->isSfDataMissing()) {
             throw new HttpNotFoundException($request);
         }
 
