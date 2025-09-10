@@ -55,6 +55,9 @@ class Settings
     /** @var array{apiKey: non-empty-string, accountWebhookSecret: string, connectAppWebhookSecret: string} */
     public array $stripe;
 
+    /** @var array{site_key: string, secret_key: string} */
+    public array $friendlyCaptchaSettings;
+
     /**
      * @param array<string, string> $env
      */
@@ -173,6 +176,11 @@ class Settings
         $this->salesforce = [
             // authenticates requests originating from salesforce to matchbot:
             'apiKey' => $this->getNonEmptyStringEnv($env, 'SALESFORCE_SECRET_KEY', false),
+        ];
+
+        $this->friendlyCaptchaSettings = [
+            'site_key' => $this->getStringEnv($env, 'FRIENDLY_CAPTCHA_SITE_KEY', false),
+            'secret_key' =>  $this->getStringEnv($env, 'FRIENDLY_CAPTCHA_SECRET_KEY', false),
         ];
     }
 

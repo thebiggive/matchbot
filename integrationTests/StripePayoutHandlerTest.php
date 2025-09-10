@@ -98,7 +98,7 @@ class StripePayoutHandlerTest extends IntegrationTest
                 info: Payout: Getting all Connect account paid Charge IDs for Payout ID po_externalId_123 complete, found 1
                 info: Payout: Getting original TBG charge IDs related to payout's Charge IDs
                 info: Payout: Finished getting original Charge IDs, found 1 (from 1 source transfer IDs and 1 donations whose transfer IDs matched)
-                info: Marked donation #{$donationId} paid based on stripe payout #po_externalId_123
+                info: Marked donation ID {$donationId} paid based on stripe payout #po_externalId_123
                 info: Payout: Updating paid donations complete for stripe payout #po_externalId_123, persisted 1
                 
                 LOGS,

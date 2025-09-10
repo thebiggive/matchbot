@@ -36,7 +36,7 @@ class CorsMiddleware implements MiddlewareInterface
             ->withHeader('Access-Control-Allow-Origin', $corsAllowedOrigin)
             ->withHeader(
                 'Access-Control-Allow-Headers',
-                'X-Is-Load-Test, X-Tbg-Auth, X-Requested-With, Content-Type, Accept, Origin, Authorization'
+                'X-Is-Load-Test, X-Tbg-Auth, X-Requested-With, Content-Type, Accept, Origin, Authorization, x-captcha-code'
             )
             ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     }

@@ -14,7 +14,6 @@ use MatchBot\Application\Environment;
 class CampaignRenderCompatibilityChecker
 {
     private const array KEYS_TO_SKIP = [
-        'x_isMetaCampaign',
         'isMetaCampaign',
         'isEmergencyIMF', // not used by FE,
         'amountRaised',  // don't need to check amount raised as it is being handled by matchbot and Salesforce data

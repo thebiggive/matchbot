@@ -203,6 +203,10 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Mailer($c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
+        Client\MailingList::class => function (ContainerInterface $c): Client\MailingList {
+            return new Client\MailingList($c->get(Settings::class), $c->get(LoggerInterface::class));
+        },
+
         Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {
             $isLoadTest = getenv('APP_ENV') !== 'production' && isset($_SERVER['HTTP_X_IS_LOAD_TEST']);
             if ($isLoadTest) {
@@ -282,7 +286,7 @@ return function (ContainerBuilder $containerBuilder) {
             $alarmChannelName = match (getenv('APP_ENV')) {
                 'production' => 'production-alarms',
                 'staging' => 'staging-alarms',
-                'regression' => 'regression-alarms',
+//                'regression' => 'regression-alarms', // TODO reinstate once dubious RG mandates are cancelled
                 default => null,
             };
 
@@ -604,6 +608,16 @@ return function (ContainerBuilder $containerBuilder) {
                     bus: $c->get(RoutableMessageBus::class),
                     donationNotifier: $c->get(DonationNotifier::class),
                 );
-            }
+            },
+
+        Auth\FriendlyCaptchaVerifier::class => static function (ContainerInterface $c): Auth\FriendlyCaptchaVerifier {
+            $FCSettings = $c->get(Settings::class)->friendlyCaptchaSettings;
+            return new Auth\FriendlyCaptchaVerifier(
+                client: $c->get(GuzzleHttp\Client::class),
+                secret: $FCSettings['secret_key'],
+                siteKey: $FCSettings['site_key'],
+                logger: $c->get(LoggerInterface::class)
+            );
+        }
     ]);
 };

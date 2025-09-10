@@ -647,6 +647,16 @@ class Campaign extends SalesforceReadProxy
         return $this->salesforceData + ['charity' => $this->charity->getSalesforceData()];
     }
 
+    /**
+     * it's not possible to render a campaign without having this data filled in. There's at least one
+     * campaign missing it in prod, possibly because it was deleted from Salesforce.
+     *
+     */
+    public function isSfDataMissing(): bool
+    {
+        return $this->salesforceData === [];
+    }
+
     public function isHidden(): bool
     {
         return $this->hidden;

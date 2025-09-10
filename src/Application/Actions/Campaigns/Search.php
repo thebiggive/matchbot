@@ -6,6 +6,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -93,16 +94,11 @@ class Search extends Action
         /**
          * Some campaigns have SF data {} when they were last synced before we saved full SF data. If we try
          * to render those there are missing array keys for beneficiaries et al.
-         * @psalm-suppress RedundantCondition For charity only empty SF data; we'll soon load all campaign data.
          *
          * Have to then pass through array_values to make sure it produces a JSON array as needed by FE not a JSON
          * object - any missing keys (other than at the end of the list) will make PHP output it as an object.
          */
-        $campaignsWithSfData = \array_values(array_filter($campaigns, static function ($campaign) {
-            $coreCampaignData = $campaign->getSalesforceData();
-            unset($coreCampaignData['charity']);
-            return $coreCampaignData !== [];
-        }));
+        $campaignsWithSfData = \array_values(\array_filter($campaigns, static fn(Campaign $c) => ! $c->isSfDataMissing()));
 
         $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData);
 
