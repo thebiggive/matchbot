@@ -13,6 +13,7 @@ use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -27,9 +28,7 @@ use Stripe\Exception\InvalidRequestException;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\Exception\LockConflictedException;
-use Symfony\Component\Lock\Lock;
 use Symfony\Component\Lock\LockFactory;
-use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 class Confirm extends Action
@@ -126,7 +125,10 @@ EOF
         } catch (LazyAssertionException $exception) {
             $message = $exception->getMessage();
 
-            $level = \str_contains(haystack: $message, needle: 'matchedAmount') ? LogLevel::ERROR : LogLevel::WARNING;
+            // `matchedAmount` is £0 if donation was cancelled, which can happen not uncommonly on Stripe auto-cancels.
+            $level = \str_contains(haystack: $message, needle: 'matchedAmount') && $donation->getDonationStatus() !== DonationStatus::Cancelled
+                ? LogLevel::ERROR
+                : LogLevel::WARNING;
 
             $this->logger->log(level: $level, message: $message);
 
