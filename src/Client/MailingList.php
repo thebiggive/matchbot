@@ -44,7 +44,7 @@ class MailingList extends Common
         ?string $jobTitle = null,
         ?string $organisationName = null
     ): bool {
-        $uri = $this->sfApiBaseUrl . '/mailing-list-signup';
+        $uri = $this->sfApiBaseUrl . '/donations/services/apexrest/v2.0/mailing-list-signup/';
 
         $payload = [
             'mailingList' => $mailingList,
