@@ -24,4 +24,16 @@ readonly class DayOfMonth
     {
         return new self($day);
     }
+
+    public static function forMandateStartingAt(\DateTimeImmutable $date): self
+    {
+        $dateInUK = $date->setTimezone(new \DateTimeZone('Europe/London'));
+        $originalDayOfMonth = (int)$dateInUK->format('j');
+
+        // for simplicity, we don't take payments on the 29th, 30th or 31st of the month since not all months have them.
+
+        $constrainedDayOfMOnth = min(28, $originalDayOfMonth);
+
+        return self::of($constrainedDayOfMOnth);
+    }
 }
