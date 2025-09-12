@@ -38,7 +38,6 @@ use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Application\Settings;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
-use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationNotifier;
@@ -286,7 +285,7 @@ return function (ContainerBuilder $containerBuilder) {
             $alarmChannelName = match (getenv('APP_ENV')) {
                 'production' => 'production-alarms',
                 'staging' => 'staging-alarms',
-//                'regression' => 'regression-alarms', // TODO reinstate once dubious RG mandates are cancelled
+                'regression' => 'regression-alarms',
                 default => null,
             };
 
