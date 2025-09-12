@@ -106,7 +106,7 @@ class FundRepository extends SalesforceReadProxyRepository
                     $newTotal = $matchingAdapter->addAmount($campaignFunding, $increaseInAmount);
 
                     $this->getLogger()->info(
-                        "Funding ID {$campaignFunding->getId()} balance increased " .
+                        "Campaign Funding ID {$campaignFunding->getId()} balance increased " .
                         "£{$increaseInAmount} to £{$newTotal}"
                     );
 
@@ -115,12 +115,12 @@ class FundRepository extends SalesforceReadProxyRepository
 
                 if (bccomp($increaseInAmount, '0.00', 2) === -1 && $campaign->getStartDate() < $at) {
                     $this->getLogger()->error(
-                        "Funding ID {$campaignFunding->getId()} balance could not be negative-increased by " .
+                        "Campaign Funding ID {$campaignFunding->getId()} balance could not be negative-increased by " .
                         "£{$increaseInAmount}. Salesforce Fund ID {$fundData['id']} as campaign {$campaignSFId} opened in past"
                     );
                 } else {
                     $this->getLogger()->info(
-                        "Funding ID {$campaignFunding->getId()} balance set to £{$amountForCampaign} " .
+                        "Campaign Funding ID {$campaignFunding->getId()} balance set to £{$amountForCampaign} " .
                         "for campaign {$campaignSFId} and fund SF ID {$fundData['id']}"
                     );
                 }
