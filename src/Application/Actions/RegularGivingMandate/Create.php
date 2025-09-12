@@ -98,7 +98,6 @@ class Create extends Action
                 amount: $mandateData->amount,
                 campaign: $campaign,
                 giftAid: $mandateData->giftAid,
-                dayOfMonth: $mandateData->dayOfMonth,
                 billingCountry: $mandateData->billingCountry,
                 billingPostCode: $mandateData->billingPostcode,
                 tbgComms: $mandateData->tbgComms,
