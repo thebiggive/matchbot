@@ -30,7 +30,7 @@ class DayOfMonthTest extends TestCase
                 // do calcuations in UK time, so this date should be treated as the 1st.
                 '2020-01-02T12:00:00+14', 1
             ],
-            'day 28 on January 28st' => [
+            'day 28 on January 28th' => [
                 '2020-01-28T00:00:00z', 28
             ],
             'day 28 on January 29' => [
