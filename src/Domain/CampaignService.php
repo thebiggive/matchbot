@@ -78,11 +78,6 @@ class CampaignService
 
     public function renderMetaCampaign(MetaCampaign $metaCampaign): MetaCampaignHttpModel
     {
-        /**
-         * This should not be prod because the todos below need to be fixed first before we call this in prod.
-         */
-        Assertion::notEq(Environment::current(), Environment::Production);
-
         $salesforceId = $metaCampaign->getSalesforceId();
         Assertion::notNull($salesforceId);
 
