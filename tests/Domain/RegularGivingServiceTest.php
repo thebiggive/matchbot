@@ -157,7 +157,6 @@ class RegularGivingServiceTest extends TestCase
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             false,
-            DayOfMonth::of(20),
             Country::fromEnum(CountryAlpha2::Kiribati),
             billingPostCode: 'KI0107',
             tbgComms: false,
@@ -177,12 +176,12 @@ class RegularGivingServiceTest extends TestCase
         $this->assertSame(DonationStatus::PreAuthorized, $this->donations[2]->getDonationStatus());
 
         $this->assertEquals(
-            new \DateTimeImmutable('2024-12-20T06:00:00 GMT'),
+            new \DateTimeImmutable('2024-12-28T06:00:00 GMT'),
             $this->donations[1]->getPreAuthorizationDate()
         );
 
         $this->assertEquals(
-            new \DateTimeImmutable('2025-01-20T06:00:00 GMT'),
+            new \DateTimeImmutable('2025-01-28T06:00:00 GMT'),
             $this->donations[2]->getPreAuthorizationDate()
         );
 
@@ -209,7 +208,6 @@ class RegularGivingServiceTest extends TestCase
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             false,
-            DayOfMonth::of(20),
             Country::fromEnum(CountryAlpha2::Kiribati),
             billingPostCode: 'KI0107',
             tbgComms: false,
@@ -240,7 +238,6 @@ class RegularGivingServiceTest extends TestCase
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             true,
-            DayOfMonth::of(20),
             Country::fromEnum(CountryAlpha2::Kiribati),
             billingPostCode: 'KI0107',
             tbgComms: false,
@@ -271,7 +268,6 @@ class RegularGivingServiceTest extends TestCase
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             true,
-            DayOfMonth::of(20),
             Country::fromEnum(CountryAlpha2::Kiribati),
             billingPostCode: 'KI0107',
             tbgComms: false,
@@ -319,7 +315,6 @@ class RegularGivingServiceTest extends TestCase
             amount: Money::fromPoundsGBP(42),
             campaign: TestCase::someCampaign(isRegularGiving: true),
             giftAid: false,
-            dayOfMonth: DayOfMonth::of(20),
             billingCountry: Country::GB(),
             billingPostCode: 'SW1',
             tbgComms: false,
@@ -378,7 +373,6 @@ class RegularGivingServiceTest extends TestCase
                 Money::fromPoundsGBP(42),
                 TestCase::someCampaign(isRegularGiving: true),
                 giftAid: false,
-                dayOfMonth: DayOfMonth::of(20),
                 billingCountry: null,
                 billingPostCode: null,
                 tbgComms: false,
@@ -408,7 +402,6 @@ class RegularGivingServiceTest extends TestCase
             Money::fromPoundsGBP(50),
             $campaign,
             giftAid: false,
-            dayOfMonth: DayOfMonth::of(12),
             billingCountry: null,
             billingPostCode: null,
             tbgComms: false,
@@ -437,7 +430,6 @@ class RegularGivingServiceTest extends TestCase
             Money::fromPoundsGBP(42),
             $campaign,
             giftAid: false,
-            dayOfMonth: DayOfMonth::of(12),
             billingCountry: Country::fromEnum(CountryAlpha2::Kiribati),
             billingPostCode: null,
             tbgComms: false,
@@ -495,7 +487,6 @@ class RegularGivingServiceTest extends TestCase
             Money::fromPoundsGBP(42),
             $campaign,
             giftAid: false,
-            dayOfMonth: DayOfMonth::of(12),
             billingCountry: null,
             billingPostCode: 'KI0107',
             tbgComms: false,
@@ -567,7 +558,6 @@ class RegularGivingServiceTest extends TestCase
                 Money::fromPoundsGBP(42),
                 TestCase::someCampaign(isRegularGiving: true),
                 false,
-                DayOfMonth::of(20),
                 Country::fromEnum(CountryAlpha2::Kiribati),
                 billingPostCode: 'KI0107',
                 tbgComms: false,
@@ -741,7 +731,6 @@ class RegularGivingServiceTest extends TestCase
             Money::fromPoundsGBP(42),
             $campaign,
             false,
-            DayOfMonth::of(20),
             Country::fromEnum(CountryAlpha2::Kiribati),
             billingPostCode: 'KI0107',
             tbgComms: false,

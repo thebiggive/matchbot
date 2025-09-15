@@ -79,7 +79,6 @@ readonly class RegularGivingService
         Money $amount,
         Campaign $campaign,
         bool $giftAid,
-        DayOfMonth $dayOfMonth,
         ?Country $billingCountry,
         ?string $billingPostCode,
         bool $tbgComms,
@@ -104,6 +103,7 @@ readonly class RegularGivingService
         $this->ensureCampaignIsOpen($campaign);
         $this->cancelAnyPendingMandateForDonorAndCampaign($donor, $campaign);
 
+
         if ($billingCountry) {
             $donor->setBillingCountry($billingCountry);
         }
@@ -113,6 +113,8 @@ readonly class RegularGivingService
         }
 
         $donor->assertHasRequiredInfoForRegularGiving();
+
+        $dayOfMonth = DayOfMonth::forMandateStartingAt($this->now);
 
         $mandate = new RegularGivingMandate(
             donorId: $donor->id(),

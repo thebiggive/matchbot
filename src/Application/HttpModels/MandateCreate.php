@@ -17,7 +17,6 @@ use MatchBot\Domain\StripeConfirmationTokenId;
 readonly class MandateCreate
 {
     public Money $amount;
-    public DayOfMonth $dayOfMonth;
 
     /** @var Salesforce18Id<Campaign>  */
     public Salesforce18Id $campaignId;
@@ -44,7 +43,6 @@ readonly class MandateCreate
         // any config I've been able to find the Symfony Serializer doesn't initialise their properties.
         int $amountInPence,
         string $currency,
-        int $dayOfMonth,
         public bool $giftAid,
         string $campaignId,
         ?string $billingCountry,
@@ -55,7 +53,6 @@ readonly class MandateCreate
         ?array $home,
         public bool $unmatched = false,
     ) {
-        $this->dayOfMonth = DayOfMonth::of($dayOfMonth);
         $this->amount = Money::fromPence($amountInPence, Currency::fromIsoCode($currency));
         $this->campaignId = Salesforce18Id::ofCampaign($campaignId);
         $this->billingCountry = Country::fromAlpha2OrNull($billingCountry);
