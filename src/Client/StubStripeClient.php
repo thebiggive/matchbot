@@ -55,9 +55,14 @@ class StubStripeClient implements Stripe
     }
 
     #[\Override]
-    public function retrievePaymentIntent(string $paymentIntentId): never
+    public function retrievePaymentIntent(string $paymentIntentId): PaymentIntent
     {
-        throw new \Exception("Retrieve Payment Intent not implemented in stub- not currently used in load tests");
+        $this->pause();
+
+        $pi = new PaymentIntent($paymentIntentId);
+        $pi->setup_future_usage = null;
+
+        return $pi;
     }
 
     #[\Override]
