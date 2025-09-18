@@ -636,6 +636,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
         } else {
             $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
         }
+
+        // order additionally by id to make sure we have a total order in case other fields are equal.
+        // Total order is required so we don't lose items in pagination, even with the (still required)
+        // assumption that the user pages through campaigns faster than the data in the db changes.
+
+        // This means campaigns that were set up earlier will show first, which seems reasonable.
+        $qb->addOrderBy('campaign.id');
     }
 
     /**
