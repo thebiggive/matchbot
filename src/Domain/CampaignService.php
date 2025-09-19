@@ -174,13 +174,15 @@ class CampaignService
 
         $stats = $campaign->getStatistics();
 
+        $bannerUri = $sfCampaignData['bannerUri'];
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
             amountRaised: $stats->getAmountRaised()->toMajorUnitFloat(),
             additionalImageUris: $sfCampaignData['additionalImageUris'],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
-            bannerUri: $sfCampaignData['bannerUri'],
+            banner: \is_string($bannerUri) ? ['uri' => $bannerUri, 'alt_text' => null] : null,
+            bannerUri: $bannerUri, // @todo - delete this when FE deploy is done to read 'banner' instead.
             beneficiaries: $sfCampaignData['beneficiaries'],
             budgetDetails: $sfCampaignData['budgetDetails'],
             /* @mat-405-todo - remove this and any other properties that make sense only for meta-campaigns. Will require separating model in FE also */
