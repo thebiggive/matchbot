@@ -55,8 +55,8 @@ readonly class Campaign
                 type: "object",
                 properties: [
                     new OA\Property(property: "uri", type: "string", example: "https://example.com/image1.jpg"),
-                    new OA\Property(property: "alt_text", type: "string", example: "https://example.com/image1.jpg"),
-                    new OA\Property(property: "order", type: "integer", example: "The USC smoke stack stands tall before the bright blue, partly cloudy sky.", nullable: true)
+                    new OA\Property(property: "alt_text", type: "string", example: "The USC smoke stack stands tall before the bright blue, partly cloudy sky.", nullable: true),
+                    new OA\Property(property: "order", type: "integer", example: 1)
                 ]
             )
         )]

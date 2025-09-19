@@ -226,7 +226,7 @@ class CreateFictionalData extends Command
             'additionalImageUris' => [
                 [
                     'uri' => 'https://picsum.photos/seed/' . \random_int(1, 100) . ' /1700/500',
-                    'order' => '1',
+                    'order' => 1,
                     'alt_text' => 'This is the image alt-text',
                 ]
             ],
