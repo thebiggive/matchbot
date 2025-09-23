@@ -33,7 +33,8 @@ readonly class Campaign
      * @param list<array{person: string, quote: string}> $quotes
      * @param list<array{content: string, modifiedDate: string}> $updates
      * @param ?array{provider: string, key: string} $video
-     * */
+     * @param ?array{uri: string, alt_text: ?string} $banner
+     */
     public function __construct(
         #[OA\Property(
             property: "id",
@@ -55,6 +56,7 @@ readonly class Campaign
                 type: "object",
                 properties: [
                     new OA\Property(property: "uri", type: "string", example: "https://example.com/image1.jpg"),
+                    new OA\Property(property: "alt_text", type: "string", example: "The USC smoke stack stands tall before the bright blue, partly cloudy sky.", nullable: true),
                     new OA\Property(property: "order", type: "integer", example: 1)
                 ]
             )
@@ -73,6 +75,18 @@ readonly class Campaign
             example: "Funds will be used for our general charitable purposes"
         )]
         public ?string $alternativeFundUse,
+        #[OA\Property(
+            property: "banner",
+            description: "URI and optional alt-text for the campaign's banner image",
+            properties: [
+                new OA\Property(property: "uri", type: "string"),
+                new OA\Property(property: "alt_text", type: "string", example: "A long straight clearing is cut through a dense pine forest")
+            ],
+            type: "object",
+            example: "https://example.com/banner.jpg",
+            nullable: true
+        )]
+        public ?array $banner,
         #[OA\Property(
             property: "bannerUri",
             description: "URI for the campaign's banner image",
