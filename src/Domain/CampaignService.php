@@ -174,14 +174,22 @@ class CampaignService
 
         $stats = $campaign->getStatistics();
 
-        $bannerUri = $sfCampaignData['bannerUri'];
+        $bannerUri = $sfCampaignData['bannerUri'] ?? null;
+        $banner = $sfCampaignData['banner'] ?? null;
+        if ($banner === null && \is_string($bannerUri)) {
+            $banner = [
+                'uri' => $bannerUri, 'alt_text' => null
+            ];
+        }
+
+
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
             amountRaised: $stats->getAmountRaised()->toMajorUnitFloat(),
             additionalImageUris: $sfCampaignData['additionalImageUris'],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
-            banner: \is_string($bannerUri) ? ['uri' => $bannerUri, 'alt_text' => null] : null,
+            banner: $banner,
             bannerUri: $bannerUri, // @todo - delete this when FE deploy is done to read 'banner' instead.
             beneficiaries: $sfCampaignData['beneficiaries'],
             budgetDetails: $sfCampaignData['budgetDetails'],
