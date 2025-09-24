@@ -86,6 +86,7 @@ use Symfony\Component\Notifier\Chatter;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\CacheStorage;
+use Symfony\Component\RateLimiter\Storage\StorageInterface as RateLimiterStorage;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\BackedEnumNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
@@ -394,6 +395,10 @@ return function (ContainerBuilder $containerBuilder) {
 
         'commit-id' => static fn(ContainerInterface $_c): string => require __DIR__ . "/../.build-commit-id.php",
 
+        RateLimiterStorage::class => function (ContainerInterface $c): RateLimiterStorage {
+            return new CacheStorage(new RedisCacheAdapter($c->get(Redis::class)));
+        },
+
         ORM\Configuration::class => static function (ContainerInterface $c): ORM\Configuration {
             $settings = $c->get(Settings::class);
             $commitId = $c->get('commit-id');
@@ -595,7 +600,6 @@ return function (ContainerBuilder $containerBuilder) {
                     allocator: $c->get(Matching\Allocator::class),
                     donationRepository: $c->get(DonationRepository::class),
                     campaignRepository: $c->get(CampaignRepository::class),
-                    fundRepository: $c->get(FundRepository::class),
                     logger: $c->get(LoggerInterface::class),
                     entityManager: $c->get(EntityManagerInterface::class),
                     stripe: $c->get(\MatchBot\Client\Stripe::class),
@@ -606,6 +610,9 @@ return function (ContainerBuilder $containerBuilder) {
                     donorAccountRepository: $c->get(DonorAccountRepository::class),
                     bus: $c->get(RoutableMessageBus::class),
                     donationNotifier: $c->get(DonationNotifier::class),
+                    fundRepository: $c->get(FundRepository::class),
+                    rateLimiterstorage: $c->get(RateLimiterStorage::class),
+                    redis: $c->get(Redis::class)
                 );
             },
 

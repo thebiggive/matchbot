@@ -49,6 +49,7 @@ use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\StorageInterface as RateLimiterStorage;
 
 class DonationService
 {
@@ -97,6 +98,8 @@ class DonationService
         private RoutableMessageBus $bus,
         private DonationNotifier $donationNotifier,
         private FundRepository $fundRepository,
+        private RateLimiterStorage $rateLimiterstorage,
+        private \Redis $redis,
     ) {
     }
 
@@ -455,11 +458,36 @@ class DonationService
         $token = $this->stripe->retrieveConfirmationToken($tokenId);
 
         /** @var StripeObject&object{
-         *     card: null|object{country: string, brand: string},
+         *     card: null|object{country: string, brand: string, fingerprint: string},
          *     pay_by_bank: null|StripeObject
          * } $paymentMethodPreview
          */
+
         $paymentMethodPreview = $token->payment_method_preview;
+
+        $card = $paymentMethodPreview->card;
+
+        if ($card) {
+            $fingerprint = $card['fingerprint'];
+            if ($fingerprint && !$this->redis->exists('card-fingerprint-' . $fingerprint)) {
+                $rateLimitId = 'confirm-donation-' . $donation->getPspCustomerId()?->stripeCustomerId;
+                $rateLImiter = (new RateLimiterFactory([
+                    'id' => $rateLimitId,
+                    'policy' => 'token_bucket',
+                    'limit' => 5,
+                    'rate' => ['interval' => '30 minutes'],
+                ], $this->rateLimiterstorage))->create();
+
+                $rateLImiter->consume(1)->ensureAccepted();
+
+                $this->redis->set(
+                    key: 'card-fingerprint-' . $fingerprint,
+                    value: true,
+                    options: ['EX' => 60 * 60 * 2] // keep card fingerprint for two hours - attempting to use it again after that will count towards limit.
+                );
+            }
+        }
+
 
         if ($paymentMethodPreview->card !== null) {
             $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception('Missing card brand');
