@@ -462,15 +462,17 @@ class DonationService
          *     pay_by_bank: null|StripeObject
          * } $paymentMethodPreview
          */
-
         $paymentMethodPreview = $token->payment_method_preview;
 
         $card = $paymentMethodPreview->card;
 
         if ($card) {
-            $fingerprint = $card['fingerprint'];
-            if ($fingerprint && !$this->redis->exists('card-fingerprint-' . $fingerprint)) {
-                $rateLimitId = 'confirm-donation-' . $donation->getPspCustomerId()?->stripeCustomerId;
+            $fingerprint = $card->fingerprint;
+            if ($fingerprint && $this->redis->exists('card-fingerprint-' . $fingerprint) === 0) {
+                $stripeCustomerId = $donation->getPspCustomerId()?->stripeCustomerId;
+                \assert(\is_string($stripeCustomerId));
+
+                $rateLimitId = 'confirm-donation-' . $stripeCustomerId;
                 $rateLImiter = (new RateLimiterFactory([
                     'id' => $rateLimitId,
                     'policy' => 'token_bucket',
@@ -480,9 +482,12 @@ class DonationService
 
                 $rateLImiter->consume(1)->ensureAccepted();
 
+                /** @psalm-suppress InvalidNamedArgument - confused about why I'm getting error 'Parameter $options does not exist on function Redis::set (see https://psalm.dev/238)'
+                 * - it seems to exist according to the phpstorm stub.
+                 */
                 $this->redis->set(
                     key: 'card-fingerprint-' . $fingerprint,
-                    value: true,
+                    value: 'value-not-used',
                     options: ['EX' => 60 * 60 * 2] // keep card fingerprint for two hours - attempting to use it again after that will count towards limit.
                 );
             }

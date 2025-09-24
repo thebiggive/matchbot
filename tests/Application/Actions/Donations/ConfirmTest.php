@@ -86,8 +86,6 @@ class ConfirmTest extends TestCase
             donationRepository: $this->getDonationRepository(),
             entityManager: $this->entityManagerProphecy->reveal(),
             bus: $messageBusStub,
-            clock: new MockClock('2025-01-01'),
-            lockFactory: $this->createStub(LockFactory::class),
             donationService: new DonationService(
                 allocator: $this->createStub(Allocator::class),
                 donationRepository: $this->getDonationRepository(),
@@ -106,7 +104,11 @@ class ConfirmTest extends TestCase
                 bus: $this->createStub(RoutableMessageBus::class),
                 donationNotifier: $this->createStub(DonationNotifier::class),
                 fundRepository: $this->createStub(FundRepository::class),
-            )
+                rateLimiterstorage: $this->prophesize(\Symfony\Component\RateLimiter\Storage\StorageInterface::class)->reveal(),
+                redis: $this->prophesize(\Redis::class)->reveal()
+            ),
+            clock: new MockClock('2025-01-01'),
+            lockFactory: $this->createStub(LockFactory::class)
         );
     }
 

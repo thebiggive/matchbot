@@ -228,7 +228,6 @@ class UpdateHandlesLockExceptionTest extends TestCase
                 allocator: $this->allocatorProphecy->reveal(),
                 donationRepository: $donationRepository,
                 campaignRepository: $this->createStub(CampaignRepository::class),
-                fundRepository: $this->createStub(FundRepository::class),
                 logger: new NullLogger(),
                 entityManager: $entityManager,
                 stripe: $this->createStub(Stripe::class),
@@ -242,6 +241,9 @@ class UpdateHandlesLockExceptionTest extends TestCase
                 donorAccountRepository: $this->createStub(DonorAccountRepository::class),
                 bus: $this->messageBusProphecy->reveal(),
                 donationNotifier: $this->createStub(DonationNotifier::class),
+                fundRepository: $this->createStub(FundRepository::class),
+                rateLimiterstorage: $this->prophesize(\Symfony\Component\RateLimiter\Storage\StorageInterface::class)->reveal(),
+                redis: $this->prophesize(\Redis::class)->reveal()
             ),
         );
     }

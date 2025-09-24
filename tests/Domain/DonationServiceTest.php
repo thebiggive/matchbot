@@ -238,6 +238,8 @@ class DonationServiceTest extends TestCase
             bus: $this->createStub(RoutableMessageBus::class),
             donationNotifier: $this->createStub(DonationNotifier::class),
             fundRepository: $fundRepoProphecy->reveal(),
+            rateLimiterstorage: $this->prophesize(\Symfony\Component\RateLimiter\Storage\StorageInterface::class)->reveal(),
+            redis: $this->prophesize(\Redis::class)->reveal()
         );
     }
 
