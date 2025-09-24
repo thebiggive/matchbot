@@ -223,6 +223,9 @@ class DonationServiceTest extends TestCase
         $campaignRepoProphecy ??= $this->prophesize(CampaignRepository::class);
         $fundRepoProphecy ??= $this->prophesize(FundRepository::class);
 
+        $redisProphecy = $this->prophesize(\Redis::class);
+        $redisProphecy->exists(Argument::any())->willReturn(1);
+
         return new DonationService(
             allocator: $this->createStub(Allocator::class),
             donationRepository: $this->donationRepoProphecy->reveal(),
@@ -239,7 +242,7 @@ class DonationServiceTest extends TestCase
             donationNotifier: $this->createStub(DonationNotifier::class),
             fundRepository: $fundRepoProphecy->reveal(),
             rateLimiterstorage: $this->prophesize(\Symfony\Component\RateLimiter\Storage\StorageInterface::class)->reveal(),
-            redis: $this->prophesize(\Redis::class)->reveal()
+            redis: $redisProphecy->reveal()
         );
     }
 
@@ -284,7 +287,7 @@ class DonationServiceTest extends TestCase
                 /** @psalm-suppress InvalidPropertyAssignmentValue */
                 $confirmationToken->payment_method_preview['type'] = 'card';
                 /** @psalm-suppress InvalidPropertyAssignmentValue */
-                $confirmationToken->payment_method_preview['card'] = ['brand' => 'visa', 'country' => 'GB'];
+                $confirmationToken->payment_method_preview['card'] = ['brand' => 'visa', 'country' => 'GB', 'fingerprint' => 'some-card-fingerprint'];
                 /** @psalm-suppress InvalidPropertyAssignmentValue */
                 $confirmationToken->payment_method_preview['pay_by_bank'] = null;
 

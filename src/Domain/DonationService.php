@@ -467,8 +467,7 @@ class DonationService
         $card = $paymentMethodPreview->card;
 
         if ($card) {
-            $fingerprint = $card->fingerprint;
-            if ($fingerprint && $this->redis->exists('card-fingerprint-' . $fingerprint) === 0) {
+            if ($card->fingerprint && $this->redis->exists('card-fingerprint-' . $card->fingerprint) === 0) {
                 $stripeCustomerId = $donation->getPspCustomerId()?->stripeCustomerId;
                 \assert(\is_string($stripeCustomerId));
 
@@ -486,7 +485,7 @@ class DonationService
                  * - it seems to exist according to the phpstorm stub.
                  */
                 $this->redis->set(
-                    key: 'card-fingerprint-' . $fingerprint,
+                    key: 'card-fingerprint-' . $card->fingerprint,
                     value: 'value-not-used',
                     options: ['EX' => 60 * 60 * 2] // keep card fingerprint for two hours - attempting to use it again after that will count towards limit.
                 );
