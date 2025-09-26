@@ -334,8 +334,6 @@ return function (ContainerBuilder $containerBuilder) {
                     'policy' => 'token_bucket',
                     // how many distinct card confirm attempts are allowed in the time window
                     'limit' => 5,
-
-                    // how often they can create new donations once the initial allowance is used up.
                     'rate' => ['interval' => '30 minutes'],
                 ],
                 storage: $c->get(RateLimiterStorage::class)
