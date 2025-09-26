@@ -469,7 +469,8 @@ class DonationService
     }
 
     private function updateDonationFeesFromConfirmationToken(
-        Donation $donation, ConfirmationToken $confirmationToken
+        Donation $donation,
+        ConfirmationToken $confirmationToken
     ): void {
         /** @var StripeObject&object{
          *     card: null|object{country: string, brand: string, fingerprint: string},
