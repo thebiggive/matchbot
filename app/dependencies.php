@@ -332,10 +332,7 @@ return function (ContainerBuilder $containerBuilder) {
                 config: [
                     'id' => 'confirm-donation',
                     'policy' => 'token_bucket',
-
-                    // how many donations a new user can create within their first second on the site
-                    // If they are creating these 5 manually over a few minutes then they should accrue
-                    // rate limit credits to make another 5 or so before they run out.
+                    // how many distinct card confirm attempts are allowed in the time window
                     'limit' => 5,
 
                     // how often they can create new donations once the initial allowance is used up.
