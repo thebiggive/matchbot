@@ -37,6 +37,7 @@ use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
 use Stripe\Card;
 use Stripe\Charge;
+use Stripe\ConfirmationToken;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
@@ -92,11 +93,13 @@ class DonationService
         private MatchingAdapter $matchingAdapter,
         private StripeChatterInterface|ChatterInterface $chatter,
         private ClockInterface $clock,
-        private RateLimiterFactory $rateLimiterFactory,
+        private RateLimiterFactory $creationRateLimiterFactory,
         private DonorAccountRepository $donorAccountRepository,
         private RoutableMessageBus $bus,
         private DonationNotifier $donationNotifier,
         private FundRepository $fundRepository,
+        private \Redis $redis,
+        private RateLimiterFactory $confirmRateLimitFactory,
     ) {
     }
 
@@ -251,13 +254,30 @@ class DonationService
      * @throws ApiErrorException
      * @throws RegularGivingDonationTooOldToCollect
      * @throws PaymentIntentNotSucceeded
+     * @throws RateLimitExceededException
      */
     public function confirmOnSessionDonation(
         Donation $donation,
         StripeConfirmationTokenId $tokenId,
         ?string $confirmationTokenSetupFutureUsage,
     ): \Stripe\PaymentIntent {
-        $this->updateDonationFeesFromConfirmationToken($tokenId, $donation);
+        $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
+
+        /** @var StripeObject&object{
+         *     card: null|object{country: string, brand: string, fingerprint: string},
+         *     pay_by_bank: null|StripeObject
+         * } $paymentMethodPreview
+         */
+        $paymentMethodPreview = $confirmationToken->payment_method_preview;
+
+        try {
+            $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
+        } catch (RateLimitExceededException $exception) {
+            $this->logger->warning($exception->__toString());
+            throw $exception;
+        }
+
+        $this->updateDonationFeesFromConfirmationToken($donation, $confirmationToken);
 
         // We flush now to make sure the actual fees we're charging are recorded. If there's any DB error at this point
         // we prefer to crash without collecting the donation over collecting the donation without a proper record
@@ -449,17 +469,15 @@ class DonationService
     }
 
     private function updateDonationFeesFromConfirmationToken(
-        StripeConfirmationTokenId $tokenId,
-        Donation $donation
+        Donation $donation,
+        ConfirmationToken $confirmationToken
     ): void {
-        $token = $this->stripe->retrieveConfirmationToken($tokenId);
-
         /** @var StripeObject&object{
-         *     card: null|object{country: string, brand: string},
+         *     card: null|object{country: string, brand: string, fingerprint: string},
          *     pay_by_bank: null|StripeObject
          * } $paymentMethodPreview
          */
-        $paymentMethodPreview = $token->payment_method_preview;
+        $paymentMethodPreview = $confirmationToken->payment_method_preview;
 
         if ($paymentMethodPreview->card !== null) {
             $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception('Missing card brand');
@@ -955,7 +973,7 @@ class DonationService
      */
     public function doCreateDonation(string $pspCustomerId, DonationCreate $donationData, PersonId $donorId): Donation
     {
-        $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
+        $this->creationRateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
 
         try {
             $donation = $this->buildFromAPIRequest($donationData, $donorId);
@@ -999,5 +1017,38 @@ class DonationService
         $this->doUpdateDonationFees(
             donation: $donation,
         );
+    }
+
+    /** @param StripeObject&object{
+     *     card: null|object{country: string, brand: string, fingerprint: string},
+     *     pay_by_bank: null|StripeObject
+     * } $paymentMethodPreview
+     * @param Donation $donation
+     *
+     * @throws RateLimitExceededException if there are attempts to confirm with two many different cards from the same account
+     * in a short time period.
+     * @return void
+     */
+    private function limitNewPaymentCardUsageRate(StripeObject $paymentMethodPreview, Donation $donation): void
+    {
+        $card = $paymentMethodPreview->card;
+
+        if ($card) {
+            if ($card->fingerprint && $this->redis->exists('card-fingerprint-' . $card->fingerprint) === 0) {
+                $stripeCustomerId = $donation->getPspCustomerId()?->stripeCustomerId;
+                \assert(\is_string($stripeCustomerId));
+
+                $this->confirmRateLimitFactory->create($stripeCustomerId)->consume(1)->ensureAccepted();
+
+                /** @psalm-suppress InvalidNamedArgument - confused about why I'm getting error 'Parameter $options does not exist on function Redis::set (see https://psalm.dev/238)'
+                 * - it seems to exist according to the phpstorm stub.
+                 */
+                $this->redis->set(
+                    key: 'card-fingerprint-' . $card->fingerprint,
+                    value: 'value-not-used',
+                    options: ['EX' => 60 * 60 * 2] // keep card fingerprint for two hours - attempting to use it again after that will count towards limit.
+                );
+            }
+        }
     }
 }
