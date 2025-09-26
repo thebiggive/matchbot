@@ -226,6 +226,7 @@ class DonationServiceTest extends TestCase
         $redisProphecy = $this->prophesize(\Redis::class);
         $redisProphecy->exists(Argument::any())->willReturn(1);
 
+        $stubRateLimiter = new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage());
         return new DonationService(
             allocator: $this->createStub(Allocator::class),
             donationRepository: $this->donationRepoProphecy->reveal(),
@@ -236,13 +237,13 @@ class DonationServiceTest extends TestCase
             matchingAdapter: $this->prophesize(Adapter::class)->reveal(),
             chatter: $this->chatterProphecy->reveal(),
             clock: new MockClock(new \DateTimeImmutable('2025-01-01')),
-            rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
+            creationRateLimiterFactory: $stubRateLimiter,
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),
             donationNotifier: $this->createStub(DonationNotifier::class),
             fundRepository: $fundRepoProphecy->reveal(),
-            rateLimiterstorage: $this->prophesize(\Symfony\Component\RateLimiter\Storage\StorageInterface::class)->reveal(),
-            redis: $redisProphecy->reveal()
+            redis: $redisProphecy->reveal(),
+            confirmRateLimitFactory: $stubRateLimiter,
         );
     }
 

@@ -84,6 +84,11 @@ class ConfirmTest extends TestCase
         $redisProphecy = $this->prophesize(\Redis::class);
         $redisProphecy->exists(Argument::any())->willReturn(1);
 
+        $stubRateLimiter = new RateLimiterFactory(
+            ['id' => 'stub', 'policy' => 'no_limit'],
+            new InMemoryStorage()
+        );
+
         $this->sut = new Confirm(
             logger: new NullLogger(),
             donationRepository: $this->getDonationRepository(),
@@ -99,16 +104,13 @@ class ConfirmTest extends TestCase
                 matchingAdapter: $this->createStub(Adapter::class),
                 chatter: $this->createStub(ChatterInterface::class),
                 clock: $this->createStub(\Symfony\Component\Clock\ClockInterface::class),
-                rateLimiterFactory: new RateLimiterFactory(
-                    ['id' => 'stub', 'policy' => 'no_limit'],
-                    new InMemoryStorage()
-                ),
+                creationRateLimiterFactory: $stubRateLimiter,
                 donorAccountRepository: $this->createStub(DonorAccountRepository::class),
                 bus: $this->createStub(RoutableMessageBus::class),
                 donationNotifier: $this->createStub(DonationNotifier::class),
                 fundRepository: $this->createStub(FundRepository::class),
-                rateLimiterstorage: $this->prophesize(\Symfony\Component\RateLimiter\Storage\StorageInterface::class)->reveal(),
-                redis: $redisProphecy->reveal()
+                redis: $redisProphecy->reveal(),
+                confirmRateLimitFactory: $stubRateLimiter,
             ),
             clock: new MockClock('2025-01-01'),
             lockFactory: $this->createStub(LockFactory::class)

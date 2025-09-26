@@ -95,6 +95,9 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\CacheInterface as SymfonyCacheInterface;
 
 return function (ContainerBuilder $containerBuilder) {
+    $DONATION_CREATION_RATE_LIMITER_FACTORY_KEY = 'donation-creation-rate-limiter-factory';
+    $NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY = 'new-card-usage-rate-limiter-factory';
+
     // When writing closures within this function do not use `use` or implicit binding of arrow functions to bring in
     // variables - that works in the dev
     // env where we use the non-compiled container but not in prod or prod-like envs where it causes an error
@@ -306,7 +309,7 @@ return function (ContainerBuilder $containerBuilder) {
             return Environment::fromAppEnv(getenv('APP_ENV'));
         },
 
-        'donation-creation-rate-limiter-factory' => function (ContainerInterface $c): RateLimiterFactory {
+        $DONATION_CREATION_RATE_LIMITER_FACTORY_KEY => function (ContainerInterface $c): RateLimiterFactory {
             return new RateLimiterFactory(
                 config: [
                     'id' => 'create-donation',
@@ -320,7 +323,25 @@ return function (ContainerBuilder $containerBuilder) {
                     // how often they can create new donations once the initial allowance is used up.
                     'rate' => ['interval' => '30 seconds'],
                 ],
-                storage: new CacheStorage(new RedisCacheAdapter($c->get(Redis::class)))
+                storage: $c->get(RateLimiterStorage::class)
+            );
+        },
+
+        $NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY => function (ContainerInterface $c): RateLimiterFactory {
+            return new RateLimiterFactory(
+                config: [
+                    'id' => 'confirm-donation',
+                    'policy' => 'token_bucket',
+
+                    // how many donations a new user can create within their first second on the site
+                    // If they are creating these 5 manually over a few minutes then they should accrue
+                    // rate limit credits to make another 5 or so before they run out.
+                    'limit' => 5,
+
+                    // how often they can create new donations once the initial allowance is used up.
+                    'rate' => ['interval' => '30 minutes'],
+                ],
+                storage: $c->get(RateLimiterStorage::class)
             );
         },
 
@@ -585,7 +606,7 @@ return function (ContainerBuilder $containerBuilder) {
             },
 
         DonationService::class =>
-            static function (ContainerInterface $c): DonationService {
+            static function (ContainerInterface $c) use ($DONATION_CREATION_RATE_LIMITER_FACTORY_KEY, $NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY): DonationService {
             /**
              * @var ChatterInterface $chatter
              * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
@@ -593,9 +614,11 @@ return function (ContainerBuilder $containerBuilder) {
              */
                 $chatter = $c->get(StripeChatterInterface::class); // @phpstan-ignore varTag.type
 
-                $rateLimiterFactory = $c->get('donation-creation-rate-limiter-factory');
-                \assert($rateLimiterFactory instanceof RateLimiterFactory);
+                $creationRateLimiterFactory = $c->get($DONATION_CREATION_RATE_LIMITER_FACTORY_KEY);
+                \assert($creationRateLimiterFactory instanceof RateLimiterFactory);
 
+                $confirmRateLimiterFactory = $c->get($NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY);
+                \assert($confirmRateLimiterFactory instanceof RateLimiterFactory);
                 return new DonationService(
                     allocator: $c->get(Matching\Allocator::class),
                     donationRepository: $c->get(DonationRepository::class),
@@ -606,13 +629,13 @@ return function (ContainerBuilder $containerBuilder) {
                     matchingAdapter: $c->get(Matching\Adapter::class),
                     chatter: $chatter,
                     clock: $c->get(ClockInterface::class),
-                    rateLimiterFactory: $rateLimiterFactory,
+                    creationRateLimiterFactory: $creationRateLimiterFactory,
                     donorAccountRepository: $c->get(DonorAccountRepository::class),
                     bus: $c->get(RoutableMessageBus::class),
                     donationNotifier: $c->get(DonationNotifier::class),
                     fundRepository: $c->get(FundRepository::class),
-                    rateLimiterstorage: $c->get(RateLimiterStorage::class),
-                    redis: $c->get(Redis::class)
+                    redis: $c->get(Redis::class),
+                    confirmRateLimitFactory: $confirmRateLimiterFactory
                 );
             },
 

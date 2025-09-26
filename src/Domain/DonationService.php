@@ -93,13 +93,13 @@ class DonationService
         private MatchingAdapter $matchingAdapter,
         private StripeChatterInterface|ChatterInterface $chatter,
         private ClockInterface $clock,
-        private RateLimiterFactory $rateLimiterFactory,
+        private RateLimiterFactory $creationRateLimiterFactory,
         private DonorAccountRepository $donorAccountRepository,
         private RoutableMessageBus $bus,
         private DonationNotifier $donationNotifier,
         private FundRepository $fundRepository,
-        private RateLimiterStorage $rateLimiterstorage,
         private \Redis $redis,
+        private RateLimiterFactory $confirmRateLimitFactory,
     ) {
     }
 
@@ -471,15 +471,7 @@ class DonationService
                 $stripeCustomerId = $donation->getPspCustomerId()?->stripeCustomerId;
                 \assert(\is_string($stripeCustomerId));
 
-                $rateLimitId = 'confirm-donation-' . $stripeCustomerId;
-                $rateLImiter = (new RateLimiterFactory([
-                    'id' => $rateLimitId,
-                    'policy' => 'token_bucket',
-                    'limit' => 5,
-                    'rate' => ['interval' => '30 minutes'],
-                ], $this->rateLimiterstorage))->create();
-
-                $rateLImiter->consume(1)->ensureAccepted();
+                $this->confirmRateLimitFactory->create($stripeCustomerId)->consume(1)->ensureAccepted();
 
                 /** @psalm-suppress InvalidNamedArgument - confused about why I'm getting error 'Parameter $options does not exist on function Redis::set (see https://psalm.dev/238)'
                  * - it seems to exist according to the phpstorm stub.
@@ -987,7 +979,7 @@ class DonationService
      */
     public function doCreateDonation(string $pspCustomerId, DonationCreate $donationData, PersonId $donorId): Donation
     {
-        $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
+        $this->creationRateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
 
         try {
             $donation = $this->buildFromAPIRequest($donationData, $donorId);

@@ -217,6 +217,10 @@ class UpdateHandlesLockExceptionTest extends TestCase
     {
         $donationRepository = $this->donationRepositoryProphecy->reveal();
         $entityManager = $this->entityManagerProphecy->reveal();
+        $stubRateLimiter = new RateLimiterFactory(
+            ['id' => 'stub', 'policy' => 'no_limit'],
+            new InMemoryStorage()
+        );
         return new Update(
             $donationRepository,
             $entityManager,
@@ -234,16 +238,13 @@ class UpdateHandlesLockExceptionTest extends TestCase
                 matchingAdapter: $this->createStub(Adapter::class),
                 chatter: $this->createStub(ChatterInterface::class),
                 clock: new MockClock(),
-                rateLimiterFactory: new RateLimiterFactory(
-                    ['id' => 'stub', 'policy' => 'no_limit'],
-                    new InMemoryStorage()
-                ),
+                creationRateLimiterFactory: $stubRateLimiter,
                 donorAccountRepository: $this->createStub(DonorAccountRepository::class),
                 bus: $this->messageBusProphecy->reveal(),
                 donationNotifier: $this->createStub(DonationNotifier::class),
                 fundRepository: $this->createStub(FundRepository::class),
-                rateLimiterstorage: $this->prophesize(\Symfony\Component\RateLimiter\Storage\StorageInterface::class)->reveal(),
-                redis: $this->prophesize(\Redis::class)->reveal()
+                redis: $this->prophesize(\Redis::class)->reveal(),
+                confirmRateLimitFactory: $stubRateLimiter
             ),
         );
     }
