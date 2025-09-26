@@ -50,7 +50,6 @@ use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
-use Symfony\Component\RateLimiter\Storage\StorageInterface as RateLimiterStorage;
 
 class DonationService
 {
@@ -255,6 +254,7 @@ class DonationService
      * @throws ApiErrorException
      * @throws RegularGivingDonationTooOldToCollect
      * @throws PaymentIntentNotSucceeded
+     * @throws RateLimitExceededException
      */
     public function confirmOnSessionDonation(
         Donation $donation,
@@ -262,6 +262,20 @@ class DonationService
         ?string $confirmationTokenSetupFutureUsage,
     ): \Stripe\PaymentIntent {
         $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
+
+        /** @var StripeObject&object{
+         *     card: null|object{country: string, brand: string, fingerprint: string},
+         *     pay_by_bank: null|StripeObject
+         * } $paymentMethodPreview
+         */
+        $paymentMethodPreview = $confirmationToken->payment_method_preview;
+
+        try {
+            $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
+        } catch (RateLimitExceededException $exception) {
+            $this->logger->warning($exception->__toString());
+            throw $exception;
+        }
 
         $this->updateDonationFeesFromConfirmationToken($donation, $confirmationToken);
 
@@ -463,8 +477,6 @@ class DonationService
          * } $paymentMethodPreview
          */
         $paymentMethodPreview = $confirmationToken->payment_method_preview;
-
-        $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
 
         if ($paymentMethodPreview->card !== null) {
             $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception('Missing card brand');
@@ -1006,12 +1018,17 @@ class DonationService
         );
     }
 
-    /**
-     * @param StripeObject&object $paymentMethodPreview
+    /** @param StripeObject&object{
+     *     card: null|object{country: string, brand: string, fingerprint: string},
+     *     pay_by_bank: null|StripeObject
+     * } $paymentMethodPreview
      * @param Donation $donation
+     *
+     * @throws RateLimitExceededException if there are attempts to confirm with two many different cards from the same account
+     * in a short time period.
      * @return void
      */
-    public function limitNewPaymentCardUsageRate(object&StripeObject $paymentMethodPreview, Donation $donation): void
+    private function limitNewPaymentCardUsageRate(StripeObject $paymentMethodPreview, Donation $donation): void
     {
         $card = $paymentMethodPreview->card;
 
