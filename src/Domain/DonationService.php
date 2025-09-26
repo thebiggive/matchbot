@@ -37,6 +37,7 @@ use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
 use Stripe\Card;
 use Stripe\Charge;
+use Stripe\ConfirmationToken;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
@@ -260,7 +261,9 @@ class DonationService
         StripeConfirmationTokenId $tokenId,
         ?string $confirmationTokenSetupFutureUsage,
     ): \Stripe\PaymentIntent {
-        $this->updateDonationFeesFromConfirmationToken($tokenId, $donation);
+        $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
+
+        $this->updateDonationFeesFromConfirmationToken($donation, $confirmationToken);
 
         // We flush now to make sure the actual fees we're charging are recorded. If there's any DB error at this point
         // we prefer to crash without collecting the donation over collecting the donation without a proper record
@@ -452,17 +455,14 @@ class DonationService
     }
 
     private function updateDonationFeesFromConfirmationToken(
-        StripeConfirmationTokenId $tokenId,
-        Donation $donation
+        Donation $donation, ConfirmationToken $confirmationToken
     ): void {
-        $token = $this->stripe->retrieveConfirmationToken($tokenId);
-
         /** @var StripeObject&object{
          *     card: null|object{country: string, brand: string, fingerprint: string},
          *     pay_by_bank: null|StripeObject
          * } $paymentMethodPreview
          */
-        $paymentMethodPreview = $token->payment_method_preview;
+        $paymentMethodPreview = $confirmationToken->payment_method_preview;
 
         $card = $paymentMethodPreview->card;
 
