@@ -464,26 +464,7 @@ class DonationService
          */
         $paymentMethodPreview = $confirmationToken->payment_method_preview;
 
-        $card = $paymentMethodPreview->card;
-
-        if ($card) {
-            if ($card->fingerprint && $this->redis->exists('card-fingerprint-' . $card->fingerprint) === 0) {
-                $stripeCustomerId = $donation->getPspCustomerId()?->stripeCustomerId;
-                \assert(\is_string($stripeCustomerId));
-
-                $this->confirmRateLimitFactory->create($stripeCustomerId)->consume(1)->ensureAccepted();
-
-                /** @psalm-suppress InvalidNamedArgument - confused about why I'm getting error 'Parameter $options does not exist on function Redis::set (see https://psalm.dev/238)'
-                 * - it seems to exist according to the phpstorm stub.
-                 */
-                $this->redis->set(
-                    key: 'card-fingerprint-' . $card->fingerprint,
-                    value: 'value-not-used',
-                    options: ['EX' => 60 * 60 * 2] // keep card fingerprint for two hours - attempting to use it again after that will count towards limit.
-                );
-            }
-        }
-
+        $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
 
         if ($paymentMethodPreview->card !== null) {
             $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception('Missing card brand');
@@ -1023,5 +1004,33 @@ class DonationService
         $this->doUpdateDonationFees(
             donation: $donation,
         );
+    }
+
+    /**
+     * @param StripeObject&object $paymentMethodPreview
+     * @param Donation $donation
+     * @return void
+     */
+    public function limitNewPaymentCardUsageRate(object&StripeObject $paymentMethodPreview, Donation $donation): void
+    {
+        $card = $paymentMethodPreview->card;
+
+        if ($card) {
+            if ($card->fingerprint && $this->redis->exists('card-fingerprint-' . $card->fingerprint) === 0) {
+                $stripeCustomerId = $donation->getPspCustomerId()?->stripeCustomerId;
+                \assert(\is_string($stripeCustomerId));
+
+                $this->confirmRateLimitFactory->create($stripeCustomerId)->consume(1)->ensureAccepted();
+
+                /** @psalm-suppress InvalidNamedArgument - confused about why I'm getting error 'Parameter $options does not exist on function Redis::set (see https://psalm.dev/238)'
+                 * - it seems to exist according to the phpstorm stub.
+                 */
+                $this->redis->set(
+                    key: 'card-fingerprint-' . $card->fingerprint,
+                    value: 'value-not-used',
+                    options: ['EX' => 60 * 60 * 2] // keep card fingerprint for two hours - attempting to use it again after that will count towards limit.
+                );
+            }
+        }
     }
 }
