@@ -696,6 +696,11 @@ class DonationService
             $donation = $this->donationRepository->findAndLockOneByUUID($donationId);
             Assertion::notNull($donation);
 
+            // temp code below to check that new code for sending CLI errors to logs/slack is working.
+            if ($donation->getDonorFirstName() === 'error' && date("Y-m-d") === '2025-09-29') {
+                throw new \Exception("Dummy exception to check we report it to slack. Only will be generated today.");
+            }
+
             $this->allocator->releaseMatchFunds($donation);
 
             $this->entityManager->flush();
