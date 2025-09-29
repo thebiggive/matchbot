@@ -94,11 +94,14 @@ use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\CacheInterface as SymfonyCacheInterface;
 
+// phpcs:disable PSR1.Files.SideEffects
+// `use` isn't supported so hard to replace a constant here with a local variable.
 if (! defined('DEPENDENCY_CONSTANTS_DEFINED')) {
     define('DONATION_CREATION_RATE_LIMITER_FACTORY_KEY', 'donation-creation-rate-limiter-factory');
     define('NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY', 'new-card-usage-rate-limiter-factory');
     define('DEPENDENCY_CONSTANTS_DEFINED', true);
 }
+// phpcs:enable
 
 return function (ContainerBuilder $containerBuilder) {
     // When writing closures within this function do not use `use` or implicit binding of arrow functions to bring in
