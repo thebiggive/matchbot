@@ -104,4 +104,12 @@ foreach ($commands as $command) {
 }
 
 
-$cliApp->run();
+
+try {
+    $cliApp->run();
+} catch (Throwable $t) {
+    $logger = $psr11App->get(LoggerInterface::class);
+    $logger->error("CLI Error:" . $t->__toString());
+
+    throw $t;
+}
