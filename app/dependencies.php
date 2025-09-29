@@ -333,7 +333,7 @@ return function (ContainerBuilder $containerBuilder) {
             );
         },
 
-        $NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY => function (ContainerInterface $c): RateLimiterFactory {
+        NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY => function (ContainerInterface $c): RateLimiterFactory {
             return new RateLimiterFactory(
                 config: [
                     'id' => 'confirm-donation',
