@@ -39,6 +39,11 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
+use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
+use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\Notifier\Message\ChatMessage;
 
 $psr11App = require __DIR__ . '/bootstrap.php';
 
@@ -108,8 +113,23 @@ foreach ($commands as $command) {
 try {
     $cliApp->run();
 } catch (Throwable $t) {
-    $logger = $psr11App->get(LoggerInterface::class);
-    $logger->error("CLI Error:" . $t->__toString());
+//    $logger = $psr11App->get(LoggerInterface::class);
+//   $logger->error("CLI Error:" . $t->__toString());
+
+    // not sure why that error message isn't appearing, so also sending this way:
+
+    $slackConnction = $psr11App->get(ChatterInterface::class);
+    $heading = "Matchbot CLI " . get_class($t);
+    $chatMessage = new ChatMessage($heading);
+    $options = (new SlackOptions())
+            // For now, do a simple truncate at the max, 150 chars, since most messages are shorter and the next line
+            // usually has the full text anyway.
+            ->block((new SlackHeaderBlock(substr($heading, 0, 150))))
+            // Text block is also limited to 3000 characters, so must truncate to not crash.
+            ->block((new SlackSectionBlock())->text(substr($t->__toString(), 0, 3000)));
+    $chatMessage->options($options);
+
+    $slackConnction->send($chatMessage);
 
     throw $t;
 }
