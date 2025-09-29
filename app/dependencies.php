@@ -94,10 +94,13 @@ use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\CacheInterface as SymfonyCacheInterface;
 
-return function (ContainerBuilder $containerBuilder) {
-    $DONATION_CREATION_RATE_LIMITER_FACTORY_KEY = 'donation-creation-rate-limiter-factory';
-    $NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY = 'new-card-usage-rate-limiter-factory';
+if (! defined('DEPENDENCY_CONSTANTS_DEFINED')) {
+    define('DONATION_CREATION_RATE_LIMITER_FACTORY_KEY', 'donation-creation-rate-limiter-factory');
+    define('NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY', 'new-card-usage-rate-limiter-factory');
+    define('DEPENDENCY_CONSTANTS_DEFINED', true);
+}
 
+return function (ContainerBuilder $containerBuilder) {
     // When writing closures within this function do not use `use` or implicit binding of arrow functions to bring in
     // variables - that works in the dev
     // env where we use the non-compiled container but not in prod or prod-like envs where it causes an error
@@ -309,7 +312,7 @@ return function (ContainerBuilder $containerBuilder) {
             return Environment::fromAppEnv(getenv('APP_ENV'));
         },
 
-        $DONATION_CREATION_RATE_LIMITER_FACTORY_KEY => function (ContainerInterface $c): RateLimiterFactory {
+        DONATION_CREATION_RATE_LIMITER_FACTORY_KEY => function (ContainerInterface $c): RateLimiterFactory {
             return new RateLimiterFactory(
                 config: [
                     'id' => 'create-donation',
@@ -601,7 +604,7 @@ return function (ContainerBuilder $containerBuilder) {
             },
 
         DonationService::class =>
-            static function (ContainerInterface $c) use ($DONATION_CREATION_RATE_LIMITER_FACTORY_KEY, $NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY): DonationService {
+            static function (ContainerInterface $c): DonationService {
             /**
              * @var ChatterInterface $chatter
              * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
@@ -609,10 +612,10 @@ return function (ContainerBuilder $containerBuilder) {
              */
                 $chatter = $c->get(StripeChatterInterface::class); // @phpstan-ignore varTag.type
 
-                $creationRateLimiterFactory = $c->get($DONATION_CREATION_RATE_LIMITER_FACTORY_KEY);
+                $creationRateLimiterFactory = $c->get(DONATION_CREATION_RATE_LIMITER_FACTORY_KEY);
                 \assert($creationRateLimiterFactory instanceof RateLimiterFactory);
 
-                $confirmRateLimiterFactory = $c->get($NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY);
+                $confirmRateLimiterFactory = $c->get(NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY);
                 \assert($confirmRateLimiterFactory instanceof RateLimiterFactory);
                 return new DonationService(
                     allocator: $c->get(Matching\Allocator::class),
