@@ -46,7 +46,7 @@ class RegularGivingNotifierTest extends TestCase
         $donor = $this->givenADonor();
         list($campaign, $mandate, $firstDonation, $clock) = $this->andGivenAnActivatedMandate($this->personId, $donor);
 
-        $this->thenThisRequestShouldBeSentToMatchbot(EmailMessage::donorMandateConfirmation(
+        $this->thenThisRequestShouldBeSentToMailer(EmailMessage::donorMandateConfirmation(
             EmailAddress::of("donor@example.com"),
             [
                 "donorName" => "Jenny Generous",
@@ -54,9 +54,9 @@ class RegularGivingNotifierTest extends TestCase
                 "campaignName" => "someCampaign",
                 "charityNumber" => "Reg-no",
                 "campaignThankYouMessage" => 'Thank you for setting up your regular donation to us!',
-                "signupDate" => "01/12/2024 00:00",
+                "signupDate" => "1 December 2024, 00:00 GMT",
                 "schedule" => "Monthly on day #12",
-                "nextPaymentDate" => "12/12/2024",
+                "nextPaymentDate" => "12 December 2024",
                 "amount" => "£64.00",
                 "giftAidValue" => "£16.00",
                 "totalIncGiftAid" => "£80.00",
@@ -178,7 +178,7 @@ class RegularGivingNotifierTest extends TestCase
         return [$campaign, $mandate, $firstDonation, $clock];
     }
 
-    private function thenThisRequestShouldBeSentToMatchbot(EmailMessage $sendEmailCommand): void
+    private function thenThisRequestShouldBeSentToMailer(EmailMessage $sendEmailCommand): void
     {
         $this->mailerProphecy->send(Argument::any())
             ->shouldBeCalledOnce()

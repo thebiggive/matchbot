@@ -28,6 +28,8 @@ class RegularGivingNotifier
         $signUpDate = $mandate->getActiveFrom();
         Assertion::notNull($signUpDate);
 
+        $tz = new \DateTimeZone('Europe/London');
+
         $this->mailer->send(EmailMessage::donorMandateConfirmation(
             $donorAccount->emailAddress,
             [
@@ -36,9 +38,9 @@ class RegularGivingNotifier
                 'campaignName' => $campaign->getCampaignName(),
                 'charityNumber' => $charity->getRegulatorNumber(),
                 'campaignThankYouMessage' => $campaign->getThankYouMessage(),
-                'signupDate' => $signUpDate->format('d/m/Y H:i'),
+                'signupDate' => $signUpDate->setTimezone($tz)->format('j F Y, H:i T'),
                 'schedule' => $mandate->describeSchedule(),
-                'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->format('d/m/Y'),
+                'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->setTimezone($tz)->format('j F Y'),
                 'amount' => $mandate->getDonationAmount()->format(),
                 'giftAidValue' => $mandate->getGiftAidAmount()->format(),
                 'totalIncGiftAid' => $mandate->totalIncGiftAid()->format(),
