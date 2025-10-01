@@ -45,7 +45,8 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @see self::$currencyCode
-     * Also currently the limit for Pay By Bank.
+     * Theoretically also a global limit for any other methods in the Payment Element, but currently the Pay By Bank
+     * limit is £10k and that method won't be offered by Stripe.js above that level.
      */
     public const int MAXIMUM_CARD_DONATION = 25_000;
 
@@ -1339,16 +1340,6 @@ class Donation extends SalesforceWriteProxy
                     'bank_transfer' => [
                         'type' => 'gb_bank_transfer',
                     ],
-                ],
-            ];
-        }
-
-        // https://docs.stripe.com/api/payment_intents/object#payment_intent_object-payment_method_options-pay_by_bank
-        if ($this->paymentMethodType === PaymentMethodType::PayByBank) {
-            $properties['payment_method_options'] = [
-                'pay_by_bank' => [
-                    'country' => $this->donorCountryCode,
-                    'statement_descriptor' => $this->getCampaign()->getCharity()->getStatementDescriptor(),
                 ],
             ];
         }
