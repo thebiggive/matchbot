@@ -30,6 +30,7 @@ use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\Exception\LockConflictedException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
 
 class Confirm extends Action
 {
@@ -177,6 +178,20 @@ EOF
                 'error' => [
                     'message' => $exception->getMessage(),
                     'code' => $exception->getStripeCode()
+                ],
+            ], 402);
+        } catch (RateLimitExceededException $exception) {
+            $this->logger->warning(sprintf(
+                'Rate limit exceed on Confirm for donation %s (%s): %s',
+                $donation->getUuid(),
+                $paymentIntentId,
+                $exception->getMessage(),
+            ));
+
+            return new JsonResponse([
+                'error' => [
+                    'message' => 'Rate limited - please try try later',
+                    'code' => 429
                 ],
             ], 402);
         } catch (ApiErrorException $exception) {

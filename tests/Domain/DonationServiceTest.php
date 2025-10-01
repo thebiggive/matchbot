@@ -46,6 +46,7 @@ use Stripe\StripeObject;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Message\ChatMessage;
+use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
@@ -223,6 +224,10 @@ class DonationServiceTest extends TestCase
         $campaignRepoProphecy ??= $this->prophesize(CampaignRepository::class);
         $fundRepoProphecy ??= $this->prophesize(FundRepository::class);
 
+        $redisProphecy = $this->prophesize(\Redis::class);
+        $redisProphecy->exists(Argument::any())->willReturn(1);
+
+        $stubRateLimiter = new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage());
         return new DonationService(
             allocator: $this->createStub(Allocator::class),
             donationRepository: $this->donationRepoProphecy->reveal(),
@@ -233,12 +238,85 @@ class DonationServiceTest extends TestCase
             matchingAdapter: $this->prophesize(Adapter::class)->reveal(),
             chatter: $this->chatterProphecy->reveal(),
             clock: new MockClock(new \DateTimeImmutable('2025-01-01')),
-            rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
+            creationRateLimiterFactory: $stubRateLimiter,
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),
             donationNotifier: $this->createStub(DonationNotifier::class),
             fundRepository: $fundRepoProphecy->reveal(),
+            redis: $redisProphecy->reveal(),
+            confirmRateLimitFactory: $stubRateLimiter,
         );
+    }
+
+    public function testRateLimitStopsTestingManyCardsInQuickSuccession(): void
+    {
+        $logger = new NullLogger();
+        $rateLimiterFactory = new RateLimiterFactory(
+            [
+            'id' => 'stub',
+            'policy' => 'token_bucket',
+            'limit' => 5,
+            'rate' => ['interval' => '30 minutes'],
+            ],
+            new InMemoryStorage()
+        );
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $fundRepoProphecy = $this->prophesize(FundRepository::class);
+
+        $redisProphecy = $this->prophesize(\Redis::class);
+        $redisProphecy->exists(Argument::any())->willReturn(0);
+        $redisProphecy->set(Argument::cetera())->willReturn(true);
+
+        $this->stripeProphecy->updatePaymentIntent(Argument::cetera())->shouldBeCalled();
+        $this->entityManagerProphecy->flush()->shouldBeCalled();
+
+        $sut = new DonationService(
+            allocator: $this->createStub(Allocator::class),
+            donationRepository: $this->donationRepoProphecy->reveal(),
+            campaignRepository: $campaignRepoProphecy->reveal(),
+            logger: $logger,
+            entityManager: $this->entityManagerProphecy->reveal(),
+            stripe: $this->stripeProphecy->reveal(),
+            matchingAdapter: $this->prophesize(Adapter::class)->reveal(),
+            chatter: $this->chatterProphecy->reveal(),
+            clock: new MockClock(new \DateTimeImmutable('2025-01-01')),
+            creationRateLimiterFactory: $rateLimiterFactory,
+            donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
+            bus: $this->createStub(RoutableMessageBus::class),
+            donationNotifier: $this->createStub(DonationNotifier::class),
+            fundRepository: $fundRepoProphecy->reveal(),
+            redis: $redisProphecy->reveal(),
+            confirmRateLimitFactory: $rateLimiterFactory,
+        );
+
+
+        $tokenId = StripeConfirmationTokenId::of('ctoken_confirmationtokenid');
+        $confirmationToken = new ConfirmationToken('ctoken_confirmationtokenid');
+
+        /** @psalm-suppress InvalidPropertyAssignmentValue - hard to create an object that fits the declared type in a test */
+        $confirmationToken->payment_method_preview = StripeObject::constructFrom(
+            ['card' => ['brand' => 'visa', 'country' => 'gb', 'fingerprint' => self::randomString()]]
+        );
+        $this->stripeProphecy->retrieveConfirmationToken($tokenId)->willReturn($confirmationToken);
+        $this->stripeProphecy->retrievePaymentIntent('some-transaction-id', Argument::any())
+            ->willReturn(new PaymentIntent());
+        $this->stripeProphecy->confirmPaymentIntent('some-transaction-id', Argument::any())
+            ->willReturn(PaymentIntent::constructFrom(['status' => PaymentIntent::STATUS_SUCCEEDED]));
+
+        $this->expectException(RateLimitExceededException::class);
+
+        for ($i = 0; $i < 6; $i++) {
+            $donation = $this->someDonation();
+            $donation->setTransactionId('some-transaction-id');
+            $donation->setPspCustomerId('cus_somecustomerid');
+
+            $sut->confirmOnSessionDonation(
+                donation: $donation,
+                tokenId: $tokenId,
+                confirmationTokenSetupFutureUsage: 'on_session'
+            );
+        }
     }
 
     private function getDonationCreate(): DonationCreate
@@ -282,7 +360,7 @@ class DonationServiceTest extends TestCase
                 /** @psalm-suppress InvalidPropertyAssignmentValue */
                 $confirmationToken->payment_method_preview['type'] = 'card';
                 /** @psalm-suppress InvalidPropertyAssignmentValue */
-                $confirmationToken->payment_method_preview['card'] = ['brand' => 'visa', 'country' => 'GB'];
+                $confirmationToken->payment_method_preview['card'] = ['brand' => 'visa', 'country' => 'GB', 'fingerprint' => 'some-card-fingerprint'];
                 /** @psalm-suppress InvalidPropertyAssignmentValue */
                 $confirmationToken->payment_method_preview['pay_by_bank'] = null;
 

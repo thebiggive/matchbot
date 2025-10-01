@@ -86,12 +86,22 @@ use Symfony\Component\Notifier\Chatter;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\CacheStorage;
+use Symfony\Component\RateLimiter\Storage\StorageInterface as RateLimiterStorage;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\BackedEnumNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\CacheInterface as SymfonyCacheInterface;
+
+// phpcs:disable PSR1.Files.SideEffects
+// `use` isn't supported so hard to replace a constant here with a local variable.
+if (! defined('DEPENDENCY_CONSTANTS_DEFINED')) {
+    define('DONATION_CREATION_RATE_LIMITER_FACTORY_KEY', 'donation-creation-rate-limiter-factory');
+    define('NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY', 'new-card-usage-rate-limiter-factory');
+    define('DEPENDENCY_CONSTANTS_DEFINED', true);
+}
+// phpcs:enable
 
 return function (ContainerBuilder $containerBuilder) {
     // When writing closures within this function do not use `use` or implicit binding of arrow functions to bring in
@@ -305,7 +315,7 @@ return function (ContainerBuilder $containerBuilder) {
             return Environment::fromAppEnv(getenv('APP_ENV'));
         },
 
-        'donation-creation-rate-limiter-factory' => function (ContainerInterface $c): RateLimiterFactory {
+        DONATION_CREATION_RATE_LIMITER_FACTORY_KEY => function (ContainerInterface $c): RateLimiterFactory {
             return new RateLimiterFactory(
                 config: [
                     'id' => 'create-donation',
@@ -319,7 +329,20 @@ return function (ContainerBuilder $containerBuilder) {
                     // how often they can create new donations once the initial allowance is used up.
                     'rate' => ['interval' => '30 seconds'],
                 ],
-                storage: new CacheStorage(new RedisCacheAdapter($c->get(Redis::class)))
+                storage: $c->get(RateLimiterStorage::class)
+            );
+        },
+
+        NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY => function (ContainerInterface $c): RateLimiterFactory {
+            return new RateLimiterFactory(
+                config: [
+                    'id' => 'confirm-donation',
+                    'policy' => 'token_bucket',
+                    // how many distinct card confirm attempts are allowed in the time window
+                    'limit' => 5,
+                    'rate' => ['interval' => '30 minutes'],
+                ],
+                storage: $c->get(RateLimiterStorage::class)
             );
         },
 
@@ -393,6 +416,10 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         'commit-id' => static fn(ContainerInterface $_c): string => require __DIR__ . "/../.build-commit-id.php",
+
+        RateLimiterStorage::class => function (ContainerInterface $c): RateLimiterStorage {
+            return new CacheStorage(new RedisCacheAdapter($c->get(Redis::class)));
+        },
 
         ORM\Configuration::class => static function (ContainerInterface $c): ORM\Configuration {
             $settings = $c->get(Settings::class);
@@ -588,24 +615,28 @@ return function (ContainerBuilder $containerBuilder) {
              */
                 $chatter = $c->get(StripeChatterInterface::class); // @phpstan-ignore varTag.type
 
-                $rateLimiterFactory = $c->get('donation-creation-rate-limiter-factory');
-                \assert($rateLimiterFactory instanceof RateLimiterFactory);
+                $creationRateLimiterFactory = $c->get(DONATION_CREATION_RATE_LIMITER_FACTORY_KEY);
+                \assert($creationRateLimiterFactory instanceof RateLimiterFactory);
 
+                $confirmRateLimiterFactory = $c->get(NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY);
+                \assert($confirmRateLimiterFactory instanceof RateLimiterFactory);
                 return new DonationService(
                     allocator: $c->get(Matching\Allocator::class),
                     donationRepository: $c->get(DonationRepository::class),
                     campaignRepository: $c->get(CampaignRepository::class),
-                    fundRepository: $c->get(FundRepository::class),
                     logger: $c->get(LoggerInterface::class),
                     entityManager: $c->get(EntityManagerInterface::class),
                     stripe: $c->get(\MatchBot\Client\Stripe::class),
                     matchingAdapter: $c->get(Matching\Adapter::class),
                     chatter: $chatter,
                     clock: $c->get(ClockInterface::class),
-                    rateLimiterFactory: $rateLimiterFactory,
+                    creationRateLimiterFactory: $creationRateLimiterFactory,
                     donorAccountRepository: $c->get(DonorAccountRepository::class),
                     bus: $c->get(RoutableMessageBus::class),
                     donationNotifier: $c->get(DonationNotifier::class),
+                    fundRepository: $c->get(FundRepository::class),
+                    redis: $c->get(Redis::class),
+                    confirmRateLimitFactory: $confirmRateLimiterFactory
                 );
             },
 

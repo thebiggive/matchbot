@@ -81,13 +81,19 @@ class ConfirmTest extends TestCase
 
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
+        $redisProphecy = $this->prophesize(\Redis::class);
+        $redisProphecy->exists(Argument::any())->willReturn(1);
+
+        $stubRateLimiter = new RateLimiterFactory(
+            ['id' => 'stub', 'policy' => 'no_limit'],
+            new InMemoryStorage()
+        );
+
         $this->sut = new Confirm(
             logger: new NullLogger(),
             donationRepository: $this->getDonationRepository(),
             entityManager: $this->entityManagerProphecy->reveal(),
             bus: $messageBusStub,
-            clock: new MockClock('2025-01-01'),
-            lockFactory: $this->createStub(LockFactory::class),
             donationService: new DonationService(
                 allocator: $this->createStub(Allocator::class),
                 donationRepository: $this->getDonationRepository(),
@@ -98,15 +104,16 @@ class ConfirmTest extends TestCase
                 matchingAdapter: $this->createStub(Adapter::class),
                 chatter: $this->createStub(ChatterInterface::class),
                 clock: $this->createStub(\Symfony\Component\Clock\ClockInterface::class),
-                rateLimiterFactory: new RateLimiterFactory(
-                    ['id' => 'stub', 'policy' => 'no_limit'],
-                    new InMemoryStorage()
-                ),
+                creationRateLimiterFactory: $stubRateLimiter,
                 donorAccountRepository: $this->createStub(DonorAccountRepository::class),
                 bus: $this->createStub(RoutableMessageBus::class),
                 donationNotifier: $this->createStub(DonationNotifier::class),
                 fundRepository: $this->createStub(FundRepository::class),
-            )
+                redis: $redisProphecy->reveal(),
+                confirmRateLimitFactory: $stubRateLimiter,
+            ),
+            clock: new MockClock('2025-01-01'),
+            lockFactory: $this->createStub(LockFactory::class)
         );
     }
 
@@ -114,7 +121,7 @@ class ConfirmTest extends TestCase
     {
         // arrange
         $this->fakeStripeClient(
-            cardDetails: ['brand' => 'discover', 'country' => 'KI'],
+            cardDetails: ['brand' => 'discover', 'country' => 'KI', 'fingerprint' => 'some-fingerprint'],
             paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_action',
@@ -149,7 +156,7 @@ class ConfirmTest extends TestCase
     {
         // arrange
         $this->fakeStripeClient(
-            cardDetails: ['brand' => 'visa', 'country' => 'GB'],
+            cardDetails: ['brand' => 'visa', 'country' => 'GB', 'fingerprint' => 'some-fingerprint'],
             paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_action',
@@ -209,7 +216,7 @@ class ConfirmTest extends TestCase
         // arrange
 
         $this->fakeStripeClient(
-            cardDetails: ['brand' => 'discover', 'country' => 'KI'],
+            cardDetails: ['brand' => 'discover', 'country' => 'KI', 'fingerprint' => 'some-fingerprint'],
             paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_payment_method',
@@ -244,7 +251,7 @@ class ConfirmTest extends TestCase
     {
         // arrange
         $this->fakeStripeClient(
-            cardDetails: ['brand' => 'discover', 'country' => 'KI'],
+            cardDetails: ['brand' => 'discover', 'country' => 'KI', 'fingerprint' => 'some-fingerprint'],
             paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_payment_method',
@@ -276,7 +283,7 @@ class ConfirmTest extends TestCase
     public function testNewlyNullFutureUsageConfirmsViaNewPaymentIntent(): void
     {
         $this->fakeStripeClient(
-            cardDetails: ['brand' => 'discover', 'country' => 'KI'],
+            cardDetails: ['brand' => 'discover', 'country' => 'KI', 'fingerprint' => 'some-fingerprint'],
             paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_action',
@@ -312,7 +319,7 @@ class ConfirmTest extends TestCase
     private function successReadyFakeStripeClient(string $amountInWholeUnits): void
     {
         $this->fakeStripeClient(
-            cardDetails: ['brand' => 'discover', 'country' => 'KI'],
+            cardDetails: ['brand' => 'discover', 'country' => 'KI', 'fingerprint' => 'some-fingerprint'],
             paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_action',

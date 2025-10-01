@@ -36,9 +36,15 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleEvent;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
+use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
+use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\Notifier\Message\ChatMessage;
 
 $psr11App = require __DIR__ . '/bootstrap.php';
 
@@ -104,4 +110,16 @@ foreach ($commands as $command) {
 }
 
 
-$cliApp->run();
+try {
+    // We don't want Symfony to catch any throwable because we want to catch it ourselves and log it
+    // instead (which should also mean it gets sent to Slack
+    $cliApp->setCatchExceptions(false);
+    $cliApp->setCatchErrors(false);
+    $cliApp->run();
+} catch (Throwable $t) {
+    $logger = $psr11App->get(LoggerInterface::class);
+    $logger->error("CLI Error: " . $t->__toString());
+
+    $cliApp->renderThrowable($t, (new ConsoleOutput())->getErrorOutput());
+    exit(1);
+}

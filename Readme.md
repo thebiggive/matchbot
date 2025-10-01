@@ -202,6 +202,16 @@ To run a script in an already-running Docker `app` container, use:
     docker compose exec app composer {name:of:script:from:composer.json}
 ```
 
+#### Seeding with fictional data
+
+You can test donating using a campaign in your local frontend database that doesn't have to exist in any Salesforce org.
+
+To add the fictional campaign without clearing any existing data, run
+
+    docker compose exec app ./matchbot matchbot:create-fictional-data 
+
+You should then be able to donate by visiting http://localhost:4200/campaign/000000000000000000
+
 ### How tasks run on staging & production
 
 [ECS](https://aws.amazon.com/ecs/) task invocations are configured to run the tasks we expect to happen regularly
