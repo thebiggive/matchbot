@@ -1367,7 +1367,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function getStripeOnBehalfOfProperties(): array
     {
-        if ($this->paymentMethodType === PaymentMethodType::Card) {
+        if ($this->paymentMethodType?->usesPaymentElement()) {
             return ['on_behalf_of' => $this->getCampaign()->getCharity()->getStripeAccountId()];
         }
 
