@@ -96,13 +96,13 @@ class FundRepository extends SalesforceReadProxyRepository
                 // Note that a balance DECREASE after campaign open time is unsupported and would be error
                 // logged below, as this risks invalidating in-progress donation matches.
                 $increaseInAmount = bcsub($amountForCampaign, $campaignFunding->getAmount(), 2);
+                $matchingAdapter = $this->matchingAdapter;
+                if ($matchingAdapter === null) {
+                    throw new \Exception("Matching Adapter not set");
+                }
 
                 if (bccomp($increaseInAmount, '0.00', 2) === 1) {
-                    $matchingAdapter = $this->matchingAdapter;
-                    if ($matchingAdapter === null) {
-                        throw new \Exception("Matching Adapter not set");
-                    }
-
+                    // This sets CampaignFunding::$amountAvailable as a side effect.
                     $newTotal = $matchingAdapter->addAmount($campaignFunding, $increaseInAmount);
 
                     $this->getLogger()->info(
@@ -113,12 +113,26 @@ class FundRepository extends SalesforceReadProxyRepository
                     $campaignFunding->setAmount($amountForCampaign);
                 }
 
-                if (bccomp($increaseInAmount, '0.00', 2) === -1 && $campaign->getStartDate() < $at) {
-                    $this->getLogger()->error(
-                        "Campaign Funding ID {$campaignFunding->getId()} balance could not be negative-increased by " .
-                        "£{$increaseInAmount}. Salesforce Fund ID {$fundData['id']} as campaign {$campaignSFId} opened in past"
-                    );
-                } else {
+                if (bccomp($increaseInAmount, '0.00', 2) === -1) {
+                    $decreaseInAmount = bcmul($increaseInAmount, '-1', 2);
+
+                    if ($campaign->getStartDate() < $at) {
+                        $this->getLogger()->error(
+                            "Campaign Funding ID {$campaignFunding->getId()} balance could not be decreased by " .
+                            "£{$decreaseInAmount}. Salesforce Fund ID {$fundData['id']} as campaign {$campaignSFId} opened in past"
+                        );
+                    } else { // Campaign hasn't started yet, so we can allow the decrease
+                        // This sets CampaignFunding::$amountAvailable as a side effect.
+                        $newTotal = $matchingAdapter->subtractAmount($campaignFunding, $decreaseInAmount);
+
+                        $this->getLogger()->info(
+                            "Campaign Funding ID {$campaignFunding->getId()} balance decreased " .
+                            "£" . bcmul($decreaseInAmount, '-1', 2) . " to £{$newTotal}"
+                        );
+
+                        $campaignFunding->setAmount($amountForCampaign);
+                    }
+                } elseif (bccomp($increaseInAmount, '0.00', 2) === 0) {
                     $this->getLogger()->info(
                         "Campaign Funding ID {$campaignFunding->getId()} balance set to £{$amountForCampaign} " .
                         "for campaign {$campaignSFId} and fund SF ID {$fundData['id']}"

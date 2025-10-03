@@ -119,7 +119,7 @@ return function (ContainerBuilder $containerBuilder) {
             },
 
         RedisCacheAdapter::class => function (ContainerInterface $c): RedisCacheAdapter {
-            return new Symfony\Component\Cache\Adapter\RedisAdapter(
+            return new RedisCacheAdapter(
                 $c->get(Redis::class),
                 // Distinguish e.g. rate limit data from matching if we ever need to debug
                 // or clear Redis contents.

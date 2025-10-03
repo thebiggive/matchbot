@@ -127,7 +127,7 @@ class FundRepositoryTest extends TestCase
         $repo->pullForCampaign($campaign, $this->now);
     }
 
-    public function testPullForCampaignAllExistingWithBalanceUpdated(): void
+    public function testPullForCampaignAllExistingWithBalanceIncreased(): void
     {
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -164,16 +164,75 @@ class FundRepositoryTest extends TestCase
 
         $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
 
-        // Validate that the matching adapter DOES have its `addAmount()` called inside a safe transaction
-        // wrapper, and the £100 increase in match funding from £400 to £500 is reflected.
+        // Validate that the matching adapter DOES have its `addAmount()` called,
+        // and the £100 increase in match funding from £400 to £500 is reflected.
         $matchingAdapterProphecy->addAmount(Argument::cetera())
-            ->willReturn('100.00') // Amount available after adjustment
+            ->willReturn('100.00') // Amount available after adjustment; probably unrealistic for 2nd call but doesn't matter for this test.
             ->shouldBeCalledTimes(2);
 
         $repo = $this->getFundRepoPartialMock(
             $entityManagerProphecy->reveal(),
             $campaignFundingRepoProphecy->reveal(),
-            $this->getFundClientForPerCampaignLookup(),
+            $this->getFundClientForPerCampaignLookup(firstFundNewAmount: 500),
+            $matchingAdapterProphecy->reveal(),
+            $this->getExistingFund(false),
+            $this->getExistingFund(true),
+        );
+
+        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID));
+
+        $repo->pullForCampaign($campaign, $this->now);
+    }
+
+    public function testPullForFutureCampaignAllExistingWithBalanceDecreased(): void
+    {
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        // Validate that with an existing fund on an existing campaign, the Doctrine EM is asked to persist the
+        // campaign funding and Fund, with updated amounts.
+        $entityManagerProphecy
+            ->persist(Argument::type(Fund::class))
+            ->shouldBeCalledTimes(2);
+        $entityManagerProphecy
+            ->persist(Argument::type(CampaignFunding::class))
+            ->shouldBeCalledTimes(2);
+
+        $entityManagerProphecy->flush()->shouldBeCalledTimes(4);
+
+        $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
+
+        // For a non-shared fund, we expect to call `getFundingForCampaign()` to determine
+        // whether there's an existing funding *specifically for the campaign*.
+
+        $campaignFundingRepoProphecy
+            ->getFundingForCampaign(
+                Argument::which('getSalesforceId', self::CAMPAIGN_SF_ID),
+                Argument::which('getSalesforceId', 'sffundid1234567890')
+            )
+            ->willReturn($this->getExistingCampaignFunding(false))
+            ->shouldBeCalledOnce();
+
+        // For a shared fund, we expect to call `getFunding()` to determine
+        // whether there's an existing funding, linked to *any* campaign.
+        $campaignFundingRepoProphecy
+            ->getFunding(Argument::which('getSalesforceId', 'sffunDid4567890ABC'))
+            ->willReturn($this->getExistingCampaignFunding(true))
+            ->shouldBeCalledOnce();
+
+        $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
+
+        // Validate that the matching adapter DOES have its `addAmount()` called,
+        // and the £100 increase in match funding from £400 to £299 is reflected.
+        $matchingAdapterProphecy->subtractAmount(Argument::cetera())
+            ->willReturn('101.00') // Amount available after adjustment
+            ->shouldBeCalledOnce();
+        // 2nd fund increase isn't the focus of this test.
+        $matchingAdapterProphecy->addAmount(Argument::cetera())->shouldBeCalledOnce();
+
+        $repo = $this->getFundRepoPartialMock(
+            $entityManagerProphecy->reveal(),
+            $campaignFundingRepoProphecy->reveal(),
+            $this->getFundClientForPerCampaignLookup(firstFundNewAmount: 299),
             $matchingAdapterProphecy->reveal(),
             $this->getExistingFund(false),
             $this->getExistingFund(true),
@@ -265,7 +324,7 @@ class FundRepositoryTest extends TestCase
      * The HTTP model for each fund is the same as the single fund response Schema in
      * @link https://app.swaggerhub.com/apis/thebiggive/Funds
      */
-    private function getFundClientForPerCampaignLookup(string $currencyCode = 'GBP'): Client\Fund
+    private function getFundClientForPerCampaignLookup(string $currencyCode = 'GBP', int $firstFundNewAmount = 500): Client\Fund
     {
         $fundClientProphecy = $this->prophesize(Client\Fund::class);
         $fundClientProphecy->getForCampaign(self::CAMPAIGN_SF_ID)->willReturn([
@@ -275,8 +334,8 @@ class FundRepositoryTest extends TestCase
                 'name' => 'Test Champion Fund 123',
                 'currencyCode' => $currencyCode,
                 'amountRaised' => '0.00',
-                'totalAmount' => 500,
-                'amountForCampaign' => 500,
+                'totalAmount' => $firstFundNewAmount,
+                'amountForCampaign' => $firstFundNewAmount,
                 'logoUri' => 'https://httpbin.org/image/png',
                 'isShared' => false,
                 'slug' => null,
