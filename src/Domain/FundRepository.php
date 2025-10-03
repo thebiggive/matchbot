@@ -118,7 +118,7 @@ class FundRepository extends SalesforceReadProxyRepository
 
                     if ($campaign->getStartDate() < $at) {
                         $this->getLogger()->error(
-                            "Campaign Funding ID {$campaignFunding->getId()} balance could not be descreased by " .
+                            "Campaign Funding ID {$campaignFunding->getId()} balance could not be decreased by " .
                             "£{$decreaseInAmount}. Salesforce Fund ID {$fundData['id']} as campaign {$campaignSFId} opened in past"
                         );
                     } else { // Campaign hasn't started yet, so we can allow the decrease
