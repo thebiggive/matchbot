@@ -40,11 +40,6 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
-use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
-use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
-use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
-use Symfony\Component\Notifier\ChatterInterface;
-use Symfony\Component\Notifier\Message\ChatMessage;
 
 $psr11App = require __DIR__ . '/bootstrap.php';
 
