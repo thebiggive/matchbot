@@ -21,6 +21,7 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
+use MatchBot\Domain\DomainException\CouldNotRetrievePaymentMethod;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
@@ -728,6 +729,7 @@ class DonationService
 
     /**
      * @throws PaymentIntentNotSucceeded
+     * @throws CouldNotRetrievePaymentMethod
      * */
     public function confirmDonationWithSavedPaymentMethod(
         Donation $donation,
@@ -1001,11 +1003,19 @@ class DonationService
         return $donation;
     }
 
+    /**
+     * @throws CouldNotRetrievePaymentMethod
+     */
     private function updateDonationFeesFromPaymentMethodId(Donation $donation, StripePaymentMethodId $paymentMethodId): void
     {
         $customerId = $donation->getPspCustomerId();
         Assertion::notNull($customerId);
-        $paymentMethod = $this->stripe->retrievePaymentMethod($customerId, $paymentMethodId);
+
+        try {
+            $paymentMethod = $this->stripe->retrievePaymentMethod($customerId, $paymentMethodId);
+        } catch (ApiErrorException $exception) {
+            throw new CouldNotRetrievePaymentMethod(previous: $exception);
+        }
         $card = $paymentMethod->card;
         Assertion::notNull($card);
 
