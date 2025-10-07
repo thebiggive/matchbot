@@ -29,6 +29,7 @@ CREATE TABLE `RegularGivingMandate` (
   `cancellationType` varchar(50) DEFAULT NULL,
   `cancellationReason` varchar(500) DEFAULT NULL,
   `cancelledAt` datetime DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)',
+  `paymentDateOffsetMonths` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_F638CA2BD17F50A6` (`uuid`),
   UNIQUE KEY `UNIQ_F638CA2BD8961D21` (`salesforceId`),

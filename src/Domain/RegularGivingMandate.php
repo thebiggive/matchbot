@@ -60,6 +60,18 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column()]
     private readonly bool $giftAid;
 
+    /**
+     * How many months later than normal should donations be taken. For use via db migrations in case of errors or
+     * unusual situations. E.g. if we need to take donations one month earlier than standard for this mandate set to -1,
+     * if we need to take donations one month later set to +1.
+     *
+     * Adjustments to this only affect donation records created in the future, as the pre-auth date on each
+     * donation is set at creation time.
+     *
+     * Currently no setter as only set via db migrations, no getter as only used within this class.
+     */
+    #[ORM\Column(options: ['default' => 0])]
+    private int $paymentDateOffsetMonths = 0;
 
     /**
      * @var bool When the mandate was created, did the donor give or refuse permission for Big Give to send marketing
@@ -363,7 +375,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             throw new \Exception('Cannot generate pre-authorized first donation');
         }
 
-        $offset = $sequenceNumber->number - 2;
+        $offset = $sequenceNumber->number - 2 + $this->paymentDateOffsetMonths;
 
         $preAuthorizationDate = $secondDonationDate->modify("+$offset months");
 
