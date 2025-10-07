@@ -12,6 +12,7 @@ use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\BadCommandException;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
+use MatchBot\Domain\DomainException\CouldNotRetrievePaymentMethod;
 use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\HomeAddressRequired;
 use MatchBot\Domain\DomainException\MandateAlreadyExists;
@@ -73,6 +74,7 @@ readonly class RegularGivingService
      * @throws AccountDetailsMismatch
      * @throws CouldNotCancelStripePaymentIntent
      * @throws UnexpectedValueException if the amount is out of the allowed range
+     * @throws CouldNotRetrievePaymentMethod
      */
     public function setupNewMandate(
         DonorAccount $donor,
