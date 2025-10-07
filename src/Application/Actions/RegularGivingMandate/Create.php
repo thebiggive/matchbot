@@ -14,6 +14,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
+use MatchBot\Domain\DomainException\CouldNotRetrievePaymentMethod;
 use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\MandateAlreadyExists;
 use MatchBot\Domain\DomainException\NotFullyMatched;
@@ -182,6 +183,13 @@ class Create extends Action
                 $response,
                 logMessage: $e->getMessage(),
                 publicMessage: "Your account information may have changed after you loaded this page. Please refresh and try again.",
+            );
+        } catch (CouldNotRetrievePaymentMethod $e) {
+            $this->logger->warning("CouldNotRetrievePaymentMethod: {$e->getMessage()}");
+            return $this->validationError(
+                $response,
+                logMessage: $e->getMessage(),
+                publicMessage: "Your saved payment method could not be retrieved. Please refresh and try using a different payment method.",
             );
         }
 
