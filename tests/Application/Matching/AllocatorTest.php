@@ -70,7 +70,7 @@ class AllocatorTest extends TestCase
     public function testItAllocatesZeroWhenNoMatchFundsAvailable(): void
     {
         // arrange
-        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([]);
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign, false)->willReturn([]);
 
         $donation = Donation::fromApiModel(
             new DonationCreate(
@@ -106,7 +106,7 @@ class AllocatorTest extends TestCase
         );
         $campaignFunding->setId(1);
 
-        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign, false)->willReturn([
             $campaignFunding
         ]);
         $this->emProphecy->persist(Argument::type(FundingWithdrawal::class))->shouldBeCalled();
@@ -193,7 +193,7 @@ class AllocatorTest extends TestCase
         $campaignFunding1->setId(1);
 
 
-        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign, false)->willReturn([
             $campaignFunding0,
             $campaignFunding1,
         ]);
@@ -239,7 +239,7 @@ class AllocatorTest extends TestCase
         );
         $campaignFunding->setId(1);
 
-        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign, false)->willReturn([
             $campaignFunding
         ]);
         $this->emProphecy->persist(Argument::type(FundingWithdrawal::class))->shouldBeCalled();
@@ -281,7 +281,7 @@ class AllocatorTest extends TestCase
             amountAvailable: '1',
         );
 
-        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign, false)->willReturn([
             $campaignFunding
         ]);
         $donation = Donation::fromApiModel(

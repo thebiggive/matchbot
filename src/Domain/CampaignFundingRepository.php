@@ -28,11 +28,14 @@ class CampaignFundingRepository extends EntityRepository
      * @param Campaign $campaign
      * @return CampaignFunding[]    Sorted in the order funds should be allocated
      */
-    public function getAvailableFundings(Campaign $campaign): array
+    public function getAvailableFundings(Campaign $campaign, bool $forceNotBigGive = false): array
     {
+        // Temporary option to allow for fixing wrong BG allocations.
+        $extraCondition = $forceNotBigGive ? " AND cf.fund != 'a09WS00000BDhATYA1'" : '';
+
         $query = $this->getEntityManager()->createQuery('
             SELECT cf FROM MatchBot\Domain\CampaignFunding cf JOIN cf.fund fund
-            WHERE :campaign MEMBER OF cf.campaigns
+            WHERE :campaign MEMBER OF cf.campaigns ' . $extraCondition . '
             AND cf.amountAvailable > 0
             ORDER BY fund.allocationOrder, cf.id
         ');
@@ -48,8 +51,6 @@ class CampaignFundingRepository extends EntityRepository
      * Returns all CampaignFunding associated with campaign, including those that have zero
      * funds available at this time.
      *
-     * Result is in an arbitrary order, unlike getAvailableFundings which gives an ordered list.
-     *
      * @return CampaignFunding[]
      */
     public function getAllFundingsForCampaign(Campaign $campaign): array
@@ -57,6 +58,7 @@ class CampaignFundingRepository extends EntityRepository
         $query = $this->getEntityManager()->createQuery('
             SELECT cf FROM MatchBot\Domain\CampaignFunding cf
             WHERE :campaign MEMBER OF cf.campaigns
+            ORDER BY fund.allocationOrder, cf.id
         ');
         $query->setParameter('campaign', $campaign->getId());
 
@@ -135,7 +137,7 @@ class CampaignFundingRepository extends EntityRepository
             WHERE :campaign MEMBER OF cf.campaigns
             AND cf.fund = :fund
         ')->setMaxResults(1);
-        $query->setParameter('campaign', new ArrayCollection([$campaign->getId()]));
+        $query->setParameter('campaign', $campaign->getId());
         $query->setParameter('fund', $fund->getId());
         $query->execute();
 
@@ -143,5 +145,19 @@ class CampaignFundingRepository extends EntityRepository
         $result = $query->getOneOrNullResult();
 
         return $result;
+    }
+
+    public function zeroBigGiveWgmf25Funding(Campaign $campaign): void
+    {
+        $query = $this->getEntityManager()->createQuery('
+            UPDATE MatchBot\Domain\CampaignFunding cf
+            SET cf.amountAvailable = 0, cf.amountAllocated = 0
+            WHERE :campaign MEMBER OF cf.campaigns
+            AND cf.fund = :fund
+        ');
+        $query->setParameter('campaign', $campaign->getId());
+        $query->setParameter('fund', 'a09WS00000BDhATYA1');
+
+        $query->execute();
     }
 }
