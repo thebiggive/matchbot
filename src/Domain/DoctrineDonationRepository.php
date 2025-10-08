@@ -86,6 +86,36 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     }
 
     #[\Override]
+    public function findWithBigGiveWgmf25Matching(Campaign $campaign): array
+    {
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT d FROM MatchBot\Domain\Donation d
+            -- Only select donations with 1+ FWs (i.e. some matching).
+            INNER JOIN d.fundingWithdrawals fw
+            INNER JOIN fw.campaignFunding donationCf
+            INNER JOIN donationCf.fund donationFund
+            AND d.donationStatus IN (:collectedStatuses)
+            AND d.campaign = :campaign
+            AND donationFund.salesforceId = :sfBigGiveFundId
+            GROUP BY d.id
+            ORDER BY d.id ASC
+        DQL
+        );
+
+        $query->setParameter('campaign', $campaign);
+        $query->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES);
+        $query->setParameter('sfBigGiveFundId', 'a09WS00000BDhATYA1');
+
+        // Result caching rationale as per `findWithExpiredMatching()`.
+        /** @var Donation[] $donations */
+        $donations = $query
+            ->disableResultCache()
+            ->getResult();
+
+        return $donations;
+    }
+
+    #[\Override]
     public function findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
         \DateTimeImmutable $campaignsClosedBefore,
         \DateTimeImmutable $donationsCollectedAfter,
@@ -113,7 +143,6 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $query->setParameter('campaignsClosedBefore', $campaignsClosedBefore);
         $query->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES);
         $query->setParameter('donationsCollectedAfter', $donationsCollectedAfter);
-        ;
 
         // Result caching rationale as per `findWithExpiredMatching()`.
         /** @var Donation[] $donations */
