@@ -217,4 +217,9 @@ class InMemoryDonationRepository implements DonationRepository
             fn(Donation $d) => $d->getCampaign() === $campaign
         ));
     }
+
+    #[\Override] public function findWithBigGiveWgmf25Matching(Campaign $campaign): array
+    {
+        throw new \Exception("Method not implemented in test double");
+    }
 }

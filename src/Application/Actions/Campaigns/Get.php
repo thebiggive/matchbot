@@ -19,9 +19,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Exception\HttpNotFoundException;
 
 /**
- * Gets details of a campaign. For the moment this is just a very thin wrapper around Salesforce, so that frontend
- * can start to switch over to using matchbot, but the intention is that in future
- * it should serve from the matchbot db instead of calling SF on demand.
+ * Gets details of a campaign.
  */
 class Get extends Action
 {
