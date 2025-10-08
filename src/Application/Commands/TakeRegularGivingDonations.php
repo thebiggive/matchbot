@@ -17,6 +17,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\MandateCancellationType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
@@ -206,6 +207,12 @@ class TakeRegularGivingDonations extends LockingCommand
                 " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>
                 "
             );
+
+            if ($donation->getDonorId()?->equals(PersonId::of('1f08cce7-a6a7-63dc-946f-2f38cdddb3ea'))) {
+                $io->writeln("Skipping donation {$donation->getUuid()} while we confirm donor's intention");
+                continue;
+            }
+
             try {
                 try {
                     $this->donationService->confirmPreAuthorized($donation);
