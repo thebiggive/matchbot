@@ -153,12 +153,12 @@ class CampaignFundingRepository extends EntityRepository
     {
         $query = $this->getEntityManager()->createQuery('
             UPDATE MatchBot\Domain\CampaignFunding cf
-            SET cf.amountAvailable = 0, cf.amountAllocated = 0
-            WHERE :campaign MEMBER OF cf.campaigns
-            AND cf.fund = :fund
+            SET cf.amount = 0, cf.amountAvailable = 0
+            WHERE :campaign MEMBER OF cf.campaigns AND cf.fund IN
+            (SELECT f.id FROM MatchBot\Domain\Fund f WHERE f.salesforceId = :fundSalesforceId)
         ');
         $query->setParameter('campaign', $campaign->getId());
-        $query->setParameter('fund', 'a09WS00000BDhATYA1');
+        $query->setParameter('fundSalesforceId', 'a09WS00000BDhATYA1');
 
         $query->execute();
     }
