@@ -46,7 +46,7 @@ class PatchFunds8Oct extends Command
         $output->writeln('Campaigns affected: ' . count($campaigns));
 
         foreach ($campaigns as $campaign) {
-            $campaignId = $campaign->getId() ?? 0;
+            $campaignId = $campaign->getId() ?? throw new \Exception('campaign id missing');
             $donations = $this->donationRepository->findWithBigGiveWgmf25Matching($campaign);
             $output->writeln("Campaign $campaignId - Donations affected: " . count($donations));
 
