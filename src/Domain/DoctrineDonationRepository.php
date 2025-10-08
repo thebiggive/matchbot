@@ -94,15 +94,15 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             INNER JOIN d.fundingWithdrawals fw
             INNER JOIN fw.campaignFunding donationCf
             INNER JOIN donationCf.fund donationFund
-            AND d.donationStatus IN (:collectedStatuses)
-            AND d.campaign = :campaign
+            WHERE d.donationStatus IN (:collectedStatuses)
+            AND d.campaign = :campaignId
             AND donationFund.salesforceId = :sfBigGiveFundId
             GROUP BY d.id
             ORDER BY d.id ASC
         DQL
         );
 
-        $query->setParameter('campaign', $campaign);
+        $query->setParameter('campaignId', $campaign->getId());
         $query->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES);
         $query->setParameter('sfBigGiveFundId', 'a09WS00000BDhATYA1');
 
