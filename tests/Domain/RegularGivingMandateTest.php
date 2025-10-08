@@ -2,9 +2,7 @@
 
 namespace MatchBot\Tests\Domain;
 
-use MatchBot\Client\Fund;
 use MatchBot\Domain\Campaign;
-use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
@@ -125,6 +123,7 @@ class RegularGivingMandateTest extends TestCase
         string $activationTime,
         int $dayOfMonth,
         int $sequenceNo,
+        int $paymentDateOffsetMonths,
         string $expected
     ): void {
         $mandate = new RegularGivingMandate(
@@ -141,6 +140,10 @@ class RegularGivingMandateTest extends TestCase
         ))->setTimezone(new \DateTimeZone('Europe/London')));
 
         $donor = $this->someDonor();
+
+        // simulating having run a DB migration to set the `paymentDateOffsetMonths` on the mandate.
+        $reflect = new \ReflectionClass($mandate);
+        $reflect->getProperty('paymentDateOffsetMonths')->setValue($mandate, $paymentDateOffsetMonths);
 
         $donation = $mandate->createPreAuthorizedDonation(
             DonationSequenceNumber::of($sequenceNo),
@@ -352,19 +355,23 @@ class RegularGivingMandateTest extends TestCase
         ];
     }
 
-    /** @return list<array{0: string, 1: int, 2: int, 3: string}> */
+    /** @return list<array{0: string, 1: int, 2: int, 3: int, 4: string}> */
     public function expectedDonationPreAuth(): array
     {
         return [
             // activationTime, dayOfMonth, sequenceNo, expected
             // E.g. If mandate is activated on August 23rd, payable on the 1st of each month, then the 2nd donation is
             // payable on September 1st.
-            ['2024-08-23T17:30:00Z', 1, 2, '2024-09-01T06:00:00+0100'],
-            ['2024-08-23T17:30:00Z', 1, 3, '2024-10-01T06:00:00+0100'],
-            ['2024-08-23T17:30:00Z', 1, 4, '2024-11-01T06:00:00+0100'],
 
-            ['2024-08-23T17:30:00Z', 23, 2, '2024-09-23T06:00:00+0100'],
-            ['2024-08-23T17:30:00Z', 23, 3, '2024-10-23T06:00:00+0100'],
+            ['2024-08-23T17:30:00Z', 1, 2, 0, '2024-09-01T06:00:00+0100'],
+            ['2024-08-23T17:30:00Z', 1, 3, 0, '2024-10-01T06:00:00+0100'],
+            // In case there was an issue with a donation that means we need to e.g. refund it and take
+            // the next donation a month earlier than normal we would set an offset of -1 on the mandate.
+            ['2024-08-23T17:30:00Z', 1, 3, -1, '2024-09-01T06:00:00+0100'],
+            ['2024-08-23T17:30:00Z', 1, 4, 0, '2024-11-01T06:00:00+0100'],
+
+            ['2024-08-23T17:30:00Z', 23, 2, 0, '2024-09-23T06:00:00+0100'],
+            ['2024-08-23T17:30:00Z', 23, 3, 0, '2024-10-23T06:00:00+0100'],
         ];
     }
 
