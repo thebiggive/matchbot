@@ -51,6 +51,8 @@ class CampaignFundingRepository extends EntityRepository
      * Returns all CampaignFunding associated with campaign, including those that have zero
      * funds available at this time.
      *
+     * Order is just by CF ID, whereas {@see self::getAvailableFundings()} gives an ordered-by-allocation-order list.
+     *
      * @return CampaignFunding[]
      */
     public function getAllFundingsForCampaign(Campaign $campaign): array
@@ -58,7 +60,7 @@ class CampaignFundingRepository extends EntityRepository
         $query = $this->getEntityManager()->createQuery('
             SELECT cf FROM MatchBot\Domain\CampaignFunding cf
             WHERE :campaign MEMBER OF cf.campaigns
-            ORDER BY fund.allocationOrder, cf.id
+            ORDER BY cf.id
         ');
         $query->setParameter('campaign', $campaign->getId());
 
