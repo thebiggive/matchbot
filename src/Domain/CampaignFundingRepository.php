@@ -182,6 +182,6 @@ class CampaignFundingRepository extends EntityRepository
 
         $fundingId = $funding->getId() ?? throw new \Exception('funding id missing');
 
-        $logger->info('Redis-zeroed Big Give WGMF25 funding ' .$fundingId . ' for campaign ' . ($campaign->getId() ?? 'null'));
+        $logger->info('Redis-zeroed Big Give WGMF25 funding ' . $fundingId . ' for campaign ' . ($campaign->getId() ?? 'null'));
     }
 }
