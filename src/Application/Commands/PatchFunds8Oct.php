@@ -68,36 +68,36 @@ class PatchFunds8Oct extends Command
     private function getCampaignsAffected(): array
     {
         // Raw pMA export
-        $Campaign = array(
-            array('id' => '9629','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'),
-            array('id' => '9641','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS000009MZDGYA4'),
-            array('id' => '9649','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'),
-            array('id' => '9671','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS000009MZDGYA4'),
-            array('id' => '9676','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'),
-            array('id' => '9678','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'),
-            array('id' => '9692','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'),
-            array('id' => '9708','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS000009MZDGYA4'),
-            array('id' => '9725','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'),
-            array('id' => '9729','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'),
-            array('id' => '9731','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'),
-            array('id' => '9732','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'),
-            array('id' => '9735','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'),
-            array('id' => '9753','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'),
-            array('id' => '9763','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'),
-            array('id' => '9767','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'),
-            array('id' => '9768','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS000009MZDGYA4'),
-            array('id' => '9777','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'),
-            array('id' => '9778','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'),
-            array('id' => '9779','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'),
-            array('id' => '9786','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'),
-            array('id' => '9806','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'),
-            array('id' => '9814','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'),
-            array('id' => '9824','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'),
-            array('id' => '9838','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'),
-            array('id' => '9842','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'),
-            array('id' => '29091','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'),
-            array('id' => '29656','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ')
-        );
+        $Campaign = [
+            ['id' => '9629','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'],
+            ['id' => '9641','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS000009MZDGYA4'],
+            ['id' => '9649','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'],
+            ['id' => '9671','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS000009MZDGYA4'],
+            ['id' => '9676','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'],
+            ['id' => '9678','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'],
+            ['id' => '9692','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'],
+            ['id' => '9708','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS000009MZDGYA4'],
+            ['id' => '9725','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'],
+            ['id' => '9729','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'],
+            ['id' => '9731','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'],
+            ['id' => '9732','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'],
+            ['id' => '9735','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'],
+            ['id' => '9753','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'],
+            ['id' => '9763','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'],
+            ['id' => '9767','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'],
+            ['id' => '9768','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS000009MZDGYA4'],
+            ['id' => '9777','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'],
+            ['id' => '9778','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'],
+            ['id' => '9779','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'],
+            ['id' => '9786','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'],
+            ['id' => '9806','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqOyeYAF'],
+            ['id' => '9814','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'],
+            ['id' => '9824','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'],
+            ['id' => '9838','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'],
+            ['id' => '9842','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000CqTzuYAF'],
+            ['id' => '29091','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ'],
+            ['id' => '29656','COUNT(DISTINCT cf.id)' => '2','GROUP_CONCAT(Fund.salesforceId)' => 'a09WS00000BDhATYA1,a09WS00000BlbDtYAJ']
+        ];
         $campaignIds = array_column($Campaign, 'id');
 
         /** @var Campaign[] $campaigns */
