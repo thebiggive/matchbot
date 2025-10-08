@@ -2,22 +2,17 @@
 
 namespace MatchBot\Application\Commands;
 
-use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Matching\Allocator;
+use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
-use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Messenger\RoutableMessageBus;
 
 /**
  * @see MatchFundsRedistributor which has some of the core logic in common.
@@ -29,36 +24,18 @@ use Symfony\Component\Messenger\RoutableMessageBus;
 class PatchFunds8Oct extends Command
 {
     public function __construct(
-        private Allocator $allocator,
+        private Adapter $matchingAdapter,
         private CampaignRepository $campaignRepository,
         private CampaignFundingRepository $campaignFundingRepository,
         private DonationRepository $donationRepository,
-        private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
-        private RoutableMessageBus $bus,
     ) {
         parent::__construct();
     }
 
     #[\Override]
-    protected function configure(): void
-    {
-        $this->addArgument(
-            'mode',
-            InputArgument::REQUIRED,
-            '"check" to print status information only or "fix" to attempt to restore over-allocated funds.'
-        );
-    }
-
-    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $mode = $input->getArgument('mode');
-        if (!in_array($mode, ['check', 'fix'], true)) {
-            $output->writeln('Please set the mode to "check" or "fix"');
-            return 1;
-        }
-
         $campaigns = $this->getCampaignsAffected();
         $output->writeln('Campaigns affected: ' . count($campaigns));
 
@@ -67,23 +44,7 @@ class PatchFunds8Oct extends Command
             $donations = $this->donationRepository->findWithBigGiveWgmf25Matching($campaign);
             $output->writeln("Campaign $campaignId - Donations affected: " . count($donations));
 
-            foreach ($donations as $donation) {
-                if ($mode === 'check') {
-                    $output->writeln('Donation ' . ($donation->getUuid()->toString()) . ' matching would be moved');
-                    continue;
-                }
-
-                $this->switchMatchingToCorrectFunding($donation);
-                $output->writeln('Donation ' . ($donation->getUuid()->toString()) . ' matching moved');
-            }
-
-            if ($mode === 'check') {
-                $output->writeln("Campaign $campaignId processed - run in 'fix' mode to zero Big Give WGMF25 funding");
-                continue;
-            }
-
-            $this->campaignFundingRepository->zeroBigGiveWgmf25Funding($campaign);
-            $this->entityManager->flush();
+            $this->campaignFundingRepository->zeroBigGiveWgmf25Funding($campaign, $this->matchingAdapter, $this->logger);
 
             $output->writeln("Campaign $campaignId processed + Big Give WGMF25 funding zeroed");
         }
@@ -133,26 +94,5 @@ class PatchFunds8Oct extends Command
         $campaigns = $this->campaignRepository->findBy(['id' => $campaignIds]);
 
         return $campaigns;
-    }
-
-    private function switchMatchingToCorrectFunding(Donation $donation): void
-    {
-        $originallyMatched = $donation->getFundingWithdrawalTotal();
-        /** @psalm-suppress InternalMethod */
-        $this->allocator->releaseMatchFunds($donation);
-        $nowMatched = $this->allocator->allocateMatchFunds(donation: $donation, forceNotBigGive: true);
-
-        if (bccomp($nowMatched, $originallyMatched, 2) === -1) {
-            $this->logger->error(sprintf(
-                'Donation %s had redistributed match funds reduced from %s to %s (%s)',
-                $donation->getUuid(),
-                $originallyMatched,
-                $nowMatched,
-                $donation->currency()->isoCode(),
-            ));
-        }
-
-        $this->entityManager->flush();
-        $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donation));
     }
 }
