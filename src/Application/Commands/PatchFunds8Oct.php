@@ -9,8 +9,8 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -31,7 +31,7 @@ class PatchFunds8Oct extends Command
         private Allocator $allocator,
         private CampaignRepository $campaignRepository,
         private CampaignFundingRepository $campaignFundingRepository,
-        private DoctrineDonationRepository $donationRepository,
+        private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
         private RoutableMessageBus $bus,

@@ -178,4 +178,9 @@ interface DonationRepository
      * @return non-negative-int
      */
     public function countCompleteDonationsToCampaign(Campaign $campaign): int;
+
+    /**
+     * @return Donation[]
+     */
+    public function findWithBigGiveWgmf25Matching(Campaign $campaign): array;
 }

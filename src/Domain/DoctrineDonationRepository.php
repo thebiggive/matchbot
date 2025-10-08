@@ -85,9 +85,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return array_map(static fn(array $row): UuidInterface => $row['uuid'], $rows);
     }
 
-    /**
-     * @return Donation[]
-     */
+    #[\Override]
     public function findWithBigGiveWgmf25Matching(Campaign $campaign): array
     {
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
