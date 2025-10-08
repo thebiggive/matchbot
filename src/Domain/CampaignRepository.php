@@ -202,8 +202,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $id = $charityData['id'];
 
         // getting some unexplained duplicate stripe ID errors, this may help explain?
-        $this->logger->info("Pulling charity id: $id");
-        $this->logger->info("Charity Data from SF: " . json_encode($charityData));
+        $this->getLogger()->info("Pulling charity id: $id");
+        $this->getLogger()->info("Charity Data from SF: " . json_encode($charityData, flags: \JSON_THROW_ON_ERROR));
 
         $charity = $this->getEntityManager()
             ->getRepository(Charity::class)
