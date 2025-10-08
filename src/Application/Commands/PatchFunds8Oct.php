@@ -83,6 +83,8 @@ class PatchFunds8Oct extends Command
             }
 
             $this->campaignFundingRepository->zeroBigGiveWgmf25Funding($campaign);
+            $this->entityManager->flush();
+
             $output->writeln("Campaign $campaignId processed + Big Give WGMF25 funding zeroed");
         }
 

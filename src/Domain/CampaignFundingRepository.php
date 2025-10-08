@@ -31,7 +31,8 @@ class CampaignFundingRepository extends EntityRepository
     public function getAvailableFundings(Campaign $campaign, bool $forceNotBigGive = false): array
     {
         // Temporary option to allow for fixing wrong BG allocations.
-        $extraCondition = $forceNotBigGive ? " AND cf.fund != 'a09WS00000BDhATYA1'" : '';
+        // Salesforce Champion Funding a09WS00000BDhATYA1 has Fund.id 31740.
+        $extraCondition = $forceNotBigGive ? " AND cf.fund != 31740 " : '';
 
         $query = $this->getEntityManager()->createQuery('
             SELECT cf FROM MatchBot\Domain\CampaignFunding cf JOIN cf.fund fund
@@ -153,12 +154,12 @@ class CampaignFundingRepository extends EntityRepository
     {
         $query = $this->getEntityManager()->createQuery('
             UPDATE MatchBot\Domain\CampaignFunding cf
-            SET cf.amountAvailable = 0, cf.amountAllocated = 0
-            WHERE :campaign MEMBER OF cf.campaigns
-            AND cf.fund = :fund
+            SET cf.amount = 0, cf.amountAvailable = 0
+            WHERE :campaign MEMBER OF cf.campaigns AND cf.fund IN
+            (SELECT f.id FROM MatchBot\Domain\Fund f WHERE f.salesforceId = :fundSalesforceId)
         ');
         $query->setParameter('campaign', $campaign->getId());
-        $query->setParameter('fund', 'a09WS00000BDhATYA1');
+        $query->setParameter('fundSalesforceId', 'a09WS00000BDhATYA1');
 
         $query->execute();
     }
