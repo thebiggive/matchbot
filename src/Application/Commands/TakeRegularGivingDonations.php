@@ -237,7 +237,7 @@ class TakeRegularGivingDonations extends LockingCommand
                     }
                 }
             } catch (\Exception $exception) {
-                $this->logger->error('Exception, skipping donation: ' . $exception->getMessage());
+                $this->logger->error('Exception, skipping RG confirmation of donation: ' . $donation->getUuid()->toString() . ", " . \get_class($exception) . ": " . $exception->getMessage());
                 continue;
             }
         }
