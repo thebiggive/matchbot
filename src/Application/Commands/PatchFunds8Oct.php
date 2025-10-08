@@ -14,6 +14,7 @@ use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Messenger\RoutableMessageBus;
@@ -40,8 +41,24 @@ class PatchFunds8Oct extends Command
     }
 
     #[\Override]
+    protected function configure(): void
+    {
+        $this->addArgument(
+            'mode',
+            InputArgument::REQUIRED,
+            '"check" to print status information only or "fix" to attempt to restore over-allocated funds.'
+        );
+    }
+
+    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $mode = $input->getArgument('mode');
+        if (!in_array($mode, ['check', 'fix'], true)) {
+            $output->writeln('Please set the mode to "check" or "fix"');
+            return 1;
+        }
+
         $campaigns = $this->getCampaignsAffected();
         $output->writeln('Campaigns affected: ' . count($campaigns));
 
@@ -51,8 +68,18 @@ class PatchFunds8Oct extends Command
             $output->writeln("Campaign $campaignId - Donations affected: " . count($donations));
 
             foreach ($donations as $donation) {
+                if ($mode === 'check') {
+                    $output->writeln('Donation ' . ($donation->getUuid()->toString()) . ' matching would be moved');
+                    continue;
+                }
+
                 $this->switchMatchingToCorrectFunding($donation);
                 $output->writeln('Donation ' . ($donation->getUuid()->toString()) . ' matching moved');
+            }
+
+            if ($mode === 'check') {
+                $output->writeln("Campaign $campaignId processed - run in 'fix' mode to zero Big Give WGMF25 funding");
+                continue;
             }
 
             $this->campaignFundingRepository->zeroBigGiveWgmf25Funding($campaign);
