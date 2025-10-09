@@ -198,7 +198,6 @@ class TakeRegularGivingDonations extends LockingCommand
         $io->block(count($donations) . " donations are due to be confirmed at this time");
 
         foreach ($donations as $donation) {
-            $this->reportableEventHappened = true;
             $preAuthDate = $donation->getPreAuthorizationDate();
             \assert($preAuthDate instanceof \DateTimeImmutable);
             $io->writeln("Processing donation ID {$donation->getId()}");
@@ -212,6 +211,8 @@ class TakeRegularGivingDonations extends LockingCommand
                 $io->writeln("Skipping donation {$donation->getUuid()} while we confirm donor's intention");
                 continue;
             }
+
+            $this->reportableEventHappened = true; // Only for those not skipped above.
 
             try {
                 try {
