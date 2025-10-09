@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use Assert\Assertion;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityRepository;
+use MatchBot\Application\Matching\Adapter;
+use Psr\Log\LoggerInterface;
 
 /**
  * @extends EntityRepository<CampaignFunding>
@@ -39,6 +40,23 @@ class CampaignFundingRepository extends EntityRepository
             WHERE :campaign MEMBER OF cf.campaigns ' . $extraCondition . '
             AND cf.amountAvailable > 0
             ORDER BY fund.allocationOrder, cf.id
+        ');
+        $query->setParameter('campaign', $campaign->getId());
+
+        /** @var CampaignFunding[] $result */
+        $result = $query->getResult();
+
+        return $result;
+    }
+
+    /**
+     * @return CampaignFunding[]
+     */
+    public function getBigGiveFundingsForCleanup(Campaign $campaign): array
+    {
+        $query = $this->getEntityManager()->createQuery('
+            SELECT cf FROM MatchBot\Domain\CampaignFunding cf
+            WHERE :campaign MEMBER OF cf.campaigns AND cf.fund = 31740
         ');
         $query->setParameter('campaign', $campaign->getId());
 
@@ -150,17 +168,20 @@ class CampaignFundingRepository extends EntityRepository
         return $result;
     }
 
-    public function zeroBigGiveWgmf25Funding(Campaign $campaign): void
+    public function zeroBigGiveWgmf25Funding(Campaign $campaign, Adapter $matchingAdapter, LoggerInterface $logger): void
     {
-        $query = $this->getEntityManager()->createQuery('
-            UPDATE MatchBot\Domain\CampaignFunding cf
-            SET cf.amount = 0, cf.amountAvailable = 0
-            WHERE :campaign MEMBER OF cf.campaigns AND cf.fund IN
-            (SELECT f.id FROM MatchBot\Domain\Fund f WHERE f.salesforceId = :fundSalesforceId)
-        ');
-        $query->setParameter('campaign', $campaign->getId());
-        $query->setParameter('fundSalesforceId', 'a09WS00000BDhATYA1');
+        $fundings = $this->getBigGiveFundingsForCleanup($campaign);
 
-        $query->execute();
+        if (count($fundings) !== 1) {
+            $logger->error('Expected exactly one Big Give WGMF25 funding for campaign ' . ($campaign->getId() ?? 'null') . ', found ' . count($fundings));
+            return;
+        }
+
+        $funding = $fundings[0];
+        $matchingAdapter->zeroStorageOnly($funding);
+
+        $fundingId = $funding->getId() ?? throw new \Exception('funding id missing');
+
+        $logger->info('Redis-zeroed Big Give WGMF25 funding ' . $fundingId . ' for campaign ' . ($campaign->getId() ?? 'null'));
     }
 }

@@ -56,7 +56,7 @@ class HandleOutOfSyncFunds extends LockingCommand
         $this->addArgument(
             'mode',
             InputArgument::REQUIRED,
-            '"check" to print status information only or "fix" to attempt to restore over-allocated funds.'
+            '"check" to print status information only or "fix" to attempt to restore under-matched funds.'
         );
     }
 
