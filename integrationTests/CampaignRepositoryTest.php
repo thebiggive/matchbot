@@ -6,6 +6,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignStatistics;
@@ -167,7 +168,7 @@ class CampaignRepositoryTest extends IntegrationTest
             isRegularGiving: false,
             pinPosition: null,
             championPagePinPosition: null,
-            relatedApplicationStatus: 'Approved',
+            relatedApplicationStatus: ApplicationStatus::Approved,
             relatedApplicationCharityResponseToOffer: 'Accepted',
             regularGivingCollectionEnd: null,
             totalFundraisingTarget: Money::zero(),

@@ -42,7 +42,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     status: 'Active'|'Expired'|'Preview'|null,
  *     pinPosition?: int|null,
  *     championPagePinPosition?: int|null,
- *     relatedApplicationStatus?: value-of<\MatchBot\Domain\Campaign::APPLICATION_STATUSES>|null,
+ *     relatedApplicationStatus?: value-of<\MatchBot\Domain\ApplicationStatus>|null,
  *     relatedApplicationCharityResponseToOffer?: value-of<\MatchBot\Domain\Campaign::CHARITY_RESPONSES_TO_OFFER>|null,
  *     title: ?string,
 *      currencyCode: string,

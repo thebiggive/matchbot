@@ -510,12 +510,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $currency = Currency::fromIsoCode($campaignData['currencyCode']);
 
+        $relatedApplicationStatusString = $campaignData['relatedApplicationStatus'] ?? null;
         $campaign->updateFromSfPull(
             currencyCode: $currency->isoCode(),
             status: $campaignData['status'],
             pinPosition: $campaignData['pinPosition'] ?? null,
             championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
-            relatedApplicationStatus: $campaignData['relatedApplicationStatus'] ?? null,
+            relatedApplicationStatus: is_string($relatedApplicationStatusString) ? ApplicationStatus::from($relatedApplicationStatusString) : null,
             relatedApplicationCharityResponseToOffer: $campaignData['relatedApplicationCharityResponseToOffer'] ?? null,
             endDate: new DateTime($endDateString),
             isMatched: $campaignData['isMatched'],
