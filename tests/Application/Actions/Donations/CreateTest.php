@@ -113,6 +113,7 @@ class CreateTest extends TestCase
                 'tipAmount' => '1.11',
             ],
             'statement_descriptor' => 'Big Give Create test c',
+            'statement_descriptor_suffix' => 'Big Give Create test c',
             'application_fee_amount' => 157,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
@@ -394,6 +395,7 @@ class CreateTest extends TestCase
                 'tipAmount' => '1.11',
             ],
             'statement_descriptor' => 'Big Give Create test c',
+            'statement_descriptor_suffix' => 'Big Give Create test c',
             'application_fee_amount' => 157,
             'on_behalf_of' => 'unitTest_newStripeAccount_456',
             'transfer_data' => [
@@ -498,6 +500,7 @@ class CreateTest extends TestCase
                 'tipAmount' => '1.11',
             ],
             'statement_descriptor' => 'Big Give Create test c',
+            'statement_descriptor_suffix' => 'Big Give Create test c',
             'application_fee_amount' => 157,
             'transfer_data' => [
                 'destination' => 'unitTest_stripeAccount_123',
@@ -590,6 +593,7 @@ class CreateTest extends TestCase
                 'tipAmount' => '1.11',
             ],
             'statement_descriptor' => 'Big Give Create test c',
+            'statement_descriptor_suffix' => 'Big Give Create test c',
             'application_fee_amount' => 157,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
