@@ -478,6 +478,11 @@ class Campaign extends SalesforceReadProxy
         return $this->ready;
     }
 
+    public function isNeverProceedingAppCampaign(): bool
+    {
+        return $this->relatedApplicationStatus === 'Rejected' && $this->relatedApplicationCharityResponseToOffer === 'Rejected';
+    }
+
     /**
      * @param Money $totalFundraisingTarget
      * @param 'Active'|'Expired'|'Preview'|null $status
