@@ -43,7 +43,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     pinPosition?: int|null,
  *     championPagePinPosition?: int|null,
  *     relatedApplicationStatus?: value-of<\MatchBot\Domain\ApplicationStatus>|null,
- *     relatedApplicationCharityResponseToOffer?: value-of<\MatchBot\Domain\Campaign::CHARITY_RESPONSES_TO_OFFER>|null,
+ *     relatedApplicationCharityResponseToOffer?: value-of<\MatchBot\Domain\CharityResponseToOffer>|null,
  *     title: ?string,
 *      currencyCode: string,
  *     isRegularGiving?: boolean,

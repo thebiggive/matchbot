@@ -70,9 +70,8 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(nullable:true, options: ['default' => null])]
     private ?ApplicationStatus $relatedApplicationStatus;
 
-    /** @var value-of<self::CHARITY_RESPONSES_TO_OFFER>|null */
-    #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
-    private ?string $relatedApplicationCharityResponseToOffer; // @phpstan-ignore doctrine.columnType
+    #[ORM\Column(nullable:true, options: ['default' => null])]
+    private ?CharityResponseToOffer $relatedApplicationCharityResponseToOffer;
 
     /**
      * @var string
@@ -200,7 +199,7 @@ class Campaign extends SalesforceReadProxy
      * @param 'Active'|'Expired'|'Preview'|null $status
      * @param bool $isRegularGiving
      * @param ApplicationStatus|null $relatedApplicationStatus,
-     * @param value-of<self::CHARITY_RESPONSES_TO_OFFER>|null $relatedApplicationCharityResponseToOffer
+     * @param CharityResponseToOffer|null $relatedApplicationCharityResponseToOffer
      * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
      * */
     public function __construct(
@@ -220,7 +219,7 @@ class Campaign extends SalesforceReadProxy
         ?int $pinPosition,
         ?int $championPagePinPosition,
         ?ApplicationStatus $relatedApplicationStatus,
-        ?string $relatedApplicationCharityResponseToOffer,
+        ?CharityResponseToOffer $relatedApplicationCharityResponseToOffer,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         Money $totalFundraisingTarget,
         ?string $thankYouMessage = null,
@@ -297,6 +296,7 @@ class Campaign extends SalesforceReadProxy
         $currency = Currency::fromIsoCode($campaignData['currencyCode']);
 
         $relatedApplicationStatusString = $campaignData['relatedApplicationStatus'] ?? null;
+        $relatedApplicationCharityResponseToOfferString = $campaignData['relatedApplicationCharityResponseToOffer'] ?? null;
         return new self(
             sfId: $salesforceId,
             metaCampaignSlug: $campaignData['parentRef'],
@@ -314,7 +314,7 @@ class Campaign extends SalesforceReadProxy
             pinPosition: $campaignData['pinPosition'] ?? null,
             championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
             relatedApplicationStatus: is_string($relatedApplicationStatusString) ?  ApplicationStatus::from($relatedApplicationStatusString) : null,
-            relatedApplicationCharityResponseToOffer: $campaignData['relatedApplicationCharityResponseToOffer'] ?? null,
+            relatedApplicationCharityResponseToOffer: is_string($relatedApplicationCharityResponseToOfferString) ? CharityResponseToOffer::from($relatedApplicationCharityResponseToOfferString) : null,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
             totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
             thankYouMessage: $campaignData['thankYouMessage'],
@@ -478,13 +478,13 @@ class Campaign extends SalesforceReadProxy
 
     public function isNeverProceedingAppCampaign(): bool
     {
-        return $this->relatedApplicationStatus === ApplicationStatus::Rejected && $this->relatedApplicationCharityResponseToOffer === 'Rejected';
+        return $this->relatedApplicationStatus === ApplicationStatus::Rejected && $this->relatedApplicationCharityResponseToOffer === CharityResponseToOffer::Rejected;
     }
 
     /**
      * @param Money $totalFundraisingTarget
      * @param 'Active'|'Expired'|'Preview'|null $status
-     * @param value-of<self::CHARITY_RESPONSES_TO_OFFER>|null $relatedApplicationCharityResponseToOffer
+     * @param CharityResponseToOffer|null $relatedApplicationCharityResponseToOffer
      * @param array<string,mixed> $sfData
      */
     final public function updateFromSfPull(
@@ -493,7 +493,7 @@ class Campaign extends SalesforceReadProxy
         ?int $pinPosition,
         ?int $championPagePinPosition,
         ?ApplicationStatus $relatedApplicationStatus,
-        ?string $relatedApplicationCharityResponseToOffer,
+        ?CharityResponseToOffer $relatedApplicationCharityResponseToOffer,
         \DateTimeInterface $endDate,
         bool $isMatched,
         string $name,
@@ -522,7 +522,6 @@ class Campaign extends SalesforceReadProxy
         Assertion::nullOrBetweenLength($metaCampaignSlug, 1, 64);
         Assertion::nullOrRegex($metaCampaignSlug, '/^[-A-Za-z0-9]+$/');
 
-        Assertion::nullOrInArray($relatedApplicationCharityResponseToOffer, self::CHARITY_RESPONSES_TO_OFFER);
 
         if ($metaCampaignSlug !== null && \str_starts_with($metaCampaignSlug, 'a05')) {
             // needed because SF may send an ID if slug is not filled in - we don't want that in the matchbot DB.

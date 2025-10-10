@@ -11,6 +11,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignStatistics;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\CharityResponseToOffer;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
@@ -169,7 +170,7 @@ class CampaignRepositoryTest extends IntegrationTest
             pinPosition: null,
             championPagePinPosition: null,
             relatedApplicationStatus: ApplicationStatus::Approved,
-            relatedApplicationCharityResponseToOffer: 'Accepted',
+            relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted,
             regularGivingCollectionEnd: null,
             totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,

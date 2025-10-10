@@ -32,7 +32,7 @@ CREATE TABLE `Campaign` (
   `total_fundraising_target_amountInPence` int NOT NULL,
   `total_fundraising_target_currency` varchar(3) NOT NULL,
   `relatedApplicationStatus` varchar(255) DEFAULT NULL,
-  `relatedApplicationCharityResponseToOffer` varchar(64) DEFAULT NULL,
+  `relatedApplicationCharityResponseToOffer` varchar(255) DEFAULT NULL,
   `pinPosition` int DEFAULT NULL,
   `championPagePinPosition` int DEFAULT NULL,
   PRIMARY KEY (`id`),
