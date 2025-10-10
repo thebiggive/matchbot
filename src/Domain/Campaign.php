@@ -30,7 +30,6 @@ class Campaign extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
-    public final const array APPLICATION_STATUSES = ['Register Interest','InProgress','Submitted','Approved','Rejected','Pending Approval','Missed Deadline'];
     public final const array CHARITY_RESPONSES_TO_OFFER = ['Accepted', 'Rejected'];
 
     /**
@@ -68,14 +67,11 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
     private ?string $status = null; // @phpstan-ignore doctrine.columnType
 
+    #[ORM\Column(nullable:true, options: ['default' => null])]
+    private ?ApplicationStatus $relatedApplicationStatus;
 
-    /** @var value-of<self::APPLICATION_STATUSES>|null */
-    #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
-    private ?string $relatedApplicationStatus; // @phpstan-ignore doctrine.columnType
-
-    /** @var value-of<self::CHARITY_RESPONSES_TO_OFFER>|null */
-    #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
-    private ?string $relatedApplicationCharityResponseToOffer; // @phpstan-ignore doctrine.columnType
+    #[ORM\Column(nullable:true, options: ['default' => null])]
+    private ?CharityResponseToOffer $relatedApplicationCharityResponseToOffer;
 
     /**
      * @var string
@@ -202,8 +198,8 @@ class Campaign extends SalesforceReadProxy
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
      * @param 'Active'|'Expired'|'Preview'|null $status
      * @param bool $isRegularGiving
-     * @param value-of<self::APPLICATION_STATUSES>|null $relatedApplicationStatus,
-     * @param value-of<self::CHARITY_RESPONSES_TO_OFFER>|null $relatedApplicationCharityResponseToOffer
+     * @param ApplicationStatus|null $relatedApplicationStatus,
+     * @param CharityResponseToOffer|null $relatedApplicationCharityResponseToOffer
      * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
      * */
     public function __construct(
@@ -222,8 +218,8 @@ class Campaign extends SalesforceReadProxy
         bool $isRegularGiving,
         ?int $pinPosition,
         ?int $championPagePinPosition,
-        ?string $relatedApplicationStatus,
-        ?string $relatedApplicationCharityResponseToOffer,
+        ?ApplicationStatus $relatedApplicationStatus,
+        ?CharityResponseToOffer $relatedApplicationCharityResponseToOffer,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         Money $totalFundraisingTarget,
         ?string $thankYouMessage = null,
@@ -299,6 +295,8 @@ class Campaign extends SalesforceReadProxy
 
         $currency = Currency::fromIsoCode($campaignData['currencyCode']);
 
+        $relatedApplicationStatusString = $campaignData['relatedApplicationStatus'] ?? null;
+        $relatedApplicationCharityResponseToOfferString = $campaignData['relatedApplicationCharityResponseToOffer'] ?? null;
         return new self(
             sfId: $salesforceId,
             metaCampaignSlug: $campaignData['parentRef'],
@@ -315,8 +313,8 @@ class Campaign extends SalesforceReadProxy
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             pinPosition: $campaignData['pinPosition'] ?? null,
             championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
-            relatedApplicationStatus: $campaignData['relatedApplicationStatus'] ?? null,
-            relatedApplicationCharityResponseToOffer: $campaignData['relatedApplicationCharityResponseToOffer'] ?? null,
+            relatedApplicationStatus: is_string($relatedApplicationStatusString) ?  ApplicationStatus::from($relatedApplicationStatusString) : null,
+            relatedApplicationCharityResponseToOffer: is_string($relatedApplicationCharityResponseToOfferString) ? CharityResponseToOffer::from($relatedApplicationCharityResponseToOfferString) : null,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
             totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
             thankYouMessage: $campaignData['thankYouMessage'],
@@ -480,14 +478,13 @@ class Campaign extends SalesforceReadProxy
 
     public function isNeverProceedingAppCampaign(): bool
     {
-        return $this->relatedApplicationStatus === 'Rejected' && $this->relatedApplicationCharityResponseToOffer === 'Rejected';
+        return $this->relatedApplicationStatus === ApplicationStatus::Rejected && $this->relatedApplicationCharityResponseToOffer === CharityResponseToOffer::Rejected;
     }
 
     /**
      * @param Money $totalFundraisingTarget
      * @param 'Active'|'Expired'|'Preview'|null $status
-     * @param value-of<self::APPLICATION_STATUSES>|null $relatedApplicationStatus
-     * @param value-of<self::CHARITY_RESPONSES_TO_OFFER>|null $relatedApplicationCharityResponseToOffer
+     * @param CharityResponseToOffer|null $relatedApplicationCharityResponseToOffer
      * @param array<string,mixed> $sfData
      */
     final public function updateFromSfPull(
@@ -495,8 +492,8 @@ class Campaign extends SalesforceReadProxy
         ?string $status,
         ?int $pinPosition,
         ?int $championPagePinPosition,
-        ?string $relatedApplicationStatus,
-        ?string $relatedApplicationCharityResponseToOffer,
+        ?ApplicationStatus $relatedApplicationStatus,
+        ?CharityResponseToOffer $relatedApplicationCharityResponseToOffer,
         \DateTimeInterface $endDate,
         bool $isMatched,
         string $name,
@@ -525,8 +522,6 @@ class Campaign extends SalesforceReadProxy
         Assertion::nullOrBetweenLength($metaCampaignSlug, 1, 64);
         Assertion::nullOrRegex($metaCampaignSlug, '/^[-A-Za-z0-9]+$/');
 
-        Assertion::nullOrInArray($relatedApplicationStatus, self::APPLICATION_STATUSES);
-        Assertion::nullOrInArray($relatedApplicationCharityResponseToOffer, self::CHARITY_RESPONSES_TO_OFFER);
 
         if ($metaCampaignSlug !== null && \str_starts_with($metaCampaignSlug, 'a05')) {
             // needed because SF may send an ID if slug is not filled in - we don't want that in the matchbot DB.
