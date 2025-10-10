@@ -116,12 +116,14 @@ class FundRepository extends SalesforceReadProxyRepository
                 if (bccomp($increaseInAmount, '0.00', 2) === -1) {
                     $decreaseInAmount = bcmul($increaseInAmount, '-1', 2);
 
-                    if ($campaign->getStartDate() < $at) {
+                    $campaignAbandonedAndFundsUnused = $campaign->isNeverProceedingAppCampaign() && $campaignFunding->getAmountAvailable() ===
+                        $campaignFunding->getAmount();
+                    if (!$campaignAbandonedAndFundsUnused && $campaign->getStartDate() < $at) {
                         $this->getLogger()->error(
                             "Campaign Funding ID {$campaignFunding->getId()} balance could not be decreased by " .
                             "£{$decreaseInAmount}. Salesforce Fund ID {$fundData['id']} as campaign {$campaignSFId} opened in past"
                         );
-                    } else { // Campaign hasn't started yet, so we can allow the decrease
+                    } else { // Campaign hasn't started yet (or in rare cases, an app is Rejected after first funding); so we can allow the decrease
                         // This sets CampaignFunding::$amountAvailable as a side effect.
                         $newTotal = $matchingAdapter->subtractAmount($campaignFunding, $decreaseInAmount);
 
