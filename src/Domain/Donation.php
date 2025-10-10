@@ -1800,6 +1800,7 @@ class Donation extends SalesforceWriteProxy
                 'tipAmount' => $this->getTipAmount(),
             ],
             'statement_descriptor' => $this->getCampaign()->getCharity()->getStatementDescriptor(),
+            'statement_descriptor_suffix' => $this->getCampaign()->getCharity()->getStatementDescriptor(),
             // See https://stripe.com/docs/connect/destination-charges#application-fee
             'application_fee_amount' => $this->getAmountToDeductFractional(),
             'transfer_data' => [
