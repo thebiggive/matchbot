@@ -47,16 +47,6 @@ class Adapter
     ) {
     }
 
-    public function zeroStorageOnly(CampaignFunding $campaignFunding): void
-    {
-        Assertion::eq('0.00', $campaignFunding->getAmount(), 'Can only Redis-zero funds already at zero in DB');
-        $this->storage->set(
-            $this->buildKey($campaignFunding),
-            0,
-            self::REDIS_OPTIONS_FOR_LIMITED_DURATION_STORAGE,
-        );
-    }
-
     /**
      * Callers are responsible for flushing after this works on `CampaignFunding`s – typically once per larger operation
      * if looping over many.

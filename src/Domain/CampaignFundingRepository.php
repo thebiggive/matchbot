@@ -50,23 +50,6 @@ class CampaignFundingRepository extends EntityRepository
     }
 
     /**
-     * @return CampaignFunding[]
-     */
-    public function getBigGiveFundingsForCleanup(Campaign $campaign): array
-    {
-        $query = $this->getEntityManager()->createQuery('
-            SELECT cf FROM MatchBot\Domain\CampaignFunding cf
-            WHERE :campaign MEMBER OF cf.campaigns AND cf.fund = 31740
-        ');
-        $query->setParameter('campaign', $campaign->getId());
-
-        /** @var CampaignFunding[] $result */
-        $result = $query->getResult();
-
-        return $result;
-    }
-
-    /**
      * Returns all CampaignFunding associated with campaign, including those that have zero
      * funds available at this time.
      *
@@ -166,22 +149,5 @@ class CampaignFundingRepository extends EntityRepository
         $result = $query->getOneOrNullResult();
 
         return $result;
-    }
-
-    public function zeroBigGiveWgmf25Funding(Campaign $campaign, Adapter $matchingAdapter, LoggerInterface $logger): void
-    {
-        $fundings = $this->getBigGiveFundingsForCleanup($campaign);
-
-        if (count($fundings) !== 1) {
-            $logger->error('Expected exactly one Big Give WGMF25 funding for campaign ' . ($campaign->getId() ?? 'null') . ', found ' . count($fundings));
-            return;
-        }
-
-        $funding = $fundings[0];
-        $matchingAdapter->zeroStorageOnly($funding);
-
-        $fundingId = $funding->getId() ?? throw new \Exception('funding id missing');
-
-        $logger->info('Redis-zeroed Big Give WGMF25 funding ' . $fundingId . ' for campaign ' . ($campaign->getId() ?? 'null'));
     }
 }
