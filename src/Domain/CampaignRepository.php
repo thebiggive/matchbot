@@ -56,7 +56,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 charity.tbgApprovedToClaimGiftAid = 0 AND
                 c.endDate >= :extendedLookbackDate
             )
-            OR c.metaCampaignSlug = 'small-charity-week-2025' -- to cover changes to funding allocations
             OR c.isRegularGiving = 1
             ORDER BY c.createdAt ASC
             DQL
