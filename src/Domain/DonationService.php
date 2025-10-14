@@ -299,13 +299,24 @@ class DonationService
         /** @var string|null $paymentMethodId */
         $paymentMethodId = $paymentIntent->payment_method ?? null;
         if ($paymentMethodId !== null) {
-            $paymentMethod = $this->stripe->retrievePaymentMethod(
-                $donation->getPspCustomerId() ?? throw new \LogicException('Missing customer ID'),
-                StripePaymentMethodId::of($paymentMethodId),
-            );
-            $currentPaymentMethodType = $paymentMethod->type;
+            $paymentMethod = null;
+            try {
+                $paymentMethod = $this->stripe->retrievePaymentMethod(
+                    $donation->getPspCustomerId() ?? throw new \LogicException('Missing customer ID'),
+                    StripePaymentMethodId::of($paymentMethodId),
+                );
+            } catch (ApiErrorException $exception) { // e.g. a 404 from a detached-by-Stripe.js method is an InvalidRequestException.
+                $this->logger->info(sprintf(
+                    'Donation UUID %s: Could not retrieve probably detached payment method %s: %s',
+                    $donation->getUuid(),
+                    $paymentMethodId,
+                    $exception->getMessage()
+                ));
+            }
 
-            if ($currentPaymentMethodType !== $newPaymentMethodType) {
+            $currentPaymentMethodType = $paymentMethod?->type;
+
+            if ($currentPaymentMethodType !== null && $currentPaymentMethodType !== $newPaymentMethodType) {
                 $this->logger->info(sprintf(
                     'Donation UUID %s: Unsetting payment_method from PaymentIntent %s due to type change from %s to %s',
                     $donation->getUuid(),
