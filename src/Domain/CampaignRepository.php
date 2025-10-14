@@ -56,7 +56,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 charity.tbgApprovedToClaimGiftAid = 0 AND
                 c.endDate >= :extendedLookbackDate
             )
-            OR c.metaCampaignSlug = 'small-charity-week-2025' -- to cover changes to funding allocations
             OR c.isRegularGiving = 1
             ORDER BY c.createdAt ASC
             DQL
@@ -510,13 +509,15 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $currency = Currency::fromIsoCode($campaignData['currencyCode']);
 
+        $relatedApplicationStatusString = $campaignData['relatedApplicationStatus'] ?? null;
+        $relatedApplicationCharityResponseToOfferString = $campaignData['relatedApplicationCharityResponseToOffer'] ?? null;
         $campaign->updateFromSfPull(
             currencyCode: $currency->isoCode(),
             status: $campaignData['status'],
             pinPosition: $campaignData['pinPosition'] ?? null,
             championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
-            relatedApplicationStatus: $campaignData['relatedApplicationStatus'] ?? null,
-            relatedApplicationCharityResponseToOffer: $campaignData['relatedApplicationCharityResponseToOffer'] ?? null,
+            relatedApplicationStatus: is_string($relatedApplicationStatusString) ? ApplicationStatus::from($relatedApplicationStatusString) : null,
+            relatedApplicationCharityResponseToOffer: is_string($relatedApplicationCharityResponseToOfferString) ? CharityResponseToOffer::from($relatedApplicationCharityResponseToOfferString) : null,
             endDate: new DateTime($endDateString),
             isMatched: $campaignData['isMatched'],
             name: $title,

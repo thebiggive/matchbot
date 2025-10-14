@@ -292,6 +292,36 @@ class DonationService
 
         $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
 
+        // Based on new confirmation token
+        $newPaymentMethodType = $paymentMethodPreview->card !== null ? 'card' : 'pay_by_bank';
+
+        // Check if PaymentIntent has a payment_method of a different type
+        /** @var string|null $paymentMethodId */
+        $paymentMethodId = $paymentIntent->payment_method ?? null;
+        if ($paymentMethodId !== null) {
+            $paymentMethod = $this->stripe->retrievePaymentMethod(
+                $donation->getPspCustomerId() ?? throw new \LogicException('Missing customer ID'),
+                StripePaymentMethodId::of($paymentMethodId),
+            );
+            $currentPaymentMethodType = $paymentMethod->type;
+
+            if ($currentPaymentMethodType !== $newPaymentMethodType) {
+                $this->logger->info(sprintf(
+                    'Donation UUID %s: Unsetting payment_method from PaymentIntent %s due to type change from %s to %s',
+                    $donation->getUuid(),
+                    $paymentIntentId,
+                    $currentPaymentMethodType,
+                    $newPaymentMethodType
+                ));
+
+                // Unset the payment_method to allow confirming with a different type. We used the new preview for
+                // `application_fee_amount` update above so don't need to repeat that.
+                $this->stripe->updatePaymentIntent($paymentIntentId, ['payment_method' => null]);
+
+                $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
+            }
+        }
+
         if ($confirmationTokenSetupFutureUsage === null && $paymentIntent->setup_future_usage !== null) {
             // Replaces $transactionId on the Donation too – which e.g. Confirm should flush shortly.
             // It's not allowed to un-set future usage on a payment intent by Stripe's API, but the donor

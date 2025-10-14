@@ -14,7 +14,6 @@ use MatchBot\Application\Commands\ExpirePendingMandates;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
 use MatchBot\Application\Commands\MergeOpenApiDocs;
-use MatchBot\Application\Commands\PatchFunds8Oct;
 use MatchBot\Application\Commands\PullIndividualCampaignFromSF;
 use MatchBot\Application\Commands\PullMetaCampaignFromSF;
 use MatchBot\Application\Commands\PushDailyFundTotals;
@@ -56,7 +55,6 @@ $commands = array_map($psr11App->get(...), [
     ExpirePendingMandates::class,
     HandleOutOfSyncFunds::class,
     MergeOpenApiDocs::class,
-    PatchFunds8Oct::class,
     PullIndividualCampaignFromSF::class,
     PullMetaCampaignFromSF::class,
     PushDailyFundTotals::class,
