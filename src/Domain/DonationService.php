@@ -297,7 +297,7 @@ class DonationService
 
         // Check if PaymentIntent has a payment_method of a different type
         /** @var string|null $paymentMethodId */
-        $paymentMethodId = $paymentIntent->payment_method;
+        $paymentMethodId = $paymentIntent->payment_method ?? null;
         if ($paymentMethodId !== null) {
             $paymentMethod = $this->stripe->retrievePaymentMethod(
                 $donation->getPspCustomerId() ?? throw new \LogicException('Missing customer ID'),
