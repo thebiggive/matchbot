@@ -28,8 +28,8 @@ final class Version20251015143752 extends AbstractMigration
                 d1.donorHomePostcode = d2.donorHomePostcode,
                 d1.salesforcePushStatus =  'pending-update'
             WHERE d1.transactionId = 'pi_3SGGPqKkGuKkxwBN0Ii4G0Fx'
+            LIMIT 1
         EOT);
-
     }
 
     public function down(Schema $schema): void
