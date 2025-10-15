@@ -1876,12 +1876,17 @@ class Donation extends SalesforceWriteProxy
             ->that($this->tbgComms)->notNull('Missing tbgComms preference')
             ->that($this->charityComms)->notNull('Missing charityComms preference')
             ->that($this->donationStatus, 'donationStatus')
-            ->that($this->getFundingWithdrawalTotalAsObject()->amountInPence, 'matchedAmount')->greaterOrEqualThan($this->expectedMatchAmount->amountInPence)
+            ->that($this->hasExpectedMatchingReserved(), 'matchedAmount')
             ->that($this->donationStatus)->inArray(
                 [DonationStatus::Pending, DonationStatus::PreAuthorized],
                 "Donation status is '{$this->donationStatus->value}', must be " .
                 "'Pending' or 'PreAuthorized' to confirm payment"
             );
+    }
+
+    public function hasExpectedMatchingReserved(): bool
+    {
+        return $this->getFundingWithdrawalTotalAsObject()->amountInPence >= $this->expectedMatchAmount->amountInPence;
     }
 
     /**
