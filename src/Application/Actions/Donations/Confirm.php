@@ -104,6 +104,19 @@ EOF
 
         \assert($paymentMethodId !== ""); // required to call updatePaymentMethodBillingDetail
 
+        if (!$donation->hasExpectedMatchingReserved()) {
+            $this->entityManager->rollback();
+            $this->logger->warning(sprintf(
+                'Donation %s does not have expected match funds reserved at confirmation',
+                $donation->getUuid(),
+            ));
+            return new JsonResponse([
+                'error' => [
+                    'message' => 'Donation does not have expected match funds reserved',
+                    'code' => 'donation-no-match-funds-reserved',
+                ],
+            ], 400);
+        }
 
         // AssertIsReadyToConfirm is going to check that the donation has all the match funds expected. We aquire a lock to make sure those funds
         // can't be released after we've checked.
