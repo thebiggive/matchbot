@@ -207,11 +207,6 @@ class TakeRegularGivingDonations extends LockingCommand
                 "
             );
 
-            if ($donation->getDonorId()?->equals(PersonId::of('1f08cce7-a6a7-63dc-946f-2f38cdddb3ea'))) {
-                $io->writeln("Skipping donation {$donation->getUuid()} while we confirm donor's intention");
-                continue;
-            }
-
             $this->reportableEventHappened = true; // Only for those not skipped above.
 
             try {
