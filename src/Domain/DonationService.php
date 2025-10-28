@@ -1060,13 +1060,14 @@ class DonationService
     }
 
     /**
+     * Replaces $transactionId on the Donation too – which e.g. Confirm should flush shortly.
+     * It's not allowed to un-set future usage on a payment intent by Stripe's API, but the donor
+     * is allowed to change their mind about saving a 2nd card.
+     *
      * @throws RegularGivingDonationTooOldToCollect
      */
     private function replacePaymentIntent(Donation $donation, string $paymentIntentId): string
     {
-        // Replaces $transactionId on the Donation too – which e.g. Confirm should flush shortly.
-        // It's not allowed to un-set future usage on a payment intent by Stripe's API, but the donor
-        // is allowed to change their mind about saving a 2nd card.
         $this->logger->info(sprintf(
             'Donation UUID %s: Replacing payment intent %s in order to respect newly null setup choice',
             $donation->getUuid(),
