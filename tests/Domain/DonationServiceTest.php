@@ -15,6 +15,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\MandateNotActive;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
@@ -344,8 +345,11 @@ class DonationServiceTest extends TestCase
      * Not attempting to cover all possible variations here, just one example of confirming via the
      * \MatchBot\Domain\DonationService::confirmOnSessionDonation . Details of the fee calcuations are
      * tested directly against the Calculator class.
+     *
+     * @testWith ["succeeded", false]
+     *           ["any_other_status", true]
      */
-    public function testItConfirmsOnSessionUKVisaDonationChargingAppropriateFee(): void
+    public function testItConfirmsOnSessionUKVisaDonationChargingAppropriateFee(string $paymentIntentStatus, bool $shouldThrow): void
     {
         $confirmationTokenId = StripeConfirmationTokenId::of('ctoken_xyz');
         $paymentIntentId = 'payment_intent_id';
@@ -386,7 +390,7 @@ class DonationServiceTest extends TestCase
         ])->shouldBeCalledOnce();
 
         $paymentIntent = new PaymentIntent($paymentIntentId);
-        $paymentIntent->status = PaymentIntent::STATUS_SUCCEEDED;
+        $paymentIntent->status = $paymentIntentStatus;
         $paymentIntent->setup_future_usage = PaymentIntent::SETUP_FUTURE_USAGE_ON_SESSION;
 
         $this->stripeProphecy->confirmPaymentIntent($paymentIntentId, [
@@ -399,6 +403,10 @@ class DonationServiceTest extends TestCase
         $this->stripeProphecy->retrievePaymentIntent($paymentIntentId)
             ->willReturn($paymentIntent)
             ->shouldBeCalledOnce();
+
+        if ($shouldThrow) {
+            $this->expectException(PaymentIntentNotSucceeded::class);
+        }
 
         // act
         $this->getDonationService()->confirmOnSessionDonation(
