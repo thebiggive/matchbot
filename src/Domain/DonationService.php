@@ -300,8 +300,8 @@ class DonationService
             $paymentIntent = $this->updatePaymentMethodFromStripe(
                 donation: $donation,
                 paymentMethodId: $paymentMethodId,
-                paymentIntentId: $paymentIntentId,
                 paymentMethodPreview: $paymentMethodPreview,
+                paymentIntentId: $paymentIntentId,
                 paymentIntent: $paymentIntent
             );
         }
@@ -318,12 +318,7 @@ class DonationService
             ]
         );
 
-        if ($updatedIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
-            throw new PaymentIntentNotSucceeded(
-                $updatedIntent,
-                "Payment Intent not succeded, status is {$updatedIntent->status}",
-            );
-        }
+        $this->throwIfUnsuccessful($updatedIntent);
 
         return $updatedIntent;
     }
@@ -1067,7 +1062,7 @@ class DonationService
     /**
      * @throws RegularGivingDonationTooOldToCollect
      */
-    public function replacePaymentIntent(Donation $donation, ?string $paymentIntentId): string
+    private function replacePaymentIntent(Donation $donation, string $paymentIntentId): string
     {
         // Replaces $transactionId on the Donation too – which e.g. Confirm should flush shortly.
         // It's not allowed to un-set future usage on a payment intent by Stripe's API, but the donor
@@ -1137,5 +1132,18 @@ class DonationService
             $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
         }
         return $paymentIntent;
+    }
+
+    /**
+     * @throws PaymentIntentNotSucceeded
+     */
+    public function throwIfUnsuccessful(PaymentIntent $intent): void
+    {
+        if ($intent->status !== PaymentIntent::STATUS_SUCCEEDED) {
+            throw new PaymentIntentNotSucceeded(
+                $intent,
+                "Payment Intent not succeded, status is {$intent->status}",
+            );
+        }
     }
 }
