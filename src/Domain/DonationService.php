@@ -288,6 +288,11 @@ class DonationService
         $paymentIntentId = $donation->getTransactionId();
         Assertion::notNull($paymentIntentId);
 
+        Assertion::false(
+            $donation->getDonationStatus() === DonationStatus::PreAuthorized,
+            'A pre-authed donation would not be on-session'
+        );
+        // following line has no mutation coverage but I think its fine to delete anyway given new assertion above.
         $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
 
         $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
