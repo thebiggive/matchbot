@@ -41,6 +41,7 @@ use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\Exception\RateLimitException;
 use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
@@ -271,12 +272,7 @@ class DonationService
          */
         $paymentMethodPreview = $confirmationToken->payment_method_preview;
 
-        try {
-            $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
-        } catch (RateLimitExceededException $exception) {
-            $this->logger->warning($exception->__toString());
-            throw $exception;
-        }
+        $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
 
         $this->updateDonationFeesFromConfirmationToken($donation, $confirmationToken);
 
@@ -1094,7 +1090,12 @@ class DonationService
                 $stripeCustomerId = $donation->getPspCustomerId()?->stripeCustomerId;
                 \assert(\is_string($stripeCustomerId));
 
-                $this->confirmRateLimitFactory->create($stripeCustomerId)->consume(1)->ensureAccepted();
+                try {
+                    $this->confirmRateLimitFactory->create($stripeCustomerId)->consume(1)->ensureAccepted();
+                } catch (RateLimitExceededException $e) {
+                    $this->logger->warning($e->__toString());
+                    throw $e;
+                }
 
                 /** @psalm-suppress InvalidNamedArgument - confused about why I'm getting error 'Parameter $options does not exist on function Redis::set (see https://psalm.dev/238)'
                  * - it seems to exist according to the phpstorm stub.
