@@ -41,6 +41,7 @@ use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\Exception\RateLimitException;
 use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
@@ -271,12 +272,7 @@ class DonationService
          */
         $paymentMethodPreview = $confirmationToken->payment_method_preview;
 
-        try {
-            $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
-        } catch (RateLimitExceededException $exception) {
-            $this->logger->warning($exception->__toString());
-            throw $exception;
-        }
+        $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
 
         $this->updateDonationFeesFromConfirmationToken($donation, $confirmationToken);
 
@@ -288,70 +284,30 @@ class DonationService
         $paymentIntentId = $donation->getTransactionId();
         Assertion::notNull($paymentIntentId);
 
+        Assertion::false(
+            $donation->getDonationStatus() === DonationStatus::PreAuthorized,
+            'A pre-authed donation would not be on-session'
+        );
+        // following line has no mutation coverage but I think its fine to delete anyway given new assertion above.
         $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
 
         $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
-
-        // Based on new confirmation token
-        $newPaymentMethodType = $paymentMethodPreview->card !== null ? 'card' : 'pay_by_bank';
 
         // Check if PaymentIntent has a payment_method of a different type
         /** @var string|null $paymentMethodId */
         $paymentMethodId = $paymentIntent->payment_method ?? null;
         if ($paymentMethodId !== null) {
-            $paymentMethod = null;
-            try {
-                $paymentMethod = $this->stripe->retrievePaymentMethod(
-                    $donation->getPspCustomerId() ?? throw new \LogicException('Missing customer ID'),
-                    StripePaymentMethodId::of($paymentMethodId),
-                );
-            } catch (ApiErrorException $exception) { // e.g. a 404 from a detached-by-Stripe.js method is an InvalidRequestException.
-                $this->logger->info(sprintf(
-                    'Donation UUID %s: Could not retrieve probably detached payment method %s: %s',
-                    $donation->getUuid(),
-                    $paymentMethodId,
-                    $exception->getMessage()
-                ));
-            }
-
-            $currentPaymentMethodType = $paymentMethod?->type;
-
-            if ($currentPaymentMethodType !== null && $currentPaymentMethodType !== $newPaymentMethodType) {
-                $this->logger->info(sprintf(
-                    'Donation UUID %s: Unsetting payment_method from PaymentIntent %s due to type change from %s to %s',
-                    $donation->getUuid(),
-                    $paymentIntentId,
-                    $currentPaymentMethodType,
-                    $newPaymentMethodType
-                ));
-
-                // Unset the payment_method to allow confirming with a different type. We used the new preview for
-                // `application_fee_amount` update above so don't need to repeat that.
-                $this->stripe->updatePaymentIntent($paymentIntentId, ['payment_method' => null]);
-
-                $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
-            }
+            $paymentIntent = $this->updatePaymentMethodFromStripe(
+                donation: $donation,
+                paymentMethodId: $paymentMethodId,
+                paymentMethodPreview: $paymentMethodPreview,
+                paymentIntentId: $paymentIntentId,
+                paymentIntent: $paymentIntent
+            );
         }
 
         if ($confirmationTokenSetupFutureUsage === null && $paymentIntent->setup_future_usage !== null) {
-            // Replaces $transactionId on the Donation too – which e.g. Confirm should flush shortly.
-            // It's not allowed to un-set future usage on a payment intent by Stripe's API, but the donor
-            // is allowed to change their mind about saving a 2nd card.
-            $this->logger->info(sprintf(
-                'Donation UUID %s: Replacing payment intent %s in order to respect newly null setup choice',
-                $donation->getUuid(),
-                $paymentIntentId,
-            ));
-            $this->createAndAssociatePaymentIntent($donation);
-
-            $paymentIntentId = $donation->getTransactionId();
-            \assert($paymentIntentId !== null);
-
-            $this->logger->info(sprintf(
-                'Donation UUID %s: New payment intent ID %s associated',
-                $donation->getUuid(),
-                $paymentIntentId,
-            ));
+            $paymentIntentId = $this->replacePaymentIntent($donation, $paymentIntentId);
         }
 
         $updatedIntent = $this->stripe->confirmPaymentIntent(
@@ -362,12 +318,7 @@ class DonationService
             ]
         );
 
-        if ($updatedIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
-            throw new PaymentIntentNotSucceeded(
-                $updatedIntent,
-                "Payment Intent not succeded, status is {$updatedIntent->status}",
-            );
-        }
+        $this->throwIfUnsuccessful($updatedIntent);
 
         return $updatedIntent;
     }
@@ -1089,7 +1040,12 @@ class DonationService
                 $stripeCustomerId = $donation->getPspCustomerId()?->stripeCustomerId;
                 \assert(\is_string($stripeCustomerId));
 
-                $this->confirmRateLimitFactory->create($stripeCustomerId)->consume(1)->ensureAccepted();
+                try {
+                    $this->confirmRateLimitFactory->create($stripeCustomerId)->consume(1)->ensureAccepted();
+                } catch (RateLimitExceededException $e) {
+                    $this->logger->warning($e->__toString());
+                    throw $e;
+                }
 
                 /** @psalm-suppress InvalidNamedArgument - confused about why I'm getting error 'Parameter $options does not exist on function Redis::set (see https://psalm.dev/238)'
                  * - it seems to exist according to the phpstorm stub.
@@ -1100,6 +1056,95 @@ class DonationService
                     options: ['EX' => 60 * 60 * 2] // keep card fingerprint for two hours - attempting to use it again after that will count towards limit.
                 );
             }
+        }
+    }
+
+    /**
+     * Replaces $transactionId on the Donation too – which e.g. Confirm should flush shortly.
+     * It's not allowed to un-set future usage on a payment intent by Stripe's API, but the donor
+     * is allowed to change their mind about saving a 2nd card.
+     *
+     * @throws RegularGivingDonationTooOldToCollect
+     */
+    private function replacePaymentIntent(Donation $donation, string $paymentIntentId): string
+    {
+        $this->logger->info(sprintf(
+            'Donation UUID %s: Replacing payment intent %s in order to respect newly null setup choice',
+            $donation->getUuid(),
+            $paymentIntentId,
+        ));
+
+        $this->createAndAssociatePaymentIntent($donation);
+
+        $paymentIntentId = $donation->getTransactionId();
+        \assert($paymentIntentId !== null);
+
+        $this->logger->info(sprintf(
+            'Donation UUID %s: New payment intent ID %s associated',
+            $donation->getUuid(),
+            $paymentIntentId,
+        ));
+
+        return $paymentIntentId;
+    }
+
+    /**
+     * @param StripeObject&object{
+     * card: null|object{country: string, brand: string, fingerprint: string},
+     * pay_by_bank: null|StripeObject
+     * } $paymentMethodPreview $paymentMethodPreview
+     * /
+     */
+    public function updatePaymentMethodFromStripe(Donation $donation, string $paymentMethodId, StripeObject $paymentMethodPreview, string $paymentIntentId, PaymentIntent $paymentIntent): PaymentIntent
+    {
+        // Based on new confirmation token
+        $newPaymentMethodType = $paymentMethodPreview->card !== null ? 'card' : 'pay_by_bank';
+
+        $paymentMethod = null;
+        try {
+            $paymentMethod = $this->stripe->retrievePaymentMethod(
+                $donation->getPspCustomerId() ?? throw new \LogicException('Missing customer ID'),
+                StripePaymentMethodId::of($paymentMethodId),
+            );
+        } catch (ApiErrorException $exception) { // e.g. a 404 from a detached-by-Stripe.js method is an InvalidRequestException.
+            $this->logger->info(sprintf(
+                'Donation UUID %s: Could not retrieve probably detached payment method %s: %s',
+                $donation->getUuid(),
+                $paymentMethodId,
+                $exception->getMessage()
+            ));
+        }
+
+        $currentPaymentMethodType = $paymentMethod?->type;
+
+        if ($currentPaymentMethodType !== null && $currentPaymentMethodType !== $newPaymentMethodType) {
+            $this->logger->info(sprintf(
+                'Donation UUID %s: Unsetting payment_method from PaymentIntent %s due to type change from %s to %s',
+                $donation->getUuid(),
+                $paymentIntentId,
+                $currentPaymentMethodType,
+                $newPaymentMethodType
+            ));
+
+            // Unset the payment_method to allow confirming with a different type. We used the new preview for
+            // `application_fee_amount` update above so don't need to repeat that.
+            $this->stripe->updatePaymentIntent($paymentIntentId, ['payment_method' => null]);
+
+            $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
+        }
+        return $paymentIntent;
+    }
+
+    /**
+     * @throws PaymentIntentNotSucceeded
+     */
+    public function throwIfUnsuccessful(PaymentIntent $intent): void
+    {
+        if ($intent->status !== PaymentIntent::STATUS_SUCCEEDED) {
+            throw new PaymentIntentNotSucceeded(
+                $intent,
+                "Payment Intent not succeded, status is {$intent->status}",
+            );
         }
     }
 }
