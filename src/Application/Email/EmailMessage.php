@@ -32,6 +32,14 @@ readonly class EmailMessage
     /**
      * @param emailParams $params
      */
+    public static function donorRegularDonationFailed(EmailAddress $emailAddress, array $params): self
+    {
+        return new self('donor-regular-donation-failed-payment', $emailAddress, $params);
+    }
+
+    /**
+     * @param emailParams $params
+     */
     public static function donorDonationSuccess(EmailAddress $emailAddress, array $params): self
     {
         return new self('donor-donation-success', $emailAddress, $params);

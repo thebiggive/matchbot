@@ -46,6 +46,7 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\EmailVerificationTokenRepository;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
@@ -636,7 +637,8 @@ return function (ContainerBuilder $containerBuilder) {
                     donationNotifier: $c->get(DonationNotifier::class),
                     fundRepository: $c->get(FundRepository::class),
                     redis: $c->get(Redis::class),
-                    confirmRateLimitFactory: $confirmRateLimiterFactory
+                    confirmRateLimitFactory: $confirmRateLimiterFactory,
+                    regularGivingNotifier: $c->get(RegularGivingNotifier::class),
                 );
             },
 

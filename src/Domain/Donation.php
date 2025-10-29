@@ -1898,7 +1898,7 @@ class Donation extends SalesforceWriteProxy
         if (!($this->thisIsInDateRangeToConfirm($now))) {
             throw new RegularGivingDonationTooOldToCollect(
                 "Donation ID {$this->getId()} should have been collected at " .
-                "{$this->getPreAuthorizationDate()?->format('Y-m-d')}, will not at this time",
+                "{$this->getPreAuthorizationDate()?->format('Y-m-d')}, will not at this time of {$now->format('Y-m-d')}",
             );
         }
     }

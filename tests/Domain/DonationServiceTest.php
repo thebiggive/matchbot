@@ -29,6 +29,7 @@ use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
@@ -247,6 +248,7 @@ class DonationServiceTest extends TestCase
             fundRepository: $fundRepoProphecy->reveal(),
             redis: $redisProphecy->reveal(),
             confirmRateLimitFactory: $stubRateLimiter,
+            regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
         );
     }
 
@@ -290,6 +292,7 @@ class DonationServiceTest extends TestCase
             fundRepository: $fundRepoProphecy->reveal(),
             redis: $redisProphecy->reveal(),
             confirmRateLimitFactory: $rateLimiterFactory,
+            regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
         );
 
 
