@@ -21,7 +21,6 @@ final class Version20251029113008 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $pledgeSfIds = [
-            'a09WS00000DYM3SYAX',
             'a0AWS00000EO2LZ2A1',
             'a0AWS00000Ezf7q2AB',
             'a0AWS00000F5Am52AF',
@@ -70,7 +69,7 @@ final class Version20251029113008 extends AbstractMigration
         $this->addSql(<<<EOT
             UPDATE CampaignFunding SET amount = 0, amountAvailable = 0, updatedAt = NOW()
             WHERE fund_id IN (
-                SELECT id FROM Fund WHERE salesforceId IN (:pledgeSfIds)
+                SELECT id FROM Fund WHERE salesforceId IN (:pledgeSfIds) AND (fundType = 'pledge' OR fundType = 'topupPledge')
             );
         EOT,
             ['pledgeSfIds' => $pledgeSfIds],
