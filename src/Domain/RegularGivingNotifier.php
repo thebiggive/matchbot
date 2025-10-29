@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Email\EmailMessage;
+use MatchBot\Application\Environment;
 use MatchBot\Client\Mailer;
 use Psr\Clock\ClockInterface;
 
@@ -78,6 +79,10 @@ class RegularGivingNotifier
         $preAuthDate = $donation->getPreAuthorizationDate();
         Assertion::notNull($preAuthDate);
         $preAuthDate = $preAuthDate->setTimezone($this->tz);
+
+        if (! Environment::current()->isFeatureEnabledRegularGivingPaymentFailureNotification()) {
+            return;
+        }
 
         $this->mailer->send(EmailMessage::donorRegularDonationFailed(
             $donor->emailAddress,
