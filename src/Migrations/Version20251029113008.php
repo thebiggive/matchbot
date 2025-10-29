@@ -21,6 +21,7 @@ final class Version20251029113008 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $pledgeSfIds = [
+            'a09WS00000DYM3SYAX',
             'a0AWS00000EO2LZ2A1',
             'a0AWS00000Ezf7q2AB',
             'a0AWS00000F5Am52AF',
