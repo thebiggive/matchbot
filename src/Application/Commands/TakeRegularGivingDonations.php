@@ -56,9 +56,7 @@ class TakeRegularGivingDonations extends LockingCommand
         private Environment $environment,
         private LoggerInterface $logger,
         private RegularGivingService $mandateService,
-        private ChatterInterface $chatter,
-        private RegularGivingNotifier $regularGivingNotifier,
-        private \Psr\Clock\ClockInterface $clock,
+        private ChatterInterface $chatter
     ) {
         parent::__construct();
 

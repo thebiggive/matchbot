@@ -58,9 +58,6 @@ use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 class RegularGivingNotifierTest extends TestCase
 {
-    /** @var ObjectProphecy<DonationService> */
-    private ObjectProphecy $donationServiceProphecy;
-
     /** @var ObjectProphecy<Mailer> */
     private ObjectProphecy $mailerProphecy;
 
@@ -71,7 +68,9 @@ class RegularGivingNotifierTest extends TestCase
     private ObjectProphecy $stripeClientProphecy;
     private ClockInterface $clock;
     private RegularGivingNotifier $sut;
-    private $donorAccountRepositoryProphecy;
+
+    /** @var ObjectProphecy<DonorAccountRepository>  */
+    private ObjectProphecy $donorAccountRepositoryProphecy;
     private DonorAccount $donor;
 
     public function testItNotifiesOfNewDonationMandate(): void
@@ -115,7 +114,7 @@ class RegularGivingNotifierTest extends TestCase
     public function testItNotifiesOfChargeFailure(): void
     {
         $donor = $this->givenADonor();
-        list($campaign, $mandate, $firstDonation, $clock, $secondDonation) = $this->andGivenAnActivatedMandate($this->personId, $donor);
+        list($_campaign, $_mandate, $_firstDonation, $_clock, $secondDonation) = $this->andGivenAnActivatedMandate($this->personId, $donor);
 
         $this->thenThisRequestShouldBeSentToMailer(Argument::type(EmailMessage::class));
 
@@ -127,7 +126,7 @@ class RegularGivingNotifierTest extends TestCase
             'amount' => '£64.00',
         ]));
 
-        $this->whenAPreauthorizedDonationsChargeFails($secondDonation, $donor);
+        $this->whenAPreauthorizedDonationsChargeFails($secondDonation);
     }
 
     private function markDonationCollected(Donation $firstDonation, \DateTimeImmutable $collectionDate): void
@@ -186,7 +185,7 @@ class RegularGivingNotifierTest extends TestCase
     }
 
     /**
-     * @return list{Campaign, RegularGivingMandate, Donation, ClockInterface}
+     * @return list{Campaign, RegularGivingMandate, Donation, ClockInterface, Donation}
      */
     private function andGivenAnActivatedMandate(PersonId $personId, DonorAccount $donor): array
     {
@@ -243,7 +242,7 @@ class RegularGivingNotifierTest extends TestCase
     }
 
     /**
-     * @param EmailMessage|TypeToken<EmailMessage> $sendEmailCommand
+     * @param EmailMessage|TypeToken $sendEmailCommand
      */
     private function thenThisRequestShouldBeSentToMailer(EmailMessage|TypeToken $sendEmailCommand): void
     {
@@ -287,15 +286,21 @@ class RegularGivingNotifierTest extends TestCase
 
         $this->stripeClientProphecy = $this->prophesize(Stripe::class);
         $paymentMethod = new PaymentMethod();
-        $paymentMethod->card = new StripeObject();
-        $paymentMethod->card->brand = 'visa';
-        $paymentMethod->card->country = 'gb';
+
+        /** @psalm-suppress InvalidPropertyAssignmentValue */
+        $paymentMethod->card = new StripeObject(); // @phpstan-ignore assign.propertyType
+
+        /** @psalm-suppress UndefinedMagicPropertyAssignment */
+        $paymentMethod->card->brand = 'visa'; // @phpstan-ignore property.notFound
+
+        /** @psalm-suppress UndefinedMagicPropertyAssignment */
+        $paymentMethod->card->country = 'gb'; // @phpstan-ignore property.notFound
 
 
         $this->stripeClientProphecy->retrievePaymentMethod(Argument::any(), Argument::any())->willReturn($paymentMethod);
     }
 
-    private function whenAPreauthorizedDonationsChargeFails(Donation $secondDonation, DonorAccount $donor): void
+    private function whenAPreauthorizedDonationsChargeFails(Donation $secondDonation): void
     {
         $rateLimiterFactory = new RateLimiterFactory(['id' => 'test', 'policy' => 'no_limit'], new InMemoryStorage());
 

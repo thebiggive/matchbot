@@ -380,7 +380,7 @@ class DonationService
             $this->confirmDonationWithSavedPaymentMethod(donation: $donation, paymentMethodId: $paymentMethod, offSession: true);
         } catch (PaymentIntentNotSucceeded $exception) {
             $this->regularGivingNotifier->notifyCollectionFailed($donation, $this->clock->now());
-            $this->logger->warning('PaymentIntentNotSucceeded for donation ' . $donation->getUuid() . ', will notify donor: ' . $exception->getMessage());
+            $this->logger->warning('PaymentIntentNotSucceeded for donation ' . $donation->getUuid()->toString() . ', will notify donor: ' . $exception->getMessage());
         }
     }
 
