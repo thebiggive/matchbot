@@ -41,7 +41,6 @@ use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
-use Stripe\Exception\RateLimitException;
 use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
@@ -102,6 +101,7 @@ class DonationService
         private FundRepository $fundRepository,
         private \Redis $redis,
         private RateLimiterFactory $confirmRateLimitFactory,
+        private RegularGivingNotifier $regularGivingNotifier,
     ) {
     }
 
@@ -324,10 +324,13 @@ class DonationService
     }
 
     /**
-     * Trigger collection of funds from a pre-authorized donation associated with a regular giving mandate
-     * @throws PaymentIntentNotSucceeded
+     * Trigger collection of funds from a pre-authorized donation associated with a regular giving mandate.
+     *
+     * Where a charge fails ({@see PaymentIntentNotSucceeded}), emails the donor. They can typically amend payment
+     * details for a week or two to remedy it.
+     *
      * @throws RegularGivingCollectionEndPassed
-     * */
+     */
     public function confirmPreAuthorized(Donation $donation): void
     {
         $stripeAccountId = $donation->getPspCustomerId();
@@ -373,7 +376,12 @@ class DonationService
             );
         }
 
-        $this->confirmDonationWithSavedPaymentMethod(donation: $donation, paymentMethodId: $paymentMethod, offSession: true);
+        try {
+            $this->confirmDonationWithSavedPaymentMethod(donation: $donation, paymentMethodId: $paymentMethod, offSession: true);
+        } catch (PaymentIntentNotSucceeded $exception) {
+            $this->regularGivingNotifier->notifyCollectionFailed($donation, $this->clock->now());
+            $this->logger->warning('PaymentIntentNotSucceeded for donation ' . $donation->getUuid() . ', will notify donor: ' . $exception->getMessage());
+        }
     }
 
     /**

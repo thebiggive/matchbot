@@ -22,6 +22,7 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -111,6 +112,7 @@ class ConfirmTest extends TestCase
                 fundRepository: $this->createStub(FundRepository::class),
                 redis: $redisProphecy->reveal(),
                 confirmRateLimitFactory: $stubRateLimiter,
+                regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
             ),
             clock: new MockClock('2025-01-01'),
             lockFactory: $this->createStub(LockFactory::class)

@@ -9,8 +9,15 @@ use Psr\Clock\ClockInterface;
 
 class RegularGivingNotifier
 {
-    public function __construct(private readonly Mailer $mailer, private readonly ClockInterface $clock)
-    {
+    /** e.g. "29 October 2025, 11:47 GMT" */
+    public const string TIMESTAMP_FORMAT = 'j F Y, H:i T';
+    private \DateTimeZone $tz;
+    public function __construct(
+        private readonly Mailer $mailer,
+        private readonly DonorAccountRepository $donorAccountRepository,
+        private readonly ClockInterface $clock
+    ) {
+        $this->tz = new \DateTimeZone('Europe/London');
     }
 
     public function notifyNewMandateCreated(
@@ -28,8 +35,6 @@ class RegularGivingNotifier
         $signUpDate = $mandate->getActiveFrom();
         Assertion::notNull($signUpDate);
 
-        $tz = new \DateTimeZone('Europe/London');
-
         $this->mailer->send(EmailMessage::donorMandateConfirmation(
             $donorAccount->emailAddress,
             [
@@ -38,9 +43,9 @@ class RegularGivingNotifier
                 'campaignName' => $campaign->getCampaignName(),
                 'charityNumber' => $charity->getRegulatorNumber(),
                 'campaignThankYouMessage' => $campaign->getThankYouMessage(),
-                'signupDate' => $signUpDate->setTimezone($tz)->format('j F Y, H:i T'),
+                'signupDate' => $signUpDate->setTimezone($this->tz)->format(self::TIMESTAMP_FORMAT),
                 'schedule' => $mandate->describeSchedule(),
-                'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->setTimezone($tz)->format('j F Y'),
+                'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->setTimezone($this->tz)->format('j F Y'),
                 'amount' => $mandate->getDonationAmount()->format(),
                 'giftAidValue' => $mandate->getGiftAidAmount()->format(),
                 'totalIncGiftAid' => $mandate->totalIncGiftAid()->format(),
@@ -51,6 +56,38 @@ class RegularGivingNotifier
                     $campaign
                 )
             ]
+        ));
+    }
+
+
+    /**
+     * Sends an email to notify donor that a payment failed collecting for this regular giving donation.
+     *
+     * @param Donation $donation - must be pre-authorized and linked to a regular giving mandate, and therefore also have donor account.
+     */
+    public function notifyCollectionFailed(Donation $donation, \DateTimeImmutable $at): void
+    {
+        $mandate = $donation->getMandate();
+        Assertion::notNull($mandate);
+
+        $donor = $this->donorAccountRepository->findByPersonId(
+            $donation->getDonorId() ?? throw new \Exception('Donation missing Donor ID')
+        );
+        Assertion::notNull($donor);
+
+        $preAuthDate = $donation->getPreAuthorizationDate();
+        Assertion::notNull($preAuthDate);
+        $preAuthDate = $preAuthDate->setTimezone($this->tz);
+
+        $this->mailer->send(EmailMessage::donorRegularDonationFailed(
+            $donor->emailAddress,
+            [
+                'donorName' => $donor->donorName->fullName(),
+                'charityName' => $donation->getCampaign()->getCharity()->getName(),
+                'amount' => Money::fromNumericString($donation->getAmount(), $donation->currency())->format(),
+                'originalDonationPaymentDate' => $preAuthDate->format('j F Y'),
+                'collectionAttemptTime' => $at->setTimezone($this->tz)->format(self::TIMESTAMP_FORMAT),
+            ],
         ));
     }
 
