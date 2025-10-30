@@ -28,6 +28,7 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\MandateStatus;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
@@ -66,7 +67,7 @@ class RegularGivingNotifierTest extends TestCase
 
     /** @var ObjectProphecy<Stripe>  */
     private ObjectProphecy $stripeClientProphecy;
-    private ClockInterface $clock;
+    private MockClock $clock;
     private RegularGivingNotifier $sut;
 
     /** @var ObjectProphecy<DonorAccountRepository>  */
@@ -127,6 +128,28 @@ class RegularGivingNotifierTest extends TestCase
         ]));
 
         $this->whenAPreauthorizedDonationsChargeFails($secondDonation);
+    }
+
+    public function testItCancelsMandateWhenChargeFailsAfterAWeek(): void
+    {
+        $donor = $this->givenADonor();
+        list($_campaign, $mandate, $_firstDonation, $_clock, $secondDonation) = $this->andGivenAnActivatedMandate($this->personId, $donor);
+
+        $this->thenThisRequestShouldBeSentToMailer(Argument::type(EmailMessage::class));
+
+        $this->thenThisRequestShouldBeSentToMailer(EmailMessage::donorRegularDonationFailed($donor->emailAddress, [
+            'originalDonationPaymentDate' => '12 December 2024',
+            'collectionAttemptTime' => '22 December 2024, 00:00 GMT',
+            'charityName' => 'Charity Name',
+            'donorName' => 'Jenny Generous',
+            'amount' => '£64.00',
+        ]));
+
+        $this->whenAWeekPasses();
+
+        $this->whenAPreauthorizedDonationsChargeFails($secondDonation);
+
+        $this->thenTheMandateShouldBeCancelled($mandate);
     }
 
     private function markDonationCollected(Donation $firstDonation, \DateTimeImmutable $collectionDate): void
@@ -260,6 +283,20 @@ class RegularGivingNotifierTest extends TestCase
     ): void {
         //act
         $this->sut->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
+    }
+
+    public function thenTheMandateShouldBeCancelled(RegularGivingMandate $mandate): void
+    {
+        $this->assertSame($mandate->getStatus(), MandateStatus::Cancelled);
+    }
+
+    /**
+     * @return void
+     * @throws \DateMalformedStringException
+     */
+    public function whenAWeekPasses(): void
+    {
+        $this->clock->modify("+1 week");
     }
 
     #[\Override]

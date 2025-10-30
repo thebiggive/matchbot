@@ -327,7 +327,7 @@ class DonationService
      * Trigger collection of funds from a pre-authorized donation associated with a regular giving mandate.
      *
      * Where a charge fails ({@see PaymentIntentNotSucceeded}), emails the donor. They can typically amend payment
-     * details for a week or two to remedy it.
+     * details for a week or two to remedy it. If the charge fails after that week the mandate will be cancelled.
      *
      * @throws RegularGivingCollectionEndPassed
      */
@@ -381,6 +381,14 @@ class DonationService
         } catch (PaymentIntentNotSucceeded $exception) {
             $this->regularGivingNotifier->notifyCollectionFailed($donation, $this->clock->now());
             $this->logger->warning('PaymentIntentNotSucceeded for donation ' . $donation->getUuid()->toString() . ', will notify donor: ' . $exception->getMessage());
+
+            if ($donation->getPreAuthorizationDate() < $this->clock->now()->modify("-1 week")) {
+                $mandate->cancel(
+                    'Payment failed more than one week after pre-auth date for donation ' . $donation->getUuid()->toString(),
+                    $this->clock->now(),
+                    MandateCancellationType::CollectingAutomaticDonationRepeatFailed
+                );
+            }
         }
     }
 
