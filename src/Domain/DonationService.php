@@ -327,7 +327,7 @@ class DonationService
      * Trigger collection of funds from a pre-authorized donation associated with a regular giving mandate.
      *
      * Where a charge fails ({@see PaymentIntentNotSucceeded}), emails the donor. They can typically amend payment
-     * details for a week or two to remedy it. If the charge fails after that week the mandate will be cancelled.
+     * details for a week to remedy it. If the charge fails after that week the mandate will be cancelled.
      *
      * @throws RegularGivingCollectionEndPassed
      */
