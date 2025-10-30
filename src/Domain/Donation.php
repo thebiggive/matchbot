@@ -1913,7 +1913,7 @@ class Donation extends SalesforceWriteProxy
 
         return
             $preAuthorizationDate <= $now &&
-            $preAuthorizationDate->add(new \DateInterval('P1W')) >= $now;
+            $preAuthorizationDate->add(new \DateInterval('P1M')) >= $now;
     }
 
     public function getRefundedAt(): ?DateTimeImmutable

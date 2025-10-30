@@ -1108,11 +1108,11 @@ class DonationTest extends TestCase
             'current time same as preauth time' => [
                 new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2020-01-01'), true
             ],
-            'current time a week after preauth time' => [
-                new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2020-01-08'), true
+            'current time a month after preauth time' => [
+                new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2020-02-01'), true
             ],
-            'current time more than a week after preauth time' => [
-                new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2020-01-09'), false
+            'current time more than a month after preauth time' => [
+                new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2020-02-01T00:01'), false
             ],
         ];
     }
