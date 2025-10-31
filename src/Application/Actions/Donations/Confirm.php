@@ -203,7 +203,7 @@ EOF
 
             return new JsonResponse([
                 'error' => [
-                    'message' => 'Rate limited - please try try later',
+                    'message' => 'Blocked: Too many cards used',
                     'code' => 429
                 ],
             ], 402);
