@@ -8,6 +8,7 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Settings;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\Donation;
@@ -34,6 +35,8 @@ use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
 
 class Confirm extends Action
 {
+    private bool $enableNoReservationsMode;
+
     public function __construct(
         LoggerInterface $logger,
         private DonationRepository $donationRepository,
@@ -42,8 +45,10 @@ class Confirm extends Action
         private DonationService $donationService,
         private ClockInterface $clock,
         private LockFactory $lockFactory,
+        Settings $settings,
     ) {
         parent::__construct($logger);
+        $this->enableNoReservationsMode = $settings->enableNoReservationsMode;
     }
 
     public static function donationConfirmLockKey(Donation $donation): string
@@ -105,17 +110,24 @@ EOF
         \assert($paymentMethodId !== ""); // required to call updatePaymentMethodBillingDetail
 
         if (!$donation->hasExpectedMatchingReserved()) {
-            $this->entityManager->rollback();
-            $this->logger->warning(sprintf(
-                'Donation %s does not have expected match funds reserved at confirmation',
-                $donation->getUuid(),
-            ));
-            return new JsonResponse([
-                'error' => [
-                    'message' => 'Donation does not have expected match funds reserved',
-                    'code' => 'donation-no-match-funds-reserved',
-                ],
-            ], 400);
+            if ($this->enableNoReservationsMode) {
+                $this->logger->warning(sprintf(
+                    'Donation %s does not have expected match funds reserved at confirmation, but allowing confirmatin anyway in no reservations mode',
+                    $donation->getUuid(),
+                ));
+            } else {
+                $this->entityManager->rollback();
+                $this->logger->warning(sprintf(
+                    'Donation %s does not have expected match funds reserved at confirmation',
+                    $donation->getUuid(),
+                ));
+                return new JsonResponse([
+                    'error' => [
+                        'message' => 'Donation does not have expected match funds reserved',
+                        'code' => 'donation-no-match-funds-reserved',
+                    ],
+                ], 400);
+            }
         }
 
         // AssertIsReadyToConfirm is going to check that the donation has all the match funds expected. We aquire a lock to make sure those funds
