@@ -111,8 +111,8 @@ EOF
 
         if (!$donation->hasExpectedMatchingReserved()) {
             if ($this->enableNoReservationsMode) {
-                $this->logger->warning(sprintf(
-                    'Donation %s does not have expected match funds reserved at confirmation, but allowing confirmatin anyway in no reservations mode',
+                $this->logger->notice(sprintf(
+                    'Donation %s does not have expected match funds reserved at confirmation, but allowing confirmation anyway in no reservations mode',
                     $donation->getUuid(),
                 ));
             } else {
