@@ -656,7 +656,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return array<string, mixed>
      */
-    public function toFrontEndApiModel(): array
+    public function toFrontEndApiModel(bool $enableNoReservationsMode = false): array
     {
         $totalPaidByDonor = $this->getTotalPaidByDonor();
 
@@ -678,7 +678,7 @@ class Donation extends SalesforceWriteProxy
             'donationAmount' => (float) $this->getAmount(),
             'totalPaid' => is_null($totalPaidByDonor) ? null : (float)$totalPaidByDonor,
             'donationId' => $this->getUuid(),
-            'donationMatched' => $this->getCampaign()->isMatched(),
+            'donationMatched' => $this->getCampaign()->isMatched() && ! $enableNoReservationsMode,
             'emailAddress' => $this->getDonorEmailAddress()?->email,
             'firstName' => $this->getDonorFirstName(true),
             'giftAid' => $this->hasGiftAid(),

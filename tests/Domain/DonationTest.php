@@ -302,6 +302,12 @@ class DonationTest extends TestCase
         $this->assertSame(0.0, $amountMatchedByPledges);
     }
 
+    public function testInNoReservationsModePresentsAllDonationsAsIfUnmatched(): void
+    {
+        $donation = $this->getTestDonation();
+        $this->assertFalse($donation->toFrontEndApiModel(enableNoReservationsMode: true)['donationMatched']);
+    }
+
     public function testItSumsAmountsMatchedByTypeForCollectedDonation(): void
     {
         $donation = $this->getTestDonation(collected: true);

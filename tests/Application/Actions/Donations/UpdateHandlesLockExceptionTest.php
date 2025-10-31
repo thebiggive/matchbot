@@ -11,6 +11,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\Allocator;
+use MatchBot\Application\Settings;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -248,6 +249,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
                 confirmRateLimitFactory: $stubRateLimiter,
                 regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
             ),
+            settings: Settings::fromEnvVars(getenv()),
         );
     }
 }

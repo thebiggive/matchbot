@@ -10,6 +10,7 @@ use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\Allocator;
+use MatchBot\Application\Settings;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -115,7 +116,8 @@ class ConfirmTest extends TestCase
                 regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
             ),
             clock: new MockClock('2025-01-01'),
-            lockFactory: $this->createStub(LockFactory::class)
+            lockFactory: $this->createStub(LockFactory::class),
+            settings: Settings::fromEnvVars(\getenv()),
         );
     }
 
