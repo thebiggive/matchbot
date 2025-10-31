@@ -59,12 +59,6 @@ class Settings
     public array $friendlyCaptchaSettings;
 
     /**
-     * Whether to skip the usual match-fund reservation process and instead run donation matching on a best-effort
-     * basis only.
-     */
-    public bool $enableNoReservationsMode;
-
-    /**
      * @param array<string, string> $env
      */
     private function __construct(array $env)
@@ -93,10 +87,6 @@ class Settings
         ];
 
         $this->displayErrorDetails = ($appEnv === 'local');
-
-        $this->enableNoReservationsMode = \strtoupper(
-            $this->getStringEnv($env, 'ENABLE_NO_RESERVATIONS_MODE', throwIfMissing: false)
-            ) === 'TRUE';
 
         $this->doctrine = [
             // if true, metadata caching is forcefully disabled
