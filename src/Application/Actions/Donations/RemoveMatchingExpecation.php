@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Settings;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -25,12 +26,16 @@ use Symfony\Component\Messenger\MessageBusInterface;
  */
 class RemoveMatchingExpecation extends Action
 {
+    private bool $enableNoReservationsMode;
+
     public function __construct(
         LoggerInterface $logger,
         private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
+        Settings $settings,
     ) {
         parent::__construct($logger);
+        $this->enableNoReservationsMode = $settings->enableNoReservationsMode;
     }
 
     /**
@@ -65,7 +70,7 @@ class RemoveMatchingExpecation extends Action
 
         return new JsonResponse([
             'status' => 'success',
-            'donation' => $donation->toFrontEndApiModel(),
+            'donation' => $donation->toFrontEndApiModel($this->enableNoReservationsMode),
         ]);
     }
 }

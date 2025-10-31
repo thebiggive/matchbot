@@ -15,6 +15,7 @@ use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Application\Matching\DbErrorPreventedMatch;
+use MatchBot\Application\Settings;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
@@ -33,13 +34,17 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
+    private bool $enableNoReservationsMode;
+
     public function __construct(
         private DonationService $donationService,
         private SerializerInterface $serializer,
         LoggerInterface $logger,
         private Stripe $stripe,
+        Settings $settings,
     ) {
         parent::__construct($logger);
+        $this->enableNoReservationsMode = $settings->enableNoReservationsMode;
     }
 
     /**
@@ -194,7 +199,7 @@ class Create extends Action
         $customerSession = $this->stripe->createCustomerSession($stripeCustomerId);
 
         $data = new DonationCreatedResponse(
-            donation: $donation->toFrontEndApiModel(),
+            donation: $donation->toFrontEndApiModel($this->enableNoReservationsMode),
             jwt: DonationToken::create($donation->getUuid()->toString()),
             stripeSessionSecret: $customerSession->client_secret,
         );

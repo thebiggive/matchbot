@@ -15,6 +15,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels;
 use MatchBot\Application\LazyAssertionException;
+use MatchBot\Application\Settings;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
@@ -49,6 +50,8 @@ class Update extends Action
 {
     private const int MAX_UPDATE_RETRY_COUNT = 4;
 
+    private bool $enableNoReservationsMode;
+
     #[Pure]
     public function __construct(
         private DonationRepository $donationRepository,
@@ -58,8 +61,10 @@ class Update extends Action
         LoggerInterface $logger,
         private ClockInterface $clock,
         private DonationService $donationService,
+        Settings $settings,
     ) {
         parent::__construct($logger);
+        $this->enableNoReservationsMode = $settings->enableNoReservationsMode;
     }
 
     /**
@@ -194,7 +199,7 @@ class Update extends Action
                         return $this->respond($response, new ActionPayload(500, null, $error));
                     }
                     $this->entityManager->commit();
-                    return $this->respondWithData($response, $donation->toFrontEndApiModel());
+                    return $this->respondWithData($response, $donation->toFrontEndApiModel($this->enableNoReservationsMode));
                 }
 
                 return $this->addData($donation, $donationData, $args, $response, $request);
@@ -496,7 +501,7 @@ class Update extends Action
         $this->entityManager->commit();
 
 
-        return $this->respondWithData($response, $donation->toFrontEndApiModel());
+        return $this->respondWithData($response, $donation->toFrontEndApiModel($this->enableNoReservationsMode));
     }
 
 
