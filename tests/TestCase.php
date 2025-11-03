@@ -14,6 +14,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationSequenceNumber;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\MetaCampaign;
@@ -454,7 +455,9 @@ class TestCase extends PHPUnitTestCase
         ?DonorName $donorName = null,
         bool $collected = false,
         ?string $transferId = null,
+        ?int $mandateSequenceNumber = null,
     ): Donation {
+
         $donation = new Donation(
             amount: $amount,
             currencyCode: $currencyCode,
@@ -469,7 +472,7 @@ class TestCase extends PHPUnitTestCase
             countryCode: null,
             tipAmount: $tipAmount,
             mandate: $regularGivingMandate,
-            mandateSequenceNumber: null,
+            mandateSequenceNumber: is_int($mandateSequenceNumber) ? DonationSequenceNumber::of($mandateSequenceNumber) : null,
             giftAid: $giftAid,
             tipGiftAid: null,
             homeAddress: null,

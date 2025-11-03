@@ -24,6 +24,7 @@ use MatchBot\Domain\FundType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
@@ -279,9 +280,32 @@ class DonationTest extends TestCase
                 'stripePayoutId' => 'po_some_payout_id',
                 'paidOutAt' => '2025-05-21T02:17:46+01:00',
                 'payoutSuccessful' => true,
+                'isOffSession' => false,
             ],
             $donation->toSFApiModel()
         );
+    }
+
+    public function testNonRegularGivingDonationsAreNotOffSession(): void
+    {
+        $donation = $this->getTestDonation();
+
+        $this->assertFalse($donation->isOffSession());
+    }
+
+    public function testRegularGivingFirstDonationsAreNotOffSession(): void
+    {
+        $donation = $this->getTestDonation(isRegularGiving: true, mandateSequenceNumber: 1);
+
+
+        $this->assertFalse($donation->isOffSession());
+    }
+
+    public function testRegularGivingSecondDonationsAreOffSession(): void
+    {
+        $donation = $this->getTestDonation(isRegularGiving: true, mandateSequenceNumber: 2);
+
+        $this->assertTrue($donation->isOffSession());
     }
 
     public function testAmountMatchedByChampionDefaultsToZero(): void

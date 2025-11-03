@@ -632,6 +632,7 @@ class Donation extends SalesforceWriteProxy
             'stripePayoutId' => $this->stripePayoutId,
             'paidOutAt' => $this->paidOutAt?->format(DateTimeInterface::ATOM),
             'payoutSuccessful' => $this->payoutSuccessful,
+            'isOffSession' => $this->isOffSession(),
         ];
 
         // As of mid 2024 only the actual donate frontend gets this value, to avoid
@@ -2096,5 +2097,20 @@ class Donation extends SalesforceWriteProxy
     {
         $url = Environment::current()->publicDonateURLPrefix() . 'thanks/' . $this->uuid->toString();
         return ($this->paymentMethodType === PaymentMethodType::PayByBank) ? "$url?from=bank" : $url;
+    }
+
+    /**
+     * Indicates that the donation was made without the simultaneous involvmenet of the donor at time of collection,
+     * i.e. it's a repeat payments from a regular giving madnate.
+     */
+    public function isOffSession(): bool
+    {
+        if (! $this->isRegularGiving()) {
+            return false;
+        }
+
+        \assert(\is_int($this->mandateSequenceNumber));
+
+        return $this->mandateSequenceNumber > 1;
     }
 }
