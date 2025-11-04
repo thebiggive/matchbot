@@ -51,6 +51,18 @@ class FundingWithdrawal extends Model
     }
 
     /**
+     * Ensure the parent Donation is marked updated whenever a withdrawal changes, so polling can rely on Donation only.
+     *
+     * @psalm-suppress PossiblyUnusedMethod - called by ORM
+     */
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function touchParentDonation(): void
+    {
+        $this->donation->updatedNow();
+    }
+
+    /**
      * @return numeric-string
      */
     public function getAmount(): string
