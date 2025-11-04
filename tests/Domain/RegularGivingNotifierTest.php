@@ -3,20 +3,32 @@
 namespace MatchBot\Tests\Domain;
 
 use Doctrine\Common\Collections\Collection;
-use MatchBot\Application\Assertion;
+use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Matching\Adapter as MatchingAdapter;
+use MatchBot\Application\Matching\Allocator;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Client\Mailer;
+use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\DayOfMonth;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationNotifier;
+use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationSequenceNumber;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccount;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\MandateStatus;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
@@ -26,12 +38,24 @@ use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
+use PharIo\Manifest\Email;
+use PhpParser\Node\Arg;
 use Prophecy\Argument;
+use Prophecy\Argument\Token\TypeToken;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Clock\ClockInterface;
-use Ramsey\Uuid\Uuid;
+use Psr\Log\LoggerInterface;
+use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
+use Stripe\StripeObject;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 class RegularGivingNotifierTest extends TestCase
 {
@@ -40,6 +64,15 @@ class RegularGivingNotifierTest extends TestCase
 
     /** @var PersonId  */
     private PersonId $personId;
+
+    /** @var ObjectProphecy<Stripe>  */
+    private ObjectProphecy $stripeClientProphecy;
+    private MockClock $clock;
+    private RegularGivingNotifier $sut;
+
+    /** @var ObjectProphecy<DonorAccountRepository>  */
+    private ObjectProphecy $donorAccountRepositoryProphecy;
+    private DonorAccount $donor;
 
     public function testItNotifiesOfNewDonationMandate(): void
     {
@@ -77,6 +110,46 @@ class RegularGivingNotifierTest extends TestCase
         ));
 
         $this->whenWeNotifyThemThatTheMandateWasCreated($clock, $mandate, $donor, $campaign, $firstDonation);
+    }
+
+    public function testItNotifiesOfChargeFailure(): void
+    {
+        $donor = $this->givenADonor();
+        list($_campaign, $_mandate, $_firstDonation, $_clock, $secondDonation) = $this->andGivenAnActivatedMandate($this->personId, $donor);
+
+        $this->thenThisRequestShouldBeSentToMailer(Argument::type(EmailMessage::class));
+
+        $this->thenThisRequestShouldBeSentToMailer(EmailMessage::donorRegularDonationFailed($donor->emailAddress, [
+            'originalDonationPaymentDate' => '12 December 2024',
+            'collectionAttemptTime' => '15 December 2024, 00:00 GMT',
+            'charityName' => 'Charity Name',
+            'donorName' => 'Jenny Generous',
+            'amount' => '£64.00',
+        ]));
+
+        $this->whenAPreauthorizedDonationsChargeFails($secondDonation);
+    }
+
+    public function testItCancelsMandateWhenChargeFailsAfterAWeek(): void
+    {
+        $donor = $this->givenADonor();
+        list($_campaign, $mandate, $_firstDonation, $_clock, $secondDonation) = $this->andGivenAnActivatedMandate($this->personId, $donor);
+
+        $this->thenThisRequestShouldBeSentToMailer(Argument::type(EmailMessage::class));
+
+        $this->thenThisRequestShouldBeSentToMailer(EmailMessage::donorRegularDonationFailed($donor->emailAddress, [
+            'originalDonationPaymentDate' => '12 December 2024',
+            'collectionAttemptTime' => '22 December 2024, 00:00 GMT',
+            'charityName' => 'Charity Name',
+            'donorName' => 'Jenny Generous',
+            'amount' => '£64.00',
+        ]));
+
+        $this->whenAWeekPasses();
+
+        $this->whenAPreauthorizedDonationsChargeFails($secondDonation);
+
+        $this->thenTheMandateShouldBeCancelled($mandate);
     }
 
     private function markDonationCollected(Donation $firstDonation, \DateTimeImmutable $collectionDate): void
@@ -120,18 +193,22 @@ class RegularGivingNotifierTest extends TestCase
 
     private function givenADonor(): DonorAccount
     {
-        $donor = new DonorAccount(
+        $this->donor = new DonorAccount(
             uuid: $this->personId,
             emailAddress: EmailAddress::of('donor@example.com'),
             donorName: DonorName::of('Jenny', 'Generous'),
             stripeCustomerId: StripeCustomerId::of('cus_anyid'),
         );
+        $donor = $this->donor;
         $donor->setHomeAddressLine1('pretty how town');
+        $donor->setBillingCountry(Country::GB());
+        $donor->setBillingPostcode('SW1A 1AA');
+        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_abc'));
         return $donor;
     }
 
     /**
-     * @return list{Campaign, RegularGivingMandate, Donation, ClockInterface}
+     * @return list{Campaign, RegularGivingMandate, Donation, ClockInterface, Donation}
      */
     private function andGivenAnActivatedMandate(PersonId $personId, DonorAccount $donor): array
     {
@@ -175,10 +252,22 @@ class RegularGivingNotifierTest extends TestCase
 
         $clock = new MockClock('2024-12-01');
         $mandate->activate($clock->now());
-        return [$campaign, $mandate, $firstDonation, $clock];
+
+        $secondDonation = $mandate->createPreAuthorizedDonation(
+            DonationSequenceNumber::of(2),
+            $donor,
+            $campaign,
+        );
+
+        $secondDonation->setTransactionId('transaction_id');
+
+        return [$campaign, $mandate, $firstDonation, $clock, $secondDonation];
     }
 
-    private function thenThisRequestShouldBeSentToMailer(EmailMessage $sendEmailCommand): void
+    /**
+     * @param EmailMessage|TypeToken $sendEmailCommand
+     */
+    private function thenThisRequestShouldBeSentToMailer(EmailMessage|TypeToken $sendEmailCommand): void
     {
         $this->mailerProphecy->send(Argument::any())
             ->shouldBeCalledOnce()
@@ -192,17 +281,94 @@ class RegularGivingNotifierTest extends TestCase
         Campaign $campaign,
         Donation $firstDonation
     ): void {
-        $sut = new RegularGivingNotifier($this->mailerProphecy->reveal(), $clock);
-
         //act
-        $sut->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
+        $this->sut->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
+    }
+
+    public function thenTheMandateShouldBeCancelled(RegularGivingMandate $mandate): void
+    {
+        $this->assertSame($mandate->getStatus(), MandateStatus::Cancelled);
+    }
+
+    /**
+     * @return void
+     * @throws \DateMalformedStringException
+     */
+    public function whenAWeekPasses(): void
+    {
+        $this->clock->modify("+1 week");
     }
 
     #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
-        $this->mailerProphecy = $this->prophesize(Mailer::class);
         $this->personId = self::randomPersonId();
+
+        $this->clock = new MockClock('2024-12-01');
+        $this->mailerProphecy = $this->prophesize(Mailer::class);
+        $this->givenADonor();
+
+        $this->donorAccountRepositoryProphecy = $this->prophesize(DonorAccountRepository::class);
+
+        $this->donorAccountRepositoryProphecy->findByStripeIdOrNull(Argument::any())->willReturn($this->donor);
+        $this->donorAccountRepositoryProphecy->findByPersonId(Argument::any())->willReturn($this->donor);
+
+
+        $this->sut =  new RegularGivingNotifier(
+            $this->mailerProphecy->reveal(),
+            $this->donorAccountRepositoryProphecy->reveal(),
+            $this->clock,
+        );
+
+        $this->stripeClientProphecy = $this->prophesize(Stripe::class);
+        $paymentMethod = new PaymentMethod();
+
+        /** @psalm-suppress InvalidPropertyAssignmentValue */
+        $paymentMethod->card = new StripeObject(); // @phpstan-ignore assign.propertyType
+
+        /** @psalm-suppress UndefinedMagicPropertyAssignment */
+        $paymentMethod->card->brand = 'visa'; // @phpstan-ignore property.notFound
+
+        /** @psalm-suppress UndefinedMagicPropertyAssignment */
+        $paymentMethod->card->country = 'gb'; // @phpstan-ignore property.notFound
+
+
+        $this->stripeClientProphecy->retrievePaymentMethod(Argument::any(), Argument::any())->willReturn($paymentMethod);
+    }
+
+    private function whenAPreauthorizedDonationsChargeFails(Donation $secondDonation): void
+    {
+        $rateLimiterFactory = new RateLimiterFactory(['id' => 'test', 'policy' => 'no_limit'], new InMemoryStorage());
+
+        $donationService = new DonationService(
+            $this->createStub(Allocator::class),
+            $this->createStub(DonationRepository::class),
+            $this->createStub(CampaignRepository::class),
+            $this->createStub(LoggerInterface::class),
+            $this->createStub(EntityManagerInterface::class),
+            $this->stripeClientProphecy->reveal(),
+            $this->createStub(MatchingAdapter::class),
+            $this->createStub(StripeChatterInterface::class),
+            new MockClock($this->clock->now()->modify('+2 week')),
+            $rateLimiterFactory,
+            $this->donorAccountRepositoryProphecy->reveal(),
+            $this->createStub(RoutableMessageBus::class),
+            $this->createStub(DonationNotifier::class),
+            $this->createStub(FundRepository::class),
+            $this->createStub(\Redis::class),
+            $rateLimiterFactory,
+            $this->sut,
+        );
+
+        $paymentIntent = new PaymentIntent();
+        $paymentIntent->status = PaymentIntent::STATUS_REQUIRES_PAYMENT_METHOD; // really other than success should have the same effect.
+
+        $this->stripeClientProphecy->confirmPaymentIntent($secondDonation->getTransactionId(), Argument::type('array'))
+            ->willReturn($paymentIntent);
+
+        $this->stripeClientProphecy->updatePaymentIntent("transaction_id", Argument::type('array'))->shouldBeCalled();
+
+        $donationService->confirmPreAuthorized($secondDonation);
     }
 }

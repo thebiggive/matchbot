@@ -10,6 +10,12 @@ enum MandateCancellationType: string
     case EnrollingDonationFailed = 'EnrollingDonationFailed';
 
     /**
+     * Auto cancelled because the automatic donation collection process repeatedly failed - likely due to an issue
+     * with the donor's card or bank account.
+     */
+    case CollectingAutomaticDonationRepeatFailed = 'CollectingAutomaticDonationRepeatFailed';
+
+    /**
      * Auto cancelled at creation because the first donation payment could not be collected
      */
     case FirstDonationUnsuccessful = 'FirstDonationUnsuccessful';

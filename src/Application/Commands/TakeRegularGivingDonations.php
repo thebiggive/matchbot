@@ -18,6 +18,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
@@ -55,7 +56,7 @@ class TakeRegularGivingDonations extends LockingCommand
         private Environment $environment,
         private LoggerInterface $logger,
         private RegularGivingService $mandateService,
-        private ChatterInterface $chatter,
+        private ChatterInterface $chatter
     ) {
         parent::__construct();
 
@@ -220,9 +221,6 @@ class TakeRegularGivingDonations extends LockingCommand
                     continue;
                 } catch (RegularGivingCollectionEndPassed $exception) {
                     $io->info($exception->getMessage());
-                    continue;
-                } catch (PaymentIntentNotSucceeded $exception) {
-                    $this->logger->error('PaymentIntentNotSucceeded, skipping donation: ' . $exception->getMessage());
                     continue;
                 } catch (RegularGivingDonationTooOldToCollect $exception) {
                     // Copied code from the other place we catch this, as it's only temporary.

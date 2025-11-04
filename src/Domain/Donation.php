@@ -632,6 +632,7 @@ class Donation extends SalesforceWriteProxy
             'stripePayoutId' => $this->stripePayoutId,
             'paidOutAt' => $this->paidOutAt?->format(DateTimeInterface::ATOM),
             'payoutSuccessful' => $this->payoutSuccessful,
+            'isOffSession' => $this->isOffSession(),
         ];
 
         // As of mid 2024 only the actual donate frontend gets this value, to avoid
@@ -656,7 +657,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return array<string, mixed>
      */
-    public function toFrontEndApiModel(): array
+    public function toFrontEndApiModel(bool $enableNoReservationsMode = false): array
     {
         $totalPaidByDonor = $this->getTotalPaidByDonor();
 
@@ -678,7 +679,7 @@ class Donation extends SalesforceWriteProxy
             'donationAmount' => (float) $this->getAmount(),
             'totalPaid' => is_null($totalPaidByDonor) ? null : (float)$totalPaidByDonor,
             'donationId' => $this->getUuid(),
-            'donationMatched' => $this->getCampaign()->isMatched(),
+            'donationMatched' => $this->getCampaign()->isMatched() && ! $enableNoReservationsMode,
             'emailAddress' => $this->getDonorEmailAddress()?->email,
             'firstName' => $this->getDonorFirstName(true),
             'giftAid' => $this->hasGiftAid(),
@@ -1898,7 +1899,7 @@ class Donation extends SalesforceWriteProxy
         if (!($this->thisIsInDateRangeToConfirm($now))) {
             throw new RegularGivingDonationTooOldToCollect(
                 "Donation ID {$this->getId()} should have been collected at " .
-                "{$this->getPreAuthorizationDate()?->format('Y-m-d')}, will not at this time",
+                "{$this->getPreAuthorizationDate()?->format('Y-m-d')}, will not at this time of {$now->format('Y-m-d')}",
             );
         }
     }
@@ -2096,5 +2097,20 @@ class Donation extends SalesforceWriteProxy
     {
         $url = Environment::current()->publicDonateURLPrefix() . 'thanks/' . $this->uuid->toString();
         return ($this->paymentMethodType === PaymentMethodType::PayByBank) ? "$url?from=bank" : $url;
+    }
+
+    /**
+     * Indicates that the donation was made without the simultaneous involvmenet of the donor at time of collection,
+     * i.e. it's a repeat payments from a regular giving madnate.
+     */
+    public function isOffSession(): bool
+    {
+        if (! $this->isRegularGiving()) {
+            return false;
+        }
+
+        \assert(\is_int($this->mandateSequenceNumber));
+
+        return $this->mandateSequenceNumber > 1;
     }
 }

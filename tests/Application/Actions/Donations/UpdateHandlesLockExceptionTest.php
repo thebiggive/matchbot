@@ -11,6 +11,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\Allocator;
+use MatchBot\Application\Settings;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -22,6 +23,7 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -244,8 +246,10 @@ class UpdateHandlesLockExceptionTest extends TestCase
                 donationNotifier: $this->createStub(DonationNotifier::class),
                 fundRepository: $this->createStub(FundRepository::class),
                 redis: $this->prophesize(\Redis::class)->reveal(),
-                confirmRateLimitFactory: $stubRateLimiter
+                confirmRateLimitFactory: $stubRateLimiter,
+                regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
             ),
+            settings: Settings::fromEnvVars(getenv()),
         );
     }
 }

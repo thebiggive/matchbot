@@ -15,6 +15,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\MandateNotActive;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
@@ -28,6 +29,7 @@ use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
@@ -42,6 +44,7 @@ use Psr\Log\NullLogger;
 use Stripe\ConfirmationToken;
 use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Messenger\RoutableMessageBus;
@@ -245,6 +248,7 @@ class DonationServiceTest extends TestCase
             fundRepository: $fundRepoProphecy->reveal(),
             redis: $redisProphecy->reveal(),
             confirmRateLimitFactory: $stubRateLimiter,
+            regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
         );
     }
 
@@ -288,6 +292,7 @@ class DonationServiceTest extends TestCase
             fundRepository: $fundRepoProphecy->reveal(),
             redis: $redisProphecy->reveal(),
             confirmRateLimitFactory: $rateLimiterFactory,
+            regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
         );
 
 
@@ -343,8 +348,11 @@ class DonationServiceTest extends TestCase
      * Not attempting to cover all possible variations here, just one example of confirming via the
      * \MatchBot\Domain\DonationService::confirmOnSessionDonation . Details of the fee calcuations are
      * tested directly against the Calculator class.
+     *
+     * @testWith ["succeeded", false]
+     *           ["any_other_status", true]
      */
-    public function testItConfirmsOnSessionUKVisaDonationChargingAppropriateFee(): void
+    public function testItConfirmsOnSessionUKVisaDonationChargingAppropriateFee(string $paymentIntentStatus, bool $shouldThrow): void
     {
         $confirmationTokenId = StripeConfirmationTokenId::of('ctoken_xyz');
         $paymentIntentId = 'payment_intent_id';
@@ -385,7 +393,7 @@ class DonationServiceTest extends TestCase
         ])->shouldBeCalledOnce();
 
         $paymentIntent = new PaymentIntent($paymentIntentId);
-        $paymentIntent->status = PaymentIntent::STATUS_SUCCEEDED;
+        $paymentIntent->status = $paymentIntentStatus;
         $paymentIntent->setup_future_usage = PaymentIntent::SETUP_FUTURE_USAGE_ON_SESSION;
 
         $this->stripeProphecy->confirmPaymentIntent($paymentIntentId, [
@@ -399,6 +407,10 @@ class DonationServiceTest extends TestCase
             ->willReturn($paymentIntent)
             ->shouldBeCalledOnce();
 
+        if ($shouldThrow) {
+            $this->expectException(PaymentIntentNotSucceeded::class);
+        }
+
         // act
         $this->getDonationService()->confirmOnSessionDonation(
             $donation,
@@ -407,6 +419,63 @@ class DonationServiceTest extends TestCase
         );
 
         $this->assertSame('0.52', $donation->getCharityFeeGross());
+    }
+
+    /**
+     * @testWith ["card", false]
+     *           ["pay_by_bank", true]
+     */
+    public function testItUnsetsPaymentAtStripeIfTypeChanges(string $currentPaymentMethodType, bool $shouldClearPaymentMethod): void
+    {
+        // given we have a donation
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+
+        $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: false, campaignRepoProphecy: $campaignRepoProphecy);
+
+        $stripeConfirmationTokenId = StripeConfirmationTokenId::of('ctoken_xyz');
+        $donation = TestCase::someDonation(amount: '15.00');
+        $donation->setTransactionId('some-transaction-id');
+        $donation->setPspCustomerId('cus_someCustomerID');
+
+        // and a confirmation token for paying with a payment card
+        $confirmationToken = new ConfirmationToken();
+        /** @psalm-suppress InvalidPropertyAssignmentValue - hard to create an object that fits the declared type in a test */
+        $confirmationToken->payment_method_preview = StripeObject::constructFrom(
+            ['card' => ['brand' => 'visa', 'country' => 'gb', 'fingerprint' => self::randomString()]]
+        );
+        $this->stripeProphecy->retrieveConfirmationToken(Argument::any())->willReturn($confirmationToken);
+        $paymentIntent = new PaymentIntent();
+        $paymentIntent->payment_method = 'pm_paymentmethodid';
+        $paymentIntent->setup_future_usage = null;
+        $this->stripeProphecy->retrievePaymentIntent('some-transaction-id')->willReturn($paymentIntent);
+        $this->stripeProphecy->confirmPaymentIntent(Argument::cetera())->will(function () use ($paymentIntent) {
+            $paymentIntent->status = PaymentIntent::STATUS_SUCCEEDED;
+            return $paymentIntent;
+        });
+
+        // with a current payment method of Pay By Bank
+        $currentPaymentMethod = new PaymentMethod();
+        $currentPaymentMethod->type = $currentPaymentMethodType;
+
+        // When we confirm the donation
+        $this->stripeProphecy->retrievePaymentMethod(
+            StripeCustomerId::of('cus_someCustomerID'),
+            StripePaymentMethodId::of('pm_paymentmethodid')
+        )->willReturn($currentPaymentMethod);
+
+        $this->sut->confirmOnSessionDonation($donation, $stripeConfirmationTokenId, null);
+
+        // then the existing payment method at stripe should be set to null before any futher update.
+        if ($shouldClearPaymentMethod) {
+            $this->stripeProphecy->updatePaymentIntent('some-transaction-id', ['payment_method' => null])
+                ->shouldBeCalled();
+        } else {
+            $this->stripeProphecy->updatePaymentIntent('some-transaction-id', ['payment_method' => null])
+                ->shouldNotBeCalled();
+        }
+
+        $this->stripeProphecy->updatePaymentIntent('some-transaction-id', Argument::type('array'))
+            ->shouldBeCalled();
     }
 
 
