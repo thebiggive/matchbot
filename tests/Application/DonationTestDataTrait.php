@@ -12,6 +12,7 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\TestCase;
@@ -91,6 +92,8 @@ trait DonationTestDataTrait
         DateTime $tbgGiftAidRequestConfirmedCompleteAt = null,
         bool $charityComms = false,
         null|UuidInterface|string $uuid = null,
+        bool $isRegularGiving = false,
+        ?int $mandateSequenceNumber = null,
     ): Donation {
         $charity = TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
@@ -103,11 +106,20 @@ trait DonationTestDataTrait
         // next action, we don't cancel the pending donation.
         $campaign->setName('Big Give General Donations');
 
+        if ($isRegularGiving) {
+            $mandate = $this->createStub(RegularGivingMandate::class);
+        } else {
+            $mandate = null;
+        }
+
         $donation = TestCase::someDonation(
             amount: $amount,
             paymentMethodType: $pspMethodType,
             currencyCode: $currencyCode,
+            regularGivingMandate: $mandate,
+            mandateSequenceNumber: $mandateSequenceNumber,
         );
+
         $donation->setCampaign(TestCase::getMinimalCampaign());
 
         $this->setMinimumFieldsSetOnFirstPersist($donation, $pspMethodType);
