@@ -215,7 +215,7 @@ EOF
 
             return new JsonResponse([
                 'error' => [
-                    'message' => 'Rate limited - please try try later',
+                    'message' => 'Too many payment cards used',
                     'code' => 429
                 ],
             ], 402);
