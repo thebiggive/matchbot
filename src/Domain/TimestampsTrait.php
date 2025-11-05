@@ -32,9 +32,6 @@ trait TimestampsTrait
         $this->updatedAt = new \DateTime('now');
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod
-     */
     #[ORM\PreUpdate]
     public function updatedNow(): void
     {

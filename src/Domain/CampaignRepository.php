@@ -428,6 +428,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /**
      * @return list<Campaign> Each campaign with a donation updated recently.
      * It's more DB-efficient to check for any update than for recent collection & recent refunds.
+     *
+     * Performance note: We rely on Donation.updatedAt reflecting any FundingWithdrawal changes.
+     * FundingWithdrawal has lifecycle callbacks that call $donation->updatedNow() on persist/update.
+     * This allows us to avoid extra joins here and keep this query fast for the once-per-minute poller.
      */
     public function findWithDonationChangesSince(\DateTimeImmutable $updatedAfter): array
     {

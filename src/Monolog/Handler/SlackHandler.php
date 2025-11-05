@@ -4,10 +4,12 @@ namespace MatchBot\Monolog\Handler;
 
 use Monolog\Handler\HandlerInterface;
 use Monolog\Logger;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
 use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
 use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\Notifier\Exception\TransportException;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 /**
@@ -21,7 +23,7 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  */
 class SlackHandler implements HandlerInterface
 {
-    public function __construct(private ChatterInterface $slackConnction)
+    public function __construct(private ChatterInterface $slackConnction, private LoggerInterface $logger)
     {
     }
 
@@ -64,7 +66,12 @@ class SlackHandler implements HandlerInterface
             ->block((new SlackSectionBlock())->text(substr($messageFirstSeveralLines, 0, 3000)));
         $chatMessage->options($options);
 
-        $this->slackConnction->send($chatMessage);
+        try {
+            $this->slackConnction->send($chatMessage);
+        } catch (TransportException $exception) {
+            // logging as warning not error to avoid endless loop. This handler is only used for errors.
+            $this->logger->warning("Failed to send error to slack:" . $exception->getMessage() . " for message: " . $message);
+        }
 
         return false; // record will go to other handlers in addition to being sent to slack.
     }
