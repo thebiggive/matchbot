@@ -310,7 +310,7 @@ return function (ContainerBuilder $containerBuilder) {
 
             if ($alarmChannelName) {
                 $logger->pushHandler(
-                    new SlackHandler($c->get(SlackChannelChatterFactory::class)->makeChatter($alarmChannelName))
+                    new SlackHandler($c->get(SlackChannelChatterFactory::class)->makeChatter($alarmChannelName), $logger)
                 );
             }
 
