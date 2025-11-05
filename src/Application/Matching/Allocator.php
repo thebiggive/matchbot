@@ -142,6 +142,13 @@ class Allocator
 
         $this->logInfo("Taking from ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
         $this->logInfo('Deallocation took ' . (string) round($endTime - $startTime, 6) . ' seconds');
+
+        try {
+            $lock->release();
+        } catch (\Exception $e) {
+            $this->logger->error("Error releasing lock for funds allocation on donation: " . $donation->getUuid()->toString() . " caused by " . ($e->getPrevious()?->__toString() ?? 'null'));
+            throw $e;
+        }
     }
 
     /**

@@ -252,6 +252,13 @@ EOF
 
         $donation->setSalesforceUpdatePending();
 
+        try {
+            $lock->release();
+        } catch (\Exception $e) {
+            $this->logger->error("Error releasing lock for donation confirmation: " . $donation->getUuid()->toString() . " caused by " . ($e->getPrevious()?->__toString()  ?? 'null'));
+            throw $e;
+        }
+
         return new JsonResponse([
             'paymentIntent' => [
                 'status' => $updatedIntent->status,
