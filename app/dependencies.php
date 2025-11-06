@@ -70,9 +70,7 @@ use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Lock\LockFactory;
-use Symfony\Component\Lock\Store\DoctrineDbalStore;
 use Symfony\Component\Lock\Store\RedisStore;
-use Symfony\Component\Lock\Strategy\ConsensusStrategy;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Middleware\AddFifoStampMiddleware;
 use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
@@ -252,15 +250,8 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         LockFactory::class => function (ContainerInterface $c): LockFactory {
-            $em = $c->get(EntityManagerInterface::class);
-            $dbalStore = new DoctrineDbalStore($em->getConnection(), ['db_table' => 'CommandLockKeys']);
-            $redisLockStore = new RedisStore($c->get(Redis::class));
-
-            // just for temp use - once this has been deployed to prod for a few minutes we can get rid of the dbal store
-            // and just use redis.
-            $combinedLockStore = new \Symfony\Component\Lock\Store\CombinedStore([$dbalStore, $redisLockStore], new ConsensusStrategy());
-
-            $factory = new LockFactory($combinedLockStore);
+            $redisStore = new RedisStore($c->get(Redis::class));
+            $factory = new LockFactory($redisStore);
             $factory->setLogger($c->get(LoggerInterface::class));
 
             return $factory;
