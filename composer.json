@@ -144,7 +144,6 @@
             "doctrine orm:schema-tool:drop --full-database --force",
             "@doctrine:migrate:live",
             "./matchbot matchbot:write-schema-files",
-            "./matchbot matchbot:create-fictional-data --verbose",
             "MYSQL_SCHEMA=matchbot_test vendor/bin/doctrine orm:schema-tool:drop --full-database --force",
             "MYSQL_SCHEMA=matchbot_test vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration"
         ],
@@ -222,8 +221,14 @@
         "matchbot:reset": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:reset-matching",
-            "@doctrine:delete-and-recreate"
+          "@doctrine:delete-and-recreate",
+          "./matchbot matchbot:create-fictional-data --verbose"
         ],
+      "matchbot:reset-no-fictional-data": [
+        "Composer\\Config::disableProcessTimeout",
+        "php matchbot-cli.php matchbot:reset-matching",
+        "@doctrine:delete-and-recreate"
+      ],
         "matchbot:retrospectively-match": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:retrospectively-match"
