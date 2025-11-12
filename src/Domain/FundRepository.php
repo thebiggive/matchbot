@@ -278,6 +278,17 @@ EOT;
             throw new \Exception("Matching Adapter not set");
         }
 
+        // No change
+        if (bccomp($increaseInAmount, '0.00', 2) === 0) {
+            $this->getLogger()->info(
+                "Campaign Funding ID {$campaignFunding->getId()} balance was already £{$amountForCampaign} " .
+                "for campaign {$campaignSFId} and fund SF ID {$fundId}"
+            );
+
+            return;
+        }
+
+        // Increase
         if (bccomp($increaseInAmount, '0.00', 2) === 1) {
             // This sets CampaignFunding::$amountAvailable as a side effect.
             $newTotal = $this->matchingAdapter->addAmount($campaignFunding, $increaseInAmount);
@@ -288,35 +299,68 @@ EOT;
             );
 
             $campaignFunding->setAmount($amountForCampaign);
+
+            return;
         }
 
-        if (bccomp($increaseInAmount, '0.00', 2) === -1) {
-            $decreaseInAmount = bcmul($increaseInAmount, '-1', 2);
+        // By process of elimination, we're considering a decrease.
+        $decreaseInAmount = bcmul($increaseInAmount, '-1', 2);
 
-            $campaignAbandonedAndFundsUnused = $campaign->isNeverProceedingAppCampaign() && $campaignFunding->getAmountAvailable() ===
-                $campaignFunding->getAmount();
-
-            if (!$campaignAbandonedAndFundsUnused && $campaign->getStartDate() < $at) {
-                $this->getLogger()->error(
-                    "Campaign Funding ID {$campaignFunding->getId()} balance could not be decreased by " .
-                    "£{$decreaseInAmount}. Salesforce Fund ID {$fundId} as campaign {$campaignSFId} opened in past"
-                );
-            } else { // Campaign hasn't started yet (or in rare cases, an app is Rejected after first funding); so we can allow the decrease
-                // This sets CampaignFunding::$amountAvailable as a side effect.
-                $newTotal = $this->matchingAdapter->subtractAmount($campaignFunding, $decreaseInAmount);
-
-                $this->getLogger()->info(
-                    "Campaign Funding ID {$campaignFunding->getId()} balance decreased " .
-                    "£" . bcmul($decreaseInAmount, '-1', 2) . " to £{$newTotal}"
-                );
-
-                $campaignFunding->setAmount($amountForCampaign);
-            }
-        } elseif (bccomp($increaseInAmount, '0.00', 2) === 0) {
-            $this->getLogger()->info(
-                "Campaign Funding ID {$campaignFunding->getId()} balance set to £{$amountForCampaign} " .
-                "for campaign {$campaignSFId} and fund SF ID {$fundId}"
+        if (!self::reductionsAreAllowed($campaign, $campaignFunding, $at)) {
+            $this->getLogger()->error(
+                "Campaign Funding ID {$campaignFunding->getId()} balance could not be decreased by " .
+                "£{$decreaseInAmount}. Salesforce Fund ID {$fundId} as campaign {$campaignSFId} opened in past"
             );
+
+            return;
         }
+
+        // This sets CampaignFunding::$amountAvailable as a side effect.
+        $newTotal = $this->matchingAdapter->subtractAmount($campaignFunding, $decreaseInAmount);
+
+        $this->getLogger()->info(
+            "Campaign Funding ID {$campaignFunding->getId()} balance decreased " .
+            "£" . bcmul($decreaseInAmount, '-1', 2) . " to £{$newTotal}"
+        );
+
+        $campaignFunding->setAmount($amountForCampaign);
+    }
+
+    /**
+     * To avoid tricky scaling & race condition problems in big campaigns, the default position during
+     * a campaign is to allow top-ups but not reductions.
+     *
+     * Reductions are *only* allowed in 3 scenarios:
+     * 1. Campaign has yet to start
+     * 2. Campaign is a never-proceeding (Rejected) app campaign *and* all funds are unused
+     * 3. Campaign is closed *and* all funds are unused. This is likely to be useful only if a database
+     *    migration was run *before* a Salesforce data change. See the process at [@todo link]
+     *    to avoid creating data inconsistencies.
+     */
+    public static function reductionsAreAllowed(Campaign $campaign, CampaignFunding $campaignFunding, DateTimeImmutable $at): bool
+    {
+        if ($campaign->getStartDate() > $at) {
+            return true;
+        }
+
+        $fundsUnused = $campaignFunding->getAmountAvailable() === $campaignFunding->getAmount();
+
+        if (!$fundsUnused) {
+            // Never-proceeding app and closed campaign post-DB-migration cases both
+            // require all funds unused.
+            return false;
+        }
+
+        if ($campaign->isNeverProceedingAppCampaign()) {
+            // Campaign abandoned & no funds used; OK to zero even mid/post campaign.
+            return true;
+        }
+
+        if ($campaign->getEndDate() < $at) {
+            // Campaign closed & no funds used, maybe due to a DB migration moving allocations.
+            return true;
+        }
+
+        return false;
     }
 }

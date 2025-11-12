@@ -11,6 +11,7 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFamily;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\CharityResponseToOffer;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
@@ -405,6 +406,7 @@ class TestCase extends PHPUnitTestCase
         string $thankYouMessage = null,
         MetaCampaignSlug $metaCampaignSlug = null,
         bool $isMatched = false,
+        ?bool $charityRejected = false,
         ?Money $totalFundraisingTarget = null,
         ?Money $amountPledged = null,
         ?Money $totalFundingAllocation = null,
@@ -429,7 +431,7 @@ class TestCase extends PHPUnitTestCase
             pinPosition: null,
             championPagePinPosition: null,
             relatedApplicationStatus: null,
-            relatedApplicationCharityResponseToOffer: null,
+            relatedApplicationCharityResponseToOffer: $charityRejected ? CharityResponseToOffer::Rejected : null,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             totalFundraisingTarget: $totalFundraisingTarget ?? Money::zero(),
             thankYouMessage: $thankYouMessage,
