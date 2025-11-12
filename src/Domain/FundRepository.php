@@ -7,7 +7,6 @@ namespace MatchBot\Domain;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching;
 use MatchBot\Client;
 use MatchBot\Domain\DomainException\DisallowedFundTypeChange;
@@ -304,7 +303,7 @@ EOT;
         }
 
         // By process of elimination, we're considering a decrease, so
-        \assert(bccomp($increaseInAmount, '0.00', 2) === -1);
+        \assert(bccomp($increaseInAmount, '0.00', 2) === -1); // @phpstan-ignore function.alreadyNarrowedType, identical.alwaysTrue
         $decreaseInAmount = bcmul($increaseInAmount, '-1', 2);
 
         if (!self::reductionsAreAllowed($campaign, $campaignFunding, $at)) {
