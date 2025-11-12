@@ -334,7 +334,7 @@ EOT;
      * 1. Campaign has yet to start
      * 2. Campaign is a never-proceeding (Rejected) app campaign *and* all funds are unused
      * 3. Campaign is closed *and* all funds are unused. This is likely to be useful only if a database
-     *    migration was run *before* a Salesforce data change. See the process at [@todo link]
+     *    migration was run *before* a Salesforce data change. Follow the process at {@link https://youneedawiki.com/app/page/1aktyZ90uoX-nuAYW7mxPhlDLWb902FLV?p=1AR_eRWSQCFYUnvPWxf_uBW6Yz0yePCo0}
      *    to avoid creating data inconsistencies.
      */
     public static function reductionsAreAllowed(Campaign $campaign, CampaignFunding $campaignFunding, DateTimeImmutable $at): bool
