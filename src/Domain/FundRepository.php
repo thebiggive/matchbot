@@ -303,7 +303,8 @@ EOT;
             return;
         }
 
-        // By process of elimination, we're considering a decrease.
+        // By process of elimination, we're considering a decrease, so
+        \assert(bccomp($increaseInAmount, '0.00', 2) === -1);
         $decreaseInAmount = bcmul($increaseInAmount, '-1', 2);
 
         if (!self::reductionsAreAllowed($campaign, $campaignFunding, $at)) {
