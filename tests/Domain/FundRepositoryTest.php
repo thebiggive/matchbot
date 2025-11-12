@@ -240,7 +240,10 @@ class FundRepositoryTest extends TestCase
 
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID));
 
-        $repo->pullForCampaign($campaign, $this->now);
+        // Only strictly future campaigns allow reductions based on the rule this relies upon.
+        // $this->now matches our default test campaign's start date exactly so won't work.
+        $oneMinuteBeforeCampaignStart = $campaign->getStartDate()->sub(new \DateInterval('PT1M'));
+        $repo->pullForCampaign($campaign, $oneMinuteBeforeCampaignStart);
     }
 
     /**
@@ -293,6 +296,72 @@ class FundRepositoryTest extends TestCase
         $repo->pullForCampaign($campaign, $this->now);
     }
 
+    public function testFundReductionBeforeCampaignIsAllowed(): void
+    {
+        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID));
+
+        // 1 minute before campaign start date
+        $simulatedNow = $campaign->getStartDate()->sub(new \DateInterval('PT1M'));
+
+        $this->assertTrue(FundRepository::reductionsAreAllowed(
+            $campaign,
+            $this->getExistingCampaignFunding(false), // Any CampaignFunding fine.
+            $simulatedNow,
+        ));
+    }
+
+    public function testFundReductionOnAbandonedAppMidCampaignWithNoFundsUsedIsAllowed(): void
+    {
+        $campaign = TestCase::someCampaign(
+            sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID),
+            charityRejected: true,
+        );
+
+        // Mid-campaign
+        $simulatedNow = $campaign->getStartDate()->add(new \DateInterval('P1D'));
+
+        $this->assertTrue(FundRepository::reductionsAreAllowed(
+            $campaign,
+            $this->getExistingCampaignFunding(shared: false, anyUsed: false),
+            $simulatedNow,
+        ));
+    }
+
+    /**
+     * This theoretically shouldn't happen. If an app campaign is charity Rejected yet somehow used
+     * funds, we should fail safe and refuse to reduce the funding amount.
+     */
+    public function testFundReductionOnAbandonedAppMidCampaignWithFundsUsedIsNotAllowed(): void
+    {
+        $campaign = TestCase::someCampaign(
+            sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID),
+            charityRejected: true,
+        );
+
+        // Mid-campaign
+        $simulatedNow = $campaign->getStartDate()->add(new \DateInterval('P1D'));
+
+        $this->assertFalse(FundRepository::reductionsAreAllowed(
+            $campaign,
+            $this->getExistingCampaignFunding(shared: false, anyUsed: true),
+            $simulatedNow,
+        ));
+    }
+
+    public function testFundReductionOnPotentiallyProceedingOpenCampaignIsNotAllowed(): void
+    {
+        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID));
+
+        // Mid-campaign
+        $simulatedNow = $campaign->getStartDate()->add(new \DateInterval('P1D'));
+
+        $this->assertFalse(FundRepository::reductionsAreAllowed(
+            $campaign,
+            $this->getExistingCampaignFunding(false), // Any CampaignFunding fine.
+            $simulatedNow,
+        ));
+    }
+
     private function getExistingFund(bool $shared): Fund
     {
         $existingFund = new Fund(
@@ -308,11 +377,11 @@ class FundRepositoryTest extends TestCase
         return $existingFund;
     }
 
-    private function getExistingCampaignFunding(bool $shared): CampaignFunding
+    private function getExistingCampaignFunding(bool $shared, bool $anyUsed = true): CampaignFunding
     {
         return new CampaignFunding(
             fund: $this->getExistingFund($shared),
-            amount: '400',
+            amount: $anyUsed ? '400' : '1000',
             amountAvailable: '1000',
         );
     }
