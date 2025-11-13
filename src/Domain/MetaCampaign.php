@@ -379,4 +379,9 @@ class MetaCampaign extends SalesforceReadProxy
         return $this->startDate > new \DateTimeImmutable(self::INDEX_FROM) &&
             $this->startDate < $at->add(new \DateInterval(self::INDEX_NEW_INTERVAL));
     }
+
+    public function setMatchFundsTotal(Money $matchFundsTotal): void
+    {
+        $this->matchFundsTotal = $matchFundsTotal;
+    }
 }

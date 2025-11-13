@@ -10,6 +10,7 @@ use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignRepository;
+use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
@@ -106,5 +107,24 @@ class MetaCampaignRepositoryTest extends IntegrationTest
 
         // 57 = 47 + 10
         $this->assertEquals(Money::fromPence(57_00, Currency::GBP), $amountRaised);
+    }
+
+    public function testItPersistsMetaCampaignMoneyChange(): void
+    {
+        $metacampaign = TestCase::someMetaCampaign(false, false, slug: MetaCampaignSlug::of(TestCase::randomString()));
+        $slug = $metacampaign->getSlug();
+        $this->em->persist($metacampaign);
+        $this->em->flush();
+
+        $metacampaign->setMatchFundsTotal(Money::fromNumericString('42', Currency::GBP));
+
+        $this->em->flush();
+        $this->em->clear();
+
+        unset($metacampaign);
+
+        $persistedMetaCampaign = $this->sut->getBySlug($slug);
+
+        $this->assertSame('£42.00', $persistedMetaCampaign->getMatchFundsTotal()->format());
     }
 }
