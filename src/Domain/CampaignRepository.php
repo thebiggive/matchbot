@@ -583,7 +583,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         }
 
         if ($fundSlug !== null) {
-            $qb->andWhere($qb->expr()->eq('fund.slug', ':fundSlug'));
+            $qb->andWhere($qb->expr()->eq('fund.slug', ':fundSlug'))
+                ->andWhere($qb->expr()->gt('campaignFunding.amount', 0));
             $qb->setParameter('fundSlug', $fundSlug);
         }
 
