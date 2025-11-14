@@ -7,6 +7,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccountRepository;
@@ -26,6 +27,7 @@ class ResendDonorThanksNotification extends Action
     public function __construct(
         private DonationRepository $donationRepository,
         private DonationNotifier $donationNotifier,
+        private DonorAccountRepository $donorAccountRepository,
         LoggerInterface $logger,
     ) {
         parent::__construct($logger);
@@ -67,9 +69,12 @@ class ResendDonorThanksNotification extends Action
         // for new person records in identity and new email verification tokens.
         $sendRegisterUri = false;
 
+        $showAccountExistsForEmail = $this->donorAccountRepository->accountExistsMatchingEmailWithDonation($donation);
+
         $this->donationNotifier->notifyDonorOfDonationSuccess(
             donation: $donation,
             sendRegisterUri: $sendRegisterUri,
+            showAccountExistsForEmail: $showAccountExistsForEmail,
             to: $toEmailAddress,
         );
 

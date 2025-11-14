@@ -25,20 +25,24 @@ class ResendDonorThanksNotificationTest extends TestCase
         );
 
         $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
+        $donorAccountRepositoryProphecy = $this->prophesize(DonorAccountRepository::class);
         $notifierProphecy = $this->prophesize(DonationNotifier::class);
 
         $sut = new ResendDonorThanksNotification(
             $donationRepositoryProphecy->reveal(),
             $notifierProphecy->reveal(),
+            $donorAccountRepositoryProphecy->reveal(),
             new NullLogger(),
         );
 
         $donationRepositoryProphecy->findOneByUUID($donation->getUuid())->willReturn($donation);
+        $donorAccountRepositoryProphecy->accountExistsMatchingEmailWithDonation($donation)->willReturn(true);
 
         $notifierProphecy->notifyDonorOfDonationSuccess(
             $donation,
             false,
-            EmailAddress::of('new-email@example.com')
+            true,
+            EmailAddress::of('new-email@example.com'),
         )->shouldBeCalled();
 
         $response = $sut->__invoke(

@@ -27,6 +27,7 @@ class DonationNotifierTest extends TestCase
         $emailCommand = DonationNotifier::emailMessageForCollectedDonation(
             $donation,
             'https://donate.example.org',
+            false,
             new EmailVerificationToken(
                 '123456',
                 'not-relavent@example.com',
@@ -50,6 +51,7 @@ class DonationNotifierTest extends TestCase
                     'charityIsExempt' => false,
                     'charityRegistrationAuthority' => 'Charity Commission for England and Wales',
                     'createAccountUri' => 'https://donate.example.org/register?c=123456&u=00000000-0000-0000-0000-000000000000',
+                    'accountAlreadyExistsForEmail' => false,
                     'currencyCode' => 'GBP',
 
                     'donationAmount' => 10.0,
