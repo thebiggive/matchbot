@@ -19,6 +19,7 @@ class DonationNotifier
     public static function emailMessageForCollectedDonation(
         Donation $donation,
         string $donateBaseUri,
+        bool $accountAlreadyExistsForEmail,
         ?EmailVerificationToken $emailVerificationToken = null
     ): EmailMessage {
         if (! $donation->getDonationStatus()->isSuccessful()) {
@@ -74,6 +75,7 @@ class DonationNotifier
             'charityIsExempt' => $charity->isExempt(),
 
             'createAccountUri' => $createAccountUri,
+            'accountAlreadyExistsForEmail' => $accountAlreadyExistsForEmail,
             'currencyCode' => $donation->currency()->isoCode(),
 
             'donationAmount' => (float)$donation->getAmount(),
@@ -105,11 +107,13 @@ class DonationNotifier
      *
      * @param Donation $donation
      * @param EmailAddress|null $to
+     * @param bool $showAccountExistsForEmail - whether to tell the donor that although they were not logged in a donor account exists for their email address.
      * @return void
      */
     public function notifyDonorOfDonationSuccess(
         Donation $donation,
         bool $sendRegisterUri,
+        bool $showAccountExistsForEmail,
         ?EmailAddress $to = null,
     ): void {
         $emailAddress = $donation->getDonorEmailAddress();
@@ -123,7 +127,7 @@ class DonationNotifier
             );
         }
 
-        $emailMessage = self::emailMessageForCollectedDonation($donation, $this->donateBaseUri, $emailVerificationToken);
+        $emailMessage = self::emailMessageForCollectedDonation($donation, $this->donateBaseUri, $showAccountExistsForEmail, $emailVerificationToken);
 
         if ($to !== null) {
             $emailMessage = $emailMessage->withToAddress($to);
