@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityRepository;
+use MatchBot\Application\Actions\Donations\ResendDonorThanksNotification;
 
 /**
  * @extends EntityRepository<DonorAccount>
@@ -28,5 +29,34 @@ class DonorAccountRepository extends EntityRepository
     public function findByPersonId(PersonId $personId): ?DonorAccount
     {
         return $this->findOneBy(['uuid' => $personId->id]);
+    }
+
+    public function findByEmail(EmailAddress $emailAddress): ?DonorAccount
+    {
+        return $this->findOneBy(['emailAddress.email' => $emailAddress->email]);
+    }
+
+    /**
+     * @return bool Whether there is a donor account registered that has the same email address as this donation but
+     * was not used to make the donation - i.e. so we can invite the donor to log in to it next time as they didn't when
+     * making this donation.
+     */
+    public function accountExistsMatchingEmailWithDonation(Donation $donation): bool
+    {
+        $emailAddress = $donation->getDonorEmailAddress();
+        if ($emailAddress === null) {
+            return false;
+        }
+
+        $donorAccountForEmail = $this->findByEmail($emailAddress);
+
+        $donorIdFromDonation = $donation->getDonorId();
+
+        if ($donorIdFromDonation == null) {
+            // all donations made since April 2025 have non-null donorID.
+            return $donorAccountForEmail !== null;
+        }
+
+        return $donorAccountForEmail !== null && ! $donorAccountForEmail->id()->equals($donorIdFromDonation);
     }
 }
