@@ -29,7 +29,7 @@ readonly class Money implements \JsonSerializable, \Stringable
         #[Column(length: 3)]
         public Currency $currency
     ) {
-        Assertion::integerish((float) $amountInPence);
+        Assertion::regex($amountInPence, '/^-?\d+(?:\.00)?$/', 'Amount in pence must be an integer or have .00 decimal');
 
         // casting to int and then back to string to get rid of any trailing '.00', just required so that two instances
         // for the same amount match internally when checked by phpunit.
