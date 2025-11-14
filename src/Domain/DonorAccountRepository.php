@@ -42,14 +42,9 @@ class DonorAccountRepository extends EntityRepository
      * was not used to make the donation - i.e. so we can invite the donor to log in to it next time as they didn't when
      * making this donation.
      */
-    public function accountExistsMatchingEmailWithDonation(Donation $donation, LoggerInterface|null $logger = null): bool
+    public function accountExistsMatchingEmailWithDonation(Donation $donation): bool
     {
-        $logger ??= new NullLogger();
-
-        $logger->info('checking if account exists for donation ' . $donation->getUuid()->__toString());
         $emailAddress = $donation->getDonorEmailAddress();
-
-        $logger->info('email address is ' . (string) $emailAddress?->email);
 
         if ($emailAddress === null) {
             return false;
@@ -57,21 +52,13 @@ class DonorAccountRepository extends EntityRepository
 
         $donorAccountForEmail = $this->findByEmail($emailAddress);
 
-        $logger->info('found donor account ' . ($donorAccountForEmail?->id()->id->toString()));
-
         $donorIdFromDonation = $donation->getDonorId();
-
-        $logger->info('donor ID from donation is ' . ($donorIdFromDonation?->id->toString()));
 
         if ($donorIdFromDonation == null) {
             // all donations made since April 2025 have non-null donorID.
             return $donorAccountForEmail !== null;
         }
 
-        $return = $donorAccountForEmail !== null && !$donorAccountForEmail->id()->equals($donorIdFromDonation);
-
-        $logger->info('returning ' . (string) $return);
-
-        return $return;
+        return $donorAccountForEmail !== null && !$donorAccountForEmail->id()->equals($donorIdFromDonation);
     }
 }

@@ -856,7 +856,7 @@ class DonationService
             chargeCreationTimestamp: $charge->created,
         );
 
-        $showAccountExistsForEmail = $this->donorAccountRepository->accountExistsMatchingEmailWithDonation($donation, $this->logger);
+        $showAccountExistsForEmail = $this->donorAccountRepository->accountExistsMatchingEmailWithDonation($donation);
 
         if (!$donation->isRegularGiving() && !$donationWasPreviouslyCollected) {
             // Regular giving donors get an email confirming the setup of the mandate, but not an email for
