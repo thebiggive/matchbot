@@ -18,7 +18,7 @@ readonly class Money implements \JsonSerializable, \Stringable
      * @param Currency $currency
      */
     private function __construct(
-        #[Column(type: 'integer')]
+        #[Column(type: 'bigint')]
         public int $amountInPence,
         #[Column(length: 3)]
         public Currency $currency

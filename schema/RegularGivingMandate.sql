@@ -17,7 +17,7 @@ CREATE TABLE `RegularGivingMandate` (
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   `personid` char(36) NOT NULL COMMENT '(DC2Type:uuid)',
-  `donationAmount_amountInPence` int NOT NULL,
+  `donationAmount_amountInPence` bigint NOT NULL,
   `donationAmount_currency` varchar(3) NOT NULL,
   `dayOfMonth` smallint NOT NULL,
   `activeFrom` datetime DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)',
