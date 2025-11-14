@@ -15,6 +15,7 @@ class DonorAccountRepository extends EntityRepository
 {
     /**
      * @psalm-suppress PossiblyUnusedMethod - called by DI container
+     * @param ClassMetadata<DonorAccount> $class
      */
     public function __construct(EntityManagerInterface $em, ClassMetadata $class, private LoggerInterface $logger)
     {
