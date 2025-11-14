@@ -3,25 +3,15 @@
 namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
-use Doctrine\ORM\Mapping\ClassMetadata;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * @extends EntityRepository<DonorAccount>
  */
 class DonorAccountRepository extends EntityRepository
 {
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - called by DI container
-     * @param ClassMetadata<DonorAccount> $class
-     */
-    public function __construct(EntityManagerInterface $em, ClassMetadata $class, private LoggerInterface $logger)
-    {
-        parent::__construct($em, $class);
-    }
-
     /**
      * @throws UniqueConstraintViolationException if we already have a donor account with the same Stripe Customer ID.
      */
@@ -52,12 +42,14 @@ class DonorAccountRepository extends EntityRepository
      * was not used to make the donation - i.e. so we can invite the donor to log in to it next time as they didn't when
      * making this donation.
      */
-    public function accountExistsMatchingEmailWithDonation(Donation $donation): bool
+    public function accountExistsMatchingEmailWithDonation(Donation $donation, LoggerInterface|null $logger = null): bool
     {
-        $this->logger->info('checking if account exists for donation ' . $donation->getUuid()->__toString());
+        $logger ??= new NullLogger();
+
+        $logger->info('checking if account exists for donation ' . $donation->getUuid()->__toString());
         $emailAddress = $donation->getDonorEmailAddress();
 
-        $this->logger->info('email address is ' . (string) $emailAddress?->email);
+        $logger->info('email address is ' . (string) $emailAddress?->email);
 
         if ($emailAddress === null) {
             return false;
@@ -65,11 +57,11 @@ class DonorAccountRepository extends EntityRepository
 
         $donorAccountForEmail = $this->findByEmail($emailAddress);
 
-        $this->logger->info('found donor account ' . ($donorAccountForEmail?->id()->id->toString()));
+        $logger->info('found donor account ' . ($donorAccountForEmail?->id()->id->toString()));
 
         $donorIdFromDonation = $donation->getDonorId();
 
-        $this->logger->info('donor ID from donation is ' . ($donorIdFromDonation?->id->toString()));
+        $logger->info('donor ID from donation is ' . ($donorIdFromDonation?->id->toString()));
 
         if ($donorIdFromDonation == null) {
             // all donations made since April 2025 have non-null donorID.
@@ -78,7 +70,7 @@ class DonorAccountRepository extends EntityRepository
 
         $return = $donorAccountForEmail !== null && !$donorAccountForEmail->id()->equals($donorIdFromDonation);
 
-        $this->logger->info('returning ' . (string) $return);
+        $logger->info('returning ' . (string) $return);
 
         return $return;
     }
