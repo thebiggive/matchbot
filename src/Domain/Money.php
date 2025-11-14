@@ -211,6 +211,6 @@ readonly class Money implements \JsonSerializable, \Stringable
 
     public function times(int $multiplier): self
     {
-        return new self(bcmul($this->amountInPence, $multiplier, 0), $this->currency);
+        return new self(bcmul($this->amountInPence, (string) $multiplier, 0), $this->currency);
     }
 }
