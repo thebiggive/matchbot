@@ -478,7 +478,7 @@ class Campaign extends SalesforceReadProxy
 
     public function isNeverProceedingAppCampaign(): bool
     {
-        return $this->relatedApplicationStatus === ApplicationStatus::Rejected && $this->relatedApplicationCharityResponseToOffer === CharityResponseToOffer::Rejected;
+        return $this->relatedApplicationStatus === ApplicationStatus::Rejected || $this->relatedApplicationCharityResponseToOffer === CharityResponseToOffer::Rejected;
     }
 
     /**

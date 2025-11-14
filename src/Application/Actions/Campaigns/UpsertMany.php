@@ -159,8 +159,15 @@ class UpsertMany extends Action
             $this->logger->info("Saving new meta campaign from SF: {$metaCampaign->getTitle()} {$metaCampaign->getSalesforceId()}");
             $this->entityManager->persist($metaCampaign);
         } else {
+            $previousMatchFundsTotal = $metaCampaign->getMatchFundsTotal();
             $metaCampaign->updateFromSfData($campaignData);
-            $this->logger->info("updating meta campaign {$metaCampaign->getId()} from SF: {$metaCampaign->getTitle()} {$metaCampaign->getSalesforceId()}");
+
+            $this->logger->info('Entity state: ' . ($this->entityManager->contains($metaCampaign) ? 'managed' : 'detached'));
+            $available = isset($campaignData['totalMatchedFundsAvailable']) ? (string) $campaignData['totalMatchedFundsAvailable'] : 'N/A';
+            $this->logger->info("totalMatchedFundsAvailable from SF: $available");
+
+            $this->logger->info("Updating meta campaign {$metaCampaign->getId()} from SF: {$metaCampaign->getTitle()} {$metaCampaign->getSalesforceId()}");
+            $this->logger->info("Updating meta campaign {$metaCampaign->getId()} from SF: Match funds total went from {$previousMatchFundsTotal->format()} to {$metaCampaign->getMatchFundsTotal()->format()}");
         }
     }
 }

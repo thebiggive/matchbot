@@ -114,10 +114,6 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Embedded(columnPrefix: 'imf_campaign_target_override_')]
     private Money $imfCampaignTargetOverride;
 
-    /**
-     * @param Salesforce18Id<self> $salesforceId
-     *
-     */
     #[ORM\Embedded(columnPrefix: 'match_funds_total_')]
     private Money $matchFundsTotal;
 
@@ -258,7 +254,6 @@ class MetaCampaign extends SalesforceReadProxy
 
         $this->imfCampaignTargetOverride = Money::fromPence((int) (100.0 * ($data['imfCampaignTargetOverride'] ?? 0.0)), $currency);
         $this->matchFundsTotal = Money::fromPence((int) (100.0 * ($data['totalMatchedFundsAvailable'] ?? 0.0)), $currency);
-
         $this->totalAdjustment = Money::fromNumericString($totalAdjustment, $currency);
     }
 

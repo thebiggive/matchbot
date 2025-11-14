@@ -1887,7 +1887,7 @@ class Donation extends SalesforceWriteProxy
 
     public function hasExpectedMatchingReserved(): bool
     {
-        return $this->getFundingWithdrawalTotalAsObject()->amountInPence >= $this->expectedMatchAmount->amountInPence;
+        return $this->getFundingWithdrawalTotalAsObject()->amountInPence() >= $this->expectedMatchAmount->amountInPence();
     }
 
     /**
