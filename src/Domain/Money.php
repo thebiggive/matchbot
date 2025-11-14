@@ -13,17 +13,27 @@ use MatchBot\Application\Assertion;
 readonly class Money implements \JsonSerializable, \Stringable
 {
     /**
+     * @var numeric-string
+     */
+    #[Column(type: 'bigint')]
+    private string $amountInPence;
+
+    /**
      * @param numeric-string $amountInPence - Amount of money in minor units, i.e. pence, assumed to be worth 1/100 of the major
      * unit. Has upper limit set above what we expect to ever deal with on a single account. Must not be `int` while
      * {@link https://github.com/doctrine/orm/issues/11721} is unresolved.
      * @param Currency $currency
      */
     private function __construct(
-        #[Column(type: 'bigint')]
-        private string $amountInPence,
+        string $amountInPence,
         #[Column(length: 3)]
         public Currency $currency
     ) {
+        Assertion::integerish((float) $amountInPence);
+
+        // casting to int and then back to string to get rid of any trailing '.00', just required so that two instances
+        // for the same amount match internally when checked by phpunit.
+        $this->amountInPence = (string)(int)$amountInPence;
         // Almost 10 trillion £ is well Over the Max. fund value we use in regtest Salesforce sandboxes - these have very high sums of fictional money to allow continous automated donations for a long time.
         // other envs of course don't use use sums anywhere near this big.
         Assertion::between(
@@ -201,6 +211,6 @@ readonly class Money implements \JsonSerializable, \Stringable
 
     public function times(int $multiplier): self
     {
-        return new self(bcmul($this->amountInPence, (string) $multiplier, 0), $this->currency);
+        return new self(bcmul($this->amountInPence, $multiplier, 0), $this->currency);
     }
 }
