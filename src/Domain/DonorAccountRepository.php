@@ -3,14 +3,21 @@
 namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
-use MatchBot\Application\Actions\Donations\ResendDonorThanksNotification;
+use Doctrine\ORM\Mapping\ClassMetadata;
+use Psr\Log\LoggerInterface;
 
 /**
  * @extends EntityRepository<DonorAccount>
  */
 class DonorAccountRepository extends EntityRepository
 {
+    public function __construct(EntityManagerInterface $em, ClassMetadata $class, private LoggerInterface $logger)
+    {
+        parent::__construct($em, $class);
+    }
+
     /**
      * @throws UniqueConstraintViolationException if we already have a donor account with the same Stripe Customer ID.
      */
@@ -43,20 +50,32 @@ class DonorAccountRepository extends EntityRepository
      */
     public function accountExistsMatchingEmailWithDonation(Donation $donation): bool
     {
+        $this->logger->info('checking if account exists for donation ' . $donation->getUuid()->__toString());
         $emailAddress = $donation->getDonorEmailAddress();
+
+        $this->logger->info('email address is ' . (string) $emailAddress->email);
+
         if ($emailAddress === null) {
             return false;
         }
 
         $donorAccountForEmail = $this->findByEmail($emailAddress);
 
+        $this->logger->info('found donor account ' . (string) ($donorAccountForEmail?->id()->id->toString()));
+
         $donorIdFromDonation = $donation->getDonorId();
+
+        $this->logger->info('donor ID from donation is ' . (string) ($donorIdFromDonation?->id->toString()));
 
         if ($donorIdFromDonation == null) {
             // all donations made since April 2025 have non-null donorID.
             return $donorAccountForEmail !== null;
         }
 
-        return $donorAccountForEmail !== null && ! $donorAccountForEmail->id()->equals($donorIdFromDonation);
+        $return = $donorAccountForEmail !== null && !$donorAccountForEmail->id()->equals($donorIdFromDonation);
+
+        $this->logger->info('returning ' . $return);
+
+        return $return;
     }
 }
