@@ -255,10 +255,6 @@ class MetaCampaign extends SalesforceReadProxy
         $this->imfCampaignTargetOverride = Money::fromPence((int) (100.0 * ($data['imfCampaignTargetOverride'] ?? 0.0)), $currency);
         $this->matchFundsTotal = Money::fromPence((int) (100.0 * ($data['totalMatchedFundsAvailable'] ?? 0.0)), $currency);
         $this->totalAdjustment = Money::fromNumericString($totalAdjustment, $currency);
-
-        // I think changes only to Embedded properties e.g. just Money do not get registered
-        // as changes by Doctrine without marking the entity as dirty. -- N L-H
-        $this->updatedNow();
     }
 
     /**
