@@ -13,13 +13,14 @@ use MatchBot\Application\Assertion;
 readonly class Money implements \JsonSerializable, \Stringable
 {
     /**
-     * @param int $amountInPence - Amount of money in minor units, i.e. pence, assumed to be worth 1/100 of the major
-     * unit. Has upper limit set above what we expect to ever deal with on a single account.
+     * @param numeric-string $amountInPence - Amount of money in minor units, i.e. pence, assumed to be worth 1/100 of the major
+     * unit. Has upper limit set above what we expect to ever deal with on a single account. Must not be `int` while
+     * {@link https://github.com/doctrine/orm/issues/11721} is unresolved.
      * @param Currency $currency
      */
     private function __construct(
         #[Column(type: 'bigint')]
-        public int $amountInPence,
+        private string $amountInPence,
         #[Column(length: 3)]
         public Currency $currency
     ) {
@@ -32,14 +33,19 @@ readonly class Money implements \JsonSerializable, \Stringable
         );
     }
 
+    public function amountInPence(): int
+    {
+        return (int) $this->amountInPence;
+    }
+
     public static function fromPence(int $amountInPence, Currency $currency): self
     {
-        return new self($amountInPence, $currency);
+        return new self((string) $amountInPence, $currency);
     }
 
     public static function fromPoundsGBP(int $pounds): self
     {
-        return new self($pounds * 100, Currency::GBP);
+        return new self((string) ($pounds * 100), Currency::GBP);
     }
 
     public static function sum(self ...$amounts): self
@@ -57,7 +63,7 @@ readonly class Money implements \JsonSerializable, \Stringable
 
     public static function zero(Currency $currency = Currency::GBP): self
     {
-        return new self(0, $currency);
+        return new self('0', $currency);
     }
 
     /**
@@ -66,7 +72,7 @@ readonly class Money implements \JsonSerializable, \Stringable
      */
     public static function fromSerialized(mixed $value): self
     {
-        return new self($value['amountInPence'], Currency::fromIsoCode($value['currency']));
+        return new self((string) $value['amountInPence'], Currency::fromIsoCode($value['currency']));
     }
 
     /**
@@ -76,7 +82,7 @@ readonly class Money implements \JsonSerializable, \Stringable
     {
         return $this->currency->symbol() .
             number_format(
-                num: $this->amountInPence / 100,
+                num: $this->amountInPence() / 100,
                 decimals: 2,
                 decimal_separator: '.',
                 thousands_separator: ','
@@ -89,7 +95,7 @@ readonly class Money implements \JsonSerializable, \Stringable
     #[\Override]
     public function jsonSerialize(): mixed
     {
-        return ['amountInPence' => $this->amountInPence, 'currency' => $this->currency->isoCode()];
+        return ['amountInPence' => $this->amountInPence(), 'currency' => $this->currency->isoCode()];
     }
 
     public function lessThan(Money $that): bool
@@ -98,7 +104,7 @@ readonly class Money implements \JsonSerializable, \Stringable
             throw new \UnexpectedValueException("Cannot compare amounts with different currencies");
         }
 
-        return $this->amountInPence < $that->amountInPence;
+        return $this->amountInPence() < $that->amountInPence();
     }
 
     public function moreThan(Money $that): bool
@@ -107,13 +113,13 @@ readonly class Money implements \JsonSerializable, \Stringable
             throw new \UnexpectedValueException("Cannot compare amounts with different currencies");
         }
 
-        return $this->amountInPence > $that->amountInPence;
+        return $this->amountInPence() > $that->amountInPence();
     }
 
     #[\Override]
     public function __toString()
     {
-        return $this->currency->isoCode() . ' ' . (string)($this->amountInPence / 100);
+        return $this->currency->isoCode() . ' ' . (string)($this->amountInPence() / 100);
     }
 
     /**
@@ -122,7 +128,7 @@ readonly class Money implements \JsonSerializable, \Stringable
      */
     public function toNumericString(): string
     {
-        return bcdiv((string) $this->amountInPence, '100', 2);
+        return bcdiv($this->amountInPence, '100', 2);
     }
 
     /**
@@ -134,7 +140,7 @@ readonly class Money implements \JsonSerializable, \Stringable
 
         Assertion::integerish((float) $amountInPence);
 
-        return new self((int) $amountInPence, Currency::GBP);
+        return new self($amountInPence, Currency::GBP);
     }
 
     /**
@@ -146,12 +152,12 @@ readonly class Money implements \JsonSerializable, \Stringable
 
         Assertion::integerish((float) $amountInPence);
 
-        return new self((int) $amountInPence, $currency);
+        return new self($amountInPence, $currency);
     }
 
     public function withPence(int $amountInPence): self
     {
-        return new self($amountInPence, $this->currency);
+        return new self((string) $amountInPence, $this->currency);
     }
 
     public function plus(self $that): self
@@ -159,7 +165,7 @@ readonly class Money implements \JsonSerializable, \Stringable
         /** @psalm-suppress ImpureMethodCall */
         Assertion::same($this->currency, $that->currency);
 
-        return new self($this->amountInPence + $that->amountInPence, $this->currency);
+        return new self(bcadd($this->amountInPence, $that->amountInPence, 0), $this->currency);
     }
 
     public function minus(self $that): self
@@ -167,7 +173,7 @@ readonly class Money implements \JsonSerializable, \Stringable
         /** @psalm-suppress ImpureMethodCall */
         Assertion::same($this->currency, $that->currency);
 
-        return new self($this->amountInPence - $that->amountInPence, $this->currency);
+        return new self(bcsub($this->amountInPence, $that->amountInPence, 0), $this->currency);
     }
 
     /**
@@ -175,26 +181,26 @@ readonly class Money implements \JsonSerializable, \Stringable
      */
     public function equalsIgnoringCurrency(string $amount): bool
     {
-        return bccomp($amount, bcdiv((string) $this->amountInPence, '100', 2), 2) === 0;
+        return bccomp($amount, bcdiv($this->amountInPence, '100', 2), 2) === 0;
     }
 
     public function toMajorUnitFloat(): float
     {
-        return $this->amountInPence / 100;
+        return $this->amountInPence() / 100;
     }
 
     public function isZero(): bool
     {
-        return $this->amountInPence === 0;
+        return $this->amountInPence() === 0;
     }
 
     public function isStrictlyPositive(): bool
     {
-        return $this->amountInPence > 0;
+        return $this->amountInPence() > 0;
     }
 
     public function times(int $multiplier): self
     {
-        return new self($this->amountInPence * $multiplier, $this->currency);
+        return new self(bcmul($this->amountInPence, $multiplier, 0), $this->currency);
     }
 }
