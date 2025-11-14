@@ -116,7 +116,7 @@ class MetaCampaignRepositoryTest extends IntegrationTest
         $this->em->persist($metacampaign);
         $this->em->flush();
 
-        $metacampaign->setMatchFundsTotal(Money::fromNumericString('42', Currency::GBP));
+        $metacampaign->setMatchFundsTotal(Money::fromNumericString('25000000', Currency::GBP));
 
         $this->em->flush();
         $this->em->clear();
@@ -125,6 +125,6 @@ class MetaCampaignRepositoryTest extends IntegrationTest
 
         $persistedMetaCampaign = $this->sut->getBySlug($slug);
 
-        $this->assertSame('£42.00', $persistedMetaCampaign->getMatchFundsTotal()->format());
+        $this->assertSame('£25,000,000.00', $persistedMetaCampaign->getMatchFundsTotal()->format());
     }
 }
