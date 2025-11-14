@@ -13,6 +13,9 @@ use Psr\Log\LoggerInterface;
  */
 class DonorAccountRepository extends EntityRepository
 {
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - called by DI container
+     */
     public function __construct(EntityManagerInterface $em, ClassMetadata $class, private LoggerInterface $logger)
     {
         parent::__construct($em, $class);
@@ -53,7 +56,7 @@ class DonorAccountRepository extends EntityRepository
         $this->logger->info('checking if account exists for donation ' . $donation->getUuid()->__toString());
         $emailAddress = $donation->getDonorEmailAddress();
 
-        $this->logger->info('email address is ' . (string) $emailAddress->email);
+        $this->logger->info('email address is ' . (string) $emailAddress?->email);
 
         if ($emailAddress === null) {
             return false;
@@ -61,11 +64,11 @@ class DonorAccountRepository extends EntityRepository
 
         $donorAccountForEmail = $this->findByEmail($emailAddress);
 
-        $this->logger->info('found donor account ' . (string) ($donorAccountForEmail?->id()->id->toString()));
+        $this->logger->info('found donor account ' . ($donorAccountForEmail?->id()->id->toString()));
 
         $donorIdFromDonation = $donation->getDonorId();
 
-        $this->logger->info('donor ID from donation is ' . (string) ($donorIdFromDonation?->id->toString()));
+        $this->logger->info('donor ID from donation is ' . ($donorIdFromDonation?->id->toString()));
 
         if ($donorIdFromDonation == null) {
             // all donations made since April 2025 have non-null donorID.
@@ -74,7 +77,7 @@ class DonorAccountRepository extends EntityRepository
 
         $return = $donorAccountForEmail !== null && !$donorAccountForEmail->id()->equals($donorIdFromDonation);
 
-        $this->logger->info('returning ' . $return);
+        $this->logger->info('returning ' . (string) $return);
 
         return $return;
     }
