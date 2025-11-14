@@ -175,7 +175,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $totals = array_map(fn(Donation $donation) => $donation->getFundingWithdrawalTotalAsObject(), $donations);
         $grandTotal = Money::sum(...$totals);
 
-        $averagePence = intdiv($grandTotal->amountInPence, count($donations));
+        $averagePence = intdiv($grandTotal->amountInPence(), count($donations));
 
         // We know currency is same for all donations as otherwise `sum` would have thrown.
         $currency = $donations[0]->currency();
