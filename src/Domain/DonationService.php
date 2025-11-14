@@ -863,7 +863,7 @@ class DonationService
             // each individual donation.
             $this->donationNotifier->notifyDonorOfDonationSuccess(
                 donation: $donation,
-                sendRegisterUri: $this->shouldInviteRegistration($donation),
+                sendRegisterUri: $this->shouldInviteRegistration($donation) && ! $showAccountExistsForEmail,
                 showAccountExistsForEmail: $showAccountExistsForEmail,
             );
         }
