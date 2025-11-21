@@ -1012,6 +1012,7 @@ class CreateTest extends TestCase
     {
         $customerSession = new CustomerSession();
         $customerSession->client_secret = 'customer_session_client_secret';
+        $customerSession->expires_at = time() + 10;
         $stripeProphecy->createCustomerSession(StripeCustomerId::of(self::PSPCUSTOMERID))
             ->willReturn($customerSession);
     }
