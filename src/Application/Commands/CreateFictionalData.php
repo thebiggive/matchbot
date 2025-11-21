@@ -7,6 +7,7 @@ use Laminas\Diactoros\Uri;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Client\Campaign as CampaignClient;
+use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFamily;
 use MatchBot\Domain\CampaignFunding;
@@ -14,6 +15,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\CampaignStatistics;
 use MatchBot\Domain\CharityRepository;
+use MatchBot\Domain\CharityResponseToOffer;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundRepository;
@@ -237,8 +239,8 @@ class CreateFictionalData extends Command
             'championOptInStatement' => null,
             'parentMatchFundsRemaining' => null,
             'regularGivingCollectionEnd' => null,
-            'relatedApplicationStatus' => 'Approved',
-            'relatedApplicationCharityResponseToOffer' => 'Accepted',
+            'relatedApplicationStatus' => ApplicationStatus::Approved,
+            'relatedApplicationCharityResponseToOffer' => CharityResponseToOffer::Accepted,
         ];
     }
 
