@@ -204,6 +204,8 @@ class Create extends Action
             stripeSessionSecret: $customerSession->client_secret,
         );
 
+        $this->logger->info('Stripe customer session expiry: ' . $customerSession->expires_at);
+
         return $this->respondWithData($response, $data, 201);
     }
 }
