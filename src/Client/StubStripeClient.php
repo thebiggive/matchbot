@@ -82,6 +82,7 @@ class StubStripeClient implements Stripe
     {
         $session = new CustomerSession();
         $session->client_secret = 'fake_client_secret';
+        $session->expires_at = time() + 10;
 
         return $session;
     }
