@@ -413,6 +413,7 @@ abstract class IntegrationTest extends TestCase
         $stripeCustomerSessions = $this->prophesize(CustomerSessionService::class);
         $customerSession = new CustomerSession();
         $customerSession->client_secret = 'client_secret';
+        $customerSession->expires_at = time() + 10;
         $stripeCustomerSessions->create(Argument::any())
             ->willReturn($customerSession);
 
