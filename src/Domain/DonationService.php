@@ -72,6 +72,9 @@ class DonationService
         'This PaymentIntent\'s amount could not be updated because it has a status of canceled.',
         // phpcs:ignore
         'The parameter application_fee_amount cannot be updated on a PaymentIntent after a capture has already been made.',
+
+        // people attempting to abuse the system may send donation confirmation requests with non-matching stripe customer IDs. We can't stop them, will just return an error to client:
+        'does not match the expected customer',
     ];
 
     public const string STRIPE_DESTINATION_ACCOUNT_NEEDS_CAPABILITIES_MESSAGE = 'Your destination account needs to have at least one of the following capabilities enabled';
