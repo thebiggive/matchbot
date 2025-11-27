@@ -31,7 +31,8 @@ final class Version20251127121956 extends AbstractMigration
                                 donorHomePostcode = null,
                                 donorLastName = 'anonymised',
                                 donorPostalAddress = null,
-                                salesforcePushStatus = 'pending-update'
+                                salesforcePushStatus = 'pending-update',
+                                tbgComms = 0
             WHERE Donation.donorUUID = '1f0ca134-f3e6-62fe-b0b6-3fdb2dbceffd'
             AND Donation.donationStatus = 'Pending'
             LIMIT 10; -- there may be fewer than 10 matching this in prod, not publishing the exact number here.                
