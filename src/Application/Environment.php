@@ -68,7 +68,7 @@ enum Environment
     public function isFeatureEnabledRegularGivingPaymentFailureNotification(): bool
     {
         return match ($this) {
-            self::Production => false,
+            self::Production => true,
             self::Regression => true,
             self::Staging => true,
             self::Local => true,
