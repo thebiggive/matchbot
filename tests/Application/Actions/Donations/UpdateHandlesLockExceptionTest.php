@@ -24,6 +24,7 @@ use MatchBot\Domain\DonorName;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\RegularGivingNotifier;
+use MatchBot\Domain\RegularGivingService;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;

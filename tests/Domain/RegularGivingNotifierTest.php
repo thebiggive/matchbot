@@ -4,6 +4,7 @@ namespace MatchBot\Tests\Domain;
 
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Actions\RegularGivingMandate\MandateCollectionRepeatedlyFailed;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -15,7 +16,6 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\DayOfMonth;
-use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
@@ -28,7 +28,6 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\FundType;
-use MatchBot\Domain\MandateStatus;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
@@ -40,8 +39,6 @@ use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
-use PharIo\Manifest\Email;
-use PhpParser\Node\Arg;
 use Prophecy\Argument;
 use Prophecy\Argument\Token\TypeToken;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -52,9 +49,7 @@ use Stripe\PaymentMethod;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
-use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 class RegularGivingNotifierTest extends TestCase
@@ -133,7 +128,7 @@ class RegularGivingNotifierTest extends TestCase
     public function testItCancelsMandateWhenChargeFailsAfterAWeek(): void
     {
         $donor = $this->givenADonor();
-        list($_campaign, $mandate, $_firstDonation, $_clock, $secondDonation) = $this->andGivenAnActivatedMandate($this->personId, $donor);
+        list($_campaign, $_mandate, $_firstDonation, $_clock, $secondDonation) = $this->andGivenAnActivatedMandate($this->personId, $donor);
 
         $this->thenThisRequestShouldBeSentToMailer(Argument::type(EmailMessage::class));
 
@@ -147,9 +142,10 @@ class RegularGivingNotifierTest extends TestCase
 
         $this->whenAWeekPasses();
 
-        $this->whenAPreauthorizedDonationsChargeFails($secondDonation);
+        // Sets exception expectation so must come out of order for now.
+        $this->thenSomeMandateShouldBeCancelled();
 
-        $this->thenTheMandateShouldBeCancelled($mandate);
+        $this->whenAPreauthorizedDonationsChargeFails($secondDonation);
     }
 
     private function markDonationCollected(Donation $firstDonation, \DateTimeImmutable $collectionDate): void
@@ -285,9 +281,13 @@ class RegularGivingNotifierTest extends TestCase
         $this->sut->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
     }
 
-    public function thenTheMandateShouldBeCancelled(RegularGivingMandate $mandate): void
+    /**
+     * Responsibility for handling the exception sits with the caller to avoid circular dependencies,
+     * so for now just check that any mandate has this exception.
+     */
+    public function thenSomeMandateShouldBeCancelled(): void
     {
-        $this->assertSame($mandate->getStatus(), MandateStatus::Cancelled);
+        $this->expectException(MandateCollectionRepeatedlyFailed::class);
     }
 
     /**
@@ -315,7 +315,7 @@ class RegularGivingNotifierTest extends TestCase
         $this->donorAccountRepositoryProphecy->findByPersonId(Argument::any())->willReturn($this->donor);
 
 
-        $this->sut =  new RegularGivingNotifier(
+        $this->sut = new RegularGivingNotifier(
             $this->mailerProphecy->reveal(),
             $this->donorAccountRepositoryProphecy->reveal(),
             $this->clock,

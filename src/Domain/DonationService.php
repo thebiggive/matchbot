@@ -7,6 +7,7 @@ use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use GuzzleHttp\Exception\ClientException;
+use MatchBot\Application\Actions\RegularGivingMandate\MandateCollectionRepeatedlyFailed;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
@@ -386,11 +387,7 @@ class DonationService
             $this->logger->warning('PaymentIntentNotSucceeded for donation ' . $donation->getUuid()->toString() . ', will notify donor: ' . $exception->getMessage());
 
             if ($donation->getPreAuthorizationDate() < $this->clock->now()->modify("-1 week")) {
-                $mandate->cancel(
-                    'Payment failed more than one week after pre-auth date for donation ' . $donation->getUuid()->toString(),
-                    $this->clock->now(),
-                    MandateCancellationType::CollectingAutomaticDonationRepeatFailed
-                );
+                throw new MandateCollectionRepeatedlyFailed();
             }
         }
     }
