@@ -7,9 +7,9 @@ namespace MatchBot\Application\Commands;
 use Assert\AssertionFailedException;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Actions\RegularGivingMandate\MandateCollectionRepeatedlyFailed;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DomainException\MandateNotActive;
-use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\RegularGivingDonationTooOldToCollect;
 use MatchBot\Domain\DomainException\WrongCampaignType;
@@ -17,8 +17,6 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\MandateCancellationType;
-use MatchBot\Domain\PersonId;
-use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
@@ -236,9 +234,17 @@ class TakeRegularGivingDonations extends LockingCommand
                     } else {
                         throw $exception;
                     }
+                } catch (MandateCollectionRepeatedlyFailed $exception) {
+                    $mandate = $donation->getMandate();
+                    \assert($mandate instanceof RegularGivingMandate);
+                    $this->mandateService->cancelMandate(
+                        $mandate,
+                        'Payment failed more than one week after pre-auth date',
+                        MandateCancellationType::CollectingAutomaticDonationRepeatFailed,
+                    );
                 }
             } catch (\Exception $exception) {
-                $this->logger->error('Exception, skipping RG confirmation of donation: ' . $donation->getUuid()->toString() . ", " . \get_class($exception) . ": " . $exception->getMessage());
+                $this->logger->warning('Exception, skipping RG confirmation of donation: ' . $donation->getUuid()->toString() . ", " . \get_class($exception) . ": " . $exception->getMessage());
                 continue;
             }
         }
