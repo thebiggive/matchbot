@@ -417,10 +417,8 @@ readonly class RegularGivingService
         );
 
         foreach ($cancellableDonations as $donation) {
-            $uuid = $donation->getUuid();
-            $this->entityManager->wrapInTransaction(function () use ($uuid): void {
-                $donation = $this->donationRepository->findAndLockOneByUUID($uuid);
-                Assertion::notNull($donation);
+            $this->entityManager->wrapInTransaction(function () use ($donation): void {
+                $this->donationRepository->findAndLockOneByUUID($donation->getUuid());
                 $this->donationService->cancel($donation);
             });
         }
