@@ -207,7 +207,7 @@ EOF
             ], 402);
         } catch (RateLimitExceededException $exception) {
             $this->logger->warning(sprintf(
-                'Rate limit exceed on Confirm for donation %s (%s): %s',
+                'Rate limit exceeded on Confirm for donation %s (%s): %s',
                 $donation->getUuid(),
                 $paymentIntentId,
                 $exception->getMessage(),

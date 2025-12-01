@@ -27,7 +27,6 @@ use Stripe\Exception\ApiErrorException as StripeApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
-use Symfony\Component\Messenger\Envelope;
 use UnexpectedValueException;
 
 readonly class RegularGivingService
@@ -418,7 +417,10 @@ readonly class RegularGivingService
         );
 
         foreach ($cancellableDonations as $donation) {
-            $this->donationService->cancel($donation);
+            $this->entityManager->wrapInTransaction(function () use ($donation): void {
+                $this->donationRepository->findAndLockOneByUUID($donation->getUuid());
+                $this->donationService->cancel($donation);
+            });
         }
 
         $this->entityManager->flush();
