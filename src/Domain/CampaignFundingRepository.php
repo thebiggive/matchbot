@@ -78,14 +78,18 @@ class CampaignFundingRepository extends EntityRepository
      */
     public function getAmountAvailableForMetaCampaign(MetaCampaign $metaCampaign): Money
     {
-        // First, get all unique CampaignFunding IDs for the meta-campaign
+        // First, get all unique CampaignFunding IDs for the meta-campaign – campaigns we expect to go ahead only
         $idQuery = $this->getEntityManager()->createQuery(dql: <<<'DQL'
             SELECT DISTINCT cf.id FROM MatchBot\Domain\CampaignFunding cf
             LEFT JOIN cf.campaigns campaign
             WHERE campaign.metaCampaignSlug = :slug
+            AND campaign.relatedApplicationStatus = :appApproved
+            AND campaign.relatedApplicationCharityResponseToOffer = :appOfferAccepted
         DQL
         );
         $idQuery->setParameter('slug', $metaCampaign->getSlug()->slug);
+        $idQuery->setParameter('appApproved', ApplicationStatus::Approved->value);
+        $idQuery->setParameter('appOfferAccepted', CharityResponseToOffer::Accepted->value);
 
         /** @var list<array{id: int}> $ids */
         $ids = $idQuery->getResult();
