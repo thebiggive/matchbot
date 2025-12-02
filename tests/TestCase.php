@@ -8,6 +8,7 @@ use DI\Container;
 use DI\ContainerBuilder;
 use Exception;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFamily;
 use MatchBot\Domain\Charity;
@@ -430,8 +431,8 @@ class TestCase extends PHPUnitTestCase
             isRegularGiving: $isRegularGiving,
             pinPosition: null,
             championPagePinPosition: null,
-            relatedApplicationStatus: null,
-            relatedApplicationCharityResponseToOffer: $charityRejected ? CharityResponseToOffer::Rejected : null,
+            relatedApplicationStatus: $metaCampaignSlug === null ? null : ApplicationStatus::Approved,
+            relatedApplicationCharityResponseToOffer: $charityRejected ? CharityResponseToOffer::Rejected : CharityResponseToOffer::Accepted,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             totalFundraisingTarget: $totalFundraisingTarget ?? Money::zero(),
             thankYouMessage: $thankYouMessage,
