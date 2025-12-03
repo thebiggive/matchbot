@@ -861,9 +861,9 @@ class DonationService
                 $balanceTransaction,
             ));
         } else {
-            // Previously we (incorrectly) used the previous donation's value, but that is a
-            // numeric-string in pounds. There's also no value in reading and writing the value
-            // I can see except to risk more bugs so let's pass null and not use it for now.
+            // Previously we (incorrectly) tried to pass `collectFromStripeCharge()` the earlier Original
+            // PSP Fee which is in pounds. Rather than convert twice and add more scope for bugs, we now leave it
+            // null if unknown and skip setting nulls.
             $this->logger->info("Donation $uuid: Keeping starting/placeholder original PSP fee as no balance transaction ID yet");
         }
 
