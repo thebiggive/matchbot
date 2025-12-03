@@ -821,6 +821,9 @@ class DonationService
      */
     public function updateDonationStatusFromSuccessfulCharge(Charge $charge, Donation $donation): void
     {
+        $startingOriginalPspFee = $donation->getOriginalPspFee();
+        $uuid = $donation->getUuid()->toString();
+        $this->logger->info(sprintf('Updating donation %s with starting original fee %d', $uuid, $startingOriginalPspFee));
         $this->logger->info('updating donation from charge: ' . $charge->toJSON());
 
         $donationWasPreviouslyCollected = $donation->getDonationStatus() === DonationStatus::Collected;
@@ -849,8 +852,15 @@ class DonationService
                 $balanceTransaction,
                 $donation->currency()->isoCode(),
             );
+            $this->logger->info(sprintf(
+                'Donation %s: Retrieved original PSP fee %d from balance transaction %s',
+                $uuid,
+                $originalFeeFractional,
+                $balanceTransaction,
+            ));
         } else {
             $originalFeeFractional = $donation->getOriginalPspFee();
+            $this->logger->info("Donation $uuid: Keeping starting/placeholder original PSP fee as no balance transaction ID yet");
         }
 
         $donation->collectFromStripeCharge(

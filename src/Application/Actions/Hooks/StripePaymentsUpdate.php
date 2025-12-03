@@ -151,13 +151,13 @@ class StripePaymentsUpdate extends Stripe
             );
 
             $this->logger->info(sprintf(
-                'Set donation %s Collected based on hook for charge ID %s',
+                'Set donation %s Collected based on charge.succeeded hook for charge ID %s',
                 $donation->getUuid(),
                 $charge->id,
             ));
         } else {
             $this->logger->error(sprintf(
-                'Ignoring unsupported status %s for donation %s on charge ID %s',
+                'Ignoring unsupported status %s for donation %s on charge.succeeded with ID %s',
                 $charge->status,
                 $donation->getUuid(),
                 $charge->id,
@@ -217,7 +217,7 @@ class StripePaymentsUpdate extends Stripe
         );
 
         $this->logger->info(sprintf(
-            'Set donation %s Collected based on hook for charge ID %s',
+            'Set donation %s Collected based on charge.updated hook for charge ID %s',
             $donation->getUuid(),
             $charge->id,
         ));
