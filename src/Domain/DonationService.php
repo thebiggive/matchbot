@@ -41,6 +41,7 @@ use Stripe\Card;
 use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
 use Stripe\StripeObject;
@@ -738,7 +739,7 @@ class DonationService
     /**
      * @throws PaymentIntentNotSucceeded
      * @throws CouldNotRetrievePaymentMethod
-     * */
+     */
     public function confirmDonationWithSavedPaymentMethod(
         Donation $donation,
         StripePaymentMethodId $paymentMethodId,
@@ -753,14 +754,20 @@ class DonationService
         $this->entityManager->flush();
 
         Assertion::notNull($paymentIntentId);
-        $paymentIntent = $this->stripe->confirmPaymentIntent(
-            $paymentIntentId,
-            [
-                'payment_method' => $paymentMethodId->stripePaymentMethodId,
-                'return_url' => $donation->getReturnUrl(),
-                'off_session' => $offSession,
-            ]
-        );
+        try {
+            $paymentIntent = $this->stripe->confirmPaymentIntent(
+                $paymentIntentId,
+                [
+                    'payment_method' => $paymentMethodId->stripePaymentMethodId,
+                    'return_url' => $donation->getReturnUrl(),
+                    'off_session' => $offSession,
+                ]
+            );
+        } catch (CardException $exception) {
+            $this->logger->info('CardException during confirmDonationWithSavedPaymentMethod: ' . $exception->getMessage());
+            $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
+            throw new PaymentIntentNotSucceeded($paymentIntent, "CardException: " . $exception->getMessage());
+        }
 
         $this->logger->info("PaymentIntent: {$paymentIntent->toJSON()}");
 
