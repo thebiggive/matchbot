@@ -847,8 +847,10 @@ class DonationService
         // for the original async charge success, and then populated later when we handle a charge updated event.
         Assertion::nullOrString($balanceTransaction);
 
+        /** @var numeric-string|null $originalFeeFractional In pence or similar, if known */
+        $originalFeeFractional = null;
         if (\is_string($balanceTransaction)) {
-            $originalFeeFractional = $this->getOriginalFeeFractional(
+            $originalFeeFractional = (string) $this->getOriginalFeeFractional(
                 $balanceTransaction,
                 $donation->currency()->isoCode(),
             );
@@ -859,7 +861,9 @@ class DonationService
                 $balanceTransaction,
             ));
         } else {
-            $originalFeeFractional = $donation->getOriginalPspFee();
+            // Previously we (incorrectly) used the previous donation's value, but that is a
+            // numeric-string in pounds. There's also no value in reading and writing the value
+            // I can see except to risk more bugs so let's pass null and not use it for now.
             $this->logger->info("Donation $uuid: Keeping starting/placeholder original PSP fee as no balance transaction ID yet");
         }
 
@@ -869,7 +873,7 @@ class DonationService
             transferId: $charge->transfer ?? null,
             cardBrand: $cardBrand,
             cardCountry: $cardCountry,
-            originalFeeFractional: (string)$originalFeeFractional,
+            originalFeeFractional: $originalFeeFractional,
             chargeCreationTimestamp: $charge->created,
         );
 
