@@ -861,7 +861,7 @@ class DonationService
                 $balanceTransaction,
             ));
         } else {
-            // Previously we (incorrectly) tried to pass `collectFromStripeCharge()` the earlier Original
+            // Before MAT-468 we (incorrectly) tried to pass `collectFromStripeCharge()` the earlier Original
             // PSP Fee which is in pounds. Rather than convert twice and add more scope for bugs, we now leave it
             // null if unknown and skip setting nulls.
             $this->logger->info("Donation $uuid: Keeping starting/placeholder original PSP fee as no balance transaction ID yet");
