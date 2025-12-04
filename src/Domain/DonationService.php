@@ -821,6 +821,9 @@ class DonationService
      */
     public function updateDonationStatusFromSuccessfulCharge(Charge $charge, Donation $donation): void
     {
+        $startingOriginalPspFee = $donation->getOriginalPspFee();
+        $uuid = $donation->getUuid()->toString();
+        $this->logger->info(sprintf('Updating donation %s with starting original fee %d', $uuid, $startingOriginalPspFee));
         $this->logger->info('updating donation from charge: ' . $charge->toJSON());
 
         $donationWasPreviouslyCollected = $donation->getDonationStatus() === DonationStatus::Collected;
@@ -844,13 +847,24 @@ class DonationService
         // for the original async charge success, and then populated later when we handle a charge updated event.
         Assertion::nullOrString($balanceTransaction);
 
+        /** @var numeric-string|null $originalFeeFractional In pence or similar, if known */
+        $originalFeeFractional = null;
         if (\is_string($balanceTransaction)) {
-            $originalFeeFractional = $this->getOriginalFeeFractional(
+            $originalFeeFractional = (string) $this->getOriginalFeeFractional(
                 $balanceTransaction,
                 $donation->currency()->isoCode(),
             );
+            $this->logger->info(sprintf(
+                'Donation %s: Retrieved original PSP fee %d from balance transaction %s',
+                $uuid,
+                $originalFeeFractional,
+                $balanceTransaction,
+            ));
         } else {
-            $originalFeeFractional = $donation->getOriginalPspFee();
+            // Before MAT-468 we (incorrectly) tried to pass `collectFromStripeCharge()` the earlier Original
+            // PSP Fee which is in pounds. Rather than convert twice and add more scope for bugs, we now leave it
+            // null if unknown and skip setting nulls.
+            $this->logger->info("Donation $uuid: Keeping starting/placeholder original PSP fee as no balance transaction ID yet");
         }
 
         $donation->collectFromStripeCharge(
@@ -859,7 +873,7 @@ class DonationService
             transferId: $charge->transfer ?? null,
             cardBrand: $cardBrand,
             cardCountry: $cardCountry,
-            originalFeeFractional: (string)$originalFeeFractional,
+            originalFeeFractional: $originalFeeFractional,
             chargeCreationTimestamp: $charge->created,
         );
 
