@@ -6,12 +6,9 @@ namespace MatchBot\IntegrationTests;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
-use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
-use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
@@ -21,7 +18,6 @@ use MatchBot\Tests\TestLogger;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\Service\ChargeService;
 use Stripe\Service\PayoutService;
@@ -61,6 +57,22 @@ class StripePayoutHandlerTest extends IntegrationTest
             ->shouldBeCalledOnce()
             ->willReturn($this->buildAutoIterableCollection($this->getStripeHookMock('ApiResponse/bt_list_success')));
 
+        // TODO remove this after CC25 mid-payout patching is done.
+        $stripeBalanceTransactionProphecy->retrieve(
+            'txn_00000000000000',
+            null,
+            ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
+        )
+            ->willReturn(
+                /** @var \stdClass $btMock */
+                json_decode(
+                    $this->getStripeHookMock('ApiResponse/bt_success'),
+                    false,
+                    512,
+                    \JSON_THROW_ON_ERROR
+                )
+            );
+
         $stripeClientProphecy = $this->getStripeClient(withRetriedPayout: false);
         @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal(); // @phpstan-ignore property.notFound
         @$stripeClientProphecy->charges = $this->getStripeChargeList($this->getStripeHookMock( // @phpstan-ignore property.notFound
@@ -98,6 +110,7 @@ class StripePayoutHandlerTest extends IntegrationTest
                 info: Payout: Getting all Connect account paid Charge IDs for Payout ID po_externalId_123 complete, found 1
                 info: Payout: Getting original TBG charge IDs related to payout's Charge IDs
                 info: Payout: Finished getting original Charge IDs, found 1 (from 1 source transfer IDs and 1 donations whose transfer IDs matched)
+                info: Payout: Corrected fee for donation {$donation->getUuid()} from 0.00 to 0.37 (from balance transaction txn_00000000000000)
                 info: Marked donation ID {$donationId} paid based on stripe payout #po_externalId_123
                 info: Payout: Updating paid donations complete for stripe payout #po_externalId_123, persisted 1
                 
@@ -164,10 +177,23 @@ class StripePayoutHandlerTest extends IntegrationTest
 
     /**
      * Get a charges object with 'all' response as expected to reconcile against a donation.
+     *
+     * (Temporarily also returns some charge on 'retrieve' too.)
      */
     private function getStripeChargeList(string $chargeResponse): ChargeService
     {
         $stripeChargeProphecy = $this->prophesize(ChargeService::class);
+
+        // TODO remove this side effect after CC25 mid-payout patching is done.
+        $chargeData = json_decode($chargeResponse, true, 512, \JSON_THROW_ON_ERROR);
+        $stripeChargeProphecy->retrieve(Argument::type('string'), null, ['stripe_account' => self::CONNECTED_ACCOUNT_ID])
+            ->will(function () use ($chargeData) {
+                /** @var \stdClass $chargeObj */
+                $chargeObj = json_decode(json_encode($chargeData['data'][0]), false, 512, \JSON_THROW_ON_ERROR);
+
+                return $chargeObj;
+            });
+
         $stripeChargeProphecy->all(
             $this->getCommonCalloutArgs(),
             ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
