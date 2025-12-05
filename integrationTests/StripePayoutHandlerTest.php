@@ -185,7 +185,7 @@ class StripePayoutHandlerTest extends IntegrationTest
         $stripeChargeProphecy = $this->prophesize(ChargeService::class);
 
         // TODO remove this side effect after CC25 mid-payout patching is done.
-        /** @var array{data: array} $chargeData */
+        /** @var array{data: array<int, array<string, mixed>>} $chargeData */
         $chargeData = json_decode($chargeResponse, true, 512, \JSON_THROW_ON_ERROR);
         $stripeChargeProphecy->retrieve(Argument::type('string'), null, ['stripe_account' => self::CONNECTED_ACCOUNT_ID])
             ->will(function () use ($chargeData) {
