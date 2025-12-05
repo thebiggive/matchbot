@@ -117,10 +117,9 @@ class StripePayoutHandler
             }
 
             if ($donation->getDonationStatus() === DonationStatus::Collected) {
-                // Fix for donations affected by the fee fallback bug where fees were set to 0
-                // due to pounds/pence mismatch. We detect this by checking for suspiciously low fees
-                // (£0.10 or less) on collected donations and fetching the correct value from Stripe.
-                // The bug caused either zero fees or incorrectly small values when pounds were used as pence.
+                // Fix for donations affected by the fee fallback bug where original fees were set low.
+                // We detect this by checking for suspiciously low fees (£0.10 or less) on collected
+                // donations and fetching the correct value from Stripe.
                 if (bccomp($donation->getOriginalPspFee(), '0.10', 2) <= 0) {
                     $this->correctDonationFeeFromStripe($donation, $connectAccountId);
                 }
