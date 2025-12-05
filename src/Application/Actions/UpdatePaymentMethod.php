@@ -93,7 +93,10 @@ class UpdatePaymentMethod extends Action
 
             $exceptionClass = get_class($e);
 
-            $isExpectedExceptionMessage = in_array($e->getMessage(), self::EXPECTED_STRIPE_NEW_CARD_MESSAGES, true);
+            $isExpectedExceptionMessage = \array_any(
+                self::EXPECTED_STRIPE_NEW_CARD_MESSAGES,
+                fn(string $expectedMessage) => \str_contains($e->getMessage(), $expectedMessage)
+            );
 
             $this->logger->log(
                 level: $isExpectedExceptionMessage ? LogLevel::INFO : LogLevel::ERROR,
