@@ -117,6 +117,13 @@ class StripePayoutHandler
             }
 
             if ($donation->getDonationStatus() === DonationStatus::Collected) {
+                // Fix for donations affected by the fee fallback bug where original fees were set low.
+                // We detect this by checking for suspiciously low fees (£0.10 or less) on collected
+                // donations and fetching the correct value from Stripe.
+                if (bccomp($donation->getOriginalPspFee(), '0.10', 2) <= 0) {
+                    $this->correctDonationFeeFromStripe($donation, $connectAccountId);
+                }
+
                 // We're confident to set donation status to paid because this
                 // method is called only when Stripe event `payout.paid` is received.
                 $donation->recordPayout($payoutId, $payoutInfo['arrivalDate']);
@@ -328,6 +335,67 @@ class StripePayoutHandler
             'created' => $payoutCreated,
             'status' => $stripePayout->status,
         ];
+    }
+
+    /**
+     * Corrects the original PSP fee for a donation by fetching the actual fee from Stripe's balance transaction.
+     *
+     * @todo Delete after CC25 payouts are complete.
+     */
+    private function correctDonationFeeFromStripe(Donation $donation, string $connectAccountId): void
+    {
+        $chargeId = $donation->getChargeId();
+        if ($chargeId === null) {
+            $this->logger->warning(sprintf(
+                'Payout: Cannot correct fee for donation %s - no charge ID',
+                $donation->getUuid()
+            ));
+            return;
+        }
+
+        try {
+            // Fetch the charge from the connect account to get the balance transaction
+            $charge = $this->stripeClient->charges->retrieve(
+                $chargeId,
+                null,
+                ['stripe_account' => $connectAccountId]
+            );
+
+            $balanceTransactionId = $charge->balance_transaction;
+            if (!\is_string($balanceTransactionId)) {
+                $this->logger->warning(sprintf(
+                    'Payout: Cannot correct fee for donation %s - balance transaction not available on charge %s',
+                    $donation->getUuid(),
+                    $chargeId
+                ));
+                return;
+            }
+
+            // Fetch the balance transaction to get the actual fee
+            $balanceTransaction = $this->stripeClient->balanceTransactions->retrieve(
+                $balanceTransactionId,
+                null,
+                ['stripe_account' => $connectAccountId]
+            );
+
+            $originalFeeFractional = (string) $balanceTransaction->fee;
+            $startingFee = $donation->getOriginalPspFee();
+            $donation->setOriginalPspFeeFractional($originalFeeFractional);
+
+            $this->logger->info(sprintf(
+                'Payout: Corrected fee for donation %s from %s to %s (from balance transaction %s)',
+                $donation->getUuid(),
+                $startingFee,
+                $donation->getOriginalPspFee(),
+                $balanceTransactionId
+            ));
+        } catch (ApiErrorException $exception) {
+            $this->logger->error(sprintf(
+                'Payout: Failed to correct fee for donation %s: %s',
+                $donation->getUuid(),
+                $exception->getMessage()
+            ));
+        }
     }
 
     /**
