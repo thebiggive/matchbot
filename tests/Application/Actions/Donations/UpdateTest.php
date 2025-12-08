@@ -614,6 +614,49 @@ class UpdateTest extends TestCase
         $this->assertSame(400, $response->getStatusCode());
     }
 
+    /**
+     * @todo We probably want to change this behaviour to either support it, explain the situation
+     * to donors or if doing neither, validate in Donate to stop 'N/A' being provided for either
+     * name in the first place including when signing up for a Donation Funds account.
+     */
+    public function testDeserialiseWithPartialNameError(): void
+    {
+        $uuid = self::DONATION_UUID;
+        $json = <<<EOT
+{"amountMatchedByChampionFunds":0,"amountMatchedByPledges":0,"amountPreauthorizedFromChampionFunds":0,"billingPostalAddress":null,"charityFee":375.2,"charityFeeVat":75.04,"charityId":"0011r00002AAAABAAB","charityName":"Some charity","countryCode":"GB","collectedTime":null,"createdTime":"2025-12-08T15:21:01+00:00","currencyCode":"GBP","donationAmount":25000,"totalPaid":null,"donationId":"$uuid","donationMatched":true,"emailAddress":"example@example.com","firstName":"Firstname","giftAid":false,"lastName":"N/A","matchedAmount":0,"matchReservedAmount":25000,"optInCharityEmail":true,"optInChampionEmail":null,"optInTbgEmail":true,"projectId":"a05WS000005AAAABAB","psp":"stripe","pspCustomerId":"cus_TWAAAAAAAAA","pspMethodType":"customer_balance","refundedTime":null,"status":"Pending","tbgGiftAidRequestConfirmedCompleteAt":null,"tipAmount":0,"tipGiftAid":false,"transactionId":"pi_xxxo","updatedTime":"2025-12-08T15:21:01+00:00","mandate":null}
+EOT;
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/' . self::DONATION_UUID,
+            $json,
+        )
+            ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
+
+        $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
+
+        $container = $this->diContainer();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
+        $entityManagerProphecy->getRepository(CampaignFunding::class)->willReturn($this->createStub(CampaignFundingRepository::class));
+
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $this->setDoublesInContainer($container, $entityManagerProphecy, $stripeProphecy);
+
+        $app = $this->getAppInstance();
+        $response = $app->handle($request->withAttribute('route', $route));
+
+        $this->assertSame(400, $response->getStatusCode());
+        $payload = (string) $response->getBody();
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Donation Update data deserialise error for donation ' . self::DONATION_UUID . ': First and last names must be supplied together or not at all.',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+        $this->assertSame($expectedSerialised, $payload);
+    }
+
     public function testAddDataAttemptWithGiftAidMissingDonatingInGBP(): void
     {
         $app = $this->getAppInstance();

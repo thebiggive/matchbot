@@ -101,7 +101,7 @@ class Update extends Action
         ) {
             $this->logger->info("Donation Update non-serialisable payload was: $body");
 
-            $message = "Donation Update data deserialise error for donation $donationUUID";
+            $message = "Donation Update data deserialise error for donation $donationUUID: {$exception->getMessage()}";
             $exceptionType = get_class($exception);
 
             return $this->validationError(
