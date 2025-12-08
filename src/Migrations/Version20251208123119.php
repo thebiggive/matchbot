@@ -24,13 +24,13 @@ final class Version20251208123119 extends AbstractMigration
         $sourceUuid = '3d57e857-4830-4088-9edd-18b32b4dccc1';
         $targetUuid = 'b59e65f7-3bae-47ce-94b2-5d0811b06917';
 
-        /** @var string $email */
+        /** @var string|false $email */
         $email = $this->connection->fetchOne(
             'SELECT donorEmailAddress FROM Donation WHERE uuid = ? LIMIT 1',
             [$sourceUuid],
         );
 
-        if ($email === false || $email === null) {
+        if ($email === false) {
             // Nothing to update if the source row doesn't exist or has no email.
             return;
         }
