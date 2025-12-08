@@ -334,9 +334,13 @@ class DonationService
      * Where a charge fails ({@see PaymentIntentNotSucceeded}), emails the donor. They can typically amend payment
      * details for a week to remedy it. If the charge fails after that week the mandate will be cancelled.
      *
-     * @throws RegularGivingCollectionEndPassed
+     * Returns success or failure; won't throw when a card exception is new and remediation is still possible.
+     *
+     * @throws RegularGivingCollectionEndPassed|MandateNotActive|MandateCollectionRepeatedlyFailed
+     *
+     * @todo add #[\NoDiscard] attribute when we're in 8.5
      */
-    public function confirmPreAuthorized(Donation $donation): void
+    public function confirmPreAuthorized(Donation $donation): bool
     {
         $stripeAccountId = $donation->getPspCustomerId();
         Assertion::notNull($stripeAccountId);
@@ -390,7 +394,11 @@ class DonationService
             if ($donation->getPreAuthorizationDate() < $this->clock->now()->modify("-1 week")) {
                 throw new MandateCollectionRepeatedlyFailed();
             }
+
+            return false;
         }
+
+        return true;
     }
 
     /**

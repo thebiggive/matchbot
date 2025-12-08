@@ -210,10 +210,11 @@ class TakeRegularGivingDonations extends LockingCommand
 
             try {
                 try {
-                    $this->donationService->confirmPreAuthorized($donation);
-                    $io->writeln(
-                        "Donation {$donation->getUuid()} is expected to become Collected when Stripe calls back"
-                    );
+                    if ($this->donationService->confirmPreAuthorized($donation)) {
+                        $io->writeln(
+                            "Donation {$donation->getUuid()} is expected to become Collected when Stripe calls back"
+                        );
+                    } // else there are already detailed logs about the failure
                 } catch (MandateNotActive $exception) {
                     $io->info($exception->getMessage());
                     continue;
