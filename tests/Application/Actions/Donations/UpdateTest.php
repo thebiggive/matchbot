@@ -606,7 +606,7 @@ class UpdateTest extends TestCase
 
         $expectedPayload = new ActionPayload(400, ['error' => [
             'type' => 'BAD_REQUEST',
-            'description' => 'Donation Update data deserialise error for donation 3aa347b2-b405-11ef-b2db-e3ab222bcba4',
+            'description' => 'Donation Update data deserialise error for donation 3aa347b2-b405-11ef-b2db-e3ab222bcba4: ' . \MatchBot\Application\HttpModels\Donation::class . '::__construct(): Argument #12 ($homeAddress) must be of type ?string, array given',
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
