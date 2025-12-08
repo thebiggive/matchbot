@@ -338,6 +338,7 @@ class DonationService
      *
      * @throws RegularGivingCollectionEndPassed|MandateNotActive|MandateCollectionRepeatedlyFailed
      */
+     #[\NoDiscard]
     public function confirmPreAuthorized(Donation $donation): bool
     {
         $stripeAccountId = $donation->getPspCustomerId();
