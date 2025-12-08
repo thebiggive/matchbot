@@ -19,14 +19,26 @@ final class Version20251208123119 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql(<<<SQL
-            UPDATE Donation 
-                SET donorEmailAddress = (
-                    SELECT donorEmailAddress from Donation where uuid = '3d57e857-4830-4088-9edd-18b32b4dccc1'
-                )
-                WHERE uuid = 'b59e65f7-3bae-47ce-94b2-5d0811b06917'
-                LIMIT 1;
-        SQL);
+        // MySQL doesn't allow selecting from the same table being updated.
+        // Fetch the source value first, then use it as a bound parameter in the UPDATE.
+        $sourceUuid = '3d57e857-4830-4088-9edd-18b32b4dccc1';
+        $targetUuid = 'b59e65f7-3bae-47ce-94b2-5d0811b06917';
+
+        /** @var string $email */
+        $email = $this->connection->fetchOne(
+            'SELECT donorEmailAddress FROM Donation WHERE uuid = ? LIMIT 1',
+            [$sourceUuid],
+        );
+
+        if ($email === false || $email === null) {
+            // Nothing to update if the source row doesn't exist or has no email.
+            return;
+        }
+
+        $this->addSql(
+            'UPDATE Donation SET donorEmailAddress = ? WHERE uuid = ? LIMIT 1',
+            [$email, $targetUuid],
+        );
     }
 
     public function down(Schema $schema): void
