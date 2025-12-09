@@ -185,7 +185,7 @@ class Donation extends SalesforceWriteProxy
      * Original fee varies by card brand and country and is based on the full amount paid by the
      * donor: `$amount + $tipAmount`.
      *
-     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
@@ -1177,7 +1177,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string
+     * @return numeric-string
      */
     public function getOriginalPspFee(): string
     {
@@ -1185,8 +1185,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @param numeric-string $originalPspFeeFractional
-     * @return void
+     * @param numeric-string $originalPspFeeFractional i.e. in pence or similar
      */
     public function setOriginalPspFeeFractional(string $originalPspFeeFractional): void
     {
@@ -1573,17 +1572,20 @@ class Donation extends SalesforceWriteProxy
         $this->charityFeeVat = $fees->feeVat;
     }
 
+    /**
+     * @param numeric-string|null $originalFeeFractional In pence or similar, if known
+     */
     public function collectFromStripeCharge(
         string $chargeId,
         int $totalPaidFractional,
         null|string|\Stringable $transferId,
         ?CardBrand $cardBrand,
         ?Country $cardCountry,
-        string $originalFeeFractional,
+        ?string $originalFeeFractional,
         int $chargeCreationTimestamp
     ): void {
         Assertion::eq(is_null($cardBrand), is_null($cardCountry));
-        Assertion::numeric($originalFeeFractional);
+        Assertion::nullOrNumeric($originalFeeFractional);
         Assertion::notEmpty($chargeId);
 
         if ($transferId !== null) {
@@ -1594,7 +1596,9 @@ class Donation extends SalesforceWriteProxy
         $this->chargeId = $chargeId;
         $this->donationStatus = DonationStatus::Collected;
         $this->collectedAt = (new \DateTimeImmutable("@$chargeCreationTimestamp"));
-        $this->setOriginalPspFeeFractional($originalFeeFractional);
+        if ($originalFeeFractional !== null) {
+            $this->setOriginalPspFeeFractional($originalFeeFractional);
+        }
 
         $this->totalPaidByDonor = bcdiv((string)$totalPaidFractional, '100', 2);
     }

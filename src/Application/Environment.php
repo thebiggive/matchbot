@@ -64,18 +64,4 @@ enum Environment
     {
         return true;
     }
-
-    /**
-     * @phpstan-ignore return.tooWideBool
-     */
-    public function isFeatureEnabledRegularGivingPaymentFailureNotification(): bool
-    {
-        return match ($this) {
-            self::Production => true,
-            self::Regression => true,
-            self::Staging => true,
-            self::Local => true,
-            self::Test => true,
-        };
-    }
 }

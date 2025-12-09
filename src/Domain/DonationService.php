@@ -338,9 +338,13 @@ class DonationService
      * Where a charge fails ({@see PaymentIntentNotSucceeded}), emails the donor. They can typically amend payment
      * details for a week to remedy it. If the charge fails after that week the mandate will be cancelled.
      *
-     * @throws RegularGivingCollectionEndPassed
+     * Returns success or failure; won't throw when a card exception is new and remediation is still possible.
+     *
+     * @throws RegularGivingCollectionEndPassed|MandateNotActive|MandateCollectionRepeatedlyFailed
+     *
+     * @todo add #[\NoDiscard] attribute when we're in 8.5
      */
-    public function confirmPreAuthorized(Donation $donation): void
+    public function confirmPreAuthorized(Donation $donation): bool
     {
         $stripeAccountId = $donation->getPspCustomerId();
         Assertion::notNull($stripeAccountId);
@@ -394,7 +398,11 @@ class DonationService
             if ($donation->getPreAuthorizationDate() < $this->clock->now()->modify("-1 week")) {
                 throw new MandateCollectionRepeatedlyFailed();
             }
+
+            return false;
         }
+
+        return true;
     }
 
     /**
@@ -828,6 +836,9 @@ class DonationService
      */
     public function updateDonationStatusFromSuccessfulCharge(Charge $charge, Donation $donation): void
     {
+        $startingOriginalPspFee = $donation->getOriginalPspFee();
+        $uuid = $donation->getUuid()->toString();
+        $this->logger->info(sprintf('Updating donation %s with starting original fee %d', $uuid, $startingOriginalPspFee));
         $this->logger->info('updating donation from charge: ' . $charge->toJSON());
 
         $donationWasPreviouslyCollected = $donation->getDonationStatus() === DonationStatus::Collected;
@@ -851,13 +862,24 @@ class DonationService
         // for the original async charge success, and then populated later when we handle a charge updated event.
         Assertion::nullOrString($balanceTransaction);
 
+        /** @var numeric-string|null $originalFeeFractional In pence or similar, if known */
+        $originalFeeFractional = null;
         if (\is_string($balanceTransaction)) {
-            $originalFeeFractional = $this->getOriginalFeeFractional(
+            $originalFeeFractional = (string) $this->getOriginalFeeFractional(
                 $balanceTransaction,
                 $donation->currency()->isoCode(),
             );
+            $this->logger->info(sprintf(
+                'Donation %s: Retrieved original PSP fee %d from balance transaction %s',
+                $uuid,
+                $originalFeeFractional,
+                $balanceTransaction,
+            ));
         } else {
-            $originalFeeFractional = $donation->getOriginalPspFee();
+            // Before MAT-468 we (incorrectly) tried to pass `collectFromStripeCharge()` the earlier Original
+            // PSP Fee which is in pounds. Rather than convert twice and add more scope for bugs, we now leave it
+            // null if unknown and skip setting nulls.
+            $this->logger->info("Donation $uuid: Keeping starting/placeholder original PSP fee as no balance transaction ID yet");
         }
 
         $donation->collectFromStripeCharge(
@@ -866,7 +888,7 @@ class DonationService
             transferId: $charge->transfer ?? null,
             cardBrand: $cardBrand,
             cardCountry: $cardCountry,
-            originalFeeFractional: (string)$originalFeeFractional,
+            originalFeeFractional: $originalFeeFractional,
             chargeCreationTimestamp: $charge->created,
         );
 
