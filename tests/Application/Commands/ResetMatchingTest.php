@@ -71,9 +71,9 @@ class ResetMatchingTest extends TestCase
          */
         $campaignFundingRepoProphecy->findAll()
             ->willThrow(
-                new TableNotFoundException(
+                new TableNotFoundException( // @phpstan-ignore method.internal
                 // Doctrine PDO\Exception (a DriverException subclass) wraps native \PDOException.
-                    PDOException::new(
+                    PDOException::new( // @phpstan-ignore staticMethod.internalClass
                         new \PDOException(
                             'SQLSTATE[42S02]: Base table or view not found: 1146 ' .
                             "Table 'matchbot.CampaignFunding' doesn't exist"

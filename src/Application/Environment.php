@@ -65,6 +65,9 @@ enum Environment
         return true;
     }
 
+    /**
+     * @phpstan-ignore return.tooWideBool
+     */
     public function isFeatureEnabledRegularGivingPaymentFailureNotification(): bool
     {
         return match ($this) {

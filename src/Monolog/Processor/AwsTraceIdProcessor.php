@@ -13,7 +13,7 @@ class AwsTraceIdProcessor implements ProcessorInterface
     {
         $traceId = $_SERVER['HTTP_X_AMZN_TRACE_ID'] ?? null;
         if (is_string($traceId)) {
-            $record['extra']['x-amzn-trace-id'] = $traceId;
+            $record['extra']['x-amzn-trace-id'] = $traceId; // @phpstan-ignore offsetAccess.nonOffsetAccessible
         }
 
         return $record;

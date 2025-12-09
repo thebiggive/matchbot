@@ -325,7 +325,7 @@ class RegularGivingNotifierTest extends TestCase
         $paymentMethod = new PaymentMethod();
 
         /** @psalm-suppress InvalidPropertyAssignmentValue */
-        $paymentMethod->card = new StripeObject(); // @phpstan-ignore assign.propertyType
+        $paymentMethod->card = new StripeObject();
 
         /** @psalm-suppress UndefinedMagicPropertyAssignment */
         $paymentMethod->card->brand = 'visa'; // @phpstan-ignore property.notFound

@@ -98,7 +98,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         );
         $paymentMethod = new PaymentMethod();
         /** @psalm-suppress InvalidPropertyAssignmentValue */
-        $paymentMethod->card = new Card(); // @phpstan-ignore assign.propertyType
+        $paymentMethod->card = new Card();
         $paymentMethod->card->country = 'GB';
         $paymentMethod->card->brand = 'visa';
 
