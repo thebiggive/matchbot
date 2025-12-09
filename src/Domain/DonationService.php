@@ -270,12 +270,16 @@ class DonationService
     ): \Stripe\PaymentIntent {
         $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
 
-        /** @var StripeObject&object{
+        /**
+         * phpstan is newly reporting a variable type issue here, hard to see at a glance exactly what the issue
+         * is as the type involved is rather complicated.
+         *
+         * @var StripeObject&object{
          *     card: null|object{country: string, brand: string, fingerprint: string},
          *     pay_by_bank: null|StripeObject
          * } $paymentMethodPreview
          */
-        $paymentMethodPreview = $confirmationToken->payment_method_preview;
+        $paymentMethodPreview = $confirmationToken->payment_method_preview; // @phpstan-ignore varTag.type
 
         $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
 
@@ -334,9 +338,13 @@ class DonationService
      * Where a charge fails ({@see PaymentIntentNotSucceeded}), emails the donor. They can typically amend payment
      * details for a week to remedy it. If the charge fails after that week the mandate will be cancelled.
      *
-     * @throws RegularGivingCollectionEndPassed
+     * Returns success or failure; won't throw when a card exception is new and remediation is still possible.
+     *
+     * @throws RegularGivingCollectionEndPassed|MandateNotActive|MandateCollectionRepeatedlyFailed
+     *
+     * @todo add #[\NoDiscard] attribute when we're in 8.5
      */
-    public function confirmPreAuthorized(Donation $donation): void
+    public function confirmPreAuthorized(Donation $donation): bool
     {
         $stripeAccountId = $donation->getPspCustomerId();
         Assertion::notNull($stripeAccountId);
@@ -390,7 +398,11 @@ class DonationService
             if ($donation->getPreAuthorizationDate() < $this->clock->now()->modify("-1 week")) {
                 throw new MandateCollectionRepeatedlyFailed();
             }
+
+            return false;
         }
+
+        return true;
     }
 
     /**
@@ -482,12 +494,15 @@ class DonationService
         Donation $donation,
         ConfirmationToken $confirmationToken
     ): void {
-        /** @var StripeObject&object{
+        /**
+         *  phpstan is newly reporting a variable type issue here, hard to see at a glance exactly what the issue
+         *  is as the type involved is rather complicated.
+         * @var StripeObject&object{
          *     card: null|object{country: string, brand: string, fingerprint: string},
          *     pay_by_bank: null|StripeObject
          * } $paymentMethodPreview
          */
-        $paymentMethodPreview = $confirmationToken->payment_method_preview;
+        $paymentMethodPreview = $confirmationToken->payment_method_preview; // @phpstan-ignore varTag.type
 
         if ($paymentMethodPreview->card !== null) {
             $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception('Missing card brand');

@@ -1177,7 +1177,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string
+     * @return numeric-string
      */
     public function getOriginalPspFee(): string
     {

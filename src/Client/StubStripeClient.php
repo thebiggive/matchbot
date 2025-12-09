@@ -8,12 +8,10 @@ use MatchBot\Domain\StripePaymentMethodId;
 use Ramsey\Uuid\Uuid;
 use Stripe\BalanceTransaction;
 use Stripe\Charge;
-use Stripe\Collection;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
-use Stripe\SearchResult;
 use Stripe\SetupIntent;
 use Stripe\StripeObject;
 
