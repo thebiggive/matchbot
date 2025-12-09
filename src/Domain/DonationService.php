@@ -270,12 +270,16 @@ class DonationService
     ): \Stripe\PaymentIntent {
         $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
 
-        /** @var StripeObject&object{
+        /**
+         * phpstan is newly reporting a variable type issue here, hard to see at a glance exactly what the issue
+         * is as the type involved is rather complicated.
+         *
+         * @var StripeObject&object{
          *     card: null|object{country: string, brand: string, fingerprint: string},
          *     pay_by_bank: null|StripeObject
          * } $paymentMethodPreview
          */
-        $paymentMethodPreview = $confirmationToken->payment_method_preview;
+        $paymentMethodPreview = $confirmationToken->payment_method_preview; // @phpstan-ignore varTag.type
 
         $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
 
@@ -490,12 +494,15 @@ class DonationService
         Donation $donation,
         ConfirmationToken $confirmationToken
     ): void {
-        /** @var StripeObject&object{
+        /**
+         *  phpstan is newly reporting a variable type issue here, hard to see at a glance exactly what the issue
+         *  is as the type involved is rather complicated.
+         * @var StripeObject&object{
          *     card: null|object{country: string, brand: string, fingerprint: string},
          *     pay_by_bank: null|StripeObject
          * } $paymentMethodPreview
          */
-        $paymentMethodPreview = $confirmationToken->payment_method_preview;
+        $paymentMethodPreview = $confirmationToken->payment_method_preview; // @phpstan-ignore varTag.type
 
         if ($paymentMethodPreview->card !== null) {
             $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception('Missing card brand');

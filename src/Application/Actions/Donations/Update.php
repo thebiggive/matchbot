@@ -426,7 +426,7 @@ class Update extends Action
                     $nextActionType = null;
                     if ($confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
                         $nextAction = $confirmedIntent->next_action;
-                        $nextActionType = (string) $nextAction?->type; //@phpstan-ignore property.notFound
+                        $nextActionType = (string) $nextAction?->type;
                     }
 
                     $isDonationToBGRequiringBankTransfer =

@@ -211,7 +211,7 @@ class DonationServiceTest extends TestCase
              * @psalm-suppress InternalClass Hard to simulate `final` exception otherwise
              */
             $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willThrow(
-                new LockWaitTimeoutException(new PDOException('EXCEPTION_MESSAGE'), null)
+                new LockWaitTimeoutException(new PDOException('EXCEPTION_MESSAGE'), null) // @phpstan-ignore method.internal, method.internalClass, new.internalClass
             );
         } else {
             $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willReturn(null);
