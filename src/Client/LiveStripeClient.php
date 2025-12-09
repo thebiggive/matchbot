@@ -2,20 +2,15 @@
 
 namespace MatchBot\Client;
 
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use Stripe\BalanceTransaction;
 use Stripe\Charge;
-use Stripe\Collection;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
-use Stripe\Exception\ApiErrorException;
-use Stripe\Exception\InvalidArgumentException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
-use Stripe\SearchResult;
 use Stripe\SetupIntent;
 use Stripe\StripeClient;
 
@@ -119,7 +114,7 @@ class LiveStripeClient implements Stripe
     {
         $components = self::SESSION_COMPONENTS;
         $components['payment_element']['features']['payment_method_save_usage'] = 'off_session';
-        $components['payment_element']['features']['payment_method_redisplay'] = 'disabled';
+        $components['payment_element']['features']['payment_method_redisplay'] = 'disabled'; // Ensure method's not removed during non-RG checkout
         unset($components['payment_element']['features']['payment_method_allow_redisplay_filters']);
         unset($components['payment_element']['features']['payment_method_redisplay_limit']);
 

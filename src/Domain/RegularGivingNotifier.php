@@ -80,10 +80,6 @@ class RegularGivingNotifier
         Assertion::notNull($preAuthDate);
         $preAuthDate = $preAuthDate->setTimezone($this->tz);
 
-        if (! Environment::current()->isFeatureEnabledRegularGivingPaymentFailureNotification()) {
-            return;
-        }
-
         $this->mailer->send(EmailMessage::donorRegularDonationFailed(
             $donor->emailAddress,
             [
