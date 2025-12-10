@@ -61,12 +61,13 @@ class UpdateCampaignDonationStats extends LockingCommand
     }
 
     /**
-     * Expects stats within 1 day for now. If this was necessary often after the initial stats population, we might
+     * Expects stats within 1 day (@todo temporarily 1 hour) for now.
+     * If this was necessary often after the initial stats population, we might
      * want to consider making it run only at quiet times. But assuming it isn't, it's OK to run as needed on any 'tick'.
      */
     private function updateOldMissedCampaigns(OutputInterface $output): void
     {
-        $oldestExpectedWithoutStats = new \DateTimeImmutable('-1 day');
+        $oldestExpectedWithoutStats = new \DateTimeImmutable('-1 hour');
         $campaigns = $this->campaignRepository->findCampaignsWithNoRecentStats($oldestExpectedWithoutStats);
         $numChanged = 0;
 
