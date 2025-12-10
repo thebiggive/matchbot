@@ -121,7 +121,7 @@ class StripePayoutHandler
                 // We detect this by checking for suspiciously low fees (£0.10 or less) on collected
                 // donations and fetching the correct value from Stripe.
                 if (bccomp($donation->getOriginalPspFee(), '0.10', 2) <= 0) {
-                    $this->correctDonationFeeFromStripe($donation, $connectAccountId);
+                    $this->correctDonationFeeFromStripe($donation);
                 }
 
                 // We're confident to set donation status to paid because this
@@ -342,7 +342,7 @@ class StripePayoutHandler
      *
      * @todo Delete after CC25 payouts are complete.
      */
-    private function correctDonationFeeFromStripe(Donation $donation, string $connectAccountId): void
+    private function correctDonationFeeFromStripe(Donation $donation): void
     {
         $chargeId = $donation->getChargeId();
         if ($chargeId === null) {
