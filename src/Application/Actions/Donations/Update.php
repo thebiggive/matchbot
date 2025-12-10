@@ -101,14 +101,14 @@ class Update extends Action
         ) {
             $this->logger->info("Donation Update non-serialisable payload was: $body");
 
-            $message = "Donation Update data deserialise error for donation $donationUUID: {$exception->getMessage()}";
+            $message = "Donation Update data deserialise error for donation $donationUUID";
             $exceptionType = get_class($exception);
 
             return $this->validationError(
-                $response,
-                "$message: $exceptionType - {$exception->getMessage()}",
-                $message,
-                empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
+                response: $response,
+                logMessage: "$message: $exceptionType - {$exception->getMessage()}",
+                publicMessage: $message,
+                reduceSeverity: empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
             );
         }
 
