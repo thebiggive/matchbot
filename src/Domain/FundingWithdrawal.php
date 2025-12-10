@@ -57,6 +57,7 @@ class FundingWithdrawal extends Model
      */
     #[ORM\PrePersist]
     #[ORM\PreUpdate]
+    #[ORM\PreRemove]
     public function touchParentDonation(): void
     {
         $this->donation->updatedNow();
