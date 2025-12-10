@@ -53,12 +53,11 @@ class FundingWithdrawal extends Model
     /**
      * Ensure the parent Donation is marked updated whenever a withdrawal changes, so polling can rely on Donation only.
      *
-     * would like to also call this on ORM\PreRemove but we found that causes a lockw wait timeout when running
-     * integration tests.
      * @psalm-suppress PossiblyUnusedMethod - called by ORM
      */
     #[ORM\PrePersist]
     #[ORM\PreUpdate]
+    #[ORM\PreRemove]
     public function touchParentDonation(): void
     {
         $this->donation->updatedNow();
