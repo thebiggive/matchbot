@@ -121,7 +121,7 @@ class StripePayoutHandler
                 // We detect this by checking for suspiciously low fees (£0.10 or less) on collected
                 // donations and fetching the correct value from Stripe.
                 if (bccomp($donation->getOriginalPspFee(), '0.10', 2) <= 0) {
-                    $this->correctDonationFeeFromStripe($donation, $connectAccountId);
+                    $this->correctDonationFeeFromStripe($donation);
                 }
 
                 // We're confident to set donation status to paid because this
@@ -342,7 +342,7 @@ class StripePayoutHandler
      *
      * @todo Delete after CC25 payouts are complete.
      */
-    private function correctDonationFeeFromStripe(Donation $donation, string $connectAccountId): void
+    private function correctDonationFeeFromStripe(Donation $donation): void
     {
         $chargeId = $donation->getChargeId();
         if ($chargeId === null) {
@@ -354,12 +354,7 @@ class StripePayoutHandler
         }
 
         try {
-            // Fetch the charge from the connect account to get the balance transaction
-            $charge = $this->stripeClient->charges->retrieve(
-                $chargeId,
-                null,
-                ['stripe_account' => $connectAccountId]
-            );
+            $charge = $this->stripeClient->charges->retrieve($chargeId);
 
             $balanceTransactionId = $charge->balance_transaction;
             if (!\is_string($balanceTransactionId)) {
@@ -371,12 +366,7 @@ class StripePayoutHandler
                 return;
             }
 
-            // Fetch the balance transaction to get the actual fee
-            $balanceTransaction = $this->stripeClient->balanceTransactions->retrieve(
-                $balanceTransactionId,
-                null,
-                ['stripe_account' => $connectAccountId]
-            );
+            $balanceTransaction = $this->stripeClient->balanceTransactions->retrieve($balanceTransactionId);
 
             $originalFeeFractional = (string) $balanceTransaction->fee;
             $startingFee = $donation->getOriginalPspFee();
