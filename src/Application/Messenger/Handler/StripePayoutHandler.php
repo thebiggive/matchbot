@@ -354,12 +354,7 @@ class StripePayoutHandler
         }
 
         try {
-            // Fetch the charge from the connect account to get the balance transaction
-            $charge = $this->stripeClient->charges->retrieve(
-                $chargeId,
-                null,
-                ['stripe_account' => $connectAccountId]
-            );
+            $charge = $this->stripeClient->charges->retrieve($chargeId);
 
             $balanceTransactionId = $charge->balance_transaction;
             if (!\is_string($balanceTransactionId)) {
@@ -371,12 +366,7 @@ class StripePayoutHandler
                 return;
             }
 
-            // Fetch the balance transaction to get the actual fee
-            $balanceTransaction = $this->stripeClient->balanceTransactions->retrieve(
-                $balanceTransactionId,
-                null,
-                ['stripe_account' => $connectAccountId]
-            );
+            $balanceTransaction = $this->stripeClient->balanceTransactions->retrieve($balanceTransactionId);
 
             $originalFeeFractional = (string) $balanceTransaction->fee;
             $startingFee = $donation->getOriginalPspFee();
