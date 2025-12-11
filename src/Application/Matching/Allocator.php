@@ -94,6 +94,7 @@ class Allocator
         $this->logInfo('ID ' . $donation->getUuid()->toString() . ' allocated new match funds totalling ' . $amountNewlyMatched);
         $this->logInfo('Allocation took ' . (string) round($allocateEndTime - $allocateStartTime, 6) . ' seconds');
 
+
         return $amountNewlyMatched;
     }
 

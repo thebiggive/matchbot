@@ -15,6 +15,9 @@ use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
+/*
+ * // this
+ */
 class MatchFundsRedistributor
 {
     public function __construct(
@@ -38,7 +41,7 @@ class MatchFundsRedistributor
      * @throws TerminalLockException
      * @throws \DateInvalidOperationException
      */
-    public function redistributeMatchFunds(): array
+    public function redistributeMatchFunds(\Closure $simulatedParallelProcess): array
     {
         $donationsToCheck = $this->donationRepository->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
             campaignsClosedBefore: $this->now,
@@ -82,7 +85,7 @@ class MatchFundsRedistributor
 
             $amountMatchedBeforeRedistribution = $donation->getFundingWithdrawalTotal();
 
-            // Technically another donation could be allocated funds in between these two lines, so we aim to run
+            // Technically another donation could be allocated funds in between these next two lines, so we aim to run
             // this command only at quiet traffic times and also now only against donations to campaigns which
             // have closed. If we ever relax the latter condition, the worst case scenario is that we
             // inaccurately tell two donors they received matching. We log an error if this happens so we can
@@ -90,6 +93,7 @@ class MatchFundsRedistributor
 
             /** @psalm-suppress InternalMethod */
             $this->allocator->releaseMatchFunds($donation);
+            $simulatedParallelProcess();
             $amountMatchedAfterRedistribution = $this->allocator->allocateMatchFunds($donation);
 
             // If the new allocation is less, log an error but still count the donation and continue with the loop.

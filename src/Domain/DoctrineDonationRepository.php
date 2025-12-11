@@ -186,7 +186,8 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
                 array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES),
             )
             ->setParameter('campaignClosedSince', $closedSinceDate)
-            ->setParameter('now', $now);
+            ->setParameter('now', $now)
+        ;
 
         // Result caching rationale as per `findWithExpiredMatching()`.
         /** @var Donation[] $result */

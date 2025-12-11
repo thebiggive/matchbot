@@ -53,7 +53,7 @@ class RetrospectivelyMatchTest extends TestCase
     public function testMissingDaysBackRunsInDefaultMode(): void
     {
         $commandTester = $this->getCommandTester(matchingIsAllocated: true);
-        $this->matchFundsRedistributorProphecy->redistributeMatchFunds()->shouldBeCalledOnce()->willReturn([3, 2]);
+        $this->matchFundsRedistributorProphecy->redistributeMatchFunds(Argument::any())->shouldBeCalledOnce()->willReturn([3, 2]);
         $commandTester->execute([]);
 
         $expectedOutputLines = [
@@ -71,7 +71,7 @@ class RetrospectivelyMatchTest extends TestCase
     public function testNonWholeDaysBackIsRounded(): void
     {
         $commandTester = $this->getCommandTester(matchingIsAllocated: false);
-        $this->matchFundsRedistributorProphecy->redistributeMatchFunds()->shouldBeCalledOnce()->willReturn([3, 2]);
+        $this->matchFundsRedistributorProphecy->redistributeMatchFunds(Argument::any())->shouldBeCalledOnce()->willReturn([3, 2]);
         $commandTester->execute(['days-back' => '7.5']);
 
         $expectedOutputLines = [
@@ -89,7 +89,7 @@ class RetrospectivelyMatchTest extends TestCase
     public function testWholeDaysBackProceeds(): void
     {
         $commandTester = $this->getCommandTester(matchingIsAllocated: false);
-        $this->matchFundsRedistributorProphecy->redistributeMatchFunds()->shouldBeCalledOnce()->willReturn([3, 2]);
+        $this->matchFundsRedistributorProphecy->redistributeMatchFunds(Argument::any())->shouldBeCalledOnce()->willReturn([3, 2]);
         $commandTester->execute(['days-back' => '8']);
 
         $expectedOutputLines = [
