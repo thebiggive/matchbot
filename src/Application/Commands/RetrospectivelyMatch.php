@@ -38,6 +38,8 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  *
  * If not argument (number of days) is given, campaigns which closed within the last hour are checked
  * and all of their donations are eligible for matching.
+ *
+ * // this
  */
 #[AsCommand(
     name: 'matchbot:retrospectively-match',
@@ -133,7 +135,7 @@ class RetrospectivelyMatch extends LockingCommand
             $this->chatter->send($chatMessage);
         }
 
-        [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
+        [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds(fn() => null);
         $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
 
         // Intentionally use the "stale" `$oneHourBeforeExecStarted` – we want to include funds related to all

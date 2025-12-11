@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests;
 
+use DateTimeImmutable;
 use DI\Container;
 use DI\ContainerBuilder;
 use Exception;
@@ -459,6 +460,7 @@ class TestCase extends PHPUnitTestCase
         bool $collected = false,
         ?string $transferId = null,
         ?int $mandateSequenceNumber = null,
+        ?DateTimeImmutable $collectedAt = null,
     ): Donation {
 
         $donation = new Donation(
@@ -490,14 +492,15 @@ class TestCase extends PHPUnitTestCase
             self::collectDonation(
                 $donation,
                 $transferId,
-                (int) (100.0 * ((float) $amount + (float) $tipAmount))
+                (int) (100.0 * ((float) $amount + (float) $tipAmount)),
+                $collectedAt
             );
         }
 
         return $donation;
     }
 
-    protected static function collectDonation(Donation $donationResponse, ?string $transferId = null, int $totalPaidFractional = 100): void
+    protected static function collectDonation(Donation $donationResponse, ?string $transferId = null, int $totalPaidFractional = 100, ?DateTimeImmutable $collectedAt = null): void
     {
         $donationResponse->collectFromStripeCharge(
             chargeId: 'testchargeid_' . self::randomString(),
@@ -506,7 +509,7 @@ class TestCase extends PHPUnitTestCase
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',
-            chargeCreationTimestamp: (int)(new \DateTimeImmutable('1970-01-01'))->format('U'),
+            chargeCreationTimestamp: (int)($collectedAt ?? new \DateTimeImmutable('1970-01-01'))->format('U'),
         );
     }
 

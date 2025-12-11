@@ -15,16 +15,23 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class RedistributeMatchFunds extends LockingCommand
 {
+    /** @var \Closure():void  */
+    public \Closure $simulatedParallelProcess;
+
     public function __construct(
         private MatchFundsRedistributor $matchFundsRedistributor,
     ) {
+        $this->simulatedParallelProcess = function (): void {
+            return;
+        };
+
         parent::__construct();
     }
 
     #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
+        [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds($this->simulatedParallelProcess);
         $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
 
         return 0;
