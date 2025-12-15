@@ -23,6 +23,9 @@ class FundingWithdrawal extends Model
     #[ORM\JoinColumn(nullable: false)]
     protected Donation $donation;
 
+    #[ORM\OneToOne(targetEntity: FundingWithdrawal::class, fetch: 'EAGER')]
+    protected ?FundingWithdrawal $reversedBy = null;
+
     /**
      * @var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
@@ -74,5 +77,26 @@ class FundingWithdrawal extends Model
     public function getCampaignFunding(): CampaignFunding
     {
         return $this->campaignFunding;
+    }
+
+    /**
+     * Creates a negated copy of this funding withadrawal, that can be used to reverse its effect.
+     */
+    public function createReversal(): self
+    {
+        $reverse = new self(
+            $this->campaignFunding,
+            $this->donation,
+            \bcsub('0.00', $this->amount, 2)
+        );
+
+        $this->reversedBy = $reverse;
+
+        return $reverse;
+    }
+
+    public function isReversed(): bool
+    {
+        return $this->reversedBy !== null;
     }
 }

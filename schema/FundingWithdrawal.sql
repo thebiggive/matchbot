@@ -12,9 +12,12 @@ CREATE TABLE `FundingWithdrawal` (
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   `campaignFunding_id` int unsigned DEFAULT NULL,
+  `reversedBy_id` int unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `UNIQ_5C8EAC125F1168E2` (`reversedBy_id`),
   KEY `IDX_5C8EAC124DC1279C` (`donation_id`),
   KEY `IDX_5C8EAC12CB9EBA34` (`campaignFunding_id`),
   CONSTRAINT `FK_5C8EAC124DC1279C` FOREIGN KEY (`donation_id`) REFERENCES `Donation` (`id`),
+  CONSTRAINT `FK_5C8EAC125F1168E2` FOREIGN KEY (`reversedBy_id`) REFERENCES `FundingWithdrawal` (`id`),
   CONSTRAINT `FK_5C8EAC12CB9EBA34` FOREIGN KEY (`campaignFunding_id`) REFERENCES `CampaignFunding` (`id`)
 )

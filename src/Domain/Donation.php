@@ -911,11 +911,16 @@ class Donation extends SalesforceWriteProxy
      */
     public function getFundingWithdrawalTotal(): string
     {
+//        echo "\n\n--- summing funding withdrawals for donation {$this->uuid->toString()}---- ";
         $withdrawalTotal = '0.00';
+//        \var_dump(\compact('withdrawalTotal'));
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
-            $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
+            $amount = $fundingWithdrawal->getAmount();
+            $withdrawalTotal = bcadd($withdrawalTotal, $amount, 2);
+//            \var_dump(\compact(['amount', 'withdrawalTotal']));
         }
 
+//        echo "--- finished summing funding withdrawals for donation {$this->uuid->toString()}--- \n\n";
         return $withdrawalTotal;
     }
 

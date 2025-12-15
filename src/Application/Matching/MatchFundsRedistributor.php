@@ -3,11 +3,13 @@
 namespace MatchBot\Application\Matching;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Actions\Donations\Confirm;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
@@ -29,6 +31,7 @@ class MatchFundsRedistributor
         private LoggerInterface $logger,
         private EntityManagerInterface $entityManager,
         private RoutableMessageBus $bus,
+//        private LockFactory $lockFactory,
     ) {
     }
 
@@ -55,12 +58,22 @@ class MatchFundsRedistributor
         foreach ($donationsToCheck as $donation) {
             $highestAllocationOrderUsedForDonation = 0;
             foreach ($donation->getFundingWithdrawals() as $withdrawal) {
+                if ($withdrawal->isReversed()) {
+                    echo "skipping withdrawl as is reversed\n";
+                    continue;
+                }
+                if ($withdrawal->getAmount() < '0.0') {
+                    continue;
+                }
+
                 $highestAllocationOrderUsedForDonation = max(
                     $highestAllocationOrderUsedForDonation,
                     $withdrawal->getCampaignFunding()->getAllocationOrder(),
                 );
             }
 
+//            $lock = $this->lockFactory->createLock(Confirm::donationConfirmLockKey($donation), autoRelease: true);
+//            $lock->acquire(blocking: false);
             $fundings = $this->campaignFundingRepository->getAvailableFundings($donation->getCampaign());
 
             $fundingsAllowForRedistribution = false;
@@ -95,6 +108,7 @@ class MatchFundsRedistributor
             $this->allocator->releaseMatchFunds($donation);
             $simulatedParallelProcess();
             $amountMatchedAfterRedistribution = $this->allocator->allocateMatchFunds($donation);
+//            $lock->release();
 
             // If the new allocation is less, log an error but still count the donation and continue with the loop.
             // We don't expect to actually see this happen as we now intend to run the script only for closed campaigns.

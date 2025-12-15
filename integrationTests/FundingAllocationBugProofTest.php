@@ -12,7 +12,7 @@ use DateTimeImmutable;
 class FundingAllocationBugProofTest extends \MatchBot\IntegrationTests\IntegrationTest
 {
     /**
-     * @testWith [true]
+     * @testWith
      *          [false]
      */
     public function testRunningToCommandsAtOnceCanFundDonationsWrongly(bool $commandsRunAtSameTime): void

@@ -245,6 +245,9 @@ class Adapter
     {
         $totalAmountReleased = '0.00';
         foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+            if ($fundingWithdrawal->getAmount() < 0) {
+                continue;
+            }
             $funding = $fundingWithdrawal->getCampaignFunding();
             $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
 

@@ -6,6 +6,7 @@ namespace MatchBot\Application\Commands;
 
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Actions\Donations\Confirm;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
@@ -18,6 +19,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
@@ -50,6 +52,7 @@ class RetrospectivelyMatch extends LockingCommand
 {
     public function __construct(
         private Allocator $allocator,
+//        private LockFactory $lockFactory,
         private DonationRepository $donationRepository,
         private FundRepository $fundRepository,
         private ChatterInterface $chatter,
@@ -96,6 +99,7 @@ class RetrospectivelyMatch extends LockingCommand
         $totalNewMatching = '0.00';
 
         foreach ($toCheckForMatching as $donation) {
+//            $lock = $this->lockFactory->createLock(Confirm::donationConfirmLockKey($donation), autoRelease: true);
             $amountAllocated = $this->allocator->allocateMatchFunds($donation);
 
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
@@ -108,6 +112,7 @@ class RetrospectivelyMatch extends LockingCommand
                     $distinctCampaignIds[] = $donation->getCampaign()->getId();
                 }
             }
+//            $lock->release();
         }
 
         $numDistinctCampaigns = count($distinctCampaignIds);

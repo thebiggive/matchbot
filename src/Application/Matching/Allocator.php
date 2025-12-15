@@ -222,7 +222,12 @@ class Allocator
     {
         $this->entityManager->wrapInTransaction(function () use ($donation) {
             foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                $this->entityManager->remove($fundingWithdrawal);
+                $reversal = $fundingWithdrawal->createReversal();
+          //      $this->entityManager->remove($fundingWithdrawal);
+                $donation->addFundingWithdrawal($reversal);
+                  $this->entityManager->persist($reversal);
+
+                  echo "reversed FW of " . $fundingWithdrawal->getAmount() . ", persisting new one of {$reversal->getAmount()}\n";
             }
         });
     }
