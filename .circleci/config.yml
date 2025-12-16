@@ -31,6 +31,7 @@ jobs:
           REDIS_HOST: 127.0.0.1
           AWS_REGION: eu-west-1
       - image: mysql:8.4.6
+      - command: --sql_mode=TRADITIONAL
         auth:
           username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_ACCESS_TOKEN
@@ -109,6 +110,7 @@ jobs:
 
           REDIS_HOST: 127.0.0.1
       - image: mysql:8.4.6
+      - command: --sql_mode=TRADITIONAL
         auth:
           username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_ACCESS_TOKEN
