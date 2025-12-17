@@ -131,10 +131,10 @@ class RetrospectivelyMatch extends LockingCommand
             $chatMessage->options($options);
 
             $this->chatter->send($chatMessage);
-        }
 
-        [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
-        $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
+            [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
+            $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
+        }
 
         // Intentionally use the "stale" `$oneHourBeforeExecStarted` – we want to include funds related to all
         // campaigns processed above, even if the previous work took a long time.
