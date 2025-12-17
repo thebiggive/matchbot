@@ -65,6 +65,19 @@ class CampaignServiceTest extends TestCase
         $this->assertSame(3, $renderedCampaign['parentDonationCount']);
     }
 
+    public function testItDeDupesBudgetDetails(): void
+    {
+        $campaign = self::someCampaign();
+
+        $renderedCamapign = $this->SUT->renderCampaign($campaign, null);
+
+        $this->assertSame([
+            ['amount' => 23, 'description' => 'Improve the code'],
+//            ['amount' => 23, 'description' => 'Improve the code'],
+            ['amount' => 27, 'description' => 'Invent a new programing paradigm'],
+        ], $renderedCamapign['budgetDetails']);
+    }
+
 
     public function testItRendersCampaignWithDetailsOfRelatedMetaCampaignWithNonSharedFunds(): void
     {
