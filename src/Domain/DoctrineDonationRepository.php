@@ -790,6 +790,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
             SELECT d FROM MatchBot\Domain\Donation d
             LEFT JOIN d.fundingWithdrawals fw
+            GROUP BY d.id
             HAVING SUM(fw.amount) > d.amount
         DQL
         );
