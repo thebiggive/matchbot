@@ -783,4 +783,19 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
 
         return $count;
     }
+
+    #[\Override]
+    public function findOverMatchedDonations(): array
+    {
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT d FROM MatchBot\Domain\Donation d
+            LEFT JOIN d.fundingWithdrawals fw
+            HAVING SUM(fw.amount) > d.amount
+        DQL
+        );
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
 }

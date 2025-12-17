@@ -178,4 +178,13 @@ interface DonationRepository
      * @return non-negative-int
      */
     public function countCompleteDonationsToCampaign(Campaign $campaign): int;
+
+    /**
+     * Finds donations with total funding withdrawals greater than amount - this would be an error as we only offer up
+     * to 100% matching but may be possible in some race conditions in which case we will need to patch data so we don't
+     * end up paying out moree than charities are entitled to.
+     *
+     * @return list<Donation>
+     */
+    public function findOverMatchedDonations(): array;
 }

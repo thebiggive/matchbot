@@ -9,6 +9,7 @@ use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundType;
@@ -272,10 +273,11 @@ class HandleOutOfSyncFundsTest extends TestCase
             : $this->getFundingWithdrawalRepoProphecy()->reveal();
 
         $command = new HandleOutOfSyncFunds(
-            $campaignRepo,
-            $this->createStub(EntityManagerInterface::class),
-            $withdrawalRepo,
-            $adapter,
+            campaignFundingRepository: $campaignRepo,
+            entityManager: $this->createStub(EntityManagerInterface::class),
+            fundingWithdrawalRepository: $withdrawalRepo,
+            matchingAdapter: $adapter,
+            donationRepository: $this->createStub(DonationRepository::class),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());

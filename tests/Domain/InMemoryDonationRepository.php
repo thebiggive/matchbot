@@ -5,9 +5,11 @@ namespace MatchBot\Tests\Domain;
 use DateTime;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationSequenceNumber;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
@@ -215,6 +217,15 @@ class InMemoryDonationRepository implements DonationRepository
         return count(\array_filter(
             $this->donations,
             fn(Donation $d) => $d->getCampaign() === $campaign
+        ));
+    }
+
+    #[\Override]
+    public function findOverMatchedDonations(): array
+    {
+        return \array_values(\array_filter(
+            $this->donations,
+            fn(Donation $d) => $d->getFundingWithdrawalTotalAsObject()->moreThan(Money::fromNumericString($d->getAmount(), $d->currency()))
         ));
     }
 }

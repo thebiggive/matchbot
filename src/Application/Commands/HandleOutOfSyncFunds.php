@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
@@ -45,7 +46,8 @@ class HandleOutOfSyncFunds extends LockingCommand
         private CampaignFundingRepository $campaignFundingRepository,
         private EntityManagerInterface $entityManager,
         private FundingWithdrawalRepository $fundingWithdrawalRepository,
-        private Matching\Adapter $matchingAdapter
+        private Matching\Adapter $matchingAdapter,
+        private DonationRepository $donationRepository,
     ) {
         parent::__construct();
     }
@@ -134,6 +136,11 @@ class HandleOutOfSyncFunds extends LockingCommand
                 $output->writeln("Released {$undermatchAmount} to funding ID {$funding->getId()}");
                 $output->writeln("New fund total for funding ID {$funding->getId()}: $newTotal");
             }
+        }
+
+        $overmatchedDonations = $this->donationRepository->findOverMatchedDonations();
+        foreach ($overmatchedDonations as $donation) {
+            $output->writeln("Donation {$donation->getUuid()} is over-matched, withdrawl of {$donation->getFundingWithdrawalTotal()} for donation of only {$donation->getAmount()}");
         }
 
         $output->writeln(
