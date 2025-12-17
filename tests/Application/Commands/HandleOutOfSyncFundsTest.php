@@ -16,6 +16,7 @@ use MatchBot\Domain\FundType;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -278,6 +279,7 @@ class HandleOutOfSyncFundsTest extends TestCase
             fundingWithdrawalRepository: $withdrawalRepo,
             matchingAdapter: $adapter,
             donationRepository: $this->createStub(DonationRepository::class),
+            logger: $this->createStub(LoggerInterface::class),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());

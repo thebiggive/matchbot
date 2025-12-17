@@ -7,6 +7,7 @@ use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
@@ -34,8 +35,9 @@ class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
         Matching\Adapter $matchingAdapter,
         DonationRepository $donationRepository,
         private ChatterInterface $chatter,
+        LoggerInterface $logger,
     ) {
-        parent::__construct($campaignFundingRepository, $entityManager, $fundingWithdrawalRepository, $matchingAdapter, $donationRepository);
+        parent::__construct($campaignFundingRepository, $entityManager, $fundingWithdrawalRepository, $matchingAdapter, $donationRepository, $logger);
     }
 
     #[\Override]
