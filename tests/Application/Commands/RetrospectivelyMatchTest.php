@@ -71,14 +71,13 @@ class RetrospectivelyMatchTest extends TestCase
     public function testNonWholeDaysBackIsRounded(): void
     {
         $commandTester = $this->getCommandTester(matchingIsAllocated: false);
-        $this->matchFundsRedistributorProphecy->redistributeMatchFunds()->shouldBeCalledOnce()->willReturn([3, 2]);
+        $this->matchFundsRedistributorProphecy->redistributeMatchFunds()->shouldNotBeCalled(); // No retro match campaigns -> doesn't run.
         $commandTester->execute(['days-back' => '7.5']);
 
         $expectedOutputLines = [
             'matchbot:retrospectively-match starting!',
             "Looking at past 8 days' donations",
             'Retrospectively matched 0 of 0 donations. £0.00 total new matching, across 0 campaigns.',
-            'Checked 3 donations and redistributed matching for 2',
             'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
@@ -89,14 +88,13 @@ class RetrospectivelyMatchTest extends TestCase
     public function testWholeDaysBackProceeds(): void
     {
         $commandTester = $this->getCommandTester(matchingIsAllocated: false);
-        $this->matchFundsRedistributorProphecy->redistributeMatchFunds()->shouldBeCalledOnce()->willReturn([3, 2]);
+        $this->matchFundsRedistributorProphecy->redistributeMatchFunds()->shouldNotBeCalled(); // No retro match campaigns -> doesn't run.
         $commandTester->execute(['days-back' => '8']);
 
         $expectedOutputLines = [
             'matchbot:retrospectively-match starting!',
             "Looking at past 8 days' donations",
             'Retrospectively matched 0 of 0 donations. £0.00 total new matching, across 0 campaigns.',
-            'Checked 3 donations and redistributed matching for 2',
             'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
