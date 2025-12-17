@@ -54,9 +54,9 @@ abstract class LockingCommand extends Command
         \assert(\is_string($name), 'Command name must be defined');
 
         $this->lock = $this->lockFactory->createLock(
-            $name,
-            30 * 60,    // 30 minute lock
-            true        // auto-release on process end
+            resource: $name,
+            ttl: 24 * 60 * 60,    // 1 day
+            autoRelease: true        // auto-release on process end
         );
 
         return $this->lock->acquire(false);
