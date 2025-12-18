@@ -88,6 +88,7 @@ class TestCase extends PHPUnitTestCase
         'beneficiaries' => ['Animals'],
         'budgetDetails' => [
             ['amount' => 23.0, 'description' => 'Improve the code'],
+            ['amount' => 23.0, 'description' => 'Improve the code'], // duplicate item to allow testing de-dupe code.
             ['amount' => 27.0, 'description' => 'Invent a new programing paradigm'],
         ],
         'campaignCount' => null,

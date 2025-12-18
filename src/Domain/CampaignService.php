@@ -182,6 +182,12 @@ class CampaignService
             ];
         }
 
+        /**
+         * We know that it's sometimes too easy to accidentally duplicate a budget detail line when entering campaign
+         * details in Salesforce - as each of these duplicates are almost certainly errors so we only output unique
+         * values. We might consider doing the same for other lists such as aims.
+         */
+        $budgetDetails = \array_values(\array_unique(array: $sfCampaignData['budgetDetails'], flags: \SORT_REGULAR));
 
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
@@ -192,7 +198,7 @@ class CampaignService
             banner: $banner,
             bannerUri: $bannerUri, // @todo - delete this when FE deploy is done to read 'banner' instead.
             beneficiaries: $sfCampaignData['beneficiaries'],
-            budgetDetails: $sfCampaignData['budgetDetails'],
+            budgetDetails: $budgetDetails,
             /* @mat-405-todo - remove this and any other properties that make sense only for meta-campaigns. Will require separating model in FE also */
             campaignCount: $sfCampaignData['campaignCount'],
             categories: $sfCampaignData['categories'],
