@@ -71,9 +71,12 @@ class CampaignServiceTest extends TestCase
 
         $renderedCamapign = $this->SUT->renderCampaign($campaign, null);
 
+        // source data in TestCase::CAMPAIGN_FROM_SALESFORCE
+        // has the first detail duplicated to simulate data accidentally duplicated
+        //  in the SF API which we know can happen. Not duplicated in the output below.
+
         $this->assertSame([
             ['amount' => 23, 'description' => 'Improve the code'],
-//            ['amount' => 23, 'description' => 'Improve the code'],
             ['amount' => 27, 'description' => 'Invent a new programing paradigm'],
         ], $renderedCamapign['budgetDetails']);
     }
