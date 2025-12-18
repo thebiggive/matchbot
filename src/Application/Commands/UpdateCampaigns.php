@@ -8,6 +8,7 @@ use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Exception\TransferException;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -81,6 +82,8 @@ EOT
                 }
             } catch (DomainCurrencyMustNotChangeException $exception) {
                 $output->writeln('Skipping invalid currency change campaign ' . $salesforceId);
+            } catch (AssertionFailedException $exception) {
+                $output->writeln('Skipping campaign due to exception:  '  . $exception->getMessage() . ", " .  $salesforceId);
             } catch (TransferException $exception) {
                 $this->logger->info(sprintf(
                     'Retrying campaign %s due to transfer error "%s"',
@@ -114,6 +117,7 @@ EOT
      * @throws NotFoundException
      * @throws TransferException
      * @throws DomainCurrencyMustNotChangeException
+     * @throws AssertionFailedException if data given does not fit in our charity model.
      */
     protected function pull(Campaign $campaign, OutputInterface $output): void
     {

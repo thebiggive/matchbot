@@ -44,6 +44,8 @@ class Charity extends SalesforceReadProxy
         'CCNI' => 'Charity Commission for Northern Ireland',
     ];
 
+    public const int MAX_REGULATOR_NUMBER_LENGTH = 10;
+
     /**
      * @var string
      */
@@ -95,7 +97,7 @@ class Charity extends SalesforceReadProxy
     #[ORM\Column(length: 4, nullable: true)]
     protected ?string $regulator = null; // @phpstan-ignore doctrine.columnType
 
-    #[ORM\Column(length: 10, nullable: true)]
+    #[ORM\Column(length: self::MAX_REGULATOR_NUMBER_LENGTH, nullable: true)]
     protected ?string $regulatorNumber = null;
 
     /**
@@ -241,8 +243,21 @@ class Charity extends SalesforceReadProxy
         return $this->regulatorNumber;
     }
 
+
+    /**
+     * @param string|null $regulatorNumber - if set must be 10 bytes long or less.
+     *                              {@see self::MAX_REGULATOR_NUMBER_LENGTH}
+     * @throws AssertionFailedException if regulator number of over 10 bytes given.
+     * @return void
+     */
     public function setRegulatorNumber(?string $regulatorNumber): void
     {
+        Assertion::nullOrBetweenLength(
+            $regulatorNumber,
+            0,
+            self::MAX_REGULATOR_NUMBER_LENGTH,
+        );
+
         $this->regulatorNumber = $regulatorNumber;
     }
 

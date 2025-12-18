@@ -8,6 +8,7 @@ use DateTime;
 use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Client;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
@@ -192,6 +193,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * @param  SFCampaignApiResponse $campaignData
+     * @throws AssertionFailedException if data in SF not fit in our charity model.
      */
     public function pullCharity(array $campaignData): Charity
     {
@@ -248,6 +250,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * @param SFCampaignApiResponse $campaignData
+     * @throws AssertionFailedException if data given does not fit in our charity model.
      */
     public function updateCharityFromCampaignData(Charity $charity, array $campaignData): void
     {
@@ -476,6 +479,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /**
      * @param Campaign $campaign
      * @param  SFCampaignApiResponse $campaignData
+     * @throws AssertionFailedException if data given does not fit in our charity model.
      */
     public function updateCampaignFromSFData(Campaign $campaign, array $campaignData, bool $alsoUpdateCharity = true): void
     {
@@ -756,6 +760,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * @throws Client\NotFoundException
+     * @throws AssertionFailedException if data in SF does not fit in our campaign or charity model.
      */
     public function updateFromSf(
         Campaign $campaign,
