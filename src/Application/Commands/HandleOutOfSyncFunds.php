@@ -8,7 +8,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -45,7 +47,9 @@ class HandleOutOfSyncFunds extends LockingCommand
         private CampaignFundingRepository $campaignFundingRepository,
         private EntityManagerInterface $entityManager,
         private FundingWithdrawalRepository $fundingWithdrawalRepository,
-        private Matching\Adapter $matchingAdapter
+        private Matching\Adapter $matchingAdapter,
+        private DonationRepository $donationRepository,
+        private LoggerInterface $logger,
     ) {
         parent::__construct();
     }
@@ -134,6 +138,15 @@ class HandleOutOfSyncFunds extends LockingCommand
                 $output->writeln("Released {$undermatchAmount} to funding ID {$funding->getId()}");
                 $output->writeln("New fund total for funding ID {$funding->getId()}: $newTotal");
             }
+        }
+
+        $overmatchedDonations = $this->donationRepository->findOverMatchedDonations();
+        foreach ($overmatchedDonations as $donation) {
+            if (\in_array($donation->getUuid()->toString(), ['dcec4e60-8969-4f40-80f0-35bb5b7184af','c563fb10-ccbd-41d0-95c6-5a4e14596990'], true)) {
+                // known historical data anomaly
+                continue;
+            }
+            $this->logger->error("Donation {$donation->getUuid()} is over-matched, withdrawal of {$donation->getFundingWithdrawalTotal()} for donation of only {$donation->getAmount()}");
         }
 
         $output->writeln(

@@ -5,7 +5,9 @@ namespace MatchBot\Application\Commands;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
@@ -31,9 +33,11 @@ class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
         EntityManagerInterface $entityManager,
         FundingWithdrawalRepository $fundingWithdrawalRepository,
         Matching\Adapter $matchingAdapter,
+        DonationRepository $donationRepository,
         private ChatterInterface $chatter,
+        LoggerInterface $logger,
     ) {
-        parent::__construct($campaignFundingRepository, $entityManager, $fundingWithdrawalRepository, $matchingAdapter);
+        parent::__construct($campaignFundingRepository, $entityManager, $fundingWithdrawalRepository, $matchingAdapter, $donationRepository, $logger);
     }
 
     #[\Override]
