@@ -780,7 +780,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $this->updateCampaignFromSFData($campaign, $campaignData);
 
-        $this->getEntityManager()->flush();
+        try {
+            $this->getEntityManager()->flush();
+        } catch (\PDOException $e) {
+            $this->logger?->error("PDOException generated trying to update campaign SFID {$campaign->getSalesforceId()} (reg no {$campaign->getCharity()->getRegulatorNumber()}); {$e->getMessage()}");
+            throw $e;
+        }
 
         $campaign->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($campaign);
