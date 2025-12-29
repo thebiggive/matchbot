@@ -26,6 +26,9 @@ readonly class PersonHandler
     ) {
     }
 
+    /**
+     * @psalm-suppress RedundantCondition - I prefer to keep the redundant conditions in the code here for clarity.
+     */
     public function __invoke(Person $personMessage): void
     {
         $this->logger->info(sprintf(
@@ -38,12 +41,23 @@ readonly class PersonHandler
             StripeCustomerId::of($personMessage->stripe_customer_id),
         );
 
-        if ($donorAccount !== null) {
+        if ($donorAccount !== null && ! $personMessage->deleted) {
             $this->logger->info(sprintf('Updating existing Person ID %s', $personMessage->id));
             $donorAccount->updateFromPersonMessage($personMessage);
-        } else {
+        } elseif ($donorAccount === null && ! $personMessage->deleted) {
             $this->logger->info(sprintf('Creating new Person ID %s', $personMessage->id));
             $donorAccount = DonorAccount::fromPersonMessage($personMessage);
+        } elseif ($donorAccount !== null && $personMessage->deleted) {
+            $donorAccountRepo->delete($donorAccount);
+            $this->logger->info(sprintf(
+                'Person ID %s data deleted',
+                $personMessage->id,
+            ));
+            return;
+        } else {
+            \assert($donorAccount === null && $personMessage->deleted);
+            // no need to do anything.
+            return;
         }
 
         $donorAccountRepo->save($donorAccount);
