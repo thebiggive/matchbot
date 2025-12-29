@@ -2,6 +2,8 @@
 
 namespace MatchBot\Application\Messenger\Handler;
 
+use MatchBot\Client\Stripe;
+use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\StripeCustomerId;
@@ -37,6 +39,9 @@ readonly class PersonHandler
         ));
 
         $donorAccountRepo = $this->container->get(DonorAccountRepository::class);
+        $stripe = $this->container->get(Stripe::class);
+        $donationRepository = $this->container->get(DonationRepository::class);
+
         $donorAccount = $donorAccountRepo->findByStripeIdOrNull(
             StripeCustomerId::of($personMessage->stripe_customer_id),
         );
@@ -48,7 +53,24 @@ readonly class PersonHandler
             $this->logger->info(sprintf('Creating new Person ID %s', $personMessage->id));
             $donorAccount = DonorAccount::fromPersonMessage($personMessage);
         } elseif ($donorAccount !== null && $personMessage->deleted) {
+            if ($donationRepository->findAllCompleteForCustomer($donorAccount->stripeCustomerId) === []) {
+                // as they have no donations and are deleting their account, we don't need to keep a record of them
+                // in stripe (although in fact Stripe does retain records of deleted customers, with reduced
+                // functionality).
+                //
+                // Given that the record is retained in stripe anyway, we could consider deleting the stripe customer
+                // without reference to whether they have complete donations or not.
+
+                $stripe->deleteCustomer($donorAccount->stripeCustomerId);
+
+                $this->logger->info(sprintf(
+                    'Stripe customer %s for person ID %s data deleted',
+                    $donorAccount->stripeCustomerId->stripeCustomerId,
+                    $personMessage->id,
+                ));
+            }
             $donorAccountRepo->delete($donorAccount);
+
             $this->logger->info(sprintf(
                 'Person ID %s data deleted',
                 $personMessage->id,

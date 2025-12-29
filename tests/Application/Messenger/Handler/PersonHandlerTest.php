@@ -4,6 +4,8 @@ namespace MatchBot\Tests\Application\Messenger\Handler;
 
 use DI\Container;
 use MatchBot\Application\Messenger\Handler\PersonHandler;
+use MatchBot\Client\Stripe;
+use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\StripeCustomerId;
@@ -41,6 +43,8 @@ class PersonHandlerTest extends TestCase
 
         $container = new Container();
         $container->set(DonorAccountRepository::class, $this->donorAccountRepositoryProphecy->reveal());
+        $container->set(DonationRepository::class, $this->createStub(DonationRepository::class));
+        $container->set(Stripe::class, $this->createStub(Stripe::class));
 
         $sut = new PersonHandler($container, new NullLogger());
 
