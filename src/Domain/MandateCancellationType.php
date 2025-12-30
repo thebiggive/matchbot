@@ -10,6 +10,11 @@ enum MandateCancellationType: string
     case EnrollingDonationFailed = 'EnrollingDonationFailed';
 
     /**
+     * Canceled because the related donor account was deleted.
+     */
+    case DonorAccountDeleted = 'DonorAccountDeleted';
+
+    /**
      * Auto cancelled because the automatic donation collection process repeatedly failed - likely due to an issue
      * with the donor's card or bank account.
      */

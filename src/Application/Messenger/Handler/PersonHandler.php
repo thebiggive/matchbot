@@ -2,12 +2,17 @@
 
 namespace MatchBot\Application\Messenger\Handler;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\MandateCancellationType;
+use MatchBot\Domain\RegularGivingMandate;
+use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Domain\StripeCustomerId;
 use Messages\Person;
+use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -41,6 +46,9 @@ readonly class PersonHandler
         $donorAccountRepo = $this->container->get(DonorAccountRepository::class);
         $stripe = $this->container->get(Stripe::class);
         $donationRepository = $this->container->get(DonationRepository::class);
+        $regularGivingMandateRepository = $this->container->get(RegularGivingMandateRepository::class);
+        $clock = $this->container->get(ClockInterface::class);
+        $em = $this->container->get(EntityManagerInterface::class);
 
         $donorAccount = $donorAccountRepo->findByStripeIdOrNull(
             StripeCustomerId::of($personMessage->stripe_customer_id),
@@ -71,10 +79,17 @@ readonly class PersonHandler
             }
             $donorAccountRepo->delete($donorAccount);
 
+            foreach ($regularGivingMandateRepository->allActiveMandatesForDonor($donorAccount->id()) as [$mandate, $_charity]) {
+                $mandate->cancel('Donor account deleted', $clock->now(), MandateCancellationType::DonorAccountDeleted);
+            }
+
             $this->logger->info(sprintf(
                 'Person ID %s data deleted',
                 $personMessage->id,
             ));
+
+            $em->flush();
+
             return;
         } else {
             \assert($donorAccount === null && $personMessage->deleted);
