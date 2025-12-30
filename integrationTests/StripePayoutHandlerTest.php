@@ -57,18 +57,6 @@ class StripePayoutHandlerTest extends IntegrationTest
             ->shouldBeCalledOnce()
             ->willReturn($this->buildAutoIterableCollection($this->getStripeHookMock('ApiResponse/bt_list_success')));
 
-        // TODO remove this after CC25 mid-payout patching is done.
-        $stripeBalanceTransactionProphecy->retrieve('txn_00000000000000')
-            ->willReturn(
-                /** @var \stdClass $btMock */
-                json_decode(
-                    $this->getStripeHookMock('ApiResponse/bt_success'),
-                    false,
-                    512,
-                    \JSON_THROW_ON_ERROR
-                )
-            );
-
         $stripeClientProphecy = $this->getStripeClient(withRetriedPayout: false);
         @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal(); // @phpstan-ignore property.notFound
         @$stripeClientProphecy->charges = $this->getStripeChargeList($this->getStripeHookMock( // @phpstan-ignore property.notFound
@@ -179,19 +167,6 @@ class StripePayoutHandlerTest extends IntegrationTest
     private function getStripeChargeList(string $chargeResponse): ChargeService
     {
         $stripeChargeProphecy = $this->prophesize(ChargeService::class);
-
-        // TODO remove this side effect after CC25 mid-payout patching is done.
-        /** @var array{data: array<int, array<string, mixed>>} $chargeData */
-        $chargeData = json_decode($chargeResponse, true, 512, \JSON_THROW_ON_ERROR);
-        $stripeChargeProphecy->retrieve(Argument::type('string'))
-            ->will(function () use ($chargeData) {
-                $encodedCharge = json_encode($chargeData['data'][0], \JSON_THROW_ON_ERROR);
-                /** @var \stdClass $chargeObj */
-                $chargeObj = json_decode($encodedCharge, false, 512, \JSON_THROW_ON_ERROR);
-
-                return $chargeObj;
-            });
-
         $stripeChargeProphecy->all(
             $this->getCommonCalloutArgs(),
             ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
