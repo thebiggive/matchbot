@@ -84,4 +84,12 @@ interface Stripe
      * @throws ApiErrorException
      */
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void;
+
+    /**
+     * Deletes a given customer from Stripe. (removing their credit card details and prevent operations, although
+     * not erasing all data)
+     *
+     * See https://docs.stripe.com/api/customers/delete
+     */
+    public function deleteCustomer(StripeCustomerId $getStripeCustomerId): void;
 }

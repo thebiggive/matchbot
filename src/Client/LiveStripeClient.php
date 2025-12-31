@@ -145,4 +145,10 @@ class LiveStripeClient implements Stripe
     {
         $this->stripeClient->paymentMethods->detach($paymentMethodId->stripePaymentMethodId);
     }
+
+    #[\Override]
+    public function deleteCustomer(StripeCustomerId $getStripeCustomerId): void
+    {
+        $this->stripeClient->customers->delete($getStripeCustomerId->stripeCustomerId);
+    }
 }

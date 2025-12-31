@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6d35d814d44da76855b4159b20f1cf47",
+    "content-hash": "3c2c2ec68d5847fe00f5fdc436a86d37",
     "packages": [
         {
             "name": "async-aws/core",
@@ -7032,16 +7032,16 @@
         },
         {
             "name": "thebiggive/messages",
-            "version": "v3.3.3",
+            "version": "v3.3.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thebiggive/messages.git",
-                "reference": "598d858493c40363770931fe69f6d6a535f85f0a"
+                "reference": "0dba8d30c273fad55b11ea3ce2c4476948bc4bdd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thebiggive/messages/zipball/598d858493c40363770931fe69f6d6a535f85f0a",
-                "reference": "598d858493c40363770931fe69f6d6a535f85f0a",
+                "url": "https://api.github.com/repos/thebiggive/messages/zipball/0dba8d30c273fad55b11ea3ce2c4476948bc4bdd",
+                "reference": "0dba8d30c273fad55b11ea3ce2c4476948bc4bdd",
                 "shasum": ""
             },
             "require": {
@@ -7072,9 +7072,9 @@
             "description": "Shared message / model classes for cross-service communication",
             "support": {
                 "issues": "https://github.com/thebiggive/messages/issues",
-                "source": "https://github.com/thebiggive/messages/tree/v3.3.3"
+                "source": "https://github.com/thebiggive/messages/tree/v3.3.4"
             },
-            "time": "2025-07-03T10:54:10+00:00"
+            "time": "2025-12-29T10:24:03+00:00"
         },
         {
             "name": "webmozart/assert",
@@ -13542,9 +13542,9 @@
         "ext-redis": "*",
         "ext-simplexml": "*"
     },
-    "platform-dev": {},
+    "platform-dev": [],
     "platform-overrides": {
         "php": "8.3.21"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.3.0"
 }

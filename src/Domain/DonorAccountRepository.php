@@ -61,4 +61,10 @@ class DonorAccountRepository extends EntityRepository
 
         return $donorAccountForEmail !== null && !$donorAccountForEmail->id()->equals($donorIdFromDonation);
     }
+
+    public function delete(DonorAccount $donorAccount): void
+    {
+        $this->getEntityManager()->remove($donorAccount);
+        $this->getEntityManager()->flush();
+    }
 }
