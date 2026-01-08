@@ -121,7 +121,7 @@ readonly class PersonHandler
          * @var int $amount
          */
         foreach ($stripeCustomer->cash_balance->available->toArray() as $currencyCode => $amount) {
-            if ($amount == 0) {
+            if ($amount === 0) {
                 continue;
             }
 
