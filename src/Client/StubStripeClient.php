@@ -2,6 +2,7 @@
 
 namespace MatchBot\Client;
 
+use MatchBot\Domain\Money;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
@@ -9,6 +10,7 @@ use Ramsey\Uuid\Uuid;
 use Stripe\BalanceTransaction;
 use Stripe\Charge;
 use Stripe\ConfirmationToken;
+use Stripe\Customer;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
@@ -142,6 +144,18 @@ class StubStripeClient implements Stripe
 
     #[\Override]
     public function deleteCustomer(StripeCustomerId $getStripeCustomerId): void
+    {
+        $this->pause();
+    }
+
+    #[\Override]
+    public function retrieveCustomer(StripeCustomerId $stripeCustomerId, array $params): Customer
+    {
+        throw new \Exception("Retrieve Customer not implemented in stub - not currently used in load tests");
+    }
+
+    #[\Override]
+    public function refundCustomerBalance(StripeCustomerId $stripeCustomerId, Money $money): void
     {
         $this->pause();
     }

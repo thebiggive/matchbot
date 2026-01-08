@@ -2,12 +2,14 @@
 
 namespace MatchBot\Client;
 
+use MatchBot\Domain\Money;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use Stripe\BalanceTransaction;
 use Stripe\Charge;
 use Stripe\ConfirmationToken;
+use Stripe\Customer;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
@@ -150,5 +152,23 @@ class LiveStripeClient implements Stripe
     public function deleteCustomer(StripeCustomerId $getStripeCustomerId): void
     {
         $this->stripeClient->customers->delete($getStripeCustomerId->stripeCustomerId);
+    }
+
+    #[\Override]
+    public function retrieveCustomer(StripeCustomerId $stripeCustomerId, array $params): Customer
+    {
+        return $this->stripeClient->customers->retrieve($stripeCustomerId->stripeCustomerId, $params);
+    }
+
+    #[\Override]
+    public function refundCustomerBalance(StripeCustomerId $stripeCustomerId, Money $money): void
+    {
+        // see https://docs.stripe.com/payments/customer-balance/refunding#create-return-dashboard--api
+        $this->stripeClient->refunds->create([
+            'amount' => $money->amountInPence(),
+            'currency' => $money->currency->isoCode('lower'),
+            'customer' => $stripeCustomerId->stripeCustomerId,
+            'origin' => \Stripe\PaymentMethod::TYPE_CUSTOMER_BALANCE,
+        ]);
     }
 }

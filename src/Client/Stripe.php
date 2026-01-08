@@ -3,6 +3,7 @@
 namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
@@ -10,6 +11,7 @@ use Stripe\BalanceTransaction;
 use Stripe\Charge;
 use Stripe\Collection;
 use Stripe\ConfirmationToken;
+use Stripe\Customer;
 use Stripe\CustomerSession;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
@@ -92,4 +94,11 @@ interface Stripe
      * See https://docs.stripe.com/api/customers/delete
      */
     public function deleteCustomer(StripeCustomerId $getStripeCustomerId): void;
+
+    /**
+     * @param array{expand?: array<array-key, string>} $params
+     */
+    public function retrieveCustomer(StripeCustomerId $stripeCustomerId, array $params): Customer;
+
+    public function refundCustomerBalance(StripeCustomerId $stripeCustomerId, Money $money): void;
 }
