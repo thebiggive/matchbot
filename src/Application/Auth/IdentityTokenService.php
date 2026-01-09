@@ -13,7 +13,7 @@ use Psr\Log\LoggerInterface;
 /**
  * @psalm-type IdentityJWT object{sub: object{person_id: string, psp_id: ?string, complete?: boolean|null}}&\stdClass
  */
-final class IdentityToken
+final class IdentityTokenService
 {
     public function __construct(private string $baseUri)
     {
