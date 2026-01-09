@@ -13,7 +13,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
-use MatchBot\Application\Auth\IdentityToken;
+use MatchBot\Application\Auth\IdentityTokenService;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\CharityUpdated;
@@ -245,8 +245,13 @@ return function (ContainerBuilder $containerBuilder) {
             return $c->get(ORM\EntityManager::class);
         },
 
-        IdentityToken::class => function (ContainerInterface $c): IdentityToken {
-            return new IdentityToken($c->get(Settings::class)->identity['baseUri']);
+        IdentityTokenService::class => function (ContainerInterface $c): IdentityTokenService {
+            $secret = getenv('JWT_ID_SECRET');
+            if (! is_string($secret)) {
+                throw new \RuntimeException("JWT_ID_SECRET not set in environment");
+            }
+
+            return new IdentityTokenService($c->get(Settings::class)->identity['baseUri'], [$secret]);
         },
 
         LockFactory::class => function (ContainerInterface $c): LockFactory {

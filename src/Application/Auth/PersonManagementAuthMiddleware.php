@@ -34,7 +34,8 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
     #[Pure]
     public function __construct(
         protected IdentityTokenService $token,
-        protected LoggerInterface      $logger
+        protected LoggerInterface $logger,
+        private IdentityTokenService $identityTokenService,
     ) {
     }
 
@@ -66,8 +67,8 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
 
         $this->checkCompleteness($request);
 
-        $request = $request->withAttribute(self::PSP_ATTRIBUTE_NAME, IdentityTokenService::getPspId($this->jws));
-        $request = $request->withAttribute(self::PERSON_ID_ATTRIBUTE_NAME, IdentityTokenService::getPersonId($this->jws));
+        $request = $request->withAttribute(self::PSP_ATTRIBUTE_NAME, $this->identityTokenService->getPspId($this->jws));
+        $request = $request->withAttribute(self::PERSON_ID_ATTRIBUTE_NAME, $this->identityTokenService->getPersonId($this->jws));
 
         return $handler->handle($request);
     }

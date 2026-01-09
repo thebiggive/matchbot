@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Auth;
 
-use MatchBot\Application\Auth\IdentityToken;
+use MatchBot\Application\Auth\IdentityTokenService;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
 use Psr\Log\NullLogger;
@@ -18,7 +18,7 @@ class IdentityTokenTest extends TestCase
 
     public function testCheckFailsWhenWrongDonationId(): void
     {
-        $tokenHelper = new IdentityToken('https://unit-test-fake-id-sub.thebiggivetest.org.uk');
+        $tokenHelper = new IdentityTokenService('https://unit-test-fake-id-sub.thebiggivetest.org.uk', ['secret']);
 
         $this->assertFalse(
             $tokenHelper->check(
@@ -31,7 +31,7 @@ class IdentityTokenTest extends TestCase
 
     public function testCheckFailsWhenSiteIsWrong(): void
     {
-        $tokenHelper = new IdentityToken('https://another.example.org');
+        $tokenHelper = new IdentityTokenService('https://another.example.org', ['secret']);
 
         $this->assertFalse(
             $tokenHelper->check(
@@ -44,7 +44,7 @@ class IdentityTokenTest extends TestCase
 
     public function testCheckFailsAndPersonIdNullWhenSignatureGarbled(): void
     {
-        $tokenHelper = new IdentityToken('https://unit-test-fake-id-sub.thebiggivetest.org.uk');
+        $tokenHelper = new IdentityTokenService('https://unit-test-fake-id-sub.thebiggivetest.org.uk', ['secret']);
         $badToken = TestData\Identity::getTestIdentityTokenIncomplete() . 'x';
 
         $this->assertFalse(
@@ -55,6 +55,6 @@ class IdentityTokenTest extends TestCase
             ),
         );
 
-        $this->assertNull(IdentityToken::getPspId($badToken));
+        $this->assertNull($tokenHelper->getPspId($badToken));
     }
 }
