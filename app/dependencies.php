@@ -246,12 +246,30 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         IdentityTokenService::class => function (ContainerInterface $c): IdentityTokenService {
-            $secret = getenv('JWT_ID_SECRET');
-            if (! is_string($secret)) {
-                throw new \RuntimeException("JWT_ID_SECRET not set in environment");
+            // the first secret in the list is the one that will be used (in the Idenity service) to issue tokens.
+            // For rotation replace it with a new secret and move it to a later position in the list for at least
+            // eight hours to allow existing tokens to expire.
+
+            /* @var string|false $secretsString */
+            $secretsString = getenv('JWT_ID_SECRETS');
+            /** @psalm-suppress RedundantConditionGivenDocblockType - I don't think this is redundant */
+            \assert(is_string($secretsString) || $secretsString === false);
+            if ($secretsString !== false) {
+                /** @var non-empty-list<string> $secrets */
+                $secrets = json_decode($secretsString, true);
+
+                $oldSecret = getenv('JWT_ID_SECRET');
+                if (is_string($oldSecret)) {
+                    $secrets[] = $oldSecret;
+                }
+            } else {
+                $secret = getenv('JWT_ID_SECRET');
+                \assert(\is_string($secret), 'JWT ID secret must be provided as a string');
+                $secrets = [$secret];
             }
 
-            return new IdentityTokenService($c->get(Settings::class)->identity['baseUri'], [$secret]);
+
+            return new IdentityTokenService($c->get(Settings::class)->identity['baseUri'], $secrets);
         },
 
         LockFactory::class => function (ContainerInterface $c): LockFactory {
