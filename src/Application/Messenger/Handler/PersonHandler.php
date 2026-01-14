@@ -5,6 +5,7 @@ namespace MatchBot\Application\Messenger\Handler;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Currency;
+use MatchBot\Domain\DonationFundsService;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
@@ -51,6 +52,7 @@ readonly class PersonHandler
         $regularGivingMandateRepository = $this->container->get(RegularGivingMandateRepository::class);
         $clock = $this->container->get(ClockInterface::class);
         $em = $this->container->get(EntityManagerInterface::class);
+        $donationFundsService = $this->container->get(DonationFundsService::class);
 
         $donorAccount = $donorAccountRepo->findByStripeIdOrNull(
             StripeCustomerId::of($personMessage->stripe_customer_id),
@@ -63,7 +65,7 @@ readonly class PersonHandler
             $this->logger->info(sprintf('Creating new Person ID %s', $personMessage->id));
             $donorAccount = DonorAccount::fromPersonMessage($personMessage);
         } elseif ($donorAccount !== null && $personMessage->deleted) {
-            $this->refundFullBalanceToCustomer($stripe, $donorAccount);
+            $donationFundsService->refundFullBalanceToCustomer($donorAccount);
 
             if ($donationRepository->findAllCompleteForCustomer($donorAccount->stripeCustomerId) === []) {
                 // as they have no donations and are deleting their account, we don't need to keep a record of them
@@ -107,26 +109,5 @@ readonly class PersonHandler
             'Person ID %s data saved',
             $personMessage->id,
         ));
-    }
-
-    private function refundFullBalanceToCustomer(Stripe $stripe, DonorAccount $donorAccount): void
-    {
-        $stripeCustomer = $stripe->retrieveCustomer($donorAccount->stripeCustomerId, ['expand' => ['cash_balance']]);
-        if ($stripeCustomer->cash_balance === null || $stripeCustomer->cash_balance->available === null) {
-            return;
-        }
-
-        /**
-         * @var string $currencyCode
-         * @var int $amount
-         */
-        foreach ($stripeCustomer->cash_balance->available->toArray() as $currencyCode => $amount) {
-            if ($amount === 0) {
-                continue;
-            }
-
-            $money = Money::fromPence($amount, Currency::fromIsoCode($currencyCode));
-            $stripe->refundCustomerBalance($donorAccount->stripeCustomerId, $money);
-        }
     }
 }
