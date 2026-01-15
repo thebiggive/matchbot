@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Actions\DeletePaymentMethod;
+use MatchBot\Application\Actions\DonorAccount\ReturnAllDonationFunds;
 use MatchBot\Application\Actions\Sitemap;
 use MatchBot\Application\Actions\UpdatePaymentMethod;
 use MatchBot\Application\Actions\Donations;
@@ -119,6 +120,7 @@ return function (App $app) {
             /** @psalm-suppress DeprecatedClass Until we delete Donate use & the endpoint */
             $pwdDonorGroup->post('/donor-account', DonorAccount\Create::class);
             $pwdDonorGroup->get('/donor-account', DonorAccount\Get::class);
+            $pwdDonorGroup->post('/donor-account/withdraw-funds', ReturnAllDonationFunds::class);
             $pwdDonorGroup->post('/create-customer-session', RegularGivingMandate\CreateCustomerSession::class);
             $pwdDonorGroup->post('/regular-giving', RegularGivingMandate\Create::class);
             $pwdDonorGroup->put('/regular-giving/payment-method', RegularGivingMandate\UpdatePaymentMethod::class);
