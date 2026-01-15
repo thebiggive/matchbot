@@ -499,6 +499,7 @@ abstract class IntegrationTest extends TestCase
     protected function createCampaign(
         ?Charity $charity = null,
         string $name = 'Campaign Name',
+        string $summary = 'Campaign Summary',
         string $status = 'Active',
         bool $withUniqueSalesforceId = false,
     ): Campaign {
@@ -516,6 +517,7 @@ abstract class IntegrationTest extends TestCase
             ready: true,
             status: $status,
             name: $name,
+            summary: $summary,
             currencyCode: 'GBP',
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),

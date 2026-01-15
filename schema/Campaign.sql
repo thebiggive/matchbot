@@ -35,6 +35,7 @@ CREATE TABLE `Campaign` (
   `relatedApplicationCharityResponseToOffer` varchar(255) DEFAULT NULL,
   `pinPosition` int DEFAULT NULL,
   `championPagePinPosition` int DEFAULT NULL,
+  `summary` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_E663708BD8961D21` (`salesforceId`),
   KEY `IDX_E663708BF5C97E37` (`charity_id`),
