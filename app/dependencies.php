@@ -8,6 +8,7 @@ use DI\ContainerBuilder;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager as DBALDriverManager;
 use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\CustomDBALDriver;
 use Doctrine\DBAL\Schema\MySQLSchemaManager;
 use Doctrine\DBAL\Schema\SchemaManagerFactory;
@@ -502,8 +503,9 @@ return function (ContainerBuilder $containerBuilder) {
 
             // Ensure our custom SchemaManager is used by Doctrine tooling
             $config->setSchemaManagerFactory(new class implements \Doctrine\DBAL\Schema\SchemaManagerFactory {
+                /** @return AbstractSchemaManager<\Doctrine\DBAL\Platforms\MySQL84Platform> */
                 #[\Override]
-                public function createSchemaManager(Connection $connection): \Doctrine\DBAL\Schema\AbstractSchemaManager
+                public function createSchemaManager(Connection $connection): AbstractSchemaManager
                 {
                     $platform = $connection->getDatabasePlatform();
                     if ($platform instanceof AbstractMySQLPlatform) {
@@ -559,8 +561,9 @@ return function (ContainerBuilder $containerBuilder) {
             // DBAL configuration to ensure our custom SchemaManager is used even in CLI tooling
             $dbalConfig = new \Doctrine\DBAL\Configuration();
             $dbalConfig->setSchemaManagerFactory(new class implements \Doctrine\DBAL\Schema\SchemaManagerFactory {
+                /** @return AbstractSchemaManager<\Doctrine\DBAL\Platforms\AbstractMySQLPlatform> */
                 #[\Override]
-                public function createSchemaManager(\Doctrine\DBAL\Connection $connection): \Doctrine\DBAL\Schema\AbstractSchemaManager
+                public function createSchemaManager(\Doctrine\DBAL\Connection $connection): AbstractSchemaManager
                 {
                     $platform = $connection->getDatabasePlatform();
                     if ($platform instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
@@ -578,7 +581,6 @@ return function (ContainerBuilder $containerBuilder) {
                 $dbalConfig
             );
 
-            /** @var ORM\Configuration $config */
             $config = $c->get(ORM\Configuration::class);
 
             $em = new ORM\EntityManager(conn: $connection, config: $config);
