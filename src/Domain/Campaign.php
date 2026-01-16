@@ -25,30 +25,11 @@ use MatchBot\Client\Campaign as CampaignClient;
 #[ORM\Index(name: 'metaCampaignSlug', columns: ['metaCampaignSlug'])]
 #[ORM\Index(name: 'relatedApplicationStatus', columns: ['relatedApplicationStatus'])]
 #[ORM\Index(name: 'relatedApplicationCharityResponseToOffer', columns: ['relatedApplicationCharityResponseToOffer'])]
-//#[ORM\Index(
-//    // dummy index to stop the ORM attempting to drop the index of the same name created manually in migration
-//    name: 'FULLTEXT_GLOBAL_SEARCH',
-//    columns: ['searchable_text'],
-//)
-//]
 #[ORM\Entity(repositoryClass: CampaignRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class Campaign extends SalesforceReadProxy
 {
     use TimestampsTrait;
-
-    /**
-     * dummy column to satisfy the Doctrine schema validation tool. This is actually a MySQL
-     * generated column defined in migration file.
-     */
-//    #[ORM\Column(
-//        type: 'text',
-//        columnDefinition: "TEXT GENERATED ALWAYS AS (CONCAT_WS(' ', name, summary, salesforceData->>'$.beneficiaries', salesforceData->>'$.categories', salesforceData->>'$.countries')) STORED",
-//        insertable: false,
-//        updatable: false,
-//        nullable: true
-//    )]
-//    private ?string $searchable_text = null;
 
     public final const array CHARITY_RESPONSES_TO_OFFER = ['Accepted', 'Rejected'];
 

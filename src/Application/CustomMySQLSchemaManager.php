@@ -12,14 +12,6 @@ use Doctrine\DBAL\Schema\MySQLSchemaManager;
  */
 class CustomMySQLSchemaManager extends MySQLSchemaManager
 {
-//    public function __construct(Connection $connection, AbstractMySQLPlatform $platform)
-//    {
-//        // Intentionally throw to prove our custom schema manager is being used during validation
-////        throw new \Exception('here we go in constructor of custom schema manager');
-//         parent::__construct($connection, $platform); // unreachable while we are testing
-//    }
-
-
     #[\Override]
     protected function _getPortableTableIndexesList($tableIndexes, $tableName = null) // phpcs:ignore
     {

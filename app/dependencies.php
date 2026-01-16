@@ -490,6 +490,9 @@ return function (ContainerBuilder $containerBuilder) {
 
             $config->addCustomStringFunction(JsonExtract::FUNCTION_NAME, JsonExtract::class);
             $config->addCustomStringFunction(JsonSearch::FUNCTION_NAME, JsonSearch::class);
+
+            // @todo - consider removing custom match function and the DoctrineExtensions package
+            // as it wasn't possible to use it for a column that the ORM doesn't know about - raw MySQL code is used instead.
             $config->addCustomStringFunction('MATCH', \DoctrineExtensions\Query\Mysql\MatchAgainst::class);
 
 
@@ -500,8 +503,6 @@ return function (ContainerBuilder $containerBuilder) {
             $config->setMetadataDriverImpl(
                 new ORM\Mapping\Driver\AttributeDriver($settings->doctrine['metadata_dirs'])
             );
-
-//            throw new \Exception('inside cli-config.php');
 
             // Ensure our custom SchemaManager is used by Doctrine tooling
             $config->setSchemaManagerFactory(new class implements \Doctrine\DBAL\Schema\SchemaManagerFactory {
@@ -587,7 +588,6 @@ return function (ContainerBuilder $containerBuilder) {
             $config = $c->get(ORM\Configuration::class);
 
             $em = new ORM\EntityManager(conn: $connection, config: $config);
-
 
             $em->getEventManager()->addEventSubscriber($c->get(RegularGivingMandateEventSubscriber::class));
 
