@@ -176,7 +176,7 @@ class CampaignRepositoryTest extends IntegrationTest
                 'countries' => 'United Kingdom'
             ],
             term: 'Porridge is', // fulltext search ignores the word 'is'
-            fulltext: false,
+            fulltext: true,
         );
 
         // assert
