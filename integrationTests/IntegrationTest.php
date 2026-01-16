@@ -321,14 +321,14 @@ abstract class IntegrationTest extends TestCase
         $matched =  1;
 
         $db->executeStatement(<<<SQL
-            INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
+            INSERT INTO Campaign (charity_id, name, summary, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
                                   createdAt, updatedAt, currencyCode, isRegularGiving, salesforceData,
                                   total_funding_allocation_amountInPence, total_funding_allocation_currency,
                                   amount_pledged_amountInPence, amount_pledged_currency,
                                   total_fundraising_target_amountInPence, total_fundraising_target_currency
                                   )
-            VALUES ('$charityId', 'some charity', '$nyd', '$closeDate', '$matched', '$campaignSfId', '$nyd',
-                    '$nyd', '$nyd', 'GBP',  '$isRegularGivingInt', '{}', 0, 'GBP', 0, 'GBP', 0, 'GBP')
+            VALUES ('$charityId', 'some charity', 'campaign summary', '$nyd', '$closeDate', '$matched', '$campaignSfId',
+                    '$nyd', '$nyd', '$nyd', 'GBP',  '$isRegularGivingInt', '{}', 0, 'GBP', 0, 'GBP', 0, 'GBP')
             SQL
         );
 
