@@ -10,7 +10,8 @@ use Doctrine\DBAL\Schema\MySQLSchemaManager;
  * Based on https://www.liip.ch/en/blog/doctrine-and-generated-columns - makes Doctrine ignore a generated column
  * and associated index that was created manually in an SQL migration instead of via Entity metadata.
  */
-class CustomMySQLSchemaManager extends MySQLSchemaManager {
+class CustomMySQLSchemaManager extends MySQLSchemaManager
+{
 //    public function __construct(Connection $connection, AbstractMySQLPlatform $platform)
 //    {
 //        // Intentionally throw to prove our custom schema manager is being used during validation
