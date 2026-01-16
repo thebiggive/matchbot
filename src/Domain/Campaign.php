@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\Index;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\WrongCampaignType;
@@ -79,6 +80,8 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(type: 'string')]
     protected string $name;
 
+    #[ORM\Column]
+    private string $summary;
 
     /**
      * Slug of the related metacampaign, if any. Will be output as is, and also used in joins etc.
@@ -193,14 +196,15 @@ class Campaign extends SalesforceReadProxy
     private ?int $championPagePinPosition;
 
     /**
-     * @param Money $totalFundraisingTarget
      * @param Salesforce18Id<Campaign> $sfId
+     * @param string $summary
+     * @param Money $totalFundraisingTarget
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
-     * @param 'Active'|'Expired'|'Preview'|null $status
+     * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
      * @param bool $isRegularGiving
      * @param ApplicationStatus|null $relatedApplicationStatus,
+     * @param 'Active'|'Expired'|'Preview'|null $status
      * @param CharityResponseToOffer|null $relatedApplicationCharityResponseToOffer
-     * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
      * */
     public function __construct(
         Salesforce18Id $sfId,
@@ -212,6 +216,7 @@ class Campaign extends SalesforceReadProxy
         bool $ready,
         ?string $status,
         string $name,
+        string $summary,
         string $currencyCode,
         Money $totalFundingAllocation,
         Money $amountPledged,
@@ -241,6 +246,7 @@ class Campaign extends SalesforceReadProxy
             endDate: $endDate,
             isMatched: $isMatched,
             name: $name,
+            summary: $summary,
             metaCampaignSlug: $metaCampaignSlug,
             startDate: $startDate,
             ready: $ready,
@@ -253,6 +259,7 @@ class Campaign extends SalesforceReadProxy
             totalFundraisingTarget: $totalFundraisingTarget,
             sfData: $rawData,
         );
+        $this->summary = $summary;
     }
 
     /**
@@ -307,13 +314,14 @@ class Campaign extends SalesforceReadProxy
             ready: $ready,
             status: $status,
             name: $title,
+            summary: $campaignData['summary'],
             currencyCode: $currency->isoCode(),
             totalFundingAllocation: Money::fromPence((int)(100.0 * ($campaignData['totalFundingAllocation'] ?? 0.0)), $currency),
             amountPledged: Money::fromPence((int)(100.0 * ($campaignData['amountPledged'] ?? 0.0)), $currency),
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             pinPosition: $campaignData['pinPosition'] ?? null,
             championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
-            relatedApplicationStatus: is_string($relatedApplicationStatusString) ?  ApplicationStatus::from($relatedApplicationStatusString) : null,
+            relatedApplicationStatus: is_string($relatedApplicationStatusString) ? ApplicationStatus::from($relatedApplicationStatusString) : null,
             relatedApplicationCharityResponseToOffer: is_string($relatedApplicationCharityResponseToOfferString) ? CharityResponseToOffer::from($relatedApplicationCharityResponseToOfferString) : null,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
             totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
@@ -482,6 +490,7 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
+     * @param string $summary
      * @param Money $totalFundraisingTarget
      * @param 'Active'|'Expired'|'Preview'|null $status
      * @param CharityResponseToOffer|null $relatedApplicationCharityResponseToOffer
@@ -497,6 +506,7 @@ class Campaign extends SalesforceReadProxy
         \DateTimeInterface $endDate,
         bool $isMatched,
         string $name,
+        string $summary,
         ?string $metaCampaignSlug,
         \DateTimeInterface $startDate,
         bool $ready,
@@ -539,6 +549,7 @@ class Campaign extends SalesforceReadProxy
         $this->endDate = $endDate;
         $this->isMatched = $isMatched;
         $this->name = $name;
+        $this->summary = $summary;
         $this->metaCampaignSlug = $metaCampaignSlug;
         $this->startDate = $startDate;
         $this->ready = $ready;

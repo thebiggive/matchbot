@@ -34,6 +34,7 @@ class CampaignRepositoryTest extends IntegrationTest
             ready: true,
             status: null,
             name: 'Campaign Name',
+            summary: 'Campaign Summary',
             currencyCode: 'GBP',
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
@@ -89,6 +90,7 @@ class CampaignRepositoryTest extends IntegrationTest
             ready: true,
             status: null,
             name: 'Campaign Name',
+            summary: 'Campaign Summary',
             currencyCode: 'GBP',
             totalFundingAllocation: Money::zero(),
             amountPledged: Money::zero(),
@@ -98,10 +100,10 @@ class CampaignRepositoryTest extends IntegrationTest
             relatedApplicationStatus: null,
             relatedApplicationCharityResponseToOffer: null,
             regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,
             rawData: [],
             hidden: false,
-            totalFundraisingTarget: Money::zero(),
         );
 
         $em = $this->getService(EntityManagerInterface::class);
@@ -128,71 +130,7 @@ class CampaignRepositoryTest extends IntegrationTest
         // arrange
         $sut = $this->getService(CampaignRepository::class);
 
-        $campaign1 = new Campaign(
-            self::someSalesForce18CampaignId(),
-            metaCampaignSlug: null,
-            charity: TestCase::someCharity(),
-            startDate: new \DateTimeImmutable('-10 months'),
-            endDate: new \DateTimeImmutable('-9 months'),
-            isMatched: true,
-            ready: true,
-            status: null,
-            name: 'Campaign One',
-            currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
-            isRegularGiving: false,
-            pinPosition: null,
-            championPagePinPosition: null,
-            relatedApplicationStatus: null,
-            relatedApplicationCharityResponseToOffer: null,
-            regularGivingCollectionEnd: null,
-            totalFundraisingTarget: Money::zero(),
-            thankYouMessage: null,
-            rawData: [],
-            hidden: false,
-        );
-
-        $campaign2 = new Campaign(
-            self::someSalesForce18CampaignId(),
-            metaCampaignSlug: 'the-family',
-            charity: TestCase::someCharity(),
-            startDate: new \DateTimeImmutable('-8 months'),
-            endDate: new \DateTimeImmutable('+1 month'),
-            isMatched: true,
-            ready: true,
-            status: 'Active',
-            name: 'Campaign Two is for Porridge and Juice',
-            currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
-            isRegularGiving: false,
-            pinPosition: null,
-            championPagePinPosition: null,
-            relatedApplicationStatus: ApplicationStatus::Approved,
-            relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted,
-            regularGivingCollectionEnd: null,
-            totalFundraisingTarget: Money::zero(),
-            thankYouMessage: null,
-            rawData: [
-                'beneficiaries' => ['Lads', 'Dads'],
-                'categories' => ['Food', 'Drink'],
-                'countries' => ['United Kingdom', 'Ireland'],
-                'title' => 'Campaign Two is for Porridge and Juice',
-            ],
-            hidden: false,
-        );
-
-        // Add empty initial stats
-        $stats1 = CampaignStatistics::zeroPlaceholder($campaign1, new \DateTimeImmutable('now'));
-        $stats2 = CampaignStatistics::zeroPlaceholder($campaign2, new \DateTimeImmutable('now'));
-
-        $em = $this->getService(EntityManagerInterface::class);
-        $em->persist($campaign1);
-        $em->persist($campaign2);
-        $em->persist($stats1);
-        $em->persist($stats2);
-        $em->flush();
+        $this->insertCampaignsForSearchToFind();
 
         // act
         $result = $sut->search(
@@ -214,6 +152,80 @@ class CampaignRepositoryTest extends IntegrationTest
         // assert
         $this->assertCount(1, $result);
         $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
+    }
+
+    public function testFullTextSearchWithVariousFilters(): void
+    {
+        // arrange
+        $sut = $this->getService(CampaignRepository::class);
+
+        $this->insertCampaignsForSearchToFind();
+
+
+        // these words appear non-contiguously in our campaign name, so our current search would not find them
+        // as it would just look for the exact phrase "Porridge Juice". The fulltext search automatically
+        // tokenises on spaces and treats this as two search terms.
+        //
+        // @todo - add a data-driven test showing several scenarios of search queries users could type
+        // with a wider range of campaigns in the DB and what would be returned in each case.
+        $term = 'Porridge Juice';
+
+        // act
+        $result = $sut->search(
+            sortField: 'relevance',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 6,
+            status: 'Active',
+            metaCampaignSlug: 'the-family',
+            fundSlug: null,
+            jsonMatchInListConditions: [
+                'beneficiaries' => 'Lads',
+                'categories' => 'Food',
+                'countries' => 'United Kingdom'
+            ],
+            term: $term,
+            fulltext: true,
+        );
+
+        // assert
+        $this->assertCount(1, $result);
+        $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
+    }
+
+    public function testNonFullTextSearchDoesNotTokenise(): void
+    {
+        // arrange
+        $sut = $this->getService(CampaignRepository::class);
+
+        $this->insertCampaignsForSearchToFind();
+
+
+        // these words appear non-contiguously in our campaign name, so our current search would not find them
+        // as it would just look for the exact phrase "Porridge Juice". The fulltext search automatically
+        // tokenises on spaces and treats this as two search terms.
+        $term = 'Porridge Juice';
+
+        // act
+        $result = $sut->search(
+            sortField: 'relevance',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 6,
+            status: 'Active',
+            metaCampaignSlug: 'the-family',
+            fundSlug: null,
+            jsonMatchInListConditions: [
+                'beneficiaries' => 'Lads',
+                'categories' => 'Food',
+                'countries' => 'United Kingdom'
+            ],
+            term: $term,
+            fulltext: false,
+        );
+
+        // assert
+        $this->assertEmpty($result);
     }
 
     public function testSearchSortsByStatus(): void
@@ -273,5 +285,79 @@ class CampaignRepositoryTest extends IntegrationTest
     {
         $id = (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
         return Salesforce18Id::ofCampaign($id);
+    }
+
+    /**
+     * @return void
+     */
+    public function insertCampaignsForSearchToFind(): void
+    {
+        $campaign1 = new Campaign(
+            self::someSalesForce18CampaignId(),
+            metaCampaignSlug: null,
+            charity: TestCase::someCharity(),
+            startDate: new \DateTimeImmutable('-10 months'),
+            endDate: new \DateTimeImmutable('-9 months'),
+            isMatched: true,
+            ready: true,
+            status: null,
+            name: 'Campaign One',
+            summary: 'Campaign Summary',
+            currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
+            isRegularGiving: false,
+            pinPosition: null,
+            championPagePinPosition: null,
+            relatedApplicationStatus: null,
+            relatedApplicationCharityResponseToOffer: null,
+            regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
+            thankYouMessage: null,
+            rawData: [],
+            hidden: false,
+        );
+
+        $campaign2 = new Campaign(
+            self::someSalesForce18CampaignId(),
+            metaCampaignSlug: 'the-family',
+            charity: TestCase::someCharity(),
+            startDate: new \DateTimeImmutable('-8 months'),
+            endDate: new \DateTimeImmutable('+1 month'),
+            isMatched: true,
+            ready: true,
+            status: 'Active',
+            name: 'Campaign Two is for Porridge and Juice',
+            summary: 'Campaign Summary',
+            currencyCode: 'GBP',
+            totalFundingAllocation: Money::zero(),
+            amountPledged: Money::zero(),
+            isRegularGiving: false,
+            pinPosition: null,
+            championPagePinPosition: null,
+            relatedApplicationStatus: ApplicationStatus::Approved,
+            relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted,
+            regularGivingCollectionEnd: null,
+            totalFundraisingTarget: Money::zero(),
+            thankYouMessage: null,
+            rawData: [
+                'beneficiaries' => ['Lads', 'Dads'],
+                'categories' => ['Food', 'Drink'],
+                'countries' => ['United Kingdom', 'Ireland'],
+                'title' => 'Campaign Two is for Porridge and Juice',
+            ],
+            hidden: false,
+        );
+
+        // Add empty initial stats
+        $stats1 = CampaignStatistics::zeroPlaceholder($campaign1, new \DateTimeImmutable('now'));
+        $stats2 = CampaignStatistics::zeroPlaceholder($campaign2, new \DateTimeImmutable('now'));
+
+        $em = $this->getService(EntityManagerInterface::class);
+        $em->persist($campaign1);
+        $em->persist($campaign2);
+        $em->persist($stats1);
+        $em->persist($stats2);
+        $em->flush();
     }
 }

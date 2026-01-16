@@ -426,6 +426,7 @@ class TestCase extends PHPUnitTestCase
             ready: true,
             status: 'Active',
             name: 'someCampaign',
+            summary: 'Some Campaign Summary',
             currencyCode: 'GBP',
             totalFundingAllocation: $totalFundingAllocation ?? Money::zero(),
             amountPledged: $amountPledged ?? Money::zero(),
