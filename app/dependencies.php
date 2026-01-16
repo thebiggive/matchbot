@@ -503,7 +503,7 @@ return function (ContainerBuilder $containerBuilder) {
 
             // Ensure our custom SchemaManager is used by Doctrine tooling
             $config->setSchemaManagerFactory(new class implements \Doctrine\DBAL\Schema\SchemaManagerFactory {
-                /** @return AbstractSchemaManager<\Doctrine\DBAL\Platforms\MySQL84Platform> */
+                /** @return AbstractSchemaManager<\Doctrine\DBAL\Platforms\AbstractPlatform> */
                 #[\Override]
                 public function createSchemaManager(Connection $connection): AbstractSchemaManager
                 {
@@ -561,7 +561,7 @@ return function (ContainerBuilder $containerBuilder) {
             // DBAL configuration to ensure our custom SchemaManager is used even in CLI tooling
             $dbalConfig = new \Doctrine\DBAL\Configuration();
             $dbalConfig->setSchemaManagerFactory(new class implements \Doctrine\DBAL\Schema\SchemaManagerFactory {
-                /** @return AbstractSchemaManager<\Doctrine\DBAL\Platforms\AbstractMySQLPlatform> */
+                /** @return AbstractSchemaManager<\Doctrine\DBAL\Platforms\AbstractPlatform> */
                 #[\Override]
                 public function createSchemaManager(\Doctrine\DBAL\Connection $connection): AbstractSchemaManager
                 {
