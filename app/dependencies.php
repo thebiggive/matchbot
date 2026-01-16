@@ -588,7 +588,6 @@ return function (ContainerBuilder $containerBuilder) {
 
             $em->getEventManager()->addEventSubscriber($c->get(RegularGivingMandateEventSubscriber::class));
 
-            echo "created \$em: " . spl_object_id($em) . "\n";
             return $em;
         },
 
