@@ -21,7 +21,7 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
 
 
     #[\Override]
-    protected function _getPortableTableIndexesList($tableIndexes, $tableName = null)
+    protected function _getPortableTableIndexesList($tableIndexes, $tableName = null) // phpcs:ignore
     {
         $indexes = parent::_getPortableTableIndexesList($tableIndexes, $tableName);
 
@@ -31,7 +31,7 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
     }
 
     #[\Override]
-    protected function _getPortableTableColumnList($table, $database, $tableColumns)
+    protected function _getPortableTableColumnList($table, $database, $tableColumns) // phpcs:ignore
     {
         $columns = parent::_getPortableTableColumnList($table, $database, $tableColumns);
 
