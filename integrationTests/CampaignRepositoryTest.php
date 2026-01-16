@@ -190,6 +190,41 @@ class CampaignRepositoryTest extends IntegrationTest
         $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
     }
 
+    public function testNonFullTextSearchDoesNotTokenise(): void
+    {
+        // arrange
+        $sut = $this->getService(CampaignRepository::class);
+
+        $this->insertCampaignsForSearchToFind();
+
+
+        // these words appear non-contiguously in our campaign name, so our current search would not find them
+        // as it would just look for the exact phrase "Porridge Juice". The fulltext search automatically
+        // tokenises on spaces and treats this as two search terms.
+        $term = 'Porridge Juice';
+
+        // act
+        $result = $sut->search(
+            sortField: 'relevance',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 6,
+            status: 'Active',
+            metaCampaignSlug: 'the-family',
+            fundSlug: null,
+            jsonMatchInListConditions: [
+                'beneficiaries' => 'Lads',
+                'categories' => 'Food',
+                'countries' => 'United Kingdom'
+            ],
+            term: $term,
+            fulltext: false,
+        );
+
+        // assert
+        $this->assertEmpty($result);
+    }
+
     public function testSearchSortsByStatus(): void
     {
         $sut = $this->getService(CampaignRepository::class);
