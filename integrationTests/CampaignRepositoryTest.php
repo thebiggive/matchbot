@@ -161,6 +161,12 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $this->insertCampaignsForSearchToFind();
 
+
+        // these words appear non-contiguously in our campaign name, so our current search would not find them
+        // as it would just look for the exact phrase "Porridge Juice". The fulltext search automatically
+        // tokenises on spaces and treats this as two search terms.
+        $term = 'Porridge Juice';
+
         // act
         $result = $sut->search(
             sortField: 'relevance',
@@ -175,7 +181,7 @@ class CampaignRepositoryTest extends IntegrationTest
                 'categories' => 'Food',
                 'countries' => 'United Kingdom'
             ],
-            term: 'Porridges is', // fulltext search ignores the word 'is' and if it does stemming should match Porridges to Porridge
+            term: $term,
             fulltext: true,
         );
 
