@@ -175,7 +175,7 @@ class CampaignRepositoryTest extends IntegrationTest
                 'categories' => 'Food',
                 'countries' => 'United Kingdom'
             ],
-            term: 'Porridge is', // fulltext search ignores the word 'is'
+            term: 'Porridges is', // fulltext search ignores the word 'is' and if it does stemming should match Porridges to Porridge
             fulltext: true,
         );
 
