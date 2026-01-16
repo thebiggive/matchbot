@@ -7,6 +7,10 @@ use DI\Container;
 use DI\ContainerBuilder;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager as DBALDriverManager;
+use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+use Doctrine\DBAL\Schema\CustomDBALDriver;
+use Doctrine\DBAL\Schema\MySQLSchemaManager;
+use Doctrine\DBAL\Schema\SchemaManagerFactory;
 use Doctrine\ORM;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,6 +18,7 @@ use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityTokenService;
+use MatchBot\Application\CustomMySQLSchemaManager;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\CharityUpdated;
@@ -493,6 +498,21 @@ return function (ContainerBuilder $containerBuilder) {
                 new ORM\Mapping\Driver\AttributeDriver($settings->doctrine['metadata_dirs'])
             );
 
+//            throw new \Exception('inside cli-config.php');
+
+            // Ensure our custom SchemaManager is used by Doctrine tooling
+            $config->setSchemaManagerFactory(new class implements \Doctrine\DBAL\Schema\SchemaManagerFactory {
+                #[\Override]
+                public function createSchemaManager(Connection $connection): \Doctrine\DBAL\Schema\AbstractSchemaManager
+                {
+                    $platform = $connection->getDatabasePlatform();
+                    if ($platform instanceof AbstractMySQLPlatform) {
+                        return new \MatchBot\Application\CustomMySQLSchemaManager($connection, $platform);
+                    }
+                    return (new \Doctrine\DBAL\Schema\DefaultSchemaManagerFactory())->createSchemaManager($connection);
+                }
+            });
+
             $config->setMetadataCache($cacheAdapter);
 
             return $config;
@@ -536,13 +556,37 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         ORM\EntityManager::class =>  static function (ContainerInterface $c): EntityManager {
-            $connection = DBALDriverManager::getConnection($c->get(Settings::class)->doctrine['connection']);
+            // DBAL configuration to ensure our custom SchemaManager is used even in CLI tooling
+            $dbalConfig = new \Doctrine\DBAL\Configuration();
+            $dbalConfig->setSchemaManagerFactory(new class implements \Doctrine\DBAL\Schema\SchemaManagerFactory {
+                #[\Override]
+                public function createSchemaManager(\Doctrine\DBAL\Connection $connection): \Doctrine\DBAL\Schema\AbstractSchemaManager
+                {
+                    $platform = $connection->getDatabasePlatform();
+                    if ($platform instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+                        return new \MatchBot\Application\CustomMySQLSchemaManager($connection, $platform);
+                    }
+                    return (new \Doctrine\DBAL\Schema\DefaultSchemaManagerFactory())->createSchemaManager($connection);
+                }
+            });
+
+            $connection = DBALDriverManager::getConnection(
+                $c->get(Settings::class)->doctrine['connection'] +
+                [
+                    'platform' => new \MatchBot\Application\CustomMysqlPlatform(),
+                ],
+                $dbalConfig
+            );
+
+            /** @var ORM\Configuration $config */
             $config = $c->get(ORM\Configuration::class);
 
             $em = new ORM\EntityManager(conn: $connection, config: $config);
 
+
             $em->getEventManager()->addEventSubscriber($c->get(RegularGivingMandateEventSubscriber::class));
 
+            echo "created \$em: " . spl_object_id($em) . "\n";
             return $em;
         },
 
