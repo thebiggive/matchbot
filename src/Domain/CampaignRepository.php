@@ -556,6 +556,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         array $jsonMatchInListConditions,
         ?string $termWildcarded,
         bool $filterOutTargetMet,
+        bool $fullText,
+        ?string $term,
     ): void {
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
         $qb->andWhere($qb->expr()->eq('campaign.isMatched', '1'));
@@ -598,7 +600,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('jsonMatchInList_' . $field, '%' . $value . '%');
         }
 
-        if ($termWildcarded !== null) {
+        if ($termWildcarded !== null && ! $fullText) {
             /**
              * @todo We'll probably want to do fulltext search and MATCH() eventually.
             @link https://michilehr.de/full-text-search-with-mysql-and-doctrine/#3how-to-implement-a-full-text-search-with-doctrine
@@ -614,6 +616,22 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('termForWhere', $termWildcarded);
         }
 
+        if ($term && $fullText) {
+            // @todo - also include charity name and info in searchable_text. Probably requires denormalisation as match
+            // can't search across multiple tables.
+            // also @todo - use the ordering by relavence that's implicitly requested by using MATCH to display the results
+            // in relavence order.
+            $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+                'SELECT Campaign.id FROM Campaign
+                   WHERE MATCH (Campaign.searchable_text) AGAINST (? IN NATURAL LANGUAGE MODE)',
+                [$term]
+            );
+
+            $qb->andWhere('campaign.id IN (:ids)');
+            $qb->setParameter('ids', $ids);
+        }
+
+
         if ($filterOutTargetMet) {
             $qb->andWhere($qb->expr()->neq('campaignStatistics.distanceToTarget.amountInPence', 0));
         }
@@ -621,7 +639,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * @param QueryBuilder $qb Builder with its select etc. already set up.
-     * @param literal-string $safeSortField
+     * @param non-empty-string $safeSortField
      */
     private function sortForSearch(
         QueryBuilder $qb,
@@ -680,7 +698,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $metaCampaignSlug,
         ?string $fundSlug,
         array $jsonMatchInListConditions,
-        ?string $term
+        ?string $term,
+        bool $fulltext = false,
     ): array {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
@@ -730,7 +749,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
             fundSlug: $fundSlug,
             jsonMatchInListConditions: $jsonMatchInListConditions,
             termWildcarded: $termWildcarded,
-            filterOutTargetMet: $filterOutTargetMet
+            filterOutTargetMet: $filterOutTargetMet,
+            fullText: $fulltext,
+            term: $term,
         );
 
         $this->sortForSearch(

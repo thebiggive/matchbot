@@ -490,6 +490,8 @@ return function (ContainerBuilder $containerBuilder) {
 
             $config->addCustomStringFunction(JsonExtract::FUNCTION_NAME, JsonExtract::class);
             $config->addCustomStringFunction(JsonSearch::FUNCTION_NAME, JsonSearch::class);
+            $config->addCustomStringFunction('MATCH', \DoctrineExtensions\Query\Mysql\MatchAgainst::class);
+
 
             // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
             // files indefinitely.
@@ -572,6 +574,7 @@ return function (ContainerBuilder $containerBuilder) {
                     return (new \Doctrine\DBAL\Schema\DefaultSchemaManagerFactory())->createSchemaManager($connection);
                 }
             });
+
 
             $connection = DBALDriverManager::getConnection(
                 $c->get(Settings::class)->doctrine['connection'] +
