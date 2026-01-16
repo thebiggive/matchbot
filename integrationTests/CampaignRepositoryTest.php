@@ -130,6 +130,124 @@ class CampaignRepositoryTest extends IntegrationTest
         // arrange
         $sut = $this->getService(CampaignRepository::class);
 
+        $this->insertCampaignsForSearchToFind();
+
+        // act
+        $result = $sut->search(
+            sortField: 'relevance',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 6,
+            status: 'Active',
+            metaCampaignSlug: 'the-family',
+            fundSlug: null,
+            jsonMatchInListConditions: [
+                'beneficiaries' => 'Lads',
+                'categories' => 'Food',
+                'countries' => 'United Kingdom'
+            ],
+            term: 'Porridge',
+        );
+
+        // assert
+        $this->assertCount(1, $result);
+        $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
+    }
+
+    public function testFullTextSearchWithVariousFilters(): void
+    {
+        // arrange
+        $sut = $this->getService(CampaignRepository::class);
+
+        $this->insertCampaignsForSearchToFind();
+
+        // act
+        $result = $sut->search(
+            sortField: 'relevance',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 6,
+            status: 'Active',
+            metaCampaignSlug: 'the-family',
+            fundSlug: null,
+            jsonMatchInListConditions: [
+                'beneficiaries' => 'Lads',
+                'categories' => 'Food',
+                'countries' => 'United Kingdom'
+            ],
+            term: 'Porridge is', // fulltext search ignores the word 'is'
+            fulltext: true,
+        );
+
+        // assert
+        $this->assertCount(1, $result);
+        $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
+    }
+
+    public function testSearchSortsByStatus(): void
+    {
+        $sut = $this->getService(CampaignRepository::class);
+        $em = $this->getService(EntityManagerInterface::class);
+
+        $charity = TestCase::someCharity();
+
+        foreach (['Expired', 'Active', 'Preview'] as $status) {
+            $campaign = $this->createCampaign(
+                charity: $charity,
+                name: 'Campaign ' . $status,
+                status: $status,
+                withUniqueSalesforceId: true,
+            );
+            $stats = CampaignStatistics::zeroPlaceholder($campaign, new \DateTimeImmutable('now'));
+            $em->persist($campaign);
+            $em->persist($stats);
+        }
+        $em->flush();
+
+        $returnValue = $sut->search(
+            sortField: 'distanceToTarget',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 6,
+            status: null,
+            metaCampaignSlug: null,
+            fundSlug: null,
+            jsonMatchInListConditions: [],
+            term: null,
+        );
+
+        $returnCampaignNames = array_map(
+            static fn(Campaign $campaign) => $campaign->getCampaignName(),
+            $returnValue
+        );
+
+        // Expired is excluded from the Explore list with no metacampaign slug.
+        $this->assertSame(['Campaign Active', 'Campaign Preview'], $returnCampaignNames);
+    }
+
+    private function getCharityAwaitingGiftAidApproval(): Charity
+    {
+        $charity = TestCase::someCharity();
+        $charity->setTbgClaimingGiftAid(true);
+        $charity->setTbgApprovedToClaimGiftAid(false);
+
+        return $charity;
+    }
+
+    /**
+     * @return Salesforce18Id<Campaign>
+     */
+    public function randomCampaignId(): Salesforce18Id
+    {
+        $id = (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
+        return Salesforce18Id::ofCampaign($id);
+    }
+
+    /**
+     * @return void
+     */
+    public function insertCampaignsForSearchToFind(): void
+    {
         $campaign1 = new Campaign(
             self::someSalesForce18CampaignId(),
             metaCampaignSlug: null,
@@ -197,85 +315,5 @@ class CampaignRepositoryTest extends IntegrationTest
         $em->persist($stats1);
         $em->persist($stats2);
         $em->flush();
-
-        // act
-        $result = $sut->search(
-            sortField: 'relevance',
-            sortDirection: 'desc',
-            offset: 0,
-            limit: 6,
-            status: 'Active',
-            metaCampaignSlug: 'the-family',
-            fundSlug: null,
-            jsonMatchInListConditions: [
-                'beneficiaries' => 'Lads',
-                'categories' => 'Food',
-                'countries' => 'United Kingdom'
-            ],
-            term: 'Porridge',
-        );
-
-        // assert
-        $this->assertCount(1, $result);
-        $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
-    }
-
-    public function testSearchSortsByStatus(): void
-    {
-        $sut = $this->getService(CampaignRepository::class);
-        $em = $this->getService(EntityManagerInterface::class);
-
-        $charity = TestCase::someCharity();
-
-        foreach (['Expired', 'Active', 'Preview'] as $status) {
-            $campaign = $this->createCampaign(
-                charity: $charity,
-                name: 'Campaign ' . $status,
-                status: $status,
-                withUniqueSalesforceId: true,
-            );
-            $stats = CampaignStatistics::zeroPlaceholder($campaign, new \DateTimeImmutable('now'));
-            $em->persist($campaign);
-            $em->persist($stats);
-        }
-        $em->flush();
-
-        $returnValue = $sut->search(
-            sortField: 'distanceToTarget',
-            sortDirection: 'desc',
-            offset: 0,
-            limit: 6,
-            status: null,
-            metaCampaignSlug: null,
-            fundSlug: null,
-            jsonMatchInListConditions: [],
-            term: null,
-        );
-
-        $returnCampaignNames = array_map(
-            static fn(Campaign $campaign) => $campaign->getCampaignName(),
-            $returnValue
-        );
-
-        // Expired is excluded from the Explore list with no metacampaign slug.
-        $this->assertSame(['Campaign Active', 'Campaign Preview'], $returnCampaignNames);
-    }
-
-    private function getCharityAwaitingGiftAidApproval(): Charity
-    {
-        $charity = TestCase::someCharity();
-        $charity->setTbgClaimingGiftAid(true);
-        $charity->setTbgApprovedToClaimGiftAid(false);
-
-        return $charity;
-    }
-
-    /**
-     * @return Salesforce18Id<Campaign>
-     */
-    public function randomCampaignId(): Salesforce18Id
-    {
-        $id = (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
-        return Salesforce18Id::ofCampaign($id);
     }
 }
