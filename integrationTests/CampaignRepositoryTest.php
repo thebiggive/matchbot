@@ -165,6 +165,9 @@ class CampaignRepositoryTest extends IntegrationTest
         // these words appear non-contiguously in our campaign name, so our current search would not find them
         // as it would just look for the exact phrase "Porridge Juice". The fulltext search automatically
         // tokenises on spaces and treats this as two search terms.
+        //
+        // @todo - add a data-driven test showing several scenarios of search queries users could type
+        // with a wider range of campaigns in the DB and what would be returned in each case.
         $term = 'Porridge Juice';
 
         // act
