@@ -21,9 +21,9 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
 
 
     #[\Override]
-    public function listTableIndexes($tableIndexes, $tableName = null)
+    protected function _getPortableTableIndexesList($tableIndexes, $tableName = null)
     {
-        $indexes = parent::listTableIndexes($tableIndexes, $tableName);
+        $indexes = parent::_getPortableTableIndexesList($tableIndexes, $tableName);
 
         return \array_filter($indexes, function ($index) use ($tableName) {
             return !($index->getName() === 'FULLTEXT_GLOBAL_SEARCH' && $tableName === 'Campaign');
@@ -31,9 +31,9 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
     }
 
     #[\Override]
-    public function listTableColumns($table, null| string $database = null)
+    protected function _getPortableTableColumnList($table, $database, $tableColumns)
     {
-        $columns = parent::listTableColumns($table, $database);
+        $columns = parent::_getPortableTableColumnList($table, $database, $tableColumns);
 
         return array_filter($columns, function ($column) use ($table) {
             return !($column->getName() === 'searchable_text' && $table === 'Campaign');
