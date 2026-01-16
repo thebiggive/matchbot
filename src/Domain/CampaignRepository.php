@@ -616,7 +616,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('termForWhere', $termWildcarded);
         }
 
-        if ($term && $fullText) {
+        if (is_string($term) && $fullText) {
             // @todo - also include charity name and info in searchable_text. Probably requires denormalisation as match
             // can't search across multiple tables.
             // also @todo - use the ordering by relavence that's implicitly requested by using MATCH to display the results
