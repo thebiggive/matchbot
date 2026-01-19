@@ -154,44 +154,59 @@ class CampaignRepositoryTest extends IntegrationTest
         $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
     }
 
-    public function testFullTextSearchWithVariousFilters(): void
+    /**
+     * @param string $query A user search query
+     * @param list<array{0: string, 1: string}> $expectedResultsWithOldSearch The results that our old search system will give, as a list of campaign and charity names
+     * @param list<array{0: string, 1: string}> $expectedResultsWithNewSearch The results that our new search system will give, as a list of campaign and charity names
+     *
+     * @dataProvider searchQueriesAgainstResultsProvider
+     *
+     * @return void
+     */
+    public function testSearchQueriesAgainstResults(string $query, array $expectedResultsWithOldSearch, array $expectedResultsWithNewSearch)
     {
-        // arrange
         $sut = $this->getService(CampaignRepository::class);
 
         $this->insertCampaignsForSearchToFind();
 
-
-        // these words appear non-contiguously in our campaign name, so our current search would not find them
-        // as it would just look for the exact phrase "Porridge Juice". The fulltext search automatically
-        // tokenises on spaces and treats this as two search terms.
-        //
-        // @todo - add a data-driven test showing several scenarios of search queries users could type
-        // with a wider range of campaigns in the DB and what would be returned in each case.
-        $term = 'Porridge Juice';
-
         // act
-        $result = $sut->search(
+        $resultsWithOldSearch = $sut->search(
             sortField: 'relevance',
             sortDirection: 'desc',
             offset: 0,
-            limit: 6,
-            status: 'Active',
-            metaCampaignSlug: 'the-family',
+            limit: 600,
+            status: null,
+            metaCampaignSlug: null,
             fundSlug: null,
             jsonMatchInListConditions: [
-                'beneficiaries' => 'Lads',
-                'categories' => 'Food',
-                'countries' => 'United Kingdom'
             ],
-            term: $term,
+            term: $query,
+            fulltext: false,
+        );
+
+        $oldSearchNames = array_map(fn(Campaign $campaign) => [$campaign->getCharity()->getName(), $campaign->getCampaignName()], $resultsWithOldSearch);
+
+        $resultsWithNewSearch = $sut->search(
+            sortField: 'relevance',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 600,
+            status: null,
+            metaCampaignSlug: null,
+            fundSlug: null,
+            jsonMatchInListConditions: [
+            ],
+            term: $query,
             fulltext: true,
         );
 
+        $newSearchNames = array_map(fn(Campaign $campaign) => [$campaign->getCharity()->getName(), $campaign->getCampaignName()], $resultsWithNewSearch);
+
         // assert
-        $this->assertCount(1, $result);
-        $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
+        $this->assertSame($expectedResultsWithOldSearch, $oldSearchNames);
+        $this->assertSame($expectedResultsWithNewSearch, $newSearchNames);
     }
+
 
     public function testNonFullTextSearchDoesNotTokenise(): void
     {
@@ -292,6 +307,7 @@ class CampaignRepositoryTest extends IntegrationTest
      */
     public function insertCampaignsForSearchToFind(): void
     {
+
         $campaign1 = new Campaign(
             self::someSalesForce18CampaignId(),
             metaCampaignSlug: null,
@@ -318,46 +334,94 @@ class CampaignRepositoryTest extends IntegrationTest
             hidden: false,
         );
 
-        $campaign2 = new Campaign(
-            self::someSalesForce18CampaignId(),
-            metaCampaignSlug: 'the-family',
-            charity: TestCase::someCharity(),
-            startDate: new \DateTimeImmutable('-8 months'),
-            endDate: new \DateTimeImmutable('+1 month'),
-            isMatched: true,
-            ready: true,
-            status: 'Active',
-            name: 'Campaign Two is for Porridge and Juice',
-            summary: 'Campaign Summary',
-            currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
-            isRegularGiving: false,
-            pinPosition: null,
-            championPagePinPosition: null,
-            relatedApplicationStatus: ApplicationStatus::Approved,
-            relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted,
-            regularGivingCollectionEnd: null,
-            totalFundraisingTarget: Money::zero(),
-            thankYouMessage: null,
-            rawData: [
-                'beneficiaries' => ['Lads', 'Dads'],
-                'categories' => ['Food', 'Drink'],
-                'countries' => ['United Kingdom', 'Ireland'],
-                'title' => 'Campaign Two is for Porridge and Juice',
-            ],
-            hidden: false,
-        );
-
-        // Add empty initial stats
         $stats1 = CampaignStatistics::zeroPlaceholder($campaign1, new \DateTimeImmutable('now'));
-        $stats2 = CampaignStatistics::zeroPlaceholder($campaign2, new \DateTimeImmutable('now'));
-
         $em = $this->getService(EntityManagerInterface::class);
-        $em->persist($campaign1);
-        $em->persist($campaign2);
+
         $em->persist($stats1);
-        $em->persist($stats2);
+
+        $em->persist($campaign1);
+
+        foreach (
+            [
+            ['Charity Name', 'Campaign Two is for Porridge and Juice'],
+            ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+                 ] as [$charityName, $campaignName]
+        ) {
+            $campaign = new Campaign(
+                self::someSalesForce18CampaignId(),
+                metaCampaignSlug: 'the-family',
+                charity: TestCase::someCharity(name: $charityName),
+                startDate: new \DateTimeImmutable('-8 months'),
+                endDate: new \DateTimeImmutable('+1 month'),
+                isMatched: true,
+                ready: true,
+                status: 'Active',
+                name: $campaignName,
+                summary: 'Campaign Summary',
+                currencyCode: 'GBP',
+                totalFundingAllocation: Money::zero(),
+                amountPledged: Money::zero(),
+                isRegularGiving: false,
+                pinPosition: null,
+                championPagePinPosition: null,
+                relatedApplicationStatus: ApplicationStatus::Approved,
+                relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted,
+                regularGivingCollectionEnd: null,
+                totalFundraisingTarget: Money::zero(),
+                thankYouMessage: null,
+                rawData: [
+                    'beneficiaries' => ['Lads', 'Dads'],
+                    'categories' => ['Food', 'Drink'],
+                    'countries' => ['United Kingdom', 'Ireland'],
+                    'title' => $campaignName,
+                ],
+                hidden: false,
+            );
+
+            // Add empty initial stats
+            $stats2 = CampaignStatistics::zeroPlaceholder($campaign, new \DateTimeImmutable('now'));
+
+            $em->persist($campaign);
+            $em->persist($stats2);
+        }
+
+
         $em->flush();
+    }
+
+    /**
+     * @return array<array-key, array{
+     *     0: string,
+     *     1: list<array{0: string, 1: string}>,
+     *     2: list<array{0: string, 1: string}>
+     *   }>
+     */
+    public function searchQueriesAgainstResultsProvider(): array
+    {
+        return [
+            [
+                'Porridge and Juice',
+                [['Charity Name', 'Campaign Two is for Porridge and Juice']],
+                [['Charity Name', 'Campaign Two is for Porridge and Juice']],
+            ],
+            [
+                'Porridge Juice', // searching for words that are non-contiguous in the result
+                [],
+                [['Charity Name','Campaign Two is for Porridge and Juice']]
+            ],
+            [
+                'Fred\'s Charity',
+                [['Fred\'s Charity', 'This is a campaign for Fred\'s Charity']],
+                [['Fred\'s Charity', 'This is a campaign for Fred\'s Charity']]
+            ],
+            [
+                'Freds Charity',
+                [],
+                [
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+                    // todo - make this be found as well - ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name']
+                ]
+            ],
+        ];
     }
 }
