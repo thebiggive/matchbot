@@ -13,10 +13,16 @@ use Psr\Log\LoggerInterface;
 /**
  * @psalm-type IdentityJWT object{sub: object{person_id: string, psp_id: ?string, complete?: boolean|null}}&\stdClass
  */
-final class IdentityToken
+final class IdentityTokenService
 {
-    public function __construct(private string $baseUri)
-    {
+    /**
+     * @param string $baseUri
+     * @param non-empty-list<string> $secrets
+     */
+    public function __construct(
+        private string $baseUri,
+        #[\SensitiveParameter] private readonly array $secrets
+    ) {
     }
 
     /**
@@ -29,12 +35,25 @@ final class IdentityToken
     /**
      * @return IdentityJWT
      */
-    public static function decodeJWT(string $jws): object
+    public function decodeJWT(string $jws): object
     {
-        /** @var IdentityJWT $decodedJwtBody */
-        $decodedJwtBody = JWT::decode($jws, static::getKey());
+        $caughtExcpetion = null;
+        foreach ($this->secrets as $secret) {
+            try {
+                /** @var IdentityJWT $decodedJwtBody */
+                $decodedJwtBody = JWT::decode($jws, new Key($secret, static::$algorithm));
 
-        return $decodedJwtBody;
+                return $decodedJwtBody;
+            } catch (\Exception $exception) {
+                $caughtExcpetion = $exception;
+                continue;
+            }
+        }
+
+        \assert($caughtExcpetion !== null);
+
+        // we've gone through all the secrets and every one has thrown, so the JWT is not valid for any of them.
+        throw $caughtExcpetion;
     }
 
     /**
@@ -76,39 +95,22 @@ final class IdentityToken
         return true;
     }
 
-    public static function getPersonId(string $jws): PersonId
+    public function getPersonId(string $jws): PersonId
     {
-        $decodedJwtBody = self::decodeJWT($jws);
+        $decodedJwtBody = $this->decodeJWT($jws);
         return PersonId::of($decodedJwtBody->sub->person_id);
     }
 
-    public static function getPspId(string $jws): ?string
+    public function getPspId(string $jws): ?string
     {
         try {
-            $decodedJwtBody = self::decodeJWT($jws);
+            $decodedJwtBody = $this->decodeJWT($jws);
         } catch (\Exception $exception) {
             // Should never happen in practice because we `check()` first.
             return null;
         }
 
         return $decodedJwtBody->sub->psp_id ?? null;
-    }
-
-    private static function getKey(): Key
-    {
-        return new Key(static::getSecret(), static::$algorithm);
-    }
-
-    #[Pure]
-    private static function getSecret(): string
-    {
-        $secret = getenv('JWT_ID_SECRET');
-
-        if (! is_string($secret)) {
-            throw new \RuntimeException("JWT_ID_SECRET not set in environment");
-        }
-
-        return $secret;
     }
 
     public function isComplete(?string $jws): bool
@@ -118,7 +120,7 @@ final class IdentityToken
         }
 
         try {
-            $decodedJwtBody = self::decodeJWT($jws);
+            $decodedJwtBody = $this->decodeJWT($jws);
         } catch (\Exception $exception) {
             // Should never happen in practice because we `check()` first.
             return false;
