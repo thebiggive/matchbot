@@ -18,7 +18,10 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
         $indexes = parent::_getPortableTableIndexesList($tableIndexes, $tableName);
 
         return \array_filter($indexes, function ($index) use ($tableName) {
-            return !($index->getName() === 'FULLTEXT_GLOBAL_SEARCH' && $tableName === 'Campaign');
+            return ! (
+                ($index->getName() === 'FULLTEXT_GLOBAL_SEARCH' && $tableName === 'Campaign') ||
+                ($index->getName() === 'FULLTEXT_GLOBAL_SEARCH' && $tableName === 'Charity')
+            );
         });
     }
 
@@ -28,7 +31,10 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
         $columns = parent::_getPortableTableColumnList($table, $database, $tableColumns);
 
         return array_filter($columns, function ($column) use ($table) {
-            return !($column->getName() === 'searchable_text' && $table === 'Campaign');
+            return !(
+                ($column->getName() === 'searchable_text' && $table === 'Campaign') ||
+                ($column->getName() === 'searchable_text' && $table === 'Charity')
+            );
         });
     }
 }

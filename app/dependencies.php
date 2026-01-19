@@ -494,6 +494,7 @@ return function (ContainerBuilder $containerBuilder) {
             // @todo - consider removing custom match function and the DoctrineExtensions package
             // as it wasn't possible to use it for a column that the ORM doesn't know about - raw MySQL code is used instead.
             $config->addCustomStringFunction('MATCH', \DoctrineExtensions\Query\Mysql\MatchAgainst::class);
+            $config->addCustomStringFunction('FIELD', \DoctrineExtensions\Query\Mysql\Field::class);
 
 
             // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all

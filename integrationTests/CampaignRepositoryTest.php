@@ -422,9 +422,9 @@ class CampaignRepositoryTest extends IntegrationTest
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
                 ],
                 [
-                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
-                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
                 ],
             ],
             [
@@ -440,8 +440,8 @@ class CampaignRepositoryTest extends IntegrationTest
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
                 ],
                 [
-                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Charity Name', 'Campaign Two is for Porridge and Juice'],
                 ]
             ],
@@ -449,9 +449,9 @@ class CampaignRepositoryTest extends IntegrationTest
                 'Freds Charity',
                 [],
                 [
-                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
-                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
                 ]
             ],
             [
@@ -461,8 +461,8 @@ class CampaignRepositoryTest extends IntegrationTest
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
                 ],
                 [
-                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                 ]
             ],
             [

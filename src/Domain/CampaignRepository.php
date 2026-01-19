@@ -547,6 +547,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /**
      * @param QueryBuilder $qb Builder with its select etc. already set up.
      * @param array<string, string> $jsonMatchInListConditions
+     *
+     * @return list<int>| null campaign IDs sorted by relavence if doing a full text search, otherwise null.
      */
     private function filterForSearch(
         QueryBuilder $qb,
@@ -558,7 +560,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         bool $filterOutTargetMet,
         bool $fullText,
         ?string $term,
-    ): void {
+    ): array|null {
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
         $qb->andWhere($qb->expr()->eq('campaign.isMatched', '1'));
 
@@ -612,11 +614,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('termForWhere', $termWildcarded);
         }
 
+        $ids = null;
         if (is_string($term) && $fullText) {
             // @todo - also include charity name and info in searchable_text. Probably requires denormalisation as match
             // can't search across multiple tables.
             // also @todo - use the ordering by relavence that's implicitly requested by using MATCH to display the results
             // in relavence order.
+            /** @var list<int> $ids */
             $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
                 'SELECT Campaign.id FROM Campaign LEFT JOIN Charity ON Campaign.charity_id = Charity.id 
                    WHERE ((MATCH (Campaign.searchable_text) AGAINST (? IN NATURAL LANGUAGE MODE)) OR
@@ -634,9 +638,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
         if ($filterOutTargetMet) {
             $qb->andWhere($qb->expr()->neq('campaignStatistics.distanceToTarget.amountInPence', 0));
         }
+
+        Assertion::nullOrIsArray($ids);
+        return $ids;
     }
 
     /**
+     * @param list<int>|null $idsOrderedByRelavence
      * @param QueryBuilder $qb Builder with its select etc. already set up.
      * @param non-empty-string $safeSortField
      */
@@ -645,7 +653,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         bool $applyPinSort,
         string $safeSortField,
         string $sortDirection,
-        ?string $termWildcarded
+        ?string $termWildcarded,
+        array|null $idsOrderedByRelavence
     ): void {
         // Active, Expired, Preview in that order; status sort takes highest precedence.
         $qb->addOrderBy('campaign.status', 'asc');
@@ -655,8 +664,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
         }
 
         if ($safeSortField === 'relevance') {
-            $qb->addOrderBy(
-                <<<EOT
+            if (\is_array($idsOrderedByRelavence)) {
+                $qb->addOrderBy('FIELD(campaign.id, :orderedIds)', 'DESC');
+                $qb->setParameter('orderedIds', $idsOrderedByRelavence);
+            } else {
+                $qb->addOrderBy(
+                    <<<EOT
             CASE
                 WHEN charity.name LIKE :termForOrder THEN 20
                 WHEN campaign.name LIKE LOWER(:termForOrder) THEN 10
@@ -664,9 +677,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 ELSE 0
             END
             EOT,
-                $sortDirection,
-            );
-            $qb->setParameter('termForOrder', $termWildcarded);
+                    $sortDirection,
+                );
+                $qb->setParameter('termForOrder', $termWildcarded);
+            }
         } else {
             $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
         }
@@ -741,7 +755,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $safeSortField === 'campaignStatistics.distanceToTarget.amountInPence' &&
             $sortDirection === 'asc';
 
-        $this->filterForSearch(
+        $idsOrderedByRelavence = $this->filterForSearch(
             qb: $qb,
             status: $status,
             metaCampaignSlug: $metaCampaignSlug,
@@ -759,6 +773,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             safeSortField: $safeSortField,
             sortDirection: $sortDirection,
             termWildcarded: $termWildcarded,
+            idsOrderedByRelavence: $idsOrderedByRelavence,
         );
 
         $query = $qb->getQuery();
