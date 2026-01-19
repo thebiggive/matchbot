@@ -23,9 +23,11 @@ CREATE TABLE `Charity` (
   `websiteUri` varchar(255) DEFAULT NULL,
   `phoneNumber` varchar(255) DEFAULT NULL,
   `emailAddress` varchar(255) DEFAULT NULL,
+  `searchable_text` text GENERATED ALWAYS AS (concat_ws(_utf8mb4' ',`name`,`hmrcReferenceNumber`,`regulatorNumber`,`websiteUri`)) STORED,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_4CC08E82D8961D21` (`salesforceId`),
   UNIQUE KEY `UNIQ_4CC08E8293A8A818` (`stripeAccountId`),
   UNIQUE KEY `UNIQ_4CC08E829EF7853B` (`hmrcReferenceNumber`),
-  KEY `IDX_4CC08E82D8961D21` (`salesforceId`)
+  KEY `IDX_4CC08E82D8961D21` (`salesforceId`),
+  FULLTEXT KEY `FULLTEXT_GLOBAL_SEARCH` (`searchable_text`)
 )

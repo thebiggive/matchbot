@@ -203,8 +203,10 @@ class CampaignRepositoryTest extends IntegrationTest
         $newSearchNames = array_map(fn(Campaign $campaign) => [$campaign->getCharity()->getName(), $campaign->getCampaignName()], $resultsWithNewSearch);
 
         // assert
-        $this->assertSame($expectedResultsWithOldSearch, $oldSearchNames);
-        $this->assertSame($expectedResultsWithNewSearch, $newSearchNames);
+
+        $export = \var_export($oldSearchNames, true);
+        $this->assertSame($expectedResultsWithOldSearch, $oldSearchNames, 'Old search results should match expecation: ' . $export);
+        $this->assertSame($expectedResultsWithNewSearch, $newSearchNames, 'New search results should match expecation');
     }
 
 
@@ -345,6 +347,7 @@ class CampaignRepositoryTest extends IntegrationTest
             [
             ['Charity Name', 'Campaign Two is for Porridge and Juice'],
             ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+            ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
                  ] as [$charityName, $campaignName]
         ) {
             $campaign = new Campaign(
@@ -405,21 +408,76 @@ class CampaignRepositoryTest extends IntegrationTest
                 [['Charity Name', 'Campaign Two is for Porridge and Juice']],
             ],
             [
+                'Charity',
+                [
+
+                    [
+                        'Charity Name',
+                        'Campaign Two is for Porridge and Juice',
+                    ],
+                    [
+                        'Fred\'s Charity',
+                        'This is a campaign for Fred\'s Charity',
+                    ],
+                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                ],
+                [
+                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                ],
+            ],
+            [
                 'Porridge Juice', // searching for words that are non-contiguous in the result
                 [],
-                [['Charity Name','Campaign Two is for Porridge and Juice']]
+                [['Charity Name', 'Campaign Two is for Porridge and Juice']]
             ],
             [
                 'Fred\'s Charity',
-                [['Fred\'s Charity', 'This is a campaign for Fred\'s Charity']],
-                [['Fred\'s Charity', 'This is a campaign for Fred\'s Charity']]
+                [
+
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                ],
+                [
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
+                ]
             ],
             [
                 'Freds Charity',
                 [],
                 [
+                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
-                    // todo - make this be found as well - ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name']
+                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                ]
+            ],
+            [
+                'Fred',
+                [
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                ],
+                [
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                ]
+            ],
+            [
+                'Freds',
+                [
+                ],
+                [
+                ]
+            ],
+            [
+                'Porridge WORDTHATDOESNOTEXIST',
+                [
+                ],
+                [
+                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
                 ]
             ],
         ];

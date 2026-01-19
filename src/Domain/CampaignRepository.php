@@ -601,10 +601,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         }
 
         if ($termWildcarded !== null && ! $fullText) {
-            /**
-             * @todo We'll probably want to do fulltext search and MATCH() eventually.
-            @link https://michilehr.de/full-text-search-with-mysql-and-doctrine/#3how-to-implement-a-full-text-search-with-doctrine
-             */
             $whereSummaryMatches = "LOWER(JSON_EXTRACT(campaign.salesforceData, '$.summary')) LIKE LOWER(:termForWhere)";
             $qb->andWhere(
                 $qb->expr()->orX(
@@ -622,9 +618,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
             // also @todo - use the ordering by relavence that's implicitly requested by using MATCH to display the results
             // in relavence order.
             $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-                'SELECT Campaign.id FROM Campaign
-                   WHERE MATCH (Campaign.searchable_text) AGAINST (? IN NATURAL LANGUAGE MODE)',
-                [$term]
+                'SELECT Campaign.id FROM Campaign LEFT JOIN Charity ON Campaign.charity_id = Charity.id 
+                   WHERE ((MATCH (Campaign.searchable_text) AGAINST (? IN NATURAL LANGUAGE MODE)) OR
+                         ( MATCH (Charity.searchable_text) AGAINST (? IN NATURAL LANGUAGE MODE))
+                   )
+                   ',
+                [$term, $term]
             );
 
             $qb->andWhere('campaign.id IN (:ids)');
