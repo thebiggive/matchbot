@@ -6,6 +6,7 @@ namespace MatchBot\Migrations;
 
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
+use MatchBot\Application\Environment;
 
 final class Version20260115172025 extends AbstractMigration
 {
@@ -16,7 +17,14 @@ final class Version20260115172025 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('ALTER TABLE Campaign ADD summary VARCHAR(255) NOT NULL');
+        if (Environment::current() !== Environment::Staging && Environment::current() !== Environment::Regression) {
+            // this line already ran in those environments so would fail if we tried to run it again.
+            $this->addSql('ALTER TABLE Campaign ADD summary VARCHAR(255) NOT NULL');
+        }
+
+        // actual campaign summaries can be over 3,000 characters long so allow a slight buffer to 5_000
+        $this->addSql('ALTER TABLE Campaign modify summary VARCHAR(5000) NOT NULL');
+
         $this->addSql('UPDATE Campaign SET summary = salesforceData->>"$.summary"');
 
         $this->addSql(<<<SQL

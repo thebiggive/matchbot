@@ -35,7 +35,7 @@ CREATE TABLE `Campaign` (
   `relatedApplicationCharityResponseToOffer` varchar(255) DEFAULT NULL,
   `pinPosition` int DEFAULT NULL,
   `championPagePinPosition` int DEFAULT NULL,
-  `summary` varchar(255) NOT NULL,
+  `summary` varchar(5000) NOT NULL,
   `searchable_text` text GENERATED ALWAYS AS (concat_ws(_utf8mb4' ',`name`,`summary`,json_unquote(json_extract(`salesforceData`,_utf8mb4'$.beneficiaries')),json_unquote(json_extract(`salesforceData`,_utf8mb4'$.categories')),json_unquote(json_extract(`salesforceData`,_utf8mb4'$.countries')))) STORED,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_E663708BD8961D21` (`salesforceId`),
