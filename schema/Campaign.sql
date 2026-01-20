@@ -45,5 +45,6 @@ CREATE TABLE `Campaign` (
   KEY `relatedApplicationStatus` (`relatedApplicationStatus`),
   KEY `relatedApplicationCharityResponseToOffer` (`relatedApplicationCharityResponseToOffer`),
   FULLTEXT KEY `FULLTEXT_GLOBAL_SEARCH` (`searchable_text`),
+  FULLTEXT KEY `FULLTEXT_NAME` (`name`),
   CONSTRAINT `FK_E663708BF5C97E37` FOREIGN KEY (`charity_id`) REFERENCES `Charity` (`id`)
 )
