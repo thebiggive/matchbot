@@ -142,10 +142,6 @@ class HandleOutOfSyncFunds extends LockingCommand
 
         $overmatchedDonations = $this->donationRepository->findOverMatchedDonations();
         foreach ($overmatchedDonations as $donation) {
-            if (\in_array($donation->getUuid()->toString(), ['dcec4e60-8969-4f40-80f0-35bb5b7184af','c563fb10-ccbd-41d0-95c6-5a4e14596990'], true)) {
-                // known historical data anomaly
-                continue;
-            }
             $this->logger->error("Donation {$donation->getUuid()} is over-matched, withdrawal of {$donation->getFundingWithdrawalTotal()} for donation of only {$donation->getAmount()}");
         }
 
