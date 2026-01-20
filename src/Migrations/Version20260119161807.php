@@ -20,7 +20,6 @@ final class Version20260119161807 extends AbstractMigration
             ALTER TABLE Charity ADD COLUMN searchable_text TEXT GENERATED ALWAYS AS (
                 CONCAT_WS(' ',
                     name,
-                    hmrcReferenceNumber,
                     regulatorNumber,
                     websiteUri
                 )
