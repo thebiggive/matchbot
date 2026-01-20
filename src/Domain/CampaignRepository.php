@@ -661,7 +661,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         if ($safeSortField === 'relevance') {
             if (\is_array($idsOrderedByRelavence)) {
-                $qb->addOrderBy('FIELD(campaign.id, :orderedIds)', 'DESC');
+                $qb->addOrderBy('FIELD(campaign.id, :orderedIds)', 'ASC');
                 $qb->setParameter('orderedIds', $idsOrderedByRelavence);
             } else {
                 $qb->addOrderBy(
