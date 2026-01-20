@@ -80,8 +80,8 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(type: 'string')]
     protected string $name;
 
-    #[ORM\Column(length: 5_000)]
-    private string $summary;
+    #[ORM\Column(nullable: true, length: 5_000)]
+    private ?string $summary;
 
     /**
      * Slug of the related metacampaign, if any. Will be output as is, and also used in joins etc.
