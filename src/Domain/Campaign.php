@@ -80,7 +80,7 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(type: 'string')]
     protected string $name;
 
-    #[ORM\Column]
+    #[ORM\Column(length: 5_000)]
     private string $summary;
 
     /**
