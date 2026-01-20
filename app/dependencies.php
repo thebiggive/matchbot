@@ -635,7 +635,7 @@ return function (ContainerBuilder $containerBuilder) {
         StripeClient::class => static function (ContainerInterface $c): StripeClient {
             // Both hardcoding the version and using library default - see discussion at
             // https://github.com/thebiggive/matchbot/pull/927/files/5fa930f3eee3b0c919bcc1027319dc7ae9d0be05#diff-c4fef49ee08946228bb39de898c8770a1a6a8610fc281627541ec2e49c67b118
-            \assert(ApiVersion::CURRENT === '2025-04-30.basil'); // @phpstan-ignore function.alreadyNarrowedType, identical.alwaysTrue
+            \assert(ApiVersion::CURRENT === '2025-12-15.clover'); // @phpstan-ignore function.alreadyNarrowedType, identical.alwaysTrue
             return new StripeClient([
                 'api_key' => $c->get(Settings::class)->stripe['apiKey'],
                 'stripe_version' => ApiVersion::CURRENT,
