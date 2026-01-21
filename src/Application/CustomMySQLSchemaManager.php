@@ -20,7 +20,9 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
         return \array_filter($indexes, function ($index) use ($tableName) {
             return ! (
                 ($index->getName() === 'FULLTEXT_GLOBAL_SEARCH' && $tableName === 'Campaign') ||
-                ($index->getName() === 'FULLTEXT_GLOBAL_SEARCH' && $tableName === 'Charity')
+                ($index->getName() === 'FULLTEXT_GLOBAL_SEARCH' && $tableName === 'Charity') ||
+                ($index->getName() === 'FULLTEXT_NAME' && $tableName === 'Campaign') ||
+                ($index->getName() === 'FULLTEXT_NAME' && $tableName === 'Charity')
             );
         });
     }
