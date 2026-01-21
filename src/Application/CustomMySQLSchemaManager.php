@@ -33,7 +33,7 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
 
         return \array_filter(
             $indexes,
-            static fn($index) => !in_array([$index->getName(), $tableName], self::GENERATED_INDEXES, true),
+            static fn($index) => !in_array([$tableName, $index->getName()], self::GENERATED_INDEXES, true),
         );
     }
 
@@ -44,7 +44,7 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
 
         return array_filter(
             $columns,
-            static fn($column) => !in_array([$column->getName(), $table], self::GENERATED_COLUMNS, true),
+            static fn($column) => !in_array([$table, $column->getName()], self::GENERATED_COLUMNS, true),
         );
     }
 }
