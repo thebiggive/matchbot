@@ -19,7 +19,7 @@ final class Version20260121143947 extends AbstractMigration
     {
         $this->addSql(<<<SQL
             ALTER TABLE Charity ADD normalisedName varchar(255) GENERATED ALWAYS AS (
-                REGEXP_REPLACE(name, '[\'`‘’]+', '')) STORED
+                REGEXP_REPLACE(name, '', '')) STORED
         SQL);
 
         $this->addSql('CREATE FULLTEXT INDEX FULLTEXT_NORMALISED_NAME ON Charity (normalisedName)');

@@ -616,20 +616,26 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $ids = null;
         if (is_string($term) && $fullText) {
+            // we use the same regex in the database to define the generated columns Campaign.normalisedName and
+            // Charity.normalisedName
+            $termWithoutApostrophes = preg_replace("/['`‘’]+/", '', $term);
+
             /** @var list<int> $ids */
             $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-                'SELECT Campaign.id, 
-                        MATCH(Campaign.name) AGAINST(:term IN NATURAL LANGUAGE MODE) * 5 +
-                        MATCH(Charity.name) AGAINST(:term IN NATURAL LANGUAGE MODE) * 3 +
+                'SELECT Campaign.id,
+                        MATCH(Campaign.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 5 +
+                        MATCH(Charity.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 3 +
                         MATCH(Campaign.searchable_text) AGAINST(:term IN NATURAL LANGUAGE MODE) * 1 +
                         MATCH(Charity.searchable_text) AGAINST(:term IN NATURAL LANGUAGE MODE) * 1 as score                       
                      FROM Campaign LEFT JOIN Charity ON Campaign.charity_id = Charity.id 
                    WHERE ((MATCH (Campaign.searchable_text) AGAINST (:term IN NATURAL LANGUAGE MODE)) OR
                          ( MATCH (Charity.searchable_text) AGAINST (:term IN NATURAL LANGUAGE MODE))
                    )
-                    ORDER BY score DESC
-                   ',
-                ['term' => $term]
+                    ORDER BY score DESC',
+                [
+                    'term_normalised' => $termWithoutApostrophes,
+                    'term' => $term
+                ]
             );
 
             $qb->andWhere('campaign.id IN (:ids)');
