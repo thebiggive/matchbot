@@ -23,12 +23,14 @@ CREATE TABLE `Charity` (
   `websiteUri` varchar(255) DEFAULT NULL,
   `phoneNumber` varchar(255) DEFAULT NULL,
   `emailAddress` varchar(255) DEFAULT NULL,
-  `searchable_text` text GENERATED ALWAYS AS (concat_ws(_utf8mb4' ',`name`,`regulatorNumber`,`websiteUri`)) STORED,
+  `normalisedName` varchar(255) GENERATED ALWAYS AS (regexp_replace(`name`,_utf8mb4'[\'`‘’]+',_utf8mb4'')) STORED,
+  `searchable_text` text GENERATED ALWAYS AS (concat_ws(_utf8mb4' ',`normalisedName`,`regulatorNumber`,`websiteUri`)) STORED,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_4CC08E82D8961D21` (`salesforceId`),
   UNIQUE KEY `UNIQ_4CC08E8293A8A818` (`stripeAccountId`),
   UNIQUE KEY `UNIQ_4CC08E829EF7853B` (`hmrcReferenceNumber`),
   KEY `IDX_4CC08E82D8961D21` (`salesforceId`),
   FULLTEXT KEY `FULLTEXT_GLOBAL_SEARCH` (`searchable_text`),
-  FULLTEXT KEY `FULLTEXT_NAME` (`name`)
+  FULLTEXT KEY `FULLTEXT_NAME` (`name`),
+  FULLTEXT KEY `FULLTEXT_NORMALISED_NAME` (`normalisedName`)
 )
