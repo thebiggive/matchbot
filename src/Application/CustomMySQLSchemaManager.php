@@ -2,8 +2,6 @@
 
 namespace MatchBot\Application;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
 use Doctrine\DBAL\Schema\MySQLSchemaManager;
 
 /**
@@ -12,19 +10,31 @@ use Doctrine\DBAL\Schema\MySQLSchemaManager;
  */
 class CustomMySQLSchemaManager extends MySQLSchemaManager
 {
+    private const array GENERATED_INDEXES = [
+        ['Campaign', 'FULLTEXT_GLOBAL_SEARCH'],
+        ['Campaign', 'FULLTEXT_NAME'],
+        ['Campaign', 'FULLTEXT_NORMALISED_NAME'],
+        ['Charity', 'FULLTEXT_GLOBAL_SEARCH'],
+        ['Charity', 'FULLTEXT_NAME'],
+        ['Charity', 'FULLTEXT_NORMALISED_NAME'],
+    ];
+
+    private const array GENERATED_COLUMNS = [
+        ['Campaign', 'normalisedName'],
+        ['Campaign', 'searchable_text'],
+        ['Charity', 'normalisedName'],
+        ['Charity', 'searchable_text'],
+    ];
+
     #[\Override]
     protected function _getPortableTableIndexesList($tableIndexes, $tableName = null) // phpcs:ignore
     {
         $indexes = parent::_getPortableTableIndexesList($tableIndexes, $tableName);
 
-        return \array_filter($indexes, function ($index) use ($tableName) {
-            return ! (
-                ($index->getName() === 'FULLTEXT_GLOBAL_SEARCH' && $tableName === 'Campaign') ||
-                ($index->getName() === 'FULLTEXT_GLOBAL_SEARCH' && $tableName === 'Charity') ||
-                ($index->getName() === 'FULLTEXT_NAME' && $tableName === 'Campaign') ||
-                ($index->getName() === 'FULLTEXT_NAME' && $tableName === 'Charity')
-            );
-        });
+        return \array_filter(
+            $indexes,
+            static fn($index) => !in_array([$index->getName(), $tableName], self::GENERATED_INDEXES, true),
+        );
     }
 
     #[\Override]
@@ -32,11 +42,9 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
     {
         $columns = parent::_getPortableTableColumnList($table, $database, $tableColumns);
 
-        return array_filter($columns, function ($column) use ($table) {
-            return !(
-                ($column->getName() === 'searchable_text' && $table === 'Campaign') ||
-                ($column->getName() === 'searchable_text' && $table === 'Charity')
-            );
-        });
+        return array_filter(
+            $columns,
+            static fn($column) => !in_array([$column->getName(), $table], self::GENERATED_COLUMNS, true),
+        );
     }
 }
