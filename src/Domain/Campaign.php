@@ -506,7 +506,7 @@ class Campaign extends SalesforceReadProxy
         \DateTimeInterface $endDate,
         bool $isMatched,
         string $name,
-        string $summary,
+        ?string $summary,
         ?string $metaCampaignSlug,
         \DateTimeInterface $startDate,
         bool $ready,
