@@ -216,7 +216,7 @@ class Campaign extends SalesforceReadProxy
         bool $ready,
         ?string $status,
         string $name,
-        string $summary,
+        ?string $summary,
         string $currencyCode,
         Money $totalFundingAllocation,
         Money $amountPledged,
