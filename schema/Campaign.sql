@@ -35,6 +35,9 @@ CREATE TABLE `Campaign` (
   `relatedApplicationCharityResponseToOffer` varchar(255) DEFAULT NULL,
   `pinPosition` int DEFAULT NULL,
   `championPagePinPosition` int DEFAULT NULL,
+  `summary` varchar(5000) DEFAULT NULL,
+  `normalisedName` varchar(255) GENERATED ALWAYS AS (regexp_replace(`name`,_utf8mb4'[\'`‘’]+',_utf8mb4'')) STORED,
+  `searchable_text` text GENERATED ALWAYS AS (concat_ws(_utf8mb4' ',`normalisedName`,`summary`,json_unquote(json_extract(`salesforceData`,_utf8mb4'$.beneficiaries')),json_unquote(json_extract(`salesforceData`,_utf8mb4'$.categories')),json_unquote(json_extract(`salesforceData`,_utf8mb4'$.countries')))) STORED,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_E663708BD8961D21` (`salesforceId`),
   KEY `IDX_E663708BF5C97E37` (`charity_id`),
@@ -42,5 +45,8 @@ CREATE TABLE `Campaign` (
   KEY `metaCampaignSlug` (`metaCampaignSlug`),
   KEY `relatedApplicationStatus` (`relatedApplicationStatus`),
   KEY `relatedApplicationCharityResponseToOffer` (`relatedApplicationCharityResponseToOffer`),
+  FULLTEXT KEY `FULLTEXT_GLOBAL_SEARCH` (`searchable_text`),
+  FULLTEXT KEY `FULLTEXT_NAME` (`name`),
+  FULLTEXT KEY `FULLTEXT_NORMALISED_NAME` (`normalisedName`),
   CONSTRAINT `FK_E663708BF5C97E37` FOREIGN KEY (`charity_id`) REFERENCES `Charity` (`id`)
 )

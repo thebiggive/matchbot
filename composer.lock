@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3c2c2ec68d5847fe00f5fdc436a86d37",
+    "content-hash": "53449711f65b4125c3676d3c9928af00",
     "packages": [
         {
             "name": "async-aws/core",
@@ -349,6 +349,68 @@
                 "source": "https://github.com/beberlei/assert/tree/v3.3.3"
             },
             "time": "2024-07-15T13:18:35+00:00"
+        },
+        {
+            "name": "beberlei/doctrineextensions",
+            "version": "v1.5.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/beberlei/DoctrineExtensions.git",
+                "reference": "281f1650641c2f438b0a54d8eaa7ba50ac7e3eb6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/beberlei/DoctrineExtensions/zipball/281f1650641c2f438b0a54d8eaa7ba50ac7e3eb6",
+                "reference": "281f1650641c2f438b0a54d8eaa7ba50ac7e3eb6",
+                "shasum": ""
+            },
+            "require": {
+                "doctrine/orm": "^2.19 || ^3.0",
+                "php": "^7.2 || ^8.0"
+            },
+            "require-dev": {
+                "doctrine/annotations": "^1.14 || ^2",
+                "doctrine/coding-standard": "^9.0.2 || ^12.0",
+                "nesbot/carbon": "^2.72 || ^3",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^8.5 || ^9.6",
+                "squizlabs/php_codesniffer": "^3.8",
+                "symfony/cache": "^5.4 || ^6.4 || ^7.0",
+                "symfony/yaml": "^5.4 || ^6.4 || ^7.0",
+                "vimeo/psalm": "^3.18 || ^5.22",
+                "zf1/zend-date": "^1.12",
+                "zf1/zend-registry": "^1.12"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "DoctrineExtensions\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Benjamin Eberlei",
+                    "email": "kontakt@beberlei.de"
+                },
+                {
+                    "name": "Steve Lacey",
+                    "email": "steve@steve.ly"
+                }
+            ],
+            "description": "A set of extensions to Doctrine 2 that add support for additional query functions available in MySQL, Oracle, PostgreSQL and SQLite.",
+            "keywords": [
+                "database",
+                "doctrine",
+                "orm"
+            ],
+            "support": {
+                "source": "https://github.com/beberlei/DoctrineExtensions/tree/v1.5.0"
+            },
+            "time": "2024-03-03T17:55:15+00:00"
         },
         {
             "name": "brick/math",
@@ -4299,16 +4361,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v17.2.0",
+            "version": "v19.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "ff2364c75533b71116ea11994d6bd08989b7f67b"
+                "reference": "e444fbc524cd3d6583dde2c5b375d26174c54d96"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/ff2364c75533b71116ea11994d6bd08989b7f67b",
-                "reference": "ff2364c75533b71116ea11994d6bd08989b7f67b",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/e444fbc524cd3d6583dde2c5b375d26174c54d96",
+                "reference": "e444fbc524cd3d6583dde2c5b375d26174c54d96",
                 "shasum": ""
             },
             "require": {
@@ -4352,9 +4414,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v17.2.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v19.2.0"
             },
-            "time": "2025-04-30T19:20:34+00:00"
+            "time": "2026-01-16T21:28:14+00:00"
         },
         {
             "name": "symfony/amazon-sqs-messenger",

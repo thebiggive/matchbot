@@ -7,6 +7,11 @@ use DI\Container;
 use DI\ContainerBuilder;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager as DBALDriverManager;
+use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
+use Doctrine\DBAL\Schema\CustomDBALDriver;
+use Doctrine\DBAL\Schema\MySQLSchemaManager;
+use Doctrine\DBAL\Schema\SchemaManagerFactory;
 use Doctrine\ORM;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,6 +19,7 @@ use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityTokenService;
+use MatchBot\Application\CustomMySQLSchemaManager;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\CharityUpdated;
@@ -485,6 +491,12 @@ return function (ContainerBuilder $containerBuilder) {
             $config->addCustomStringFunction(JsonExtract::FUNCTION_NAME, JsonExtract::class);
             $config->addCustomStringFunction(JsonSearch::FUNCTION_NAME, JsonSearch::class);
 
+            // @todo - consider removing custom match function and the DoctrineExtensions package
+            // as it wasn't possible to use it for a column that the ORM doesn't know about - raw MySQL code is used instead.
+            $config->addCustomStringFunction('MATCH', \DoctrineExtensions\Query\Mysql\MatchAgainst::class);
+            $config->addCustomStringFunction('FIELD', \DoctrineExtensions\Query\Mysql\Field::class);
+
+
             // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
             // files indefinitely.
             $config->setAutoGenerateProxyClasses($settings->doctrine['dev_mode']);
@@ -492,6 +504,20 @@ return function (ContainerBuilder $containerBuilder) {
             $config->setMetadataDriverImpl(
                 new ORM\Mapping\Driver\AttributeDriver($settings->doctrine['metadata_dirs'])
             );
+
+            // Ensure our custom SchemaManager is used by Doctrine tooling
+            $config->setSchemaManagerFactory(new class implements \Doctrine\DBAL\Schema\SchemaManagerFactory {
+                /** @return AbstractSchemaManager<\Doctrine\DBAL\Platforms\AbstractPlatform> */
+                #[\Override]
+                public function createSchemaManager(Connection $connection): AbstractSchemaManager
+                {
+                    $platform = $connection->getDatabasePlatform();
+                    if ($platform instanceof AbstractMySQLPlatform) {
+                        return new \MatchBot\Application\CustomMySQLSchemaManager($connection, $platform);
+                    }
+                    return (new \Doctrine\DBAL\Schema\DefaultSchemaManagerFactory())->createSchemaManager($connection);
+                }
+            });
 
             $config->setMetadataCache($cacheAdapter);
 
@@ -536,7 +562,30 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         ORM\EntityManager::class =>  static function (ContainerInterface $c): EntityManager {
-            $connection = DBALDriverManager::getConnection($c->get(Settings::class)->doctrine['connection']);
+            // DBAL configuration to ensure our custom SchemaManager is used even in CLI tooling
+            $dbalConfig = new \Doctrine\DBAL\Configuration();
+            $dbalConfig->setSchemaManagerFactory(new class implements \Doctrine\DBAL\Schema\SchemaManagerFactory {
+                /** @return AbstractSchemaManager<\Doctrine\DBAL\Platforms\AbstractPlatform> */
+                #[\Override]
+                public function createSchemaManager(\Doctrine\DBAL\Connection $connection): AbstractSchemaManager
+                {
+                    $platform = $connection->getDatabasePlatform();
+                    if ($platform instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+                        return new \MatchBot\Application\CustomMySQLSchemaManager($connection, $platform);
+                    }
+                    return (new \Doctrine\DBAL\Schema\DefaultSchemaManagerFactory())->createSchemaManager($connection);
+                }
+            });
+
+
+            $connection = DBALDriverManager::getConnection(
+                $c->get(Settings::class)->doctrine['connection'] +
+                [
+                    'platform' => new \MatchBot\Application\CustomMysqlPlatform(),
+                ],
+                $dbalConfig
+            );
+
             $config = $c->get(ORM\Configuration::class);
 
             $em = new ORM\EntityManager(conn: $connection, config: $config);
@@ -586,7 +635,7 @@ return function (ContainerBuilder $containerBuilder) {
         StripeClient::class => static function (ContainerInterface $c): StripeClient {
             // Both hardcoding the version and using library default - see discussion at
             // https://github.com/thebiggive/matchbot/pull/927/files/5fa930f3eee3b0c919bcc1027319dc7ae9d0be05#diff-c4fef49ee08946228bb39de898c8770a1a6a8610fc281627541ec2e49c67b118
-            \assert(ApiVersion::CURRENT === '2025-04-30.basil'); // @phpstan-ignore function.alreadyNarrowedType, identical.alwaysTrue
+            \assert(ApiVersion::CURRENT === '2025-12-15.clover'); // @phpstan-ignore function.alreadyNarrowedType, identical.alwaysTrue
             return new StripeClient([
                 'api_key' => $c->get(Settings::class)->stripe['apiKey'],
                 'stripe_version' => ApiVersion::CURRENT,
