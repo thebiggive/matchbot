@@ -17,7 +17,7 @@ final class Version20260122110833 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
-            UPDATE Donation SET tipAmount = 0, tipRefundAmount = 100, Donation.totalPaidByDonor = 100, salesforcePushStatus = 'PENDING'
+            UPDATE Donation SET tipAmount = 0, tipRefundAmount = 100, Donation.totalPaidByDonor = 100, salesforcePushStatus = 'pending-update'
             WHERE Donation.uuid = "0c61bb48-666a-4d52-b145-0c93cbec4d71"
             LIMIT 1
         SQL
