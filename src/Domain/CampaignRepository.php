@@ -371,28 +371,31 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * Returns a list of campaigns that should be displayed for the given Charity.
+     * Returns a list of campaigns that should be displayed for the given Charity. Excludes any ended campaigns that
+     * had zero donations.
      *
      * Consider optimising by only selecting fields needed for 'campaign' summaries - maybe not so much
-     * for this but for a similar function we will write to get campaigns for a meta campaign or a search
-     *
+     * for this but for a similar functions we have to get campaigns for a meta campaign or a search
      *
      * @return list<Campaign>
      */
-    public function findCampaignsForCharityPage(Charity $charity): array
+    public function findCampaignsForCharityPage(Charity $charity, \DateTimeImmutable $at): array
     {
         $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
             SELECT campaign FROM MatchBot\Domain\Campaign campaign
+            JOIN campaign.campaignStatistics statistics
             WHERE 
              campaign.charity = :charity
              AND campaign.status IN ('Active', 'Preview', 'Expired')
+             AND statistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL
              ORDER BY campaign.status ASC, campaign.endDate ASC 
             DQL
         );
 
         $query->setParameters([
             'charity' => $charity,
+            'at' => $at,
         ]);
 
         /** @var list<Campaign> $result */
