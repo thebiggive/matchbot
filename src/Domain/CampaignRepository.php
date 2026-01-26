@@ -561,7 +561,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         array $jsonMatchInListConditions,
         ?string $termWildcarded,
         bool $filterOutTargetMet,
-        bool $fullText,
         ?string $term,
     ): array|null {
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
@@ -605,20 +604,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('jsonMatchInList_' . $field, '%' . $value . '%');
         }
 
-        if ($termWildcarded !== null && ! $fullText) {
-            $whereSummaryMatches = "LOWER(JSON_EXTRACT(campaign.salesforceData, '$.summary')) LIKE LOWER(:termForWhere)";
-            $qb->andWhere(
-                $qb->expr()->orX(
-                    $qb->expr()->like('charity.name', ':termForWhere'),
-                    $qb->expr()->like('campaign.name', ':termForWhere'),
-                    $whereSummaryMatches,
-                )
-            );
-            $qb->setParameter('termForWhere', $termWildcarded);
-        }
-
         $ids = null;
-        if (is_string($term) && $fullText) {
+        if (is_string($term)) {
             // we use the same regex in the database to define the generated columns Campaign.normalisedName and
             // Charity.normalisedName
             $termWithoutApostrophes = preg_replace("/['`‘’]+/u", '', $term);
@@ -722,7 +709,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $fundSlug,
         array $jsonMatchInListConditions,
         ?string $term,
-        bool $fulltext = false,
     ): array {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
@@ -773,7 +759,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             jsonMatchInListConditions: $jsonMatchInListConditions,
             termWildcarded: $termWildcarded,
             filterOutTargetMet: $filterOutTargetMet,
-            fullText: $fulltext,
             term: $term,
         );
 
