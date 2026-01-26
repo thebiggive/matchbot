@@ -79,7 +79,7 @@
         "phpspec/prophecy": "^1.19",
         "phpspec/prophecy-phpunit": "^v2.1.0",
         "phpstan/extension-installer": "^1.4",
-        "phpstan/phpstan": "^2.1.33",
+        "phpstan/phpstan": "^2.1.37",
         "phpstan/phpstan-beberlei-assert": "^2.0",
         "phpstan/phpstan-doctrine": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
