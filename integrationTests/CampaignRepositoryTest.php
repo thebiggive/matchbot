@@ -156,36 +156,19 @@ class CampaignRepositoryTest extends IntegrationTest
 
     /**
      * @param string $query A user search query
-     * @param list<array{0: string, 1: string}> $expectedResultsWithOldSearch The results that our old search system will give, as a list of campaign and charity names
      * @param list<array{0: string, 1: string}> $expectedResultsWithNewSearch The results that our new search system will give, as a list of campaign and charity names
      *
      * @dataProvider searchQueriesAgainstResultsProvider
      *
      * @return void
      */
-    public function testSearchQueriesAgainstResults(string $query, array $expectedResultsWithOldSearch, array $expectedResultsWithNewSearch)
+    public function testSearchQueriesAgainstResults(string $query, array $expectedResultsWithNewSearch)
     {
         $sut = $this->getService(CampaignRepository::class);
 
         $this->insertCampaignsForSearchToFind();
 
         // act
-        $resultsWithOldSearch = $sut->search(
-            sortField: 'relevance',
-            sortDirection: 'desc',
-            offset: 0,
-            limit: 600,
-            status: null,
-            metaCampaignSlug: null,
-            fundSlug: null,
-            jsonMatchInListConditions: [
-            ],
-            term: $query,
-            fulltext: false,
-        );
-
-        $oldSearchNames = array_map(fn(Campaign $campaign) => [$campaign->getCharity()->getName(), $campaign->getCampaignName()], $resultsWithOldSearch);
-
         $resultsWithNewSearch = $sut->search(
             sortField: 'relevance',
             sortDirection: 'desc',
@@ -197,52 +180,12 @@ class CampaignRepositoryTest extends IntegrationTest
             jsonMatchInListConditions: [
             ],
             term: $query,
-            fulltext: true,
         );
 
         $newSearchNames = array_map(fn(Campaign $campaign) => [$campaign->getCharity()->getName(), $campaign->getCampaignName()], $resultsWithNewSearch);
 
         // assert
-
-        $export = \var_export($oldSearchNames, true);
-        $this->assertSame($expectedResultsWithOldSearch, $oldSearchNames, 'Old search results should match expecation: ' . $export);
         $this->assertSame($expectedResultsWithNewSearch, $newSearchNames, 'New search results should match expecation');
-    }
-
-
-    public function testNonFullTextSearchDoesNotTokenise(): void
-    {
-        // arrange
-        $sut = $this->getService(CampaignRepository::class);
-
-        $this->insertCampaignsForSearchToFind();
-
-
-        // these words appear non-contiguously in our campaign name, so our current search would not find them
-        // as it would just look for the exact phrase "Porridge Juice". The fulltext search automatically
-        // tokenises on spaces and treats this as two search terms.
-        $term = 'Porridge Juice';
-
-        // act
-        $result = $sut->search(
-            sortField: 'relevance',
-            sortDirection: 'desc',
-            offset: 0,
-            limit: 6,
-            status: 'Active',
-            metaCampaignSlug: 'the-family',
-            fundSlug: null,
-            jsonMatchInListConditions: [
-                'beneficiaries' => 'Lads',
-                'categories' => 'Food',
-                'countries' => 'United Kingdom'
-            ],
-            term: $term,
-            fulltext: false,
-        );
-
-        // assert
-        $this->assertEmpty($result);
     }
 
     public function testSearchSortsByStatus(): void
@@ -396,7 +339,6 @@ class CampaignRepositoryTest extends IntegrationTest
      * @return array<array-key, array{
      *     0: string,
      *     1: list<array{0: string, 1: string}>,
-     *     2: list<array{0: string, 1: string}>
      *   }>
      */
     public function searchQueriesAgainstResultsProvider(): array
@@ -405,22 +347,9 @@ class CampaignRepositoryTest extends IntegrationTest
             [
                 'Porridge and Juice',
                 [['Charity Name', 'Campaign Two is for Porridge and Juice']],
-                [['Charity Name', 'Campaign Two is for Porridge and Juice']],
             ],
             [
                 'Charity',
-                [
-
-                    [
-                        'Charity Name',
-                        'Campaign Two is for Porridge and Juice',
-                    ],
-                    [
-                        'Fred\'s Charity',
-                        'This is a campaign for Fred\'s Charity',
-                    ],
-                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
-                ],
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
@@ -429,16 +358,10 @@ class CampaignRepositoryTest extends IntegrationTest
             ],
             [
                 'Porridge Juice', // searching for words that are non-contiguous in the result
-                [],
                 [['Charity Name', 'Campaign Two is for Porridge and Juice']]
             ],
             [
                 'Fred\'s Charity',
-                [
-
-                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
-                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
-                ],
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
@@ -447,7 +370,6 @@ class CampaignRepositoryTest extends IntegrationTest
             ],
             [
                 'Freds Charity',
-                [],
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
@@ -457,10 +379,6 @@ class CampaignRepositoryTest extends IntegrationTest
             [
                 'Fred',
                 [
-                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
-                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
-                ],
-                [
                     // the new search index stores "Freds" not "Fred's" and does not match on substrings so does
                     // not find anything here.
                 ]
@@ -468,16 +386,12 @@ class CampaignRepositoryTest extends IntegrationTest
             [
                 'Freds',
                 [
-                ],
-                [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
                 ]
             ],
             [
                 'Porridge WORDTHATDOESNOTEXIST',
-                [
-                ],
                 [
                     ['Charity Name', 'Campaign Two is for Porridge and Juice'],
                 ]

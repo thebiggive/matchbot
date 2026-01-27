@@ -75,13 +75,6 @@ class Search extends Action
         // Use limit 100 if a higher value requested.
         $limit = min(100, (int) ($params['limit'] ?? 20));
 
-        if (is_string($term) && \str_starts_with($term, 'fulltext ')) {
-            $term = \substr($term, 9);
-            $fulltext = true;
-        } else {
-            $fulltext = false;
-        }
-
         try {
             $campaigns = $this->campaignRepository->search(
                 sortField: $sortField,
@@ -93,7 +86,6 @@ class Search extends Action
                 fundSlug: $fundSlug,
                 jsonMatchInListConditions: $jsonMatchInListConditions,
                 term: $term,
-                fulltext: $fulltext,
             );
         } catch (\InvalidArgumentException $exception) {
             throw new HttpBadRequestException($request, $exception->getMessage(), $exception);

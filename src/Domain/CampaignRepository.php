@@ -559,9 +559,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $metaCampaignSlug,
         ?string $fundSlug,
         array $jsonMatchInListConditions,
-        ?string $termWildcarded,
         bool $filterOutTargetMet,
-        bool $fullText,
         ?string $term,
     ): array|null {
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
@@ -605,20 +603,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('jsonMatchInList_' . $field, '%' . $value . '%');
         }
 
-        if ($termWildcarded !== null && ! $fullText) {
-            $whereSummaryMatches = "LOWER(JSON_EXTRACT(campaign.salesforceData, '$.summary')) LIKE LOWER(:termForWhere)";
-            $qb->andWhere(
-                $qb->expr()->orX(
-                    $qb->expr()->like('charity.name', ':termForWhere'),
-                    $qb->expr()->like('campaign.name', ':termForWhere'),
-                    $whereSummaryMatches,
-                )
-            );
-            $qb->setParameter('termForWhere', $termWildcarded);
-        }
-
         $ids = null;
-        if (is_string($term) && $fullText) {
+        if (is_string($term)) {
             // we use the same regex in the database to define the generated columns Campaign.normalisedName and
             // Charity.normalisedName
             $termWithoutApostrophes = preg_replace("/['`‘’]+/u", '', $term);
@@ -663,7 +649,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         bool $applyPinSort,
         string $safeSortField,
         string $sortDirection,
-        ?string $termWildcarded,
         array|null $idsOrderedByRelavence
     ): void {
         // Active, Expired, Preview in that order; status sort takes highest precedence.
@@ -674,23 +659,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
         }
 
         if ($safeSortField === 'relevance') {
-            if (\is_array($idsOrderedByRelavence)) {
-                $qb->addOrderBy('FIELD(campaign.id, :orderedIds)', 'ASC');
-                $qb->setParameter('orderedIds', $idsOrderedByRelavence);
-            } else {
-                $qb->addOrderBy(
-                    <<<EOT
-            CASE
-                WHEN charity.name LIKE :termForOrder THEN 20
-                WHEN campaign.name LIKE LOWER(:termForOrder) THEN 10
-                WHEN LOWER(JSON_EXTRACT(campaign.salesforceData, '$.summary')) LIKE LOWER(:termForOrder) THEN 5
-                ELSE 0
-            END
-            EOT,
-                    $sortDirection,
-                );
-                $qb->setParameter('termForOrder', $termWildcarded);
-            }
+            Assertion::isArray($idsOrderedByRelavence, 'idsOrderedByRelavence must be an array when sorting by relevance');
+            $qb->addOrderBy('FIELD(campaign.id, :orderedIds)', 'ASC');
+            $qb->setParameter('orderedIds', $idsOrderedByRelavence);
         } else {
             $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
         }
@@ -722,7 +693,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $fundSlug,
         array $jsonMatchInListConditions,
         ?string $term,
-        bool $fulltext = false,
     ): array {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
@@ -754,13 +724,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             ->setFirstResult($offset)
             ->setMaxResults($limit);
 
-        if ($term !== null) {
-            // I think because binding takes care of non-LIKE escapes we only need to consider % and _.
-            $termWildcarded = '%' . addcslashes($term, '%_') . '%';
-        } else {
-            $termWildcarded = null;
-        }
-
         $filterOutTargetMet =
             $safeSortField === 'campaignStatistics.distanceToTarget.amountInPence' &&
             $sortDirection === 'asc';
@@ -771,9 +734,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             metaCampaignSlug: $metaCampaignSlug,
             fundSlug: $fundSlug,
             jsonMatchInListConditions: $jsonMatchInListConditions,
-            termWildcarded: $termWildcarded,
             filterOutTargetMet: $filterOutTargetMet,
-            fullText: $fulltext,
             term: $term,
         );
 
@@ -782,7 +743,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             applyPinSort: $jsonMatchInListConditions === [],
             safeSortField: $safeSortField,
             sortDirection: $sortDirection,
-            termWildcarded: $termWildcarded,
             idsOrderedByRelavence: $idsOrderedByRelavence,
         );
 
