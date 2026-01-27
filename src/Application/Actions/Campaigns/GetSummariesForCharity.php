@@ -3,10 +3,6 @@
 namespace MatchBot\Application\Actions\Campaigns;
 
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\Assertion;
-use MatchBot\Application\Environment;
-use MatchBot\Application\HttpModels\Charity;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\CharityRepository;
@@ -29,6 +25,7 @@ class GetSummariesForCharity extends Action
         private CharityRepository $charityRepository,
         private CampaignRepository $campaignRepository,
         private CampaignService $campaignService,
+        private \DateTimeImmutable $at,
     ) {
         parent::__construct($logger);
     }
@@ -41,7 +38,7 @@ class GetSummariesForCharity extends Action
 
         $charity = $this->charityRepository->findOneBySalesforceIdOrThrow($sfId);
 
-        $campaigns = $this->campaignRepository->findCampaignsForCharityPage($charity);
+        $campaigns = $this->campaignRepository->findCampaignsForCharityPage($charity, $this->at);
 
         return $this->respondWithData($response, [
             'charityName' => $charity->getName(),
