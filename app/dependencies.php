@@ -258,22 +258,9 @@ return function (ContainerBuilder $containerBuilder) {
 
             /* @var string|false $secretsString */
             $secretsString = getenv('JWT_ID_SECRETS');
-            /** @psalm-suppress RedundantConditionGivenDocblockType - I don't think this is redundant */
-            \assert(is_string($secretsString) || $secretsString === false);
-            if ($secretsString !== false) {
-                /** @var non-empty-list<string> $secrets */
-                $secrets = json_decode($secretsString, true);
-
-                $oldSecret = getenv('JWT_ID_SECRET');
-                if (is_string($oldSecret)) {
-                    $secrets[] = $oldSecret;
-                }
-            } else {
-                $secret = getenv('JWT_ID_SECRET');
-                \assert(\is_string($secret), 'JWT ID secret must be provided as a string');
-                $secrets = [$secret];
-            }
-
+            \assert(is_string($secretsString));
+            /** @var non-empty-list<string> $secrets */
+            $secrets = json_decode($secretsString, true, 512, JSON_THROW_ON_ERROR);
 
             return new IdentityTokenService($c->get(Settings::class)->identity['baseUri'], $secrets);
         },
