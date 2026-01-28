@@ -24,7 +24,8 @@ readonly class Campaign
 {
     /**
      * @param 'Active'|'Expired'|'Preview'|null $status
-     * @param list<array{uri: string, order: int}> $additionalImageUris
+     * @param list<array{altText: string, rank: int, uri: string}> $additionalImages
+     * @param list<array{uri: string, order: int}> $additionalImageUris (deprecated)
      * @param list<string> $aims
      * @param list<string> $beneficiaries
      * @param list<array{amount: float, description: string}> $budgetDetails
@@ -49,18 +50,19 @@ readonly class Campaign
         )]
         public float $amountRaised,
         #[OA\Property(
-            property: "additionalImageUris",
+            property: "additionalImages",
             description: "List of additional images for the campaign",
             type: "array",
             items: new OA\Items(
                 type: "object",
                 properties: [
                     new OA\Property(property: "uri", type: "string", example: "https://example.com/image1.jpg"),
-                    new OA\Property(property: "alt_text", type: "string", example: "The USC smoke stack stands tall before the bright blue, partly cloudy sky.", nullable: true),
-                    new OA\Property(property: "order", type: "integer", example: 1)
+                    new OA\Property(property: "altText", type: "string", example: "The USC smoke stack stands tall before the bright blue, partly cloudy sky.", nullable: true),
+                    new OA\Property(property: "rank", type: "integer", example: 1)
                 ]
             )
         )]
+        public array $additionalImages,
         public array $additionalImageUris,
         #[OA\Property(
             property: "aims",

@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Aws\CloudWatch\CloudWatchClient;
-use Doctrine\Common\Collections\Expr\Value;
-use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Clock\ClockInterface;
