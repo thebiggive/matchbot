@@ -388,7 +388,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             WHERE 
              campaign.charity = :charity
              AND campaign.status IN ('Active', 'Preview', 'Expired')
-             AND statistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL
+             AND (statistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
              ORDER BY campaign.status ASC, campaign.endDate ASC 
             DQL
         );
@@ -400,7 +400,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         /** @var list<Campaign> $result */
         $result =  $query->getResult();
-
         return $result;
     }
 
