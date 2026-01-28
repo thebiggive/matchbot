@@ -37,7 +37,6 @@
     <env name="ID_BASE_URI" value="https://unit-test-fake-id-sub.thebiggivetest.org.uk" force="true"/>
     <env name="ACCOUNT_MANAGEMENT_BASE_URI" value="https://unit-test-fake-donate.thebiggive.org.uk" />
     <env name="JWT_DONATION_SECRET" value="unitTestJWTSecret" force="true"/>
-    <env name="JWT_ID_SECRET" value="unitTestJWTSecret" force="true"/>
     <env name="LOW_PRIORITY_MESSENGER_TRANSPORT_DSN" value="in-memory://" force="true"/>
     <env name="MAX_CREATES_PER_IP_PER_5M" value="1" force="true" />
     <env name="MESSENGER_TRANSPORT_DSN" value="in-memory://" force="true"/>

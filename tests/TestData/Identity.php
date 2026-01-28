@@ -61,10 +61,13 @@ class Identity
 
     public static function secret(): string
     {
-        $secret = getenv('JWT_ID_SECRET');
-        \assert(is_string($secret));
+        $secrets = getenv('JWT_ID_SECRETS');
+        \assert(is_string($secrets));
 
-        return $secret;
+        /** @var non-empty-list<string> $secrets_array */
+        $secrets_array = json_decode($secrets);
+
+        return $secrets_array[0];
     }
 
     public static function donorAccount(): DonorAccount
