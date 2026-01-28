@@ -85,6 +85,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     championName: string,
  *     campaignCount: ?int,
  *     alternativeFundUse: ?string,
+ *     additionalImages: list<array{altText: string, rank: int, uri: string}>,
  *     additionalImageUris: list<array{order: int, uri: string}>,
  *     isMetaCampaign: ?bool,
  *     isEmergencyIMF: bool,

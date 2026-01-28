@@ -225,11 +225,12 @@ class CreateFictionalData extends Command
             'usesSharedFunds' => false,
             'alternativeFundUse' => null,
             'parentAmountRaised' => null,
-            'additionalImageUris' => [
+            'additionalImageUris' => [],
+            'additionalImages' => [
                 [
                     'uri' => 'https://picsum.photos/seed/' . \random_int(1, 100) . ' /1700/500',
-                    'order' => 1,
-                    'alt_text' => 'This is the image alt-text',
+                    'rank' => 1,
+                    'altText' => 'This is the image alt-text',
                 ]
             ],
             'matchFundsRemaining' => 50.0,

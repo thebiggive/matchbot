@@ -5,7 +5,6 @@ namespace MatchBot\Domain;
 use Assert\InvalidArgumentException;
 use Assert\LazyAssertionException;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\Campaign as CampaignHttpModel;
 use MatchBot\Application\HttpModels\MetaCampaign as MetaCampaignHttpModel;
 use MatchBot\Client\Campaign as CampaignClient;
@@ -192,7 +191,8 @@ class CampaignService
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
             amountRaised: $stats->getAmountRaised()->toMajorUnitFloat(),
-            additionalImageUris: $sfCampaignData['additionalImageUris'],
+            additionalImageUris: $sfCampaignData['additionalImageUris'], // @todo delete soon
+            additionalImages: $sfCampaignData['additionalImages'],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
             banner: $banner,
