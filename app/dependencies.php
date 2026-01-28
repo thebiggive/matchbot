@@ -260,7 +260,7 @@ return function (ContainerBuilder $containerBuilder) {
             $secretsString = getenv('JWT_ID_SECRETS');
             \assert(is_string($secretsString));
             /** @var non-empty-list<string> $secrets */
-            $secrets = json_decode($secretsString, true);
+            $secrets = json_decode($secretsString, true, 512, JSON_THROW_ON_ERROR);
 
             return new IdentityTokenService($c->get(Settings::class)->identity['baseUri'], $secrets);
         },
