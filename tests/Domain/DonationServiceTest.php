@@ -169,6 +169,8 @@ class DonationServiceTest extends TestCase
             EmailAddress::of('example@email.com'),
             DonorName::of('first', 'last'),
             $stripeCustomerId,
+            isOrganisation: false,
+            organisationName: null,
         );
         $donor->setBillingPostcode('SW11AA');
         $donor->setBillingCountry(Country::GB());

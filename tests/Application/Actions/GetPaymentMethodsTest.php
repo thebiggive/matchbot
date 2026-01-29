@@ -53,6 +53,8 @@ class GetPaymentMethodsTest extends TestCase
                     EmailAddress::of('email@example.com'),
                     DonorName::of('First', 'Last'),
                     StripeCustomerId::of('cus_aaaaaaaaaaaa11'),
+                    isOrganisation: false,
+                    organisationName: null,
                 )
             );
 

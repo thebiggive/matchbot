@@ -382,6 +382,8 @@ class RegularGivingMandateTest extends TestCase
             EmailAddress::of('freddo@example.com'),
             DonorName::of('Fred', 'Do'),
             StripeCustomerId::of('cus_123456'),
+            isOrganisation: false,
+            organisationName: null,
         );
         $donor->setHomePostcode(PostCode::of('SW1A 1AA'));
         $donor->setBillingPostcode('SW1A 1AA');
