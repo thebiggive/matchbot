@@ -139,7 +139,9 @@ class SetupTestMandate extends LockingCommand
                 $donorId,
                 EmailAddress::of('test@biggive.org'),
                 DonorName::of('First Name', 'Last Name'),
-                StripeCustomerId::of($donorStripeId)
+                StripeCustomerId::of($donorStripeId),
+                organisationName: null,
+                isOrganisation: false,
             );
             $donor->setBillingCountry(Country::GB());
             $donor->setBillingPostcode('SW1 1AA');

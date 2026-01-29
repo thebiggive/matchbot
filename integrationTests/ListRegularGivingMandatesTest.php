@@ -36,10 +36,12 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         $donorAccountRepo = $this->getService(DonorAccountRepository::class);
 
         $donorAccountRepo->save(new DonorAccount(
-            $this->donorId,
-            EmailAddress::of('test@example.com'),
-            DonorName::of('first', 'last'),
-            StripeCustomerId::of('cus_' . $this->randomString())
+            uuid: $this->donorId,
+            emailAddress: EmailAddress::of('test@example.com'),
+            donorName: DonorName::of('first', 'last'),
+            stripeCustomerId: StripeCustomerId::of('cus_' . $this->randomString()),
+            organisationName: null,
+            isOrganisation: false,
         ));
 
         $this->confirmFindByPersonIdWorks($donorAccountRepo);

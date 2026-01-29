@@ -20,6 +20,8 @@ CREATE TABLE `DonorAccount` (
   `billingPostcode` varchar(255) DEFAULT NULL,
   `uuid` char(36) NOT NULL COMMENT '(DC2Type:uuid)',
   `homeIsOutsideUK` tinyint(1) DEFAULT NULL,
+  `organisationName` varchar(255) DEFAULT NULL,
+  `isOrganisation` tinyint(1) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_STRIPE_ID` (`stripeCustomerId`),
   UNIQUE KEY `UNIQ_6FA7403D17F50A6` (`uuid`)

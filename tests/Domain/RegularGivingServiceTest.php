@@ -687,7 +687,9 @@ class RegularGivingServiceTest extends TestCase
             $donorId,
             EmailAddress::of('email@example.com'),
             DonorName::of('First', 'Last'),
-            StripeCustomerId::of('cus_x')
+            StripeCustomerId::of('cus_x'),
+            isOrganisation: false,
+            organisationName: null,
         );
 
         if ($stripePaymentMethodId) {
