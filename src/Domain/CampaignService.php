@@ -192,7 +192,7 @@ class CampaignService
             id: $campaign->getSalesforceId(),
             amountRaised: $stats->getAmountRaised()->toMajorUnitFloat(),
             additionalImageUris: $sfCampaignData['additionalImageUris'], // @todo delete soon
-            additionalImages: $sfCampaignData['additionalImages'],
+            additionalImages: $sfCampaignData['additionalImages'] ?? [],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
             banner: $banner,
