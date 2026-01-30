@@ -64,7 +64,7 @@ class DonationNotifier
         // @todo Don-1188: Edit email template to allow not having a donor first name in the case of organisational
         // donors.
         $donorFirstName = $donation->getDonorFirstName();
-        if (\in_array($donorFirstName, ['', null, ' '])) {
+        if (\in_array($donorFirstName, ['', null, ' '], true)) {
             $donorFirstName = '-';
         }
 
