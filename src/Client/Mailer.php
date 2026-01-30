@@ -5,6 +5,7 @@ namespace MatchBot\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Email\EmailMessage;
+use MatchBot\Application\Environment;
 
 /**
  * Originally created as a copy of the similar class BigGive\Identity\Client in Identity repo & adapted to fit in
@@ -56,6 +57,11 @@ class Mailer extends Common
                 $ex->getMessage(),
                 $response ? $response->getBody()->getContents() : 'N/A',
             ));
+
+            if (!Environment::current()->isProduction()) {
+                $this->logger->error("Message request data: " . json_encode($requestBody, \JSON_THROW_ON_ERROR));
+            }
+
             return;
         } catch (GuzzleException $ex) {
             $this->logger->error(sprintf(
