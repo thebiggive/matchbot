@@ -61,6 +61,13 @@ class DonationNotifier
             }
         }
 
+        // @todo Don-1188: Edit email template to allow not having a donor first name in the case of organisational
+        // donors.
+        $donorFirstName = $donation->getDonorFirstName();
+        if (\in_array($donorFirstName, ['', null, ' '])) {
+            $donorFirstName = '-';
+        }
+
         return EmailMessage::donorDonationSuccess($emailAddress, [
             // see required params in mailer:
             // https://github.com/thebiggive/mailer/blob/ca2c70f10720a66ff8fb041d3af430a07f49d625/app/settings.php#L27
@@ -80,8 +87,8 @@ class DonationNotifier
 
             'donationAmount' => (float)$donation->getAmount(),
             'donationDatetime' => $collectedAt->format('c'),
-            'donorFirstName' => $donation->getDonorFirstName() ?? '-', // @todo Don-1188: Edit email template to
-            'donorLastName' => $donation->getDonorLastName(),         //  accept no first name for org donors
+            'donorFirstName' => $donorFirstName,
+            'donorLastName' => $donation->getDonorLastName(),
             'giftAidAmountClaimed' => (float) $donation->getGiftAidValue(),
 
             'matchedAmount' => $donation->matchedAmount()->toMajorUnitFloat(),
