@@ -30,8 +30,9 @@ class DonorName
         // Even if spaces between digits.
         $sixDigitsRegex = '/\d\s?\d\s?\d\s?\d\s?\d\s?\d/';
 
+        // first name may be empty to account for organisation donors who only have a last name
         Assert::lazy()
-            ->that($first, 'first')->betweenLength(1, 255)
+            ->that($first, 'first')->betweenLength(0, 255)
             ->that($last, 'last')->betweenLength(1, 255)
             ->that($first)->notRegex($sixDigitsRegex)
             ->that($last)->notRegex($sixDigitsRegex)
@@ -70,6 +71,10 @@ class DonorName
 
     public function fullName(): string
     {
+        if ($this->first === '') {
+            return $this->last;
+        }
+
         return "{$this->first} {$this->last}";
     }
 }
