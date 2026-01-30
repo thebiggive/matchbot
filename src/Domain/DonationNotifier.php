@@ -80,7 +80,7 @@ class DonationNotifier
 
             'donationAmount' => (float)$donation->getAmount(),
             'donationDatetime' => $collectedAt->format('c'),
-            'donorFirstName' => $donation->getDonorFirstName() ?? '', // @todo Don-1188: Edit email template to
+            'donorFirstName' => $donation->getDonorFirstName() ?? ' ', // @todo Don-1188: Edit email template to
             'donorLastName' => $donation->getDonorLastName(),         //  accept no first name for org donors
             'giftAidAmountClaimed' => (float) $donation->getGiftAidValue(),
 
