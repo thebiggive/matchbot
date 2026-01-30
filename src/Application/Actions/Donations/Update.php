@@ -305,7 +305,7 @@ class Update extends Action
             );
         }
 
-        if ($donationData->currencyCode === 'GBP' && !isset($donationData->giftAid)) {
+        if ($donationData->currencyCode === 'GBP' && !isset($donationData->giftAid) && ! $donationData->isOrganisationDonor) {
             $this->entityManager->rollback();
 
             return $this->validationError($response, "Required boolean field 'giftAid' not set", null, true);
