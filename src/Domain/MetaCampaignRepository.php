@@ -157,6 +157,7 @@ class MetaCampaignRepository
             FROM MatchBot\Domain\Campaign c
             WHERE c.metaCampaignSlug = :slug
             AND c.status IN (:status)
+            GROUP BY c.metaCampaignSlug
         DQL
         );
 
@@ -170,7 +171,10 @@ class MetaCampaignRepository
 
         $currencyQuery = $this->em->createQuery(<<<'DQL'
             SELECT mc.currency FROM MatchBot\Domain\MetaCampaign mc
+            WHERE mc.slug = :slug
         DQL);
+
+        $currencyQuery->setParameter('slug', $metaCampaign->getSlug()->slug);
 
         $currencyResult =  $currencyQuery->getSingleScalarResult();
         Assertion::string($currencyResult);
