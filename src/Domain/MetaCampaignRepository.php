@@ -148,4 +148,33 @@ class MetaCampaignRepository
         $result = $query->getResult();
         return $result;
     }
+
+    public function matchFundsTotal(MetaCampaign $metaCampaign): Money
+    {
+        $matchedFundQuery = $this->em->createQuery(
+            <<<'DQL'
+            SELECT COALESCE(SUM(c.totalFundingAllocation + c.amountPledged), 0) as sum
+            FROM MatchBot\Domain\Campaign c
+            WHERE c.metaCampaignSlug = :slug
+            AND c.status IN (:status)
+        DQL
+        );
+
+        $matchedFundQuery->setParameters([
+            'slug' => $metaCampaign->getSlug()->slug,
+            'status' => ['Active', 'Expired', null]
+        ]);
+
+        $matchedFundResult =  $matchedFundQuery->getSingleScalarResult();
+        Assertion::numeric($matchedFundResult);
+
+        $currencyQuery = $this->em->createQuery(<<<'DQL'
+            SELECT mc.currency FROM MatchBot\Domain\MetaCampaign mc
+        DQL);
+
+        $currencyResult =  $currencyQuery->getSingleScalarResult();
+        Assertion::string($currencyResult);
+
+        return Money::fromNumericString((string) $matchedFundResult, Currency::fromIsoCode($currencyResult));
+    }
 }
