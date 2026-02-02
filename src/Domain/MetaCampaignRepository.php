@@ -153,7 +153,7 @@ class MetaCampaignRepository
     {
         $matchedFundQuery = $this->em->createQuery(
             <<<'DQL'
-            SELECT COALESCE(SUM(c.totalFundingAllocation + c.amountPledged), 0) as sum
+            SELECT COALESCE(SUM(c.totalFundingAllocation.amountInPence + c.amountPledged.amountInPence), 0) as sum
             FROM MatchBot\Domain\Campaign c
             WHERE c.metaCampaignSlug = :slug
             AND c.status IN (:status)
@@ -175,6 +175,6 @@ class MetaCampaignRepository
         $currencyResult =  $currencyQuery->getSingleScalarResult();
         Assertion::string($currencyResult);
 
-        return Money::fromNumericString((string) $matchedFundResult, Currency::fromIsoCode($currencyResult));
+        return Money::fromPence((int) $matchedFundResult, Currency::fromIsoCode($currencyResult));
     }
 }
