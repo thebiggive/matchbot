@@ -33,6 +33,7 @@ class DonationFundsNotifier
             'recipientEmailAddress' => $donorAccount->emailAddress->email,
             'params' => [
                 'donorFirstName' => $donorName->first,
+                'donorLastName' => $donorName->last,
                 'transferAmount' => $transferAmount->format(),
             ],
         ]);
