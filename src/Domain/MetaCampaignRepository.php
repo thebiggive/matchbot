@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\NoResultException;
 use MatchBot\Application\Assertion;
 
 /**
@@ -166,8 +167,12 @@ class MetaCampaignRepository
             'status' => ['Active', 'Expired', null]
         ]);
 
-        $matchedFundResult =  $matchedFundQuery->getSingleScalarResult();
-        Assertion::numeric($matchedFundResult);
+        try {
+            $matchedFundResult = $matchedFundQuery->getSingleScalarResult();
+            Assertion::numeric($matchedFundResult);
+        } catch (NoResultException) {
+            return Money::zero(Currency::GBP);
+        }
 
         $currencyQuery = $this->em->createQuery(<<<'DQL'
             SELECT mc.currency FROM MatchBot\Domain\MetaCampaign mc
