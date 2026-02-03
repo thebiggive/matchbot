@@ -66,7 +66,6 @@ use Psr\SimpleCache\CacheInterface as PSR16CacheInterface;
 use Scienta\DoctrineJsonFunctions\Query\AST\Functions\Mysql\JsonExtract;
 use Scienta\DoctrineJsonFunctions\Query\AST\Functions\Mysql\JsonSearch;
 use Slim\Psr7\Factory\ResponseFactory;
-use Stripe\Stripe;
 use Stripe\StripeClient;
 use Stripe\Util\ApiVersion;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
@@ -624,9 +623,6 @@ return function (ContainerBuilder $containerBuilder) {
             // Both hardcoding the version and using library default - see discussion at
             // https://github.com/thebiggive/matchbot/pull/927/files/5fa930f3eee3b0c919bcc1027319dc7ae9d0be05#diff-c4fef49ee08946228bb39de898c8770a1a6a8610fc281627541ec2e49c67b118
             \assert(ApiVersion::CURRENT === '2025-12-15.clover'); // @phpstan-ignore function.alreadyNarrowedType, identical.alwaysTrue
-
-            Stripe::setMaxNetworkRetries(2);
-
             return new StripeClient([
                 'api_key' => $c->get(Settings::class)->stripe['apiKey'],
                 'stripe_version' => ApiVersion::CURRENT,
