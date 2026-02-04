@@ -41,9 +41,6 @@ class DonorAccount extends Model
     #[ORM\Embedded(class: 'DonorName')]
     public ?DonorName $donorName;
 
-    /**
-     * Name of the donor if they are (or are assumed to be) an individual. Organisations have name in a separate field.
-     */
     #[ORM\Column(length: 255, nullable: true)]
     public ?string $organisationName;
 
@@ -219,6 +216,7 @@ class DonorAccount extends Model
         Assert::lazy()
             ->that($this->billingPostcode, null, 'Missing billing postcode')->notNull()
             ->that($this->billingCountryCode, null, 'Missing billing country code')->notNull()
+            ->that($this->isOrganisation, null, 'Organisations are not eligible for regularGiving')->false()
             ->setExceptionClass(AccountNotReadyToDonate::class)
             ->verifyNow();
     }
