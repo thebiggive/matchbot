@@ -1872,8 +1872,9 @@ class Donation extends SalesforceWriteProxy
      */
     private function assertionsForConfirmOrPreAuth(): \Assert\LazyAssertion
     {
-        // @todo DON-1188 - require first name only if donor is an individual not an organisation.
+        // Since DON-1188 - consider requiring first name only if donor is an individual not an organisation.
         // will require passing in the donor account if present or that detail from it.
+        // probably not critical enough to be worth doing now.
 
         return Assert::lazy()
 //            ->that($this->donorFirstName, 'donorFirstName')->notNull('Missing Donor First Name')
