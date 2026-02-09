@@ -77,6 +77,8 @@ class Identity
             EmailAddress::of('email@example.com'),
             DonorName::of('John', 'Doe'),
             StripeCustomerId::of(self::STRIPE_ID),
+            isOrganisation: false,
+            organisationName: null,
         );
         $donorAccount->setBillingPostcode('E17');
         $donorAccount->setBillingCountry(Country::GB());

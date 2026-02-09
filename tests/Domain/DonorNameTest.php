@@ -18,7 +18,7 @@ class DonorNameTest extends TestCase
         $name = DonorName::of($firstName, $lastName);
 
         if ($isAllowed) {
-            $this->assertSame("$firstName $lastName", $name->fullName());
+            $this->assertSame($firstName === '' ? $lastName : "$firstName $lastName", $name->fullName());
         }
     }
 
@@ -32,7 +32,7 @@ class DonorNameTest extends TestCase
             'Very long name' => [str_repeat('f', 255), str_repeat('l', 255), true],
             'Excessively long first name' => [str_repeat('f', 256), str_repeat('l', 255), false],
             'Excessively long last name' => [str_repeat('f', 255), str_repeat('l', 256), false],
-            'Excessively short first name' => ['', 'Bloggs', false],
+            'Excessively short first name' => ['', 'Bloggs', true], // matches the pattern of an organisation donor
             'Excessively short last name' => ['Joe', '', false],
             'First name with long number (likeely entered by mistake)' => ['123 456', 'Bloggs', false],
             'Last name with long number (likeely entered by mistake)' => ['Joe', '123 456', false],

@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\NoResultException;
 use MatchBot\Application\Assertion;
 
 /**
@@ -147,5 +148,42 @@ class MetaCampaignRepository
         /** @var list<MetaCampaign> */
         $result = $query->getResult();
         return $result;
+    }
+
+    public function matchFundsTotal(MetaCampaign $metaCampaign): Money
+    {
+        $matchedFundQuery = $this->em->createQuery(
+            <<<'DQL'
+            SELECT COALESCE(SUM(c.totalFundingAllocation.amountInPence + c.amountPledged.amountInPence), 0) as sum
+            FROM MatchBot\Domain\Campaign c
+            WHERE c.metaCampaignSlug = :slug
+            AND c.status IN (:status)
+            GROUP BY c.metaCampaignSlug
+        DQL
+        );
+
+        $matchedFundQuery->setParameters([
+            'slug' => $metaCampaign->getSlug()->slug,
+            'status' => ['Active', 'Expired', null]
+        ]);
+
+        try {
+            $matchedFundResult = $matchedFundQuery->getSingleScalarResult();
+            Assertion::numeric($matchedFundResult);
+        } catch (NoResultException) {
+            return Money::zero(Currency::GBP);
+        }
+
+        $currencyQuery = $this->em->createQuery(<<<'DQL'
+            SELECT mc.currency FROM MatchBot\Domain\MetaCampaign mc
+            WHERE mc.slug = :slug
+        DQL);
+
+        $currencyQuery->setParameter('slug', $metaCampaign->getSlug()->slug);
+
+        $currencyResult =  $currencyQuery->getSingleScalarResult();
+        Assertion::string($currencyResult);
+
+        return Money::fromPence((int) $matchedFundResult, Currency::fromIsoCode($currencyResult));
     }
 }

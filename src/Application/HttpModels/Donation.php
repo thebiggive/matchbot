@@ -44,14 +44,20 @@ readonly class Donation
         public ?bool $optInChampionEmail = null,
         public ?string $tipAmount = null,
         public ?bool $tipGiftAid = null,
+        public bool $isOrganisationDonor = false
     ) {
         $this->emailAddress = (! is_null($emailAddress) && ! ($emailAddress === ''))
             ? EmailAddress::of($emailAddress)
             : null;
 
-        // we treat N/A as empty since we sometimes replace empty values with N/A to work around salesforce validation,
-        // and at least in tests there's a possiblity of that getting fed back in to matchbot through an update.
-        $donorName = DonorName::maybeFromFirstAndLast($firstName, $lastName);
+        if ($this->isOrganisationDonor) {
+            Assertion::notNull($lastName, 'Last name is required for organisation donors');
+            $donorName = DonorName::of('', $lastName);
+        } else {
+            // we treat N/A as empty since we sometimes replace empty values with N/A to work around salesforce validation,
+            // and at least in tests there's a possibility of that getting fed back in to matchbot through an update.
+            $donorName = DonorName::maybeFromFirstAndLast($firstName, $lastName);
+        }
 
         $this->donorName = $donorName;
 

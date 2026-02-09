@@ -194,6 +194,8 @@ class RegularGivingNotifierTest extends TestCase
             emailAddress: EmailAddress::of('donor@example.com'),
             donorName: DonorName::of('Jenny', 'Generous'),
             stripeCustomerId: StripeCustomerId::of('cus_anyid'),
+            isOrganisation: false,
+            organisationName: null,
         );
         $donor = $this->donor;
         $donor->setHomeAddressLine1('pretty how town');

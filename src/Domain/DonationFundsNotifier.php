@@ -2,6 +2,7 @@
 
 namespace MatchBot\Domain;
 
+use MatchBot\Application\Assertion;
 use MatchBot\Client\Mailer;
 
 class DonationFundsNotifier
@@ -23,12 +24,16 @@ class DonationFundsNotifier
         Money $transferAmount,
         Money $_newBalance,
     ): void {
+        $donorName = $donorAccount->donorName;
+        Assertion::notNull($donorName);
+
         /** @psalm-suppress DeprecatedMethod - method was deprecated after this was written. */
         $this->mailer->sendEmail([
             'templateKey' => 'donor-funds-thanks',
             'recipientEmailAddress' => $donorAccount->emailAddress->email,
             'params' => [
-                'donorFirstName' => $donorAccount->donorName->first,
+                'donorFirstName' => $donorName->first,
+                'donorLastName' => $donorName->last,
                 'transferAmount' => $transferAmount->format(),
             ],
         ]);

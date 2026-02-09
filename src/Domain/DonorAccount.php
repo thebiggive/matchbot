@@ -34,8 +34,15 @@ class DonorAccount extends Model
     #[ORM\Embedded(class: 'EmailAddress', columnPrefix: false)]
     public EmailAddress $emailAddress;
 
+    /**
+     * Name of the donor if they are (or are assumed to be) an individual. Organisations have name in a separate field.
+     * Using one field for both purposes wouldn't work with the Doctrine Embeddable.
+     */
     #[ORM\Embedded(class: 'DonorName')]
-    public DonorName $donorName;
+    public ?DonorName $donorName;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    public ?string $organisationName;
 
     #[ORM\Embedded(class: 'StripeCustomerId', columnPrefix: false)]
     public readonly StripeCustomerId $stripeCustomerId;
@@ -83,27 +90,55 @@ class DonorAccount extends Model
     #[ORM\Column(nullable: true)]
     private ?bool $homeIsOutsideUK = null;
 
+    #[ORM\Column(nullable: false)]
+    private bool $isOrganisation;
+
     public function __construct(
         PersonId $uuid,
         EmailAddress $emailAddress,
-        DonorName $donorName,
-        StripeCustomerId $stripeCustomerId
+        ?DonorName $donorName,
+        StripeCustomerId $stripeCustomerId,
+        ?string $organisationName,
+        bool $isOrganisation,
     ) {
+        if ($isOrganisation) {
+            Assertion::notNull($organisationName, 'Organisation name cannot be null for organisations');
+            Assertion::null($donorName, 'Donor name cannot be set for organisations');
+        } else {
+            Assertion::null($organisationName, 'Organisation name cannot be set for individuals');
+            Assertion::notNull($donorName, 'Donor name cannot be null for individuals');
+        }
+
         $this->createdNow();
         $this->emailAddress = $emailAddress;
         $this->stripeCustomerId = $stripeCustomerId;
         $this->donorName = $donorName;
         $this->uuid = $uuid->id;
+        $this->organisationName = $organisationName;
+        $this->isOrganisation = $isOrganisation;
     }
 
     public static function fromPersonMessage(Person $person): self
     {
-        return new self(
-            PersonId::of($person->id->toString()),
-            EmailAddress::of($person->email_address),
-            DonorName::of($person->first_name, $person->last_name),
-            StripeCustomerId::of($person->stripe_customer_id),
-        );
+        if ($person->is_organisation) {
+            return new self(
+                uuid: PersonId::of($person->id->toString()),
+                emailAddress: EmailAddress::of($person->email_address),
+                donorName: null,
+                stripeCustomerId: StripeCustomerId::of($person->stripe_customer_id),
+                organisationName: $person->last_name,
+                isOrganisation: true,
+            );
+        } else {
+            return new self(
+                PersonId::of($person->id->toString()),
+                EmailAddress::of($person->email_address),
+                DonorName::of($person->first_name, $person->last_name),
+                StripeCustomerId::of($person->stripe_customer_id),
+                organisationName: null,
+                isOrganisation: false,
+            );
+        }
     }
 
     public function updateFromPersonMessage(Person $personMessage): void
@@ -181,18 +216,28 @@ class DonorAccount extends Model
         Assert::lazy()
             ->that($this->billingPostcode, null, 'Missing billing postcode')->notNull()
             ->that($this->billingCountryCode, null, 'Missing billing country code')->notNull()
+            ->that($this->isOrganisation, null, 'Organisations are not eligible for regularGiving')->false()
             ->setExceptionClass(AccountNotReadyToDonate::class)
             ->verifyNow();
     }
 
     /**
-     * @return array<string, null|string>
+     * @return array<string, null|string|bool>
      */
     public function toFrontEndApiModel(): array
     {
+        if ($this->isOrganisation) {
+            $fullName = $this->organisationName;
+        } else {
+            $donorName = $this->donorName;
+            Assertion::notNull($donorName);
+            $fullName = $donorName->fullName();
+        }
+
         return [
             'id' => $this->uuid->toString(),
-            'fullName' => $this->donorName->fullName(),
+            'fullName' => $fullName,
+            'isOrganisation' => $this->isOrganisation,
             'stripeCustomerId' => $this->stripeCustomerId->stripeCustomerId,
             'regularGivingPaymentMethod' => $this->regularGivingPaymentMethod,
             'billingPostCode' => $this->billingPostcode,
@@ -215,9 +260,18 @@ class DonorAccount extends Model
      */
     public function toSfApiModel(): array
     {
+        if ($this->isOrganisation) {
+            $firstName = null;
+            $lastName = $this->organisationName;
+        } else {
+            Assertion::notNull($this->donorName);
+            $firstName = $this->donorName->first;
+            $lastName = $this->donorName->last;
+        }
+
         return [
-            'firstName' => $this->donorName->first,
-            'lastName' => $this->donorName->last,
+            'firstName' => $firstName,
+            'lastName' => $lastName,
             'emailAddress' => $this->emailAddress->email,
             'billingPostalAddress' => $this->billingPostcode,
             'countryCode' => $this->billingCountryCode,

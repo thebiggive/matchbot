@@ -5,7 +5,6 @@ namespace MatchBot\Domain;
 use Assert\InvalidArgumentException;
 use Assert\LazyAssertionException;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\Campaign as CampaignHttpModel;
 use MatchBot\Application\HttpModels\MetaCampaign as MetaCampaignHttpModel;
 use MatchBot\Client\Campaign as CampaignClient;
@@ -22,6 +21,9 @@ class CampaignService
 {
     private const string CAMPAIGN_MATCH_AMOUNT_AVAILABLE_PREFIX = 'campaign_match_amount_available.';
     private const string METACAMPAIGN_MATCH_AMOUNT_TOTAL_PREFIX = 'metacampaign_match_amount_total';
+
+    private const string METACAMPAIGN_MATCH_FUNDS_TOTAL_PREFIX = 'metacampaign_match_funds_total';
+
 
     public function __construct(
         private CampaignRepository $campaignRepository,
@@ -99,7 +101,7 @@ class CampaignService
             donationCount: $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign),
             startDate: $this->formatDate($metaCampaign->getStartDate()),
             endDate: $this->formatDate($metaCampaign->getEndDate()),
-            matchFundsTotal: $metaCampaign->getMatchFundsTotal()->toMajorUnitFloat(),
+            matchFundsTotal: $this->getMatchFundsTotalForMetaCampaign($metaCampaign)->toMajorUnitFloat(),
             campaignCount: $this->campaignRepository->countCampaignsInMetaCampaign($metaCampaign),
             usesSharedFunds: $metaCampaign->usesSharedFunds(),
             shouldBeIndexed: $metaCampaign->shouldBeIndexed($this->clock->now()),
@@ -192,7 +194,8 @@ class CampaignService
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
             amountRaised: $stats->getAmountRaised()->toMajorUnitFloat(),
-            additionalImageUris: $sfCampaignData['additionalImageUris'],
+            additionalImageUris: $sfCampaignData['additionalImageUris'], // @todo delete soon
+            additionalImages: $sfCampaignData['additionalImages'] ?? [],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
             banner: $banner,
@@ -352,6 +355,22 @@ class CampaignService
             callback: function (ItemInterface $item) use ($metaCampaign): array {
                 $item->expiresAfter(120); // two minutes
                 return $this->metaCampaignRepository->totalAmountRaised($metaCampaign)->jsonSerialize();
+            }
+        );
+
+        return Money::fromSerialized($cachedAmountArray);
+    }
+
+    private function getMatchFundsTotalForMetaCampaign(MetaCampaign $metaCampaign): Money
+    {
+        $id = $metaCampaign->getId();
+        Assertion::notNull($id);
+
+        $cachedAmountArray = $this->cache->get(
+            key: self::METACAMPAIGN_MATCH_FUNDS_TOTAL_PREFIX . (string)$id,
+            callback: function (ItemInterface $item) use ($metaCampaign): array {
+                $item->expiresAfter(120); // two minutes
+                return $this->metaCampaignRepository->matchFundsTotal($metaCampaign)->jsonSerialize();
             }
         );
 

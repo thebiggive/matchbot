@@ -54,7 +54,9 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
             uuid: $mandate->donorId(),
             emailAddress: EmailAddress::of('emailAddress@test.com'),
             donorName: DonorName::of('donorFName-test', 'donorLName-test'),
-            stripeCustomerId: StripeCustomerId::of('cus_' . self::randomString())
+            stripeCustomerId: StripeCustomerId::of('cus_' . self::randomString()),
+            organisationName: null,
+            isOrganisation: false,
         );
         $donor->setBillingCountry(Country::fromAlpha2('GB'));
         $donor->setBillingPostcode('W1 5YU');

@@ -27,6 +27,8 @@ class DonationFundsNotifierTest extends TestCase
             EmailAddress::of('foo@example.com'),
             DonorName::of('Fred', 'Brooks'),
             StripeCustomerId::of('cus_1234'), // this one doesn't matter for the test.
+            isOrganisation: false,
+            organisationName: null,
         );
 
         $transferAmount = Money::fromPence(52_35, Currency::GBP);
@@ -41,6 +43,7 @@ class DonationFundsNotifierTest extends TestCase
             'recipientEmailAddress' => 'foo@example.com',
             'params' => [
                 'donorFirstName' => 'Fred',
+                'donorLastName' => 'Brooks',
                 'transferAmount' => "£52.35"
             ],
         ])->shouldBeCalledOnce();
