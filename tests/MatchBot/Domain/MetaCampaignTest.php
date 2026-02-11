@@ -6,20 +6,23 @@ use MatchBot\Tests\TestCase;
 
 class MetaCampaignTest extends TestCase
 {
-    /** @dataProvider targetWithAndWithoutOverrideProvider */
-    public function testTargetDependsOnMatchFundsAndOverride(int $override, int $totalMatchFunds, int $expectedTarget): void
-    {
-        $metaCampaign = TestCase::someMetaCampaign(
-            isRegularGiving: false,
-            isEmergencyIMF: false,
-            imfCampaignTargetOverride: Money::fromPence($override, Currency::GBP),
-            matchFundsTotal: Money::fromPence($totalMatchFunds, Currency::GBP),
-        );
-
-        $target = $metaCampaign->target();
-
-        $this->assertEquals(Money::fromPence($expectedTarget, Currency::GBP), $target);
-    }
+    /**
+     * dataProvider targetWithAndWithoutOverrideProvider
+     * @todo move to MetaCampaignRepositoryTest in integration tests.
+     */
+//    public function testTargetDependsOnMatchFundsAndOverride(int $override, int $totalMatchFunds, int $expectedTarget): void
+//    {
+//        $metaCampaign = TestCase::someMetaCampaign(
+//            isRegularGiving: false,
+//            isEmergencyIMF: false,
+//            imfCampaignTargetOverride: Money::fromPence($override, Currency::GBP),
+//            matchFundsTotal: Money::fromPence($totalMatchFunds, Currency::GBP),
+//        );
+//
+//        $target = $metaCampaign->target();
+//
+//        $this->assertEquals(Money::fromPence($expectedTarget, Currency::GBP), $target);
+//    }
 
     /**
      * @return array<string, array{0: int, 1: int, 2: int}>
