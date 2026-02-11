@@ -44,7 +44,7 @@ class CampaignService
      * the Salesforce-reported totalFundraisingTarget. {@see getTotalFundraisingTarget()} which surfaces that
      * directly for sorting etc.
      */
-    public function target(Campaign $campaign, ?MetaCampaign $metaCampaign): Money
+    public function campaignTarget(Campaign $campaign, ?MetaCampaign $metaCampaign): Money
     {
         if ($metaCampaign) {
             Assertion::eq($campaign->getMetaCampaignSlug(), $metaCampaign->getSlug());
@@ -260,7 +260,7 @@ class CampaignService
             regularGivingCollectionEnd: $this->formatDate($campaign->getRegularGivingCollectionEnd()),
             summary: $sfCampaignData['summary'],
             surplusDonationInfo: $sfCampaignData['surplusDonationInfo'],
-            target: $this->target($campaign, $metaCampaign)->toMajorUnitFloat(),
+            target: $this->campaignTarget($campaign, $metaCampaign)->toMajorUnitFloat(),
             thankYouMessage: $campaign->getThankYouMessage() ?? '',
             title: $campaign->getCampaignName(),
             updates: $sfCampaignData['updates'],
