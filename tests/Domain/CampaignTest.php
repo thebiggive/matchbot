@@ -3,6 +3,7 @@
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\Money;
@@ -198,7 +199,7 @@ class CampaignTest extends TestCase
             metaCampaignSlug: $metaCampaign->getSlug(),
         );
 
-        $target = Campaign::target($campaign, $metaCampaign);
+        $target = CampaignService::target($campaign, $metaCampaign);
 
         $this->assertEquals(Money::fromPence($expectedTarget, Currency::GBP), $target);
     }

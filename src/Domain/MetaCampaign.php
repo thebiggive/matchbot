@@ -332,20 +332,20 @@ class MetaCampaign extends SalesforceReadProxy
         return $this->endDate;
     }
 
-    public function getMatchFundsTotal(): Money
-    {
-        return $this->matchFundsTotal;
-    }
+//    public function getMatchFundsTotal(): Money
+//    {
+//        return $this->matchFundsTotal;
+//    }
 
-    public function target(): Money
-    {
-        // logic below originally ported from Campaign_Target__c in SF.
-        if ($this->imfCampaignTargetOverride->isStrictlyPositive()) {
-            return $this->imfCampaignTargetOverride;
-        }
-
-        return $this->matchFundsTotal->times(2);
-    }
+//    public function target(): Money
+//    {
+//        // logic below originally ported from Campaign_Target__c in SF.
+//        if ($this->imfCampaignTargetOverride->isStrictlyPositive()) {
+//            return $this->imfCampaignTargetOverride;
+//        }
+//
+//        return $this->matchFundsTotal->times(2);
+//    }
 
     public function isEmergencyIMF(): bool
     {
