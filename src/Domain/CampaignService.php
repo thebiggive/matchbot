@@ -47,7 +47,7 @@ class CampaignService
     public function target(Campaign $campaign, ?MetaCampaign $metaCampaign): Money
     {
         if ($metaCampaign) {
-            Assertion::eq($campaign->getMetaCampaignSlug(), $metaCampaign->getSlug()->slug);
+            Assertion::eq($campaign->getMetaCampaignSlug(), $metaCampaign->getSlug());
         }
 
         if ($metaCampaign && $metaCampaign->isEmergencyIMF()) {
