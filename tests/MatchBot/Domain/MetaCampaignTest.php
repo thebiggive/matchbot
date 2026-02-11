@@ -24,19 +24,19 @@ class MetaCampaignTest extends TestCase
 //        $this->assertEquals(Money::fromPence($expectedTarget, Currency::GBP), $target);
 //    }
 
-    /**
-     * @return array<string, array{0: int, 1: int, 2: int}>
-     */
-    public function targetWithAndWithoutOverrideProvider(): array
-    {
-        // all amounts in pence
-        // override, total match funds, expected target
-        return [
-            'nothing will come of nothing' => [0_00, 0_00, 0_00],
-            'target is double match funds' => [0_00, 5_00, 10_00],
-            'overridden target' => [0_01, 5_00, 0_01],
-        ];
-    }
+//    /**
+//     * @return array<string, array{0: int, 1: int, 2: int}>
+//     */
+//    public function targetWithAndWithoutOverrideProvider(): array
+//    {
+//        // all amounts in pence
+//        // override, total match funds, expected target
+//        return [
+//            'nothing will come of nothing' => [0_00, 0_00, 0_00],
+//            'target is double match funds' => [0_00, 5_00, 10_00],
+//            'overridden target' => [0_01, 5_00, 0_01],
+//        ];
+//    }
 
     /** @dataProvider shouldBeIndexedProvider */
     public function testMetaCampignsAreIndexOrNotAccordingToStartDate(
@@ -46,7 +46,7 @@ class MetaCampaignTest extends TestCase
     ): void {
         $now = new \DateTimeImmutable($nowString);
         $startDate = new \DateTimeImmutable($startDateString);
-        $metaCampaign = self::someMetaCampaign(false, false, startDate: $startDate);
+        $metaCampaign = self::someMetaCampaign(false, false, null, startDate: $startDate);
 
         $shouldBeIndexed = $metaCampaign->shouldBeIndexed($now);
 

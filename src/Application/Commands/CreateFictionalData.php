@@ -323,8 +323,6 @@ class CreateFictionalData extends Command
             isRegularGiving: false,
             isEmergencyIMF: false,
             totalAdjustment: Money::zero(Currency::GBP),
-            imfCampaignTargetOverride: Money::zero(),
-            matchFundsTotal: Money::zero(),
             campaignFamily: $family,
         );
     }

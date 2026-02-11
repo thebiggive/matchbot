@@ -138,8 +138,6 @@ class MetaCampaign extends SalesforceReadProxy
         bool $isRegularGiving,
         bool $isEmergencyIMF,
         Money $totalAdjustment,
-        Money $imfCampaignTargetOverride,
-        Money $matchFundsTotal,
         ?CampaignFamily $campaignFamily,
     ) {
         Assertion::same($totalAdjustment->currency, $currency);
@@ -190,8 +188,6 @@ class MetaCampaign extends SalesforceReadProxy
             isRegularGiving: false,
             isEmergencyIMF: false,
             totalAdjustment: Money::zero(),
-            imfCampaignTargetOverride: Money::zero(),
-            matchFundsTotal: Money::zero(),
             campaignFamily: CampaignFamily::from($data['campaignFamily']),
         );
 

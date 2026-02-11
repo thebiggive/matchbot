@@ -100,7 +100,6 @@ class CampaignServiceTest extends TestCase
     /** @dataProvider targetDataProvider */
     public function testTarget(
         bool $metaCampaignIsEmergencyIMF,
-        int $metaCampaignTarget,
         bool $isMatched,
         int $totalFundRaisingTarget,
         int $amountPledged,
@@ -110,8 +109,6 @@ class CampaignServiceTest extends TestCase
         $metaCampaign = TestCase::someMetaCampaign(
             isRegularGiving: false,
             isEmergencyIMF: $metaCampaignIsEmergencyIMF,
-            imfCampaignTargetOverride: Money::fromPence($metaCampaignTarget, Currency::GBP),
-            matchFundsTotal: Money::zero(),
         );
 
         $campaign = self::someCampaign(
@@ -128,7 +125,7 @@ class CampaignServiceTest extends TestCase
     }
 
     /**
-     * @return array<string, array{0: bool, 1: int, 2: bool, 3: int, 4: int, 5: int, 6: int}>
+     * @return array<string, array{0: bool, 1: bool, 2: int, 3: int, 4: int, 5: int}>
      */
     public function targetDataProvider(): array
     {
@@ -139,22 +136,22 @@ class CampaignServiceTest extends TestCase
         //   $expectedTarget
         return [
             'nothing will come of nothing' => [
-                false, 0_00, false,
+                false, false,
                 0_00, 0_00, 0_00,
                 0_00
             ],
             'uses emergency meta-campaign target' => [
-                true, 56_00, false,
+                true, false,
                 12_00, 0_00, 0_00,
                 56_00
             ],
             'uses totalFundRaisingTarget for non-emergency target' => [
-                false, 56_00, false,
+                false, false,
                 12_00, 0_00, 0_00,
                 12_00
             ],
             'for matched campaign, uses double sum of pledges and funding' => [
-                false, 56_00, true,
+                false, true,
                 12_00, 150_00, 50_00, // unusual case having 150 and 50 not equal, but covers general case.
                 400_00,
             ],
