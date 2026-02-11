@@ -6,8 +6,6 @@ use MatchBot\Tests\TestCase;
 
 class MetaCampaignTest extends TestCase
 {
-
-
     /** @dataProvider shouldBeIndexedProvider */
     public function testMetaCampignsAreIndexOrNotAccordingToStartDate(
         string $nowString,

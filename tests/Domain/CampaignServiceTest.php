@@ -99,11 +99,11 @@ class CampaignServiceTest extends TestCase
     public function testTarget(
         bool $metaCampaignIsEmergencyIMF,
         bool $isMatched,
-        int  $matchFundsTotal,
-        int  $totalFundraisingTarget,
-        int  $amountPledged,
-        int  $totalFundingAllocation,
-        int  $expectedTarget
+        int $matchFundsTotal,
+        int $totalFundraisingTarget,
+        int $amountPledged,
+        int $totalFundingAllocation,
+        int $expectedTarget
     ): void {
         $metaCampaign = TestCase::someMetaCampaign(
             isRegularGiving: false,
@@ -127,7 +127,7 @@ class CampaignServiceTest extends TestCase
     }
 
     /**
-     * @return array<string, array{0: bool, 1: bool, 2: int, 3: int, 4: int, 5: int}>
+     * @return array<string, array{0: bool, 1: bool, 2: int, 3: int, 4: int, 5: int, 6: int}>
      */
     public function targetDataProvider(): array
     {
