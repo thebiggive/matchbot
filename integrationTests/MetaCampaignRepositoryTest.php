@@ -114,9 +114,31 @@ class MetaCampaignRepositoryTest extends IntegrationTest
             isRegularGiving: false,
             isEmergencyIMF: false,
         );
+        // the meta-campaign doesn't actually have to be persisted, it just needs
+        // to have zero related charity campaigns in the DB>
 
         $matchFundsTotal = $this->sut->matchFundsTotal($metaCampaign);
 
         $this->assertEquals(Money::zero(), $matchFundsTotal);
+    }
+
+    public function testMetaCampaignHasMatchFundsTotalBasedOnCharityCampaigns(): void
+    {
+        $metaCampaign = TestCase::someMetaCampaign(
+            isRegularGiving: false,
+            isEmergencyIMF: false,
+        );
+
+        $charityCampaign = TestCase::someCampaign(
+            metaCampaignSlug: $metaCampaign->getSlug(),
+            amountPledged: Money::fromNumericStringGBP('10.00'),
+            totalFundingAllocation: Money::fromNumericStringGBP('10.00'),
+        );
+        $this->em->persist($charityCampaign);
+        $this->em->flush();
+
+        $matchFundsTotal = $this->sut->matchFundsTotal($metaCampaign);
+
+        $this->assertEquals(Money::fromNumericStringGBP('20.00'), $matchFundsTotal);
     }
 }
