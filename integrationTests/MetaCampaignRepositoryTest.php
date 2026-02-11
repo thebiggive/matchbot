@@ -129,16 +129,33 @@ class MetaCampaignRepositoryTest extends IntegrationTest
             isEmergencyIMF: false,
         );
 
-        $charityCampaign = TestCase::someCampaign(
-            metaCampaignSlug: $metaCampaign->getSlug(),
-            amountPledged: Money::fromNumericStringGBP('10.00'),
-            totalFundingAllocation: Money::fromNumericStringGBP('10.00'),
-        );
-        $this->em->persist($charityCampaign);
+        /** @var Campaign[] $charityCampaigns */
+        $charityCampaigns = [
+            TestCase::someCampaign(
+                metaCampaignSlug: $metaCampaign->getSlug(),
+                amountPledged: Money::fromNumericStringGBP('10.00'),
+                totalFundingAllocation: Money::fromNumericStringGBP('10.00'),
+                status: 'Active',
+            ),
+            TestCase::someCampaign(
+                metaCampaignSlug: $metaCampaign->getSlug(),
+                amountPledged: Money::fromNumericStringGBP('10.00'),
+                totalFundingAllocation: Money::fromNumericStringGBP('10.00'),
+                status: 'Expired',
+            ),
+            TestCase::someCampaign(
+                metaCampaignSlug: $metaCampaign->getSlug(),
+                amountPledged: Money::fromNumericStringGBP('100.00'),
+                totalFundingAllocation: Money::fromNumericStringGBP('100.00'),
+                status: 'Preview', // doesn't count towards total as preview
+            ),
+        ];
+
+        \array_map($this->em->persist(...), [...$charityCampaigns, $metaCampaign]);
         $this->em->flush();
 
         $matchFundsTotal = $this->sut->matchFundsTotal($metaCampaign);
 
-        $this->assertEquals(Money::fromNumericStringGBP('20.00'), $matchFundsTotal);
+        $this->assertEquals(Money::fromNumericStringGBP('40.00'), $matchFundsTotal);
     }
 }

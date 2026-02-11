@@ -400,6 +400,7 @@ class TestCase extends PHPUnitTestCase
 
     /**
      * @param ?Salesforce18Id<Campaign> $sfId
+     * @param 'Active'|'Expired'|'Preview' $status
      */
     public static function someCampaign(
         ?string $stripeAccountId = null,
@@ -414,6 +415,7 @@ class TestCase extends PHPUnitTestCase
         ?Money $totalFundraisingTarget = null,
         ?Money $amountPledged = null,
         ?Money $totalFundingAllocation = null,
+        string $status = 'Active',
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         $sfId ??= Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
@@ -426,7 +428,7 @@ class TestCase extends PHPUnitTestCase
             endDate: new \DateTimeImmutable('3000-01-01'),
             isMatched: $isMatched,
             ready: true,
-            status: 'Active',
+            status: $status,
             name: 'someCampaign',
             summary: 'Some Campaign Summary',
             currencyCode: 'GBP',
