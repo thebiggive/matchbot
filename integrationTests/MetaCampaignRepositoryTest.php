@@ -107,4 +107,16 @@ class MetaCampaignRepositoryTest extends IntegrationTest
         // 57 = 47 + 10
         $this->assertEquals(Money::fromPence(57_00, Currency::GBP), $amountRaised);
     }
+
+    public function testAnEmptyMetaCampaignHasZeroMatchFunds(): void
+    {
+        $metaCampaign = TestCase::someMetaCampaign(
+            isRegularGiving: false,
+            isEmergencyIMF: false,
+        );
+
+        $matchFundsTotal = $this->sut->matchFundsTotal($metaCampaign);
+
+        $this->assertEquals(Money::zero(), $matchFundsTotal);
+    }
 }
