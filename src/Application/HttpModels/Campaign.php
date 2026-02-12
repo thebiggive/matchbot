@@ -220,18 +220,6 @@ readonly class Campaign
         )]
         public ?float $matchFundsTotal,
         #[OA\Property(
-            property: "parentAmountRaised",
-            description: "Amount raised by the parent campaign (only provided if parentUsesSharedFunds)",
-            example: 100000.00
-        )]
-        public ?float $parentAmountRaised,
-        #[OA\Property(
-            property: "parentDonationCount",
-            description: "Number of donations to the parent campaign (only provided if parentUsesSharedFunds)",
-            example: 1000
-        )]
-        public ?int $parentDonationCount,
-        #[OA\Property(
             property: "parentMatchFundsRemaining",
             description: "Match funds remaining in the parent campaign (only provided if parentUsesSharedFunds)",
             example: 50000.00
@@ -243,12 +231,6 @@ readonly class Campaign
             example: "christmas-challenge-2025"
         )]
         public ?string $parentRef,
-        #[OA\Property(
-            property: "parentTarget",
-            description: "Fundraising target of the parent campaign",
-            example: 200000.00
-        )]
-        public ?float $parentTarget,
         #[OA\Property(
             property: "parentUsesSharedFunds",
             description: "Whether the parent campaign uses shared funds across campaigns",

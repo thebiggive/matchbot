@@ -4,6 +4,7 @@ namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
+use MatchBot\Domain\Currency;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\MatchFundsService;
 use MatchBot\Domain\MetaCampaignRepository;
@@ -61,8 +62,6 @@ class CampaignServiceTest extends TestCase
         // assert
         // Because the parent i.e. metacampaign is regular giving funds will be shared with any other charity campaigns.
         $this->assertTrue($renderedCampaign['parentUsesSharedFunds']);
-        $this->assertSame(12, $renderedCampaign['parentAmountRaised']);
-        $this->assertSame(3, $renderedCampaign['parentDonationCount']);
     }
 
     public function testItDeDupesBudgetDetails(): void
@@ -94,5 +93,70 @@ class CampaignServiceTest extends TestCase
         // assert
         // Because the parent i.e. metacampaign is regular giving funds will be shared with any other charity campaigns.
         $this->assertFalse($renderedCampaign['parentUsesSharedFunds']);
+    }
+
+    /** @dataProvider targetDataProvider */
+    public function testTarget(
+        bool $metaCampaignIsEmergencyIMF,
+        bool $isMatched,
+        int $matchFundsTotal,
+        int $totalFundraisingTarget,
+        int $amountPledged,
+        int $totalFundingAllocation,
+        int $expectedTarget
+    ): void {
+        $metaCampaign = TestCase::someMetaCampaign(
+            isRegularGiving: false,
+            isEmergencyIMF: $metaCampaignIsEmergencyIMF,
+        );
+        $metaCampaign->setId(1); // id doesn't matter;
+        $this->metaCampaignRepositoryProphecy->matchFundsTotal($metaCampaign)
+            ->willReturn(Money::fromPence($matchFundsTotal, Currency::GBP));
+
+        $campaign = self::someCampaign(
+            isMatched: $isMatched,
+            totalFundraisingTarget: Money::fromPence($totalFundraisingTarget, Currency::GBP),
+            amountPledged: Money::fromPence($amountPledged, Currency::GBP),
+            totalFundingAllocation: Money::fromPence($totalFundingAllocation, Currency::GBP),
+            metaCampaignSlug: $metaCampaign->getSlug(),
+        );
+
+        $target = $this->SUT->campaignTarget($campaign, $metaCampaign);
+
+        $this->assertEquals(Money::fromPence($expectedTarget, Currency::GBP), $target);
+    }
+
+    /**
+     * @return array<string, array{0: bool, 1: bool, 2: int, 3: int, 4: int, 5: int, 6: int}>
+     */
+    public function targetDataProvider(): array
+    {
+        // all amounts in pence
+        //
+        //   $metaCampaignIsEmergencyIMF, $isMatched,
+        //   $matchFundsTotal, $totalFundraisingTarget, $amountPledged, $totalFundingAllocation,
+        //   $expectedTarget
+        return [
+            'nothing will come of nothing' => [
+                false, false,
+                0_00, 0_00, 0_00, 0_00,
+                0_00
+            ],
+            'uses emergency meta-campaign target' => [
+                true, false,
+                28_00, 0_00, 0_00, 0_00,
+                56_00
+            ],
+            'uses totalFundRaisingTarget for non-emergency target' => [
+                false, false,
+                6_00, 12_35, 0_00, 0_00,
+                12_35
+            ],
+            'for matched campaign, uses double sum of pledges and funding' => [
+                false, true,
+                6, 0_00, 150_00, 50_00, // unusual case having 150 and 50 not equal, but covers general case.
+                400_00,
+            ],
+        ];
     }
 }

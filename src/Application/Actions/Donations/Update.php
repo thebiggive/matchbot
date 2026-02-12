@@ -376,38 +376,6 @@ class Update extends Action
         if ($donation->getPsp() === 'stripe') {
             try {
                 $this->updatePaymentIntent($donation);
-            } catch (RateLimitException $exception) {
-                if ($exception->getStripeCode() !== 'lock_timeout') {
-                    throw $exception; // Only re-try when object level lock failed.
-                }
-
-                $this->logger->info(sprintf(
-                    'Stripe lock "rate limit" hit while updating payment intent for donation %s – retrying in 1s...',
-                    $donation->getUuid(),
-                ));
-                $this->clock->sleep(1);
-
-                try {
-                    $this->updatePaymentIntent($donation);
-                } catch (RateLimitException $retryException) {
-                    $this->logger->error(sprintf(
-                        'Stripe Payment Intent update error from lock "rate limit" on %s, %s [%s]: %s',
-                        $donation->getUuid(),
-                        get_class($retryException),
-                        ($retryException->getStripeCode() ?? 'no-stripe-code'),
-                        $retryException->getMessage(),
-                    ));
-                    $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent [C]');
-                    $this->entityManager->rollback();
-
-                    return $this->respond($response, new ActionPayload(500, null, $error));
-                } catch (ApiErrorException $retryException) {
-                    $responseIfFinal = $this->handleGeneralStripeError($retryException, $donation, $response);
-
-                    if ($responseIfFinal) {
-                        return $responseIfFinal;
-                    }
-                }
             } catch (ApiErrorException $exception) {
                 $responseIfFinal = $this->handleGeneralStripeError($exception, $donation, $response);
 

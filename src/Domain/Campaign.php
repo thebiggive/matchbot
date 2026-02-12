@@ -683,37 +683,6 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
-     * Gets the most relevant target, factoring in meta-campaign in shared funds scenarios and using MatchBot's own
-     * funding records.
-     *
-     * The non-shared, matched charity campaign case should derive a sum (on the final line) which matches
-     * the Salesforce-reported totalFundraisingTarget. {@see getTotalFundraisingTarget()} which surfaces that
-     * directly for sorting etc.
-     */
-    public static function target(Campaign $campaign, ?MetaCampaign $metaCampaign): Money
-    {
-        if ($metaCampaign) {
-            Assertion::eq($campaign->metaCampaignSlug, $metaCampaign->getSlug()->slug);
-        }
-
-        if ($metaCampaign && $metaCampaign->isEmergencyIMF()) {
-            // Emergency IMF targets can currently assume a shared match pot, so use parent totals to calculate
-            // target for Emergency IMFs&apos; children: double the total match funds available (or override if set)
-            //because parents do not have total fund raising target set */
-
-            return $metaCampaign->target();
-        }
-
-        // SF implementation uses `Type__c = 'Regular Campaign'` is the condition. We don't have a copy of
-        // `Type__c` but I think the below is equivalent:
-        if (! $campaign->isMatched) {
-            return $campaign->totalFundraisingTarget;
-        }
-
-        return Money::sum($campaign->amountPledged, $campaign->totalFundingAllocation)->times(2);
-    }
-
-    /**
      * Get the target from Salesforce verbatim. This might be slightly misleading for printing in shared funds cases
      * (where charity campaigns don't really independently have a target) but is good enough to use for sorting in
      * all campaign types. It's used for {@see CampaignStatistics} for example.
@@ -728,5 +697,15 @@ class Campaign extends SalesforceReadProxy
     public function getStatistics(): CampaignStatistics
     {
         return $this->campaignStatistics ?? CampaignStatistics::zeroPlaceholder($this, new \DateTimeImmutable('now'));
+    }
+
+    public function getAmountPledged(): Money
+    {
+        return $this->amountPledged;
+    }
+
+    public function getTotalFundingAllocation(): Money
+    {
+        return $this->totalFundingAllocation;
     }
 }

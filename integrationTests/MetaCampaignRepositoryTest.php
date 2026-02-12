@@ -107,4 +107,55 @@ class MetaCampaignRepositoryTest extends IntegrationTest
         // 57 = 47 + 10
         $this->assertEquals(Money::fromPence(57_00, Currency::GBP), $amountRaised);
     }
+
+    public function testAnEmptyMetaCampaignHasZeroMatchFunds(): void
+    {
+        $metaCampaign = TestCase::someMetaCampaign(
+            isRegularGiving: false,
+            isEmergencyIMF: false,
+        );
+        // the meta-campaign doesn't actually have to be persisted, it just needs
+        // to have zero related charity campaigns in the DB>
+
+        $matchFundsTotal = $this->sut->matchFundsTotal($metaCampaign);
+
+        $this->assertEquals(Money::zero(), $matchFundsTotal);
+    }
+
+    public function testMetaCampaignHasMatchFundsTotalBasedOnCharityCampaigns(): void
+    {
+        $metaCampaign = TestCase::someMetaCampaign(
+            isRegularGiving: false,
+            isEmergencyIMF: false,
+        );
+
+        /** @var Campaign[] $charityCampaigns */
+        $charityCampaigns = [
+            TestCase::someCampaign(
+                metaCampaignSlug: $metaCampaign->getSlug(),
+                amountPledged: Money::fromNumericStringGBP('10.00'),
+                totalFundingAllocation: Money::fromNumericStringGBP('10.00'),
+                status: 'Active',
+            ),
+            TestCase::someCampaign(
+                metaCampaignSlug: $metaCampaign->getSlug(),
+                amountPledged: Money::fromNumericStringGBP('10.00'),
+                totalFundingAllocation: Money::fromNumericStringGBP('10.00'),
+                status: 'Expired',
+            ),
+            TestCase::someCampaign(
+                metaCampaignSlug: $metaCampaign->getSlug(),
+                amountPledged: Money::fromNumericStringGBP('100.00'),
+                totalFundingAllocation: Money::fromNumericStringGBP('100.00'),
+                status: 'Preview', // doesn't count towards total as preview
+            ),
+        ];
+
+        \array_map($this->em->persist(...), [...$charityCampaigns, $metaCampaign]);
+        $this->em->flush();
+
+        $matchFundsTotal = $this->sut->matchFundsTotal($metaCampaign);
+
+        $this->assertEquals(Money::fromNumericStringGBP('40.00'), $matchFundsTotal);
+    }
 }

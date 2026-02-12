@@ -204,6 +204,7 @@ readonly class Money implements \JsonSerializable, \Stringable
         return $this->amountInPence() === 0;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod May use in future */
     public function isStrictlyPositive(): bool
     {
         return $this->amountInPence() > 0;
