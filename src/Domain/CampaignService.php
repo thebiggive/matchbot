@@ -37,6 +37,37 @@ class CampaignService
     }
 
     /**
+     * Gets the most relevant target, factoring in meta-campaign in shared funds scenarios and using MatchBot's own
+     * funding records.
+     *
+     * The non-shared, matched charity campaign case should derive a sum (on the final line) which matches
+     * the Salesforce-reported totalFundraisingTarget. {@see getTotalFundraisingTarget()} which surfaces that
+     * directly for sorting etc.
+     */
+    public function campaignTarget(Campaign $campaign, ?MetaCampaign $metaCampaign): Money
+    {
+        if ($metaCampaign) {
+            Assertion::eq($campaign->getMetaCampaignSlug(), $metaCampaign->getSlug());
+        }
+
+        if ($metaCampaign && $metaCampaign->isEmergencyIMF()) {
+            // Emergency IMF targets can currently assume a shared match pot, so use parent totals to calculate
+            // target for Emergency IMFs&apos; children: double the total match funds available (or override if set)
+            //because parents do not have total fund raising target set */
+
+            return $this->getMatchFundsTotalForMetaCampaign($metaCampaign)->times(2);
+        }
+
+        // SF implementation uses `Type__c = 'Regular Campaign'` is the condition. We don't have a copy of
+        // `Type__c` but I think the below is equivalent:
+        if (!$campaign->isMatched()) {
+            return $campaign->getTotalFundraisingTarget();
+        }
+
+        return Money::sum($campaign->getAmountPledged(), $campaign->getTotalFundingAllocation())->times(2);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function renderCampaignSummary(CampaignDomainModel $campaign): array
@@ -165,12 +196,8 @@ class CampaignService
         );
 
         if ($metaCampaign && $metaCampaign->usesSharedFunds()) {
-            $parentDonationCount = $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign);
-            $parentAmountRaised = $this->getAmountRaisedForMetaCampaign($metaCampaign)->toMajorUnitFloat();
             $parentMatchFundsRemaining = $this->cachedMetaCampaignMatchFundsRemaining($metaCampaign)->toMajorUnitFloat();
         } else {
-            $parentDonationCount = null;
-            $parentAmountRaised = null;
             $parentMatchFundsRemaining = null;
         }
 
@@ -220,11 +247,8 @@ class CampaignService
             logoUri: $sfCampaignData['logoUri'],
             matchFundsRemaining: $stats->getMatchFundsRemaining()->toMajorUnitFloat(),
             matchFundsTotal: $stats->getMatchFundsTotal()->toMajorUnitFloat(),
-            parentAmountRaised: $parentAmountRaised,
-            parentDonationCount: $parentDonationCount,
             parentMatchFundsRemaining: $parentMatchFundsRemaining,
             parentRef: $campaign->getMetaCampaignSlug()?->slug,
-            parentTarget: $metaCampaign?->target()?->toMajorUnitFloat(),
             parentUsesSharedFunds: $metaCampaign && $metaCampaign->usesSharedFunds(),
             problem: $sfCampaignData['problem'],
             quotes: $sfCampaignData['quotes'],
@@ -236,7 +260,7 @@ class CampaignService
             regularGivingCollectionEnd: $this->formatDate($campaign->getRegularGivingCollectionEnd()),
             summary: $sfCampaignData['summary'],
             surplusDonationInfo: $sfCampaignData['surplusDonationInfo'],
-            target: Campaign::target($campaign, $metaCampaign)->toMajorUnitFloat(),
+            target: $this->campaignTarget($campaign, $metaCampaign)->toMajorUnitFloat(),
             thankYouMessage: $campaign->getThankYouMessage() ?? '',
             title: $campaign->getCampaignName(),
             updates: $sfCampaignData['updates'],

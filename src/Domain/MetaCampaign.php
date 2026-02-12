@@ -111,11 +111,6 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Column()]
     private bool $isEmergencyIMF;
 
-    #[ORM\Embedded(columnPrefix: 'imf_campaign_target_override_')]
-    private Money $imfCampaignTargetOverride;
-
-    #[ORM\Embedded(columnPrefix: 'match_funds_total_')]
-    private Money $matchFundsTotal;
 
     /**
      * Ientifies the metacampaign as part of a series or type of campaigns, often with one member per year, e.g.
@@ -143,8 +138,6 @@ class MetaCampaign extends SalesforceReadProxy
         bool $isRegularGiving,
         bool $isEmergencyIMF,
         Money $totalAdjustment,
-        Money $imfCampaignTargetOverride,
-        Money $matchFundsTotal,
         ?CampaignFamily $campaignFamily,
     ) {
         Assertion::same($totalAdjustment->currency, $currency);
@@ -165,8 +158,6 @@ class MetaCampaign extends SalesforceReadProxy
         $this->isRegularGiving = $isRegularGiving;
         $this->isEmergencyIMF = $isEmergencyIMF;
         $this->totalAdjustment = $totalAdjustment;
-        $this->imfCampaignTargetOverride = $imfCampaignTargetOverride;
-        $this->matchFundsTotal = $matchFundsTotal;
         $this->campaignFamily = $campaignFamily;
     }
 
@@ -197,8 +188,6 @@ class MetaCampaign extends SalesforceReadProxy
             isRegularGiving: false,
             isEmergencyIMF: false,
             totalAdjustment: Money::zero(),
-            imfCampaignTargetOverride: Money::zero(),
-            matchFundsTotal: Money::zero(),
             campaignFamily: CampaignFamily::from($data['campaignFamily']),
         );
 
@@ -251,9 +240,6 @@ class MetaCampaign extends SalesforceReadProxy
         $this->startDate = new \DateTimeImmutable($startDate);
         $this->endDate = new \DateTimeImmutable($endDate);
         $this->isEmergencyIMF = $data['isEmergencyIMF'];
-
-        $this->imfCampaignTargetOverride = Money::fromPence((int) (100.0 * ($data['imfCampaignTargetOverride'] ?? 0.0)), $currency);
-        $this->matchFundsTotal = Money::fromPence((int) (100.0 * ($data['totalMatchedFundsAvailable'] ?? 0.0)), $currency);
         $this->totalAdjustment = Money::fromNumericString($totalAdjustment, $currency);
     }
 
@@ -330,21 +316,6 @@ class MetaCampaign extends SalesforceReadProxy
     public function getEndDate(): \DateTimeImmutable
     {
         return $this->endDate;
-    }
-
-    public function getMatchFundsTotal(): Money
-    {
-        return $this->matchFundsTotal;
-    }
-
-    public function target(): Money
-    {
-        // logic below originally ported from Campaign_Target__c in SF.
-        if ($this->imfCampaignTargetOverride->isStrictlyPositive()) {
-            return $this->imfCampaignTargetOverride;
-        }
-
-        return $this->matchFundsTotal->times(2);
     }
 
     public function isEmergencyIMF(): bool
