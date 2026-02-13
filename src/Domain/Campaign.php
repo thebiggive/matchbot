@@ -380,7 +380,7 @@ class Campaign extends SalesforceReadProxy
             // envrionments
 
             $_charity = $this->charity;
-        } catch (\Error $e) { // @phpstan-ignore catch.neverThrown
+        } catch (\Error $e) {
             throw new \Exception(
                 "Error on attempt to persist campaign #{$this->id}, sfID {$this->getSalesforceId()}: \n{$e}"
             );

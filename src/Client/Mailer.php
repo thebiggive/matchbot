@@ -16,11 +16,11 @@ class Mailer extends Common
     /**
      * @deprecated for public use - use {@see self::send()} instead.
      *
-     * @psalm-param array{templateKey: string, recipientEmailAddress: string, params: array, ...} $requestBody
-     * @phpstan-param array<string, mixed> $requestBody
+     * @param array{templateKey: string, recipientEmailAddress: string, params: array<string, mixed>, ...} $requestBody
      */
     public function sendEmail(array $requestBody): void
     {
+        $templateKey = $requestBody['templateKey'];
         try {
             $uri = $this->baseUri() . '/v1/send';
             $response = $this->getHttpClient()->post(
@@ -39,7 +39,7 @@ class Mailer extends Common
             } else {
                 $this->logger->warning(sprintf(
                     '%s email callout didn\'t return 200. It returned code: %s. Request body: %s. Response body: %s.',
-                    $requestBody['templateKey'],
+                    $templateKey,
                     $response->getStatusCode(),
                     json_encode($requestBody, \JSON_THROW_ON_ERROR),
                     $response->getBody()->getContents(),
@@ -51,7 +51,7 @@ class Mailer extends Common
 
             $this->logger->error(sprintf(
                 '%s email exception %s with error code %s: %s. Body: %s',
-                $requestBody['templateKey'],
+                $templateKey,
                 get_class($ex),
                 $ex->getCode(),
                 $ex->getMessage(),
@@ -66,7 +66,7 @@ class Mailer extends Common
         } catch (GuzzleException $ex) {
             $this->logger->error(sprintf(
                 '%s email exception %s with error code %s: %s. Body: %s',
-                $requestBody['templateKey'],
+                $templateKey,
                 get_class($ex),
                 $ex->getCode(),
                 $ex->getMessage(),
