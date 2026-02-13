@@ -74,7 +74,7 @@ class Settings
 
         $this->appEnv = $appEnv;
         if (!in_array($appEnv, ['local', 'test'], true)) {
-            $doctrineConnectionOptions[Pdo\Mysql::ATTR_SSL_CA] =
+            $doctrineConnectionOptions[\Pdo\Mysql::ATTR_SSL_CA] =
                 dirname(__DIR__) . '/../deploy/rds-ca-eu-west-1-bundle.pem';
         }
 

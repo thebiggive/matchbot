@@ -35,9 +35,6 @@ parameters:
 	editorUrlTitle: '%%file%%:%%line%%'
 	editorUrl: '//'
 	ignoreErrors:
-		# Deprecated since PHP 8.4:
-		- '#is implicitly nullable via default value null#'
-
 #		Allow unused params if name starts with _
 		- '#has an unused parameter \$_#'
 		-
