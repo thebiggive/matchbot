@@ -38,8 +38,8 @@
         "guzzlehttp/guzzle": "^7.9",
         "guzzlehttp/psr7": "^2.7",
         "jetbrains/phpstorm-attributes": "^1.0",
-        "laminas/laminas-diactoros": "^2.26",
-        "los/los-rate-limit": "^4.0.1",
+        "laminas/laminas-diactoros": "^3.8.0",
+        "los/los-rate-limit": "dev-master",
         "middlewares/client-ip": "^2.0",
         "monolog/monolog": "^2.2",
         "php-di/php-di": "^7.0",
@@ -93,6 +93,10 @@
         "weirdan/doctrine-psalm-plugin": "^2.10",
         "zircote/swagger-php": "^5.2"
     },
+    "repositories": [{
+        "type": "vcs",
+        "url": "https://github.com/thebiggive/LosRateLimit"
+    }],
     "config": {
         "allow-plugins": {
             "composer/package-versions-deprecated": true,
