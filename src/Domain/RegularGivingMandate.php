@@ -307,7 +307,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         DonorAccount $donor,
         Campaign $campaign,
         bool $requireActiveMandate = true,
-        \DateTimeImmutable $expectedActivationDate = null,
+        ?\DateTimeImmutable $expectedActivationDate = null,
     ): Donation {
         // comms prefs below (charityComms, championComms, optInTbgEmail) are all set to null, as it's only the 1st
         // donation in the mandate that carries the donor's chosen marketing comms preferences to Salesforce.

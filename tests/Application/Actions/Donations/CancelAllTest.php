@@ -185,8 +185,8 @@ class CancelAllTest extends TestCase
         Container $container,
         ObjectProphecy $donationRepoProphecy,
         ObjectProphecy $entityManagerProphecy,
-        ObjectProphecy $stripeProphecy = null,
-        ObjectProphecy $allocatorProphecy = null,
+        ?ObjectProphecy $stripeProphecy = null,
+        ?ObjectProphecy $allocatorProphecy = null,
     ): void {
         $container->set(CampaignFundingRepository::class, $this->prophesize(CampaignFundingRepository::class)->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
