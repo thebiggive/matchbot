@@ -16,8 +16,7 @@ class Mailer extends Common
     /**
      * @deprecated for public use - use {@see self::send()} instead.
      *
-     * @psalm-param array{templateKey: string, recipientEmailAddress: string, params: array, ...} $requestBody
-     * @phpstan-param array<string, mixed> $requestBody
+     * @param array{templateKey: string, recipientEmailAddress: string, params: array<string, mixed>, ...} $requestBody
      */
     public function sendEmail(array $requestBody): void
     {

@@ -14,7 +14,7 @@
         }
     ],
     "require": {
-        "php": "^8.3",
+        "php": "^8.5",
         "ext-bcmath": "*",
         "ext-json": "*",
         "ext-mbstring": "^8.0",
@@ -38,8 +38,8 @@
         "guzzlehttp/guzzle": "^7.9",
         "guzzlehttp/psr7": "^2.7",
         "jetbrains/phpstorm-attributes": "^1.0",
-        "laminas/laminas-diactoros": "^2.26",
-        "los/los-rate-limit": "^4.0.1",
+        "laminas/laminas-diactoros": "^3.8.0",
+        "los/los-rate-limit": "dev-master",
         "middlewares/client-ip": "^2.0",
         "monolog/monolog": "^2.2",
         "php-di/php-di": "^7.0",
@@ -79,7 +79,7 @@
         "phpspec/prophecy": "^1.19",
         "phpspec/prophecy-phpunit": "^v2.1.0",
         "phpstan/extension-installer": "^1.4",
-        "phpstan/phpstan": "^2.1.37",
+        "phpstan/phpstan": "^2.1.39",
         "phpstan/phpstan-beberlei-assert": "^2.0",
         "phpstan/phpstan-doctrine": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
@@ -93,6 +93,10 @@
         "weirdan/doctrine-psalm-plugin": "^2.10",
         "zircote/swagger-php": "^5.2"
     },
+    "repositories": [{
+        "type": "vcs",
+        "url": "https://github.com/thebiggive/LosRateLimit"
+    }],
     "config": {
         "allow-plugins": {
             "composer/package-versions-deprecated": true,
@@ -102,7 +106,7 @@
         },
         "optimize-autoloader": true,
         "platform": {
-            "php": "8.3.21"
+            "php": "8.5.2"
         },
         "sort-packages": true
     },
@@ -167,7 +171,7 @@
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
         "doctrine:migrate:generate": "doctrine-migrations generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
-        "sa:check": "vendor/bin/psalm --threads=4 && vendor/bin/phpstan",
+        "sa:check": "vendor/bin/phpstan # psalm skipped for now awaiting Psalm 7 with PHP 8.5 support.",
         "sa:check-with-new-cache": "vendor/bin/psalm --clear-cache; vendor/bin/psalm",
         "lint:check": "phpcs --standard=phpcs.xml -s . --ignore=reports",
         "lint:fix": "phpcbf --standard=phpcs.xml -s . --ignore=reports",

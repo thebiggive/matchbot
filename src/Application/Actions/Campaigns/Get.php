@@ -35,11 +35,10 @@ class Get extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        $sfId = Salesforce18Id::ofCampaign(
+        $campaign = Salesforce18Id::ofCampaign(
             $args['salesforceId'] ?? throw new HttpNotFoundException($request)
-        );
-
-        $campaign = $this->campaignRepository->findOneBySalesforceId($sfId);
+        )
+                |> $this->campaignRepository->findOneBySalesforceId(...);
 
         if (!$campaign) {
             throw new HttpNotFoundException($request);

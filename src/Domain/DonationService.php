@@ -838,7 +838,7 @@ class DonationService
     {
         $startingOriginalPspFee = $donation->getOriginalPspFee();
         $uuid = $donation->getUuid()->toString();
-        $this->logger->info(sprintf('Updating donation %s with starting original fee %d', $uuid, $startingOriginalPspFee));
+        $this->logger->info(sprintf('Updating donation %s with starting original fee %s', $uuid, $startingOriginalPspFee));
         $this->logger->info('updating donation from charge: ' . $charge->toJSON());
 
         $donationWasPreviouslyCollected = $donation->getDonationStatus() === DonationStatus::Collected;
@@ -870,7 +870,7 @@ class DonationService
                 $donation->currency()->isoCode(),
             );
             $this->logger->info(sprintf(
-                'Donation %s: Retrieved original PSP fee %d from balance transaction %s',
+                'Donation %s: Retrieved original PSP fee %s from balance transaction %s',
                 $uuid,
                 $originalFeeFractional,
                 $balanceTransaction,

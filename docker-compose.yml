@@ -9,7 +9,7 @@ volumes:
 
 services:
   app:
-    image: thebiggive/php:dev-8.3
+    image: thebiggive/php:dev-8.5
     platform: linux/amd64
     ports:
       - "30030:80"
@@ -25,7 +25,7 @@ services:
       - matchbot
 
   consumer:
-    image: thebiggive/php:dev-8.3
+    image: thebiggive/php:dev-8.5
     platform: linux/amd64
     command: composer run messenger:consume:all
     volumes:
@@ -39,7 +39,7 @@ services:
       - matchbot
 
   app-cron:
-    image: thebiggive/php:dev-8.3
+    image: thebiggive/php:dev-8.5
     platform: linux/amd64
     command: bash -c 'while sleep 60; do (./matchbot matchbot:tick || echo "matchbot tick failed"); done'
     volumes:

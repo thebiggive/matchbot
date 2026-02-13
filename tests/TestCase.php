@@ -408,8 +408,8 @@ class TestCase extends PHPUnitTestCase
         ?Charity $charity = null,
         bool $isRegularGiving = false,
         ?\DateTimeImmutable $regularGivingCollectionEnd = null,
-        string $thankYouMessage = null,
-        MetaCampaignSlug $metaCampaignSlug = null,
+        ?string $thankYouMessage = null,
+        ?MetaCampaignSlug $metaCampaignSlug = null,
         bool $isMatched = false,
         ?bool $charityRejected = false,
         ?Money $totalFundraisingTarget = null,
@@ -452,7 +452,7 @@ class TestCase extends PHPUnitTestCase
      * @param numeric-string $tipAmount
      */
     public static function someDonation(
-        UuidInterface $uuid = null,
+        ?UuidInterface $uuid = null,
         string $amount = '1',
         string $currencyCode = 'GBP',
         PaymentMethodType $paymentMethodType = PaymentMethodType::Card,

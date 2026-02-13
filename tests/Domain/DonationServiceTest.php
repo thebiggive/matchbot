@@ -203,7 +203,7 @@ class DonationServiceTest extends TestCase
      */
     private function getDonationService(
         bool $withAlwaysCrashingEntityManager = false,
-        LoggerInterface $logger = null,
+        ?LoggerInterface $logger = null,
         ?ObjectProphecy $campaignRepoProphecy = null,
         ?ObjectProphecy $fundRepoProphecy = null,
     ): DonationService {

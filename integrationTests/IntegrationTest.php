@@ -294,7 +294,7 @@ abstract class IntegrationTest extends TestCase
     public function addCampaignAndCharityToDB(
         string $campaignSfId,
         bool $campaignOpen = true,
-        string $charitySfId = null,
+        ?string $charitySfId = null,
         string $charityName = 'Some Charity',
         bool $isRegularGiving = false
     ): array {

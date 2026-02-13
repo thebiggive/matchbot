@@ -98,10 +98,10 @@ class Search extends Action
          * Have to then pass through array_values to make sure it produces a JSON array as needed by FE not a JSON
          * object - any missing keys (other than at the end of the list) will make PHP output it as an object.
          */
-        $campaignsWithSfData = \array_values(\array_filter($campaigns, static fn(Campaign $c) => ! $c->isSfDataMissing()));
-
-        $campaignSummaries = \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData);
-
-        return new JsonResponse(['campaignSummaries' => $campaignSummaries], 200);
+        return
+            \array_filter($campaigns, static fn(Campaign $c) => ! $c->isSfDataMissing())
+            |> \array_values(...)
+            |> (fn(array $campaignsWithSfData) => \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData))
+            |> (fn(array $campaignSummaries) => new JsonResponse(['campaignSummaries' => $campaignSummaries], 200));
     }
 }
