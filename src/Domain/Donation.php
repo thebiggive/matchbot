@@ -1428,26 +1428,10 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->overseas = $this->donorHomePostcode === self::OVERSEAS;
         $donationMessage->postcode = $donationMessage->overseas ? '' : ($this->donorHomePostcode ?? '');
 
-        $donationMessage->house_no = '';
-
-        // MAT-192 will cover passing and storing this separately. For now, a pattern match should
-        // give reasonable 'house number' values.
+        // 'House' field has a 40 character maximum. Indications as of 2026 are that it's safest to
+        // always supply street name etc. even though it's not in HMRC's valid XML samples.
         if ($this->donorHomeAddressLine1 !== null) {
-            $houseNumber = preg_replace('/^([0-9a-z-]+).*$/i', '$1', trim($this->donorHomeAddressLine1));
-            \assert($houseNumber !== null);
-
-            $donationMessage->house_no = $houseNumber;
-
-            // In any case where this doesn't produce a result, just send the full first 40 characters
-            // of the home address. This is also HMRC's requested value in this property for overseas
-            // donations.
-            if ($donationMessage->house_no === '' || $donationMessage->overseas) {
-                $donationMessage->house_no = trim($this->donorHomeAddressLine1);
-            }
-
-            // Regardless of which source we used and if we are aiming for a number or a full
-            // address, it should be truncated at 40 characters.
-            $donationMessage->house_no = mb_substr($donationMessage->house_no, 0, 40);
+            $donationMessage->house_no = mb_substr(trim($this->donorHomeAddressLine1), 0, 40);
         }
 
         $donationMessage->amount = (float) $this->amount;
