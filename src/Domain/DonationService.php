@@ -341,9 +341,8 @@ class DonationService
      * Returns success or failure; won't throw when a card exception is new and remediation is still possible.
      *
      * @throws RegularGivingCollectionEndPassed|MandateNotActive|MandateCollectionRepeatedlyFailed
-     *
-     * @todo add #[\NoDiscard] attribute when we're in 8.5
      */
+    #[\NoDiscard]
     public function confirmPreAuthorized(Donation $donation): bool
     {
         $stripeAccountId = $donation->getPspCustomerId();

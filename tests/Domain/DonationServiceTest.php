@@ -193,7 +193,8 @@ class DonationServiceTest extends TestCase
         $this->expectException(MandateNotActive::class);
         $this->expectExceptionMessage("Not confirming donation as mandate is 'Cancelled', not Active");
 
-        $this->getDonationService()->confirmPreAuthorized($donation);
+        $confirmed = $this->getDonationService()->confirmPreAuthorized($donation);
+        $this->assertTrue($confirmed);
     }
 
     /**
