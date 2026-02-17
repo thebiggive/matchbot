@@ -371,6 +371,7 @@ class RegularGivingNotifierTest extends TestCase
 
         $this->stripeClientProphecy->updatePaymentIntent("transaction_id", Argument::type('array'))->shouldBeCalled();
 
-        $donationService->confirmPreAuthorized($secondDonation);
+        $confirmed = $donationService->confirmPreAuthorized($secondDonation);
+        $this->assertFalse($confirmed);
     }
 }
