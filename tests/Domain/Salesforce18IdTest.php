@@ -1,7 +1,8 @@
 <?php
 
-namespace MatchBot\Domain;
+namespace MatchBot\Tests\Domain;
 
+use MatchBot\Domain\Salesforce18Id;
 use PHPUnit\Framework\TestCase;
 
 class Salesforce18IdTest extends TestCase

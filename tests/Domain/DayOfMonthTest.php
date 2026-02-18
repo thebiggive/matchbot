@@ -1,7 +1,8 @@
 <?php
 
-namespace MatchBot\Domain;
+namespace MatchBot\Tests\Domain;
 
+use MatchBot\Domain\DayOfMonth;
 use PHPUnit\Framework\TestCase;
 
 class DayOfMonthTest extends TestCase

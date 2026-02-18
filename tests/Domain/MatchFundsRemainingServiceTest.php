@@ -1,7 +1,16 @@
 <?php
 
-namespace MatchBot\Domain;
+namespace MatchBot\Tests\Domain;
 
+use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\Currency;
+use MatchBot\Domain\Fund;
+use MatchBot\Domain\FundType;
+use MatchBot\Domain\MatchFundsService;
+use MatchBot\Domain\Money;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;

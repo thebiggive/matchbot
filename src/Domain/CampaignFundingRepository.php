@@ -6,8 +6,6 @@ namespace MatchBot\Domain;
 
 use Assert\Assertion;
 use Doctrine\ORM\EntityRepository;
-use MatchBot\Application\Matching\Adapter;
-use Psr\Log\LoggerInterface;
 
 /**
  * @extends EntityRepository<CampaignFunding>
