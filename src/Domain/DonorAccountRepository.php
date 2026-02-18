@@ -20,8 +20,13 @@ class DonorAccountRepository extends EntityRepository
         $log?->info('DON-1188: in \MatchBot\Domain\DonorAccountRepository::save');
         $this->getEntityManager()->persist($donorAccount);
         $log?->info('DON-1188: persisted donor account');
-        $this->getEntityManager()->flush();
-        $log?->info('DON-1188: flushed');
+        try {
+            $this->getEntityManager()->flush();
+            $log?->info('DON-1188: flushed');
+        } catch (\Throwable $t) {
+            $log?->error('DON-1188: failed to flush donor account', ['exception' => $t]);
+            throw $t;
+        }
     }
 
     public function findByStripeIdOrNull(StripeCustomerId $stripeAccountId): ?DonorAccount
