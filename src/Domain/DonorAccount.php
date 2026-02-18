@@ -35,11 +35,11 @@ class DonorAccount extends Model
     public EmailAddress $emailAddress;
 
     /**
-     * Name of the donor if they are (or are assumed to be) an individual. Organisations have name in a separate field.
-     * Using one field for both purposes wouldn't work with the Doctrine Embeddable.
+     * Name of the donor if they are (or are assumed to be) an individual. Organisations have name in a separate field
+     * but also $last within this, because nullable Embedded types don't work.
      */
     #[ORM\Embedded(class: 'DonorName')]
-    public ?DonorName $donorName;
+    public DonorName $donorName;
 
     #[ORM\Column(length: 255, nullable: true)]
     public ?string $organisationName;
@@ -96,17 +96,15 @@ class DonorAccount extends Model
     public function __construct(
         PersonId $uuid,
         EmailAddress $emailAddress,
-        ?DonorName $donorName,
+        DonorName $donorName,
         StripeCustomerId $stripeCustomerId,
         ?string $organisationName,
         bool $isOrganisation,
     ) {
         if ($isOrganisation) {
             Assertion::notNull($organisationName, 'Organisation name cannot be null for organisations');
-            Assertion::null($donorName, 'Donor name cannot be set for organisations');
         } else {
             Assertion::null($organisationName, 'Organisation name cannot be set for individuals');
-            Assertion::notNull($donorName, 'Donor name cannot be null for individuals');
         }
 
         $this->createdNow();
@@ -124,7 +122,7 @@ class DonorAccount extends Model
             return new self(
                 uuid: PersonId::of($person->id->toString()),
                 emailAddress: EmailAddress::of($person->email_address),
-                donorName: null,
+                donorName: DonorName::of('', $person->last_name),
                 stripeCustomerId: StripeCustomerId::of($person->stripe_customer_id),
                 organisationName: $person->last_name,
                 isOrganisation: true,
@@ -226,13 +224,7 @@ class DonorAccount extends Model
      */
     public function toFrontEndApiModel(): array
     {
-        if ($this->isOrganisation) {
-            $fullName = $this->organisationName;
-        } else {
-            $donorName = $this->donorName;
-            Assertion::notNull($donorName);
-            $fullName = $donorName->fullName();
-        }
+        $fullName = $this->isOrganisation ? $this->organisationName : $this->donorName->fullName();
 
         return [
             'id' => $this->uuid->toString(),
@@ -264,7 +256,6 @@ class DonorAccount extends Model
             $firstName = null;
             $lastName = $this->organisationName;
         } else {
-            Assertion::notNull($this->donorName);
             $firstName = $this->donorName->first;
             $lastName = $this->donorName->last;
         }
