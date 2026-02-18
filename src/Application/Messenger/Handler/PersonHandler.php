@@ -103,8 +103,7 @@ readonly class PersonHandler
             return;
         }
 
-        $this->logger->info('DON-1188: Will call \MatchBot\Domain\DonorAccountRepository::save');
-        $donorAccountRepo->save($donorAccount, $this->logger);
+        $donorAccountRepo->save($donorAccount);
 
         $this->logger->info(sprintf(
             'Person ID %s data saved',

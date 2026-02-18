@@ -15,13 +15,10 @@ class DonorAccountRepository extends EntityRepository
     /**
      * @throws UniqueConstraintViolationException if we already have a donor account with the same Stripe Customer ID.
      */
-    public function save(DonorAccount $donorAccount, ?LoggerInterface $log = null): void
+    public function save(DonorAccount $donorAccount): void
     {
-        $log?->info('DON-1188: in \MatchBot\Domain\DonorAccountRepository::save');
         $this->getEntityManager()->persist($donorAccount);
-        $log?->info('DON-1188: persisted donor account');
         $this->getEntityManager()->flush();
-        $log?->info('DON-1188: flushed');
     }
 
     public function findByStripeIdOrNull(StripeCustomerId $stripeAccountId): ?DonorAccount
