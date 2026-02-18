@@ -24,7 +24,10 @@ class DonorAccountRepository extends EntityRepository
             $this->getEntityManager()->flush();
             $log?->info('DON-1188: flushed');
         } catch (\Throwable $t) {
-            $log?->error('DON-1188: failed to flush donor account', ['exception' => $t]);
+            $log?->error(
+                'DON-1188: failed to flush donor account: (OK if UniqueConstraintViolationException )' .
+                get_class($t) . ': ' . $t->getMessage()
+            );
             throw $t;
         }
     }
