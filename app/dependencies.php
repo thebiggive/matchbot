@@ -74,6 +74,8 @@ use Symfony\Component\Cache\Adapter\RedisAdapter as RedisCacheAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\Console\ConsoleEvents;
+use Symfony\Component\Console\Event\ConsoleErrorEvent;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Lock\LockFactory;
@@ -169,6 +171,19 @@ return function (ContainerBuilder $containerBuilder) {
                 // running process. In Symfony framework for comparison this would be handled by
                 // a `DoctrineClearEntityManagerWorkerSubscriber`
                 $c->get(EntityManagerInterface::class)->clear();
+            });
+
+            // Individual message exceptions are handled silently, making them very hard to debug,
+            // without a listener like this.
+            // https://symfony.com/doc/current/components/console/events.html#the-consoleevents-error-event
+            $logger = $c->get(LoggerInterface::class);
+            $eventDispatcher->addListener(ConsoleEvents::ERROR, function (ConsoleErrorEvent $event) use ($logger): void {
+                $logger->error(sprintf(
+                    'Exception running command %s. Code %d: %s',
+                    $event->getCommand()?->getName() ?? '[unknown]',
+                    $event->getError()->getCode(),
+                    $event->getError()->getMessage(),
+                ));
             });
 
             return new ConsumeMessagesCommand(
