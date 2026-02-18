@@ -125,7 +125,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /**
      * @param Salesforce18Id<Campaign> $salesforceId
      */
-    public function findOneBySalesforceId(Salesforce18Id $salesforceId, \DateTimeImmutable $mustBeUpdatedSince = null): ?Campaign
+    public function findOneBySalesforceId(Salesforce18Id $salesforceId, ?\DateTimeImmutable $mustBeUpdatedSince = null): ?Campaign
     {
         $sfIdString = $salesforceId->value;
 

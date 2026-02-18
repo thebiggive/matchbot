@@ -89,7 +89,7 @@ trait DonationTestDataTrait
         string $tipAmount = '1.00',
         string $currencyCode = 'GBP',
         bool $collected = true,
-        DateTime $tbgGiftAidRequestConfirmedCompleteAt = null,
+        ?DateTime $tbgGiftAidRequestConfirmedCompleteAt = null,
         bool $charityComms = false,
         null|UuidInterface|string $uuid = null,
         bool $isRegularGiving = false,

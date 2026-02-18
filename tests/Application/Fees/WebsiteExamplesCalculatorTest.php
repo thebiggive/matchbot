@@ -79,7 +79,7 @@ class WebsiteExamplesCalculatorTest extends TestCase
     /**
      * @return array<string, array<array>>
      */
-    public function getFeeWorkedExamples(): array // @phpstan-ignore missingType.iterableValue
+    public function getFeeWorkedExamples(): array
     {
         return array_map(fn(array $args) => [$args], self::WORKED_EXAMPLES);
     }

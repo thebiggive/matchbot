@@ -35,9 +35,6 @@ parameters:
 	editorUrlTitle: '%%file%%:%%line%%'
 	editorUrl: '//'
 	ignoreErrors:
-#        we use beberlei/assert not webmozart but this must be similar to https://github.com/phpstan/phpstan-webmozart-assert/issues/32
-		- '#Call to static method Assert\\Assertion::integerish\(\) with float will always evaluate to true#'
-
 #		Allow unused params if name starts with _
 		- '#has an unused parameter \$_#'
 		-

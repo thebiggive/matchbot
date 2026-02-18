@@ -193,7 +193,8 @@ class DonationServiceTest extends TestCase
         $this->expectException(MandateNotActive::class);
         $this->expectExceptionMessage("Not confirming donation as mandate is 'Cancelled', not Active");
 
-        $this->getDonationService()->confirmPreAuthorized($donation);
+        $confirmed = $this->getDonationService()->confirmPreAuthorized($donation);
+        $this->assertTrue($confirmed);
     }
 
     /**
@@ -203,7 +204,7 @@ class DonationServiceTest extends TestCase
      */
     private function getDonationService(
         bool $withAlwaysCrashingEntityManager = false,
-        LoggerInterface $logger = null,
+        ?LoggerInterface $logger = null,
         ?ObjectProphecy $campaignRepoProphecy = null,
         ?ObjectProphecy $fundRepoProphecy = null,
     ): DonationService {

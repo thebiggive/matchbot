@@ -341,9 +341,8 @@ class DonationService
      * Returns success or failure; won't throw when a card exception is new and remediation is still possible.
      *
      * @throws RegularGivingCollectionEndPassed|MandateNotActive|MandateCollectionRepeatedlyFailed
-     *
-     * @todo add #[\NoDiscard] attribute when we're in 8.5
      */
+    #[\NoDiscard]
     public function confirmPreAuthorized(Donation $donation): bool
     {
         $stripeAccountId = $donation->getPspCustomerId();
@@ -838,7 +837,7 @@ class DonationService
     {
         $startingOriginalPspFee = $donation->getOriginalPspFee();
         $uuid = $donation->getUuid()->toString();
-        $this->logger->info(sprintf('Updating donation %s with starting original fee %d', $uuid, $startingOriginalPspFee));
+        $this->logger->info(sprintf('Updating donation %s with starting original fee %s', $uuid, $startingOriginalPspFee));
         $this->logger->info('updating donation from charge: ' . $charge->toJSON());
 
         $donationWasPreviouslyCollected = $donation->getDonationStatus() === DonationStatus::Collected;
@@ -870,7 +869,7 @@ class DonationService
                 $donation->currency()->isoCode(),
             );
             $this->logger->info(sprintf(
-                'Donation %s: Retrieved original PSP fee %d from balance transaction %s',
+                'Donation %s: Retrieved original PSP fee %s from balance transaction %s',
                 $uuid,
                 $originalFeeFractional,
                 $balanceTransaction,
