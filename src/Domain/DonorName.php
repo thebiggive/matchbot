@@ -14,6 +14,7 @@ use MatchBot\Application\LazyAssertionException;
 #[Embeddable]
 class DonorName
 {
+    /** Currently blank string for organisations. */
     #[Column(type: 'string')]
     public string $first;
 

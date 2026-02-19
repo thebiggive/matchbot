@@ -36,14 +36,10 @@ class RegularGivingNotifier
         $signUpDate = $mandate->getActiveFrom();
         Assertion::notNull($signUpDate);
 
-        $donorName = $donorAccount->donorName;
-        // for now assuming that a regular giving donor must be an individual
-        Assertion::notNull($donorName);
-
         $this->mailer->send(EmailMessage::donorMandateConfirmation(
             $donorAccount->emailAddress,
             [
-                'donorName' => $donorName->fullName(),
+                'donorName' => $donorAccount->donorName->fullName(),
                 'charityName' => $charity->getName(),
                 'campaignName' => $campaign->getCampaignName(),
                 'charityNumber' => $charity->getRegulatorNumber(),
@@ -84,15 +80,10 @@ class RegularGivingNotifier
         Assertion::notNull($preAuthDate);
         $preAuthDate = $preAuthDate->setTimezone($this->tz);
 
-        $donorName = $donor->donorName;
-
-        // for now assuming that any regular giving donor is an individual so has a donorName.
-        Assertion::notNull($donorName);
-
         $this->mailer->send(EmailMessage::donorRegularDonationFailed(
             $donor->emailAddress,
             [
-                'donorName' => $donorName->fullName(),
+                'donorName' => $donor->donorName->fullName(),
                 'charityName' => $donation->getCampaign()->getCharity()->getName(),
                 'amount' => Money::fromNumericString($donation->getAmount(), $donation->currency())->format(),
                 'originalDonationPaymentDate' => $preAuthDate->format('j F Y'),
