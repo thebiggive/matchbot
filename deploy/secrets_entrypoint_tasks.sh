@@ -13,6 +13,11 @@ fi
 # Load the S3 secrets file contents into the environment variables
 export $(aws s3 cp s3://${SECRETS_BUCKET_NAME}/secrets - | grep -v '^#' | xargs)
 
+# Decode base64-encoded secrets that may contain special characters
+if [ -n "$JWT_ID_SECRETS" ]; then
+  export JWT_ID_SECRETS=$(echo "$JWT_ID_SECRETS" | base64 -d)
+fi
+
 composer doctrine:ensure-prod || exit 2
 
 echo "Running migrations before start if necessary..."
