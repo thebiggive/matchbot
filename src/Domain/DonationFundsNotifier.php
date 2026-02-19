@@ -25,7 +25,6 @@ class DonationFundsNotifier
         Money $_newBalance,
     ): void {
         $donorName = $donorAccount->donorName;
-        Assertion::notNull($donorName);
 
         /** @psalm-suppress DeprecatedMethod - method was deprecated after this was written. */
         $this->mailer->sendEmail([

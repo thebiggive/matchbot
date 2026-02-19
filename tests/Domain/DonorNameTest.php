@@ -1,6 +1,6 @@
 <?php
 
-namespace Domain;
+namespace MatchBot\Tests\Domain;
 
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\DonorName;

@@ -448,7 +448,7 @@ class DonationTest extends TestCase
         $this->assertSame('', $claimBotMessage->title);
         $this->assertSame('John', $claimBotMessage->first_name);
         $this->assertSame('Doe', $claimBotMessage->last_name);
-        $this->assertSame('1', $claimBotMessage->house_no);
+        $this->assertSame('1 Main St, London', $claimBotMessage->house_no);
         $this->assertSame('N1 1AA', $claimBotMessage->postcode);
         $this->assertSame(123.45, $claimBotMessage->amount);
         $this->assertSame('AB12345', $claimBotMessage->org_hmrc_ref);

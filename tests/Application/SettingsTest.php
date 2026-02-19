@@ -1,6 +1,6 @@
 <?php
 
-namespace Application;
+namespace MatchBot\Tests\Application;
 
 use MatchBot\Application\Settings;
 use PHPUnit\Framework\TestCase;

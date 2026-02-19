@@ -17,6 +17,7 @@ use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Clock\ClockInterface;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
 
@@ -41,7 +42,7 @@ class PersonHandlerTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn(null);
         $this->donorAccountRepositoryProphecy
-            ->save(Argument::type(DonorAccount::class))
+            ->save(Argument::type(DonorAccount::class), Argument::type(LoggerInterface::class))
             ->shouldBeCalledOnce();
 
         $container = new Container();

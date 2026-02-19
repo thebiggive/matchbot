@@ -1,7 +1,8 @@
 <?php
 
-namespace MatchBot\Domain;
+namespace MatchBot\Tests\Domain;
 
+use MatchBot\Domain\PersonId;
 use PHPUnit\Framework\TestCase;
 use Ramsey\Uuid\Uuid;
 
