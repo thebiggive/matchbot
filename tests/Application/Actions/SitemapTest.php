@@ -1,20 +1,15 @@
 <?php
 
-namespace MatchBot\Application\Actions;
+namespace MatchBot\Tests\Application\Actions;
 
 use GuzzleHttp\Psr7\ServerRequest;
 use Laminas\Diactoros\Response;
+use MatchBot\Application\Actions\Sitemap;
 use MatchBot\Application\Environment;
-use MatchBot\Domain\Campaign;
-use MatchBot\Domain\CampaignFamily;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\Currency;
-use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\MetaCampaignSlug;
-use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
-use MatchBot\IntegrationTests\IntegrationTest;
 use MatchBot\Tests\TestCase;
 use Psr\Log\NullLogger;
 

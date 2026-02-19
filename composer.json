@@ -34,7 +34,7 @@
         "doctrine/migrations": "^3.7",
         "doctrine/orm": "^2.14.0",
         "fig/http-message-util": "^1.1",
-        "firebase/php-jwt": "^6.3",
+        "firebase/php-jwt": "^7.0",
         "guzzlehttp/guzzle": "^7.9",
         "guzzlehttp/psr7": "^2.7",
         "jetbrains/phpstorm-attributes": "^1.0",

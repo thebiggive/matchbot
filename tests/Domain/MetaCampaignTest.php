@@ -1,6 +1,6 @@
 <?php
 
-namespace MatchBot\Domain;
+namespace MatchBot\Tests\Domain;
 
 use MatchBot\Tests\TestCase;
 

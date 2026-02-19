@@ -1,7 +1,12 @@
 <?php
 
-namespace MatchBot\Domain;
+namespace MatchBot\Tests\Domain;
 
+use MatchBot\Domain\DonorAccount;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\PersonId;
+use MatchBot\Domain\StripeCustomerId;
 use PHPUnit\Framework\TestCase;
 use Ramsey\Uuid\Uuid;
 
