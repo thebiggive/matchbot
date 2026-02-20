@@ -2,8 +2,6 @@
 
 namespace MatchBot\Domain;
 
-use MatchBot\Application\Environment;
-
 class MetaCampaignLayoutChoices
 {
     /**
@@ -31,34 +29,6 @@ class MetaCampaignLayoutChoices
                 textColour: Colour::fromHex('#000000'),
                 focalArea: $focalArea,
                 imageUri: 'https://picsum.photos/id/88/1700/500',
-            ),
-            'women-an-girls-2024' => new BannerLayout(
-                backgroundColour: Colour::fromHex('#F6F6F6'),
-                textBackgroundColour: Colour::fromHex('#6E0887'),
-                textColour: Colour::fromHex('#FFFFFF'),
-                focalArea: $focalArea,
-                imageUri: 'https://d1842m250x5wwk.cloudfront.net/uploads/2025/07/WGMF-Campaign.jpg',
-            ),
-            'christmas-challenge-2025' => new BannerLayout(
-                backgroundColour: Colour::fromHex('#000000'),
-                textBackgroundColour: Colour::fromHex('#B30510'),
-                textColour: Colour::fromHex('#FFFFFF'),
-                focalArea: $focalArea,
-                imageUri: 'https://d1842m250x5wwk.cloudfront.net/uploads/2025/07/double-santa.jpg',
-            ),
-            'k2m25' => new BannerLayout(
-                backgroundColour: Colour::fromHex('#000000'),
-                textBackgroundColour: Colour::fromHex('#62CFC9'),
-                textColour: Colour::fromHex('#000000'),
-                focalArea: $focalArea,
-                imageUri: 'https://d1842m250x5wwk.cloudfront.net/uploads/2025/07/K2M.png',
-            ),
-            'middle-eas-humanitarian-appeal-2024' => new BannerLayout(
-                backgroundColour: Colour::fromHex('#000000'),
-                textBackgroundColour: Colour::fromHex('#FFE500'),
-                textColour: Colour::fromHex('#000000'),
-                focalArea: $focalArea,
-                imageUri: 'https://d1842m250x5wwk.cloudfront.net/uploads/2025/07/DEC.jpg',
             ),
             default => new BannerLayout(
                 backgroundColour: \is_null($campaignBannerUriFromSF) ? Colour::fromHex('#2C089B') : Colour::fromHex('#F6F6F6'),
