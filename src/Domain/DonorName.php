@@ -57,15 +57,16 @@ class DonorName
      * @return DonorName|null
      * @throws \Assert\AssertionFailedException
      */
-    public static function maybeFromFirstAndLast(?string $firstName, ?string $lastName): ?self
+    public static function maybeFromFirstAndLast(?string $firstName, ?string $lastName, bool $isOrganisation = false): ?self
     {
-        $hasFirstName = !is_null($firstName) && $firstName !== '' && $firstName !== 'N/A';
-        $hasLastName = !is_null($lastName) && $lastName !== '' && $lastName !== 'N/A';
-        Assertion::same(
-            $hasFirstName,
-            $hasLastName,
-            "First and last names must be supplied together or not at all."
-        );
+        if ($isOrganisation) {
+            Assertion::notBlank($lastName, 'Last name is required for organisation donors');
+            return DonorName::of('', $lastName);
+        }
+
+        $hasFirstName = !empty($firstName);
+        $hasLastName = !empty($lastName);
+        Assertion::same($hasFirstName, $hasLastName, "First and last names must be supplied together or not at all.");
 
         return ($hasFirstName && $hasLastName) ? DonorName::of($firstName, $lastName) : null;
     }

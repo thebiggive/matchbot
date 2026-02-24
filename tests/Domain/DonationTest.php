@@ -7,7 +7,6 @@ namespace MatchBot\Tests\Domain;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use MatchBot\Application\AssertionFailedException;
-use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\CampaignFunding;
@@ -24,7 +23,6 @@ use MatchBot\Domain\FundType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
-use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
@@ -281,6 +279,7 @@ class DonationTest extends TestCase
                 'paidOutAt' => '2025-05-21T02:17:46+01:00',
                 'payoutSuccessful' => true,
                 'isOffSession' => false,
+                'isOrganisationDonor' => true,
             ],
             $donation->toSFApiModel()
         );
@@ -815,12 +814,12 @@ class DonationTest extends TestCase
     /**
      * @dataProvider namesAndSFSafeLastNames
      */
-    public function testItMakesDonorLastNameSafeForSalesforce(?string $originalName, string $expecteSafeName): void
+    public function testItMakesDonorLastNameSafeForSalesforce(?string $originalName, string $expectedSafeName): void
     {
         $donation = $this->getTestDonation();
-        $donation->setDonorName(DonorName::maybeFromFirstAndLast($originalName, $originalName));
+        $donation->setDonorName(DonorName::maybeFromFirstAndLast(firstName: $originalName, lastName: $originalName, isOrganisation: false));
 
-        $this->assertSame($expecteSafeName, $donation->getDonorLastName(true));
+        $this->assertSame($expectedSafeName, $donation->getDonorLastName(true));
     }
 
     /**
@@ -830,7 +829,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
 
-        $donation->setDonorName(DonorName::maybeFromFirstAndLast($originalName, $originalName));
+        $donation->setDonorName(DonorName::maybeFromFirstAndLast(firstName: $originalName, lastName: $originalName, isOrganisation: false));
 
         $this->assertSame($expecteSafeName, $donation->getDonorFirstName(true));
     }
@@ -1035,25 +1034,24 @@ class DonationTest extends TestCase
     /**
      * @dataProvider namesEnoughForSalesForce
      */
-    public function testItHasEnoughDataForSalesforceOnlyIffBothNamesAreNonEmpty(
-        string $firstName,
-        string $lastName,
+    public function testItHasEnoughDataForSalesforceOnlyIffLastNameIsNonEmpty(
+        string $bothNames,
         bool $isEnoughForSalesforce,
     ): void {
         $donation = $this->getTestDonation();
-        $donation->setDonorName(DonorName::maybeFromFirstAndLast($firstName, $lastName));
+        $donation->setDonorName(DonorName::maybeFromFirstAndLast(firstName: $bothNames, lastName: $bothNames, isOrganisation: false));
         $this->assertSame($isEnoughForSalesforce, $donation->hasEnoughDataForSalesforce());
     }
 
     /**
-     * @return list<array{0: string, 1: string, 2: bool}>
+     * @return list<array{0: string, 1: bool}>
      */
     public function namesEnoughForSalesForce(): array
     {
         return [
-            // first name, last name, is it enough for SF?
-            ['', '', false],
-            ['nonempty', 'nonempty', true],
+            // both names (repeated for each), is it enough for SF?
+            ['', false],
+            ['nonempty', true],
         ];
     }
 

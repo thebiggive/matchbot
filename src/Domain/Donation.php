@@ -685,6 +685,7 @@ class Donation extends SalesforceWriteProxy
             'giftAid' => $this->hasGiftAid(),
             'homeAddress' => $this->getDonorHomeAddressLine1(),
             'homePostcode' => $this->getDonorHomePostcode(),
+            'isOrganisationDonor' => empty($this->donorFirstName) && $this->getDonorLastName(true),
             'lastName' => $this->getDonorLastName(true),
             'matchedAmount' => $this->matchedAmount()->toMajorUnitFloat(),
             'matchReservedAmount' => 0,
@@ -1395,12 +1396,15 @@ class Donation extends SalesforceWriteProxy
         return trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
     }
 
+    /**
+     * MatchBot and Salesforce are both allowing blank first names for orgs so AFAIK first name is
+     * the only field we historically checked that has a hard and fast rule.
+     */
     public function hasEnoughDataForSalesforce(): bool
     {
-        $firstName = $this->getDonorFirstName();
         $lastName = $this->getDonorLastName();
 
-        return is_string($firstName) && $firstName !== '' && is_string($lastName) && $lastName !== '';
+        return is_string($lastName) && $lastName !== '';
     }
 
     public function toClaimBotModel(): Messages\Donation
@@ -1856,12 +1860,7 @@ class Donation extends SalesforceWriteProxy
      */
     private function assertionsForConfirmOrPreAuth(): \Assert\LazyAssertion
     {
-        // Since DON-1188 - consider requiring first name only if donor is an individual not an organisation.
-        // will require passing in the donor account if present or that detail from it.
-        // probably not critical enough to be worth doing now.
-
         return Assert::lazy()
-//            ->that($this->donorFirstName, 'donorFirstName')->notNull('Missing Donor First Name')
             ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
             ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
             ->that($this->donorCountryCode)->notNull('Missing Billing Country')
