@@ -43,6 +43,7 @@ readonly class DonationCreate
         public ?string $tipAmount = '0.00',
         ?string $firstName = null,
         ?string $lastName = null,
+        bool $isOrganisationDonor = false,
         ?string $emailAddress = null,
         public ?bool $giftAid = null,
         public ?bool $tipGiftAid = null,
@@ -53,7 +54,7 @@ readonly class DonationCreate
             EmailAddress::of($emailAddress) :
             null;
 
-        $this->donorName = DonorName::maybeFromFirstAndLast($firstName, $lastName);
+        $this->donorName = DonorName::maybeFromFirstAndLast($firstName, $lastName, $isOrganisationDonor);
 
         $this->projectId = Salesforce18Id::ofCampaign($projectId);
 

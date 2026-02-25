@@ -82,6 +82,7 @@ class DonationNotifier
             'donationDatetime' => $collectedAt->format('c'),
             'donorFirstName' => $donation->getDonorFirstName(),
             'donorLastName' => $donation->getDonorLastName(),
+            'donorGreetingName' => $donation->getDonorFirstName() === '' ? $donation->getDonorLastName() : $donation->getDonorFirstName(), // org name is fallback
             'giftAidAmountClaimed' => (float) $donation->getGiftAidValue(),
 
             'matchedAmount' => $donation->matchedAmount()->toMajorUnitFloat(),
