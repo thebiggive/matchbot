@@ -57,6 +57,7 @@ class DonationNotifierTest extends TestCase
                     'donationAmount' => 10.0,
                     'donationDatetime' => '2025-03-06T18:46:39+00:00',
                     'donorFirstName' => 'Genny',
+                    'donorGreetingName' => 'Genny',
                     'donorLastName' => 'Jenerous',
                     'giftAidAmountClaimed' => 2.50,
 
