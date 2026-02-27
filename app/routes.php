@@ -42,6 +42,7 @@ return function (App $app) {
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
+
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
             $group->get('', Donations\Get::class);
             $group->put('', Donations\Update::class); // Includes cancelling.
@@ -49,6 +50,8 @@ return function (App $app) {
             $group->post('/remove-matching-expectation', Donations\RemoveMatchingExpecation::class);
         })
             ->add(DonationPublicAuthMiddleware::class);
+
+        $versionGroup->get('/donations/{donationId:[a-z0-9-]{36}}/explain', Donations\Explain::class);
 
         $versionGroup->post(
             '/donations/{donationId:[a-z0-9-]{36}}/send-donor-thanks-email',
