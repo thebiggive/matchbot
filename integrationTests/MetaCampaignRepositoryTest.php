@@ -147,7 +147,7 @@ class MetaCampaignRepositoryTest extends IntegrationTest
                 metaCampaignSlug: $metaCampaign->getSlug(),
                 amountPledged: Money::fromNumericStringGBP('100.00'),
                 totalFundingAllocation: Money::fromNumericStringGBP('100.00'),
-                status: 'Preview', // doesn't count towards total as preview
+                status: 'Preview', // does also count towards total as preview
             ),
         ];
 
@@ -156,6 +156,6 @@ class MetaCampaignRepositoryTest extends IntegrationTest
 
         $matchFundsTotal = $this->sut->matchFundsTotal($metaCampaign);
 
-        $this->assertEquals(Money::fromNumericStringGBP('40.00'), $matchFundsTotal);
+        $this->assertEquals(Money::fromNumericStringGBP('240.00'), $matchFundsTotal);
     }
 }

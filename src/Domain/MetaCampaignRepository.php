@@ -164,7 +164,7 @@ class MetaCampaignRepository
 
         $matchedFundQuery->setParameters([
             'slug' => $metaCampaign->getSlug()->slug,
-            'status' => ['Active', 'Expired', null]
+            'status' => ['Preview', 'Active', 'Expired', null]
         ]);
 
         try {
