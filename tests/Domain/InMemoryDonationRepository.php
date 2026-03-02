@@ -228,4 +228,10 @@ class InMemoryDonationRepository implements DonationRepository
             fn(Donation $d) => $d->getFundingWithdrawalTotalAsObject()->moreThan(Money::fromNumericString($d->getAmount(), $d->currency()))
         ));
     }
+
+    #[\Override]
+    public function potentiallyCompetingDonations(Donation $donation): never
+    {
+        throw new \Exception("Method not implemented in test double");
+    }
 }

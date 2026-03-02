@@ -15,6 +15,7 @@ use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
+use MatchBot\Tests\Domain\DonationServiceTest;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -41,7 +42,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
         // we only expire donations that were created before this point.
-        $expireBefore = $now->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
+        $expireBefore = $now->sub(self::expiryDateInterval());
 
         // and we only need to expire donations that were create AFTER this point, because if they were created at
         // before it we would have already expired them in a previous run.
@@ -798,5 +799,33 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         /** @var list<Donation> $result */
         $result = $query->getResult();
         return $result;
+    }
+
+    #[\Override]
+    public function potentiallyCompetingDonations(Donation $donation): array
+    {
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT d FROM MatchBot\Domain\Donation d
+            WHERE d.createdAt > :earliest 
+           AND d.createdAt < :latest
+           and d.campaign = :campaign
+           AND d.donationStatus IN (:incompleteStatuses)
+        DQL
+        );
+
+        $query->setParameter('earliest', $donation->getCreatedDateImmutable()->sub(self::expiryDateInterval()));
+        $query->setParameter('latest', $donation->getCreatedDateImmutable());
+        $query->setParameter('incompleteStatuses', [DonationStatus::Pending, DonationStatus::PreAuthorized, DonationStatus::Cancelled, DonationStatus::Refunded]);
+        $query->setParameter('campaign', $donation->getCampaign());
+
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
+
+    private static function expiryDateInterval(): \DateInterval
+    {
+        return new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S');
     }
 }

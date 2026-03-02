@@ -5,9 +5,13 @@ namespace MatchBot\Application\Actions\Donations;
 use Assert\Assertion;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Environment;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\MetaCampaignRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -17,11 +21,13 @@ use Slim\Exception\HttpNotFoundException;
 /**
  * Provides a plain-text explanation of a donation and what happened with it for internal use by Big Give staff.
  */
-class Explain extends  Action {
+class Explain extends Action
+{
     public function __construct(
         LoggerInterface $logger,
-        private DonationService $donationService,
         private DonationRepository $donationRepository,
+        private CampaignService $campaignService,
+        private MetaCampaignRepository $metaCampaignRepository,
     ) {
         parent::__construct($logger);
     }
@@ -51,7 +57,14 @@ class Explain extends  Action {
 
         $text = "Donation Details\n\n";
 
+        $campaign = $donation->getCampaign();
+        $text .= "Campaign: {$campaign->getSalesforceId()} '{$campaign->getCampaignName()}' for '{$campaign->getCharity()->getName()}'\n";
+        $text .= "Target (generally 2x total match funds): " .
+            $this->campaignService->campaignTarget($campaign, $this->metaCampaignRepository->getBySlug($campaign->getMetaCampaignSlug()))->format();
+        $text .= "\n--------------------------------------------------------\n\n";
+
         $text .= "{$donation->getDescription()}\n--------------------------------------------------------\n\n\n";
+
 
         $i = 0;
 
@@ -66,11 +79,43 @@ class Explain extends  Action {
                     $value = json_encode($value);
 
                     return sprintf('%-40s %s', $key . ':', $value) . ($i % 5 === 0 ? "\n" : "");
-                }, array_keys($d), $d)
+            }, array_keys($d), $d)
             |> (fn($d) => \implode("\n", $d)));
+
+
+        $text .= "\n\nFunding Withdrawals:\n\n";
+
+        $fundingWithdrawals = $donation->getFundingWithdrawals()->toArray();
+        $fundingWithdrawalText = $fundingWithdrawals
+            |> (fn(array $withdrawals) => \array_map($this->renderFundingWithdrawal(...), $withdrawals))
+            |> (fn(array $d): string => \implode("\n", $d));
+
+        $text .= $fundingWithdrawals === []  ? 'None' : $fundingWithdrawalText;
+
+        $text .= "\n\nPotentially competing donations\n\n";
+        $text .= "These are incomplete donations initiated just before this one that may have been competing for donation funds. \n";
+        $text .= "Note that the list only includes donations to the same campaign - if the campaign used shared funds ";
+        $text .= "then other donations may have affected funds available at the time.\n\n";
+
+        $competingDonations = $this->donationRepository->potentiallyCompetingDonations($donation);
+        $competingDonationText = $competingDonations
+            |> (fn(array $donations) => \array_map(fn(Donation $d) => "   -  {$d->getSalesforceId()}: {$d->getAmount()}"
+                    . " {$d->currency()->isoCode()} ({$d->getDonationStatus()->name}) "
+                    . "created {$d->getCreatedDate()->format(\DateTime::ATOM)}", $donations))
+            |> (fn(array $d): string => \implode("\n", $d));
+
+        $text .= $competingDonations === []  ? 'None' : $competingDonationText;
 
         $response->getBody()->write($text);
 
         return $response->withHeader('content-type', 'text/plain');
+    }
+
+    private function renderFundingWithdrawal(FundingWithdrawal $fundingWithdrawal): string
+    {
+        $campaignFunding = $fundingWithdrawal->getCampaignFunding();
+        $fund = $campaignFunding->getFund();
+        $fundName = $fund->getName();
+        return "   - {$fundingWithdrawal->getAmount()} from {$fund->getFundType()->name} '$fundName' (SF: {$fund->getSalesforceId()})";
     }
 }
