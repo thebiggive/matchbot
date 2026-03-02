@@ -187,4 +187,12 @@ interface DonationRepository
      * @return list<Donation>
      */
     public function findOverMatchedDonations(): array;
+
+    /**
+     * Returns a list of donations that may have been temporarily holding funds and therefore blocking the given
+     * donation from being fully matched at the time it was initiated.
+     *
+     * @return list<Donation>
+     */
+    public function potentiallyCompetingDonations(Donation $donation): array;
 }
