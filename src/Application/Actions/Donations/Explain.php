@@ -59,8 +59,12 @@ class Explain extends Action
 
         $campaign = $donation->getCampaign();
         $text .= "Campaign: {$campaign->getSalesforceId()} '{$campaign->getCampaignName()}' for '{$campaign->getCharity()->getName()}'\n";
+        $metaCampaignSlug = $campaign->getMetaCampaignSlug();
         $text .= "Target (generally 2x total match funds): " .
-            $this->campaignService->campaignTarget($campaign, $this->metaCampaignRepository->getBySlug($campaign->getMetaCampaignSlug()))->format();
+            $this->campaignService->campaignTarget(
+                $campaign,
+                $metaCampaignSlug ? $this->metaCampaignRepository->getBySlug($metaCampaignSlug) : null
+            )->format();
         $text .= "\n--------------------------------------------------------\n\n";
 
         $text .= "{$donation->getDescription()}\n--------------------------------------------------------\n\n\n";
