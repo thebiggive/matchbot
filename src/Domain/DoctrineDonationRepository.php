@@ -183,7 +183,10 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             ->andWhere('c.endDate > :campaignClosedSince')
             ->andWhere('fw.releasedAt is null')
             ->groupBy('d.id')
-            ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
+            ->having(
+                '(SUM(CASE if fw.releasedAt is null THEN fw.amount ELSE 0 END) IS NULL 
+                      OR SUM(CASE if fw.releasedAt is null THEN fw.amount ELSE 0 END) < d.amount)'
+            ) // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter(
                 'completeStatuses',
@@ -215,9 +218,11 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             ->where('d.donationStatus IN (:completeStatuses)')
             ->andWhere('c.isMatched = true')
             ->andWhere('d.createdAt >= :checkAfter')
-            ->andWhere('fw.releasedAt is null')
             ->groupBy('d.id')
-            ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
+            ->having(
+                '(SUM(CASE if fw.releasedAt is null THEN fw.amount ELSE 0 END) IS NULL 
+                      OR SUM(CASE if fw.releasedAt is null THEN fw.amount ELSE 0 END) < d.amount)'
+            ) // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter(
                 'completeStatuses',
