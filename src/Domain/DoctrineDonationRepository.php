@@ -67,6 +67,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             -- that longer than the timeout for matching, we still want to ensure matching can't be
             -- lost while 3DS is in progress.
             AND d.mandate is null
+            AND fw.releasedAt is null
             GROUP BY d.id
             DQL
         )
@@ -106,6 +107,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             AND d.collectedAt > :donationsCollectedAfter
             -- Only consider CampaignFundings with lower allocationOrder than `fw`'s.
             AND availableFund.allocationOrder < donationFund.allocationOrder
+            AND fw.releasedAt is null
             GROUP BY d.id
             ORDER BY d.id ASC
         DQL
@@ -179,6 +181,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             ->andWhere('c.isMatched = true')
             ->andWhere('c.endDate < :now')
             ->andWhere('c.endDate > :campaignClosedSince')
+            ->andWhere('fw.releasedAt is null')
             ->groupBy('d.id')
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
@@ -212,6 +215,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             ->where('d.donationStatus IN (:completeStatuses)')
             ->andWhere('c.isMatched = true')
             ->andWhere('d.createdAt >= :checkAfter')
+            ->andWhere('fw.releasedAt is null')
             ->groupBy('d.id')
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
@@ -260,7 +264,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             LEFT JOIN d.fundingWithdrawals fw
             WHERE d.createdAt >= :start
             AND d.createdAt < :end
-            HAVING SUM(fw.amount) > 0
+            HAVING (SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END )) > 0
         DQL
         );
         $query->setParameter('start', $sixteenMinutesPrior);
@@ -792,7 +796,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             SELECT d FROM MatchBot\Domain\Donation d
             LEFT JOIN d.fundingWithdrawals fw
             GROUP BY d.id
-            HAVING SUM(fw.amount) > d.amount
+            HAVING (SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END )) > d.amount
         DQL
         );
 

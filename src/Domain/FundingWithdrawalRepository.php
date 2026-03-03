@@ -22,6 +22,7 @@ class FundingWithdrawalRepository extends EntityRepository
             ->select('SUM(fw.amount)')
             ->from(FundingWithdrawal::class, 'fw')
             ->where('fw.campaignFunding = :campaignFunding')
+            ->andWhere('fw.releasedAt is null')
             ->setParameter('campaignFunding', $campaignFunding->getId());
 
         $amount = (string) $qb->getQuery()->getSingleScalarResult();
