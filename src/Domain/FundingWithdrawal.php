@@ -87,4 +87,13 @@ class FundingWithdrawal extends Model
     {
         return $this->releasedAt !== null;
     }
+
+    public function release(\DateTimeImmutable $at): void
+    {
+        if ($this->releasedAt !== null) {
+            return;
+        }
+
+        $this->releasedAt = $at;
+    }
 }

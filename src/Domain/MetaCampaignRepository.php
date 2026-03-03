@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\NoResultException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 
 /**
  * @psalm-suppress UnusedProperty - likely to be used soon
