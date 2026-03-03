@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
-use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Exception\TransferException;
 use MatchBot\Application\AssertionFailedException;
+use MatchBot\Application\Environment;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -27,6 +27,7 @@ class UpdateCampaigns extends LockingCommand
         private CampaignRepository $campaignRepository,
         /** @var EntityManager|EntityManagerInterface $entityManager */
         private EntityManagerInterface $entityManager,
+        private Environment $environment,
         private FundRepository $fundRepository,
         private LoggerInterface $logger,
         private \DateTimeImmutable $now,
@@ -53,7 +54,7 @@ EOT
             /** @var Campaign[] $campaigns */
             $campaigns = $this->campaignRepository->findAll();
         } else {
-            $campaigns = $this->campaignRepository->findCampaignsThatNeedToBeUpToDate();
+            $campaigns = $this->campaignRepository->findCampaignsThatNeedToBeUpToDate($this->environment);
         }
 
         foreach ($campaigns as $campaign) {
