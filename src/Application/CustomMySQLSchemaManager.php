@@ -44,7 +44,12 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
 
         return array_filter(
             $columns,
-            static fn($column) => !in_array([$table, $column->getName()], self::GENERATED_COLUMNS, true),
+            static fn($column) => !in_array(
+                needle: [$table, $column->getName()],
+                // releasedAt is new, want to wait until its in prod DB before we allow the ORM to rely on it.
+                haystack: [...self::GENERATED_COLUMNS, ['FundingWithdrawal', 'releasedAt']],
+                strict: true,
+            ),
         );
     }
 }
