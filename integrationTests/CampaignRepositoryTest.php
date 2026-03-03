@@ -6,6 +6,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -19,7 +20,11 @@ use Random\Randomizer;
 
 class CampaignRepositoryTest extends IntegrationTest
 {
-    public function testItFindsANineMonthOldCampaignForACharityAwaitingGiftAidApproval(): void
+    /**
+     * We now use a 14 day cut-off for test mode but this covers the logic equivalent to the 9 month
+     * look-back in Production.
+     */
+    public function testItFindsAnOldCampaignForACharityAwaitingGiftAidApproval(): void
     {
         // arrange
         $sut = $this->getService(CampaignRepository::class);
@@ -28,8 +33,8 @@ class CampaignRepositoryTest extends IntegrationTest
             $this->randomCampaignId(),
             metaCampaignSlug: null,
             charity: $this->getCharityAwaitingGiftAidApproval(),
-            startDate: new \DateTimeImmutable('-10 months'), // less than the 9 month limit
-            endDate: new \DateTimeImmutable(-29 * 9 . 'days'),
+            startDate: new \DateTimeImmutable('-15 days'), // earlier than the extended cutoff limit
+            endDate: new \DateTimeImmutable('-13 days'), // within the extended cutoff window
             isMatched: true,
             ready: true,
             status: null,
@@ -58,7 +63,7 @@ class CampaignRepositoryTest extends IntegrationTest
         $newCampaignId = $campaign->getId();
 
         // act
-        $campaignsFromDB = $sut->findCampaignsThatNeedToBeUpToDate();
+        $campaignsFromDB = $sut->findCampaignsThatNeedToBeUpToDate(Environment::Test);
 
         // assert
 
@@ -113,7 +118,7 @@ class CampaignRepositoryTest extends IntegrationTest
         $newCampaignId = $campaign->getId();
 
         // act
-        $campaignsFromDB = $sut->findCampaignsThatNeedToBeUpToDate();
+        $campaignsFromDB = $sut->findCampaignsThatNeedToBeUpToDate(Environment::Test);
 
         // assert
 

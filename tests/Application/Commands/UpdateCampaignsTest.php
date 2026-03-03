@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Request;
 use MatchBot\Application\Commands\UpdateCampaigns;
+use MatchBot\Application\Environment;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -35,7 +36,7 @@ class UpdateCampaignsTest extends TestCase
     {
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('SOMeCAMPaIGNIdXXXX'));
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->findCampaignsThatNeedToBeUpToDate()
+        $campaignRepoProphecy->findCampaignsThatNeedToBeUpToDate(Environment::Test)
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
         $campaignRepoProphecy->updateFromSf($campaign)->shouldBeCalledOnce();
@@ -46,6 +47,7 @@ class UpdateCampaignsTest extends TestCase
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
             $this->getContainer()->get(EntityManagerInterface::class),
+            Environment::Test,
             $fundRepoProphecy->reveal(),
             new NullLogger(),
             $this->now,
@@ -73,7 +75,7 @@ class UpdateCampaignsTest extends TestCase
             sfId: Salesforce18Id::ofCampaign('MISsINGOnSFIDxXXXX'),
         );
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->findCampaignsThatNeedToBeUpToDate()
+        $campaignRepoProphecy->findCampaignsThatNeedToBeUpToDate(Environment::Test)
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
         $campaignRepoProphecy->updateFromSf($campaign)->willThrow(NotFoundException::class)->shouldBeCalledOnce();
@@ -84,6 +86,7 @@ class UpdateCampaignsTest extends TestCase
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
             $this->getContainer()->get(EntityManagerInterface::class),
+            Environment::Test,
             $fundRepoProphecy->reveal(),
             new NullLogger(),
             $this->now
@@ -116,7 +119,7 @@ class UpdateCampaignsTest extends TestCase
         )
         ;
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->findCampaignsThatNeedToBeUpToDate()
+        $campaignRepoProphecy->findCampaignsThatNeedToBeUpToDate(Environment::Test)
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
         $campaignRepoProphecy->updateFromSf($campaign)
@@ -129,6 +132,7 @@ class UpdateCampaignsTest extends TestCase
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
             $this->getContainer()->get(EntityManagerInterface::class),
+            Environment::Test,
             $fundRepoProphecy->reveal(),
             new NullLogger(),
             $this->now
@@ -188,6 +192,7 @@ class UpdateCampaignsTest extends TestCase
         $command = new UpdateCampaigns(
             $campaignRepo,
             $this->getContainer()->get(EntityManagerInterface::class),
+            Environment::Test,
             $fundRepoProphecy->reveal(),
             new NullLogger(),
             $this->now
@@ -227,6 +232,7 @@ class UpdateCampaignsTest extends TestCase
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
             $this->getContainer()->get(EntityManagerInterface::class),
+            Environment::Test,
             $fundRepoProphecy->reveal(),
             new NullLogger(),
             $this->now

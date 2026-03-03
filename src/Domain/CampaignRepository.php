@@ -9,6 +9,7 @@ use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
+use MatchBot\Application\Environment;
 use MatchBot\Client;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
@@ -47,8 +48,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
      *
      * @return Campaign[]
      */
-    public function findCampaignsThatNeedToBeUpToDate(): array
+    public function findCampaignsThatNeedToBeUpToDate(Environment $environment): array
     {
+        // Allow up to 9 months for us to get full HMRC approval in Production, and keep checking.
+        // Give up sooner in test environments where we often won't catch the data up.
+        $extendedLookbackExpression = $environment->isProduction() ? 'P9M' : 'P14D';
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT c FROM MatchBot\Domain\Campaign c
             INNER JOIN c.charity charity
@@ -63,7 +67,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
         $query->setParameters([
             'shortLookBackDate' => (new DateTime('now'))->sub(new \DateInterval('P7D')),
-            'extendedLookbackDate' => (new DateTime('now'))->sub(new \DateInterval('P9M')),
+            'extendedLookbackDate' => (new DateTime('now'))->sub(new \DateInterval($extendedLookbackExpression)),
         ]);
 
         /** @var Campaign[] $campaigns */

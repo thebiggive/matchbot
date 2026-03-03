@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityRepository;
-use MatchBot\Application\Assertion;
 
 /**
  * @extends EntityRepository<FundingWithdrawal>
