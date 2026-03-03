@@ -29,11 +29,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
-use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
-use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
-use Symfony\Component\Notifier\ChatterInterface;
-use Symfony\Component\Notifier\Message\ChatMessage;
 
 #[AsCommand(
     name: 'matchbot:collect-regular-giving',
@@ -42,8 +37,6 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 class TakeRegularGivingDonations extends LockingCommand
 {
     private const int MAXBATCHSIZE = 500;
-
-    private bool $reportableEventHappened = false;
 
     public function __construct(
         private Container $container,
@@ -54,7 +47,6 @@ class TakeRegularGivingDonations extends LockingCommand
         private Environment $environment,
         private LoggerInterface $logger,
         private RegularGivingService $mandateService,
-        private ChatterInterface $chatter
     ) {
         parent::__construct();
 
@@ -116,12 +108,6 @@ class TakeRegularGivingDonations extends LockingCommand
         $outputText = $bufferedOutput->fetch();
         $output->writeln($outputText);
 
-        // temporarily removed if condition below (and catch later) since sending report to Slack didn't seem to work
-        // this morning when it should have been true and I want to see why.
-        if ($this->reportableEventHappened) {
-            $this->sendReport($this->truncate($outputText));
-        }
-
         return 0;
     }
 
@@ -144,7 +130,6 @@ class TakeRegularGivingDonations extends LockingCommand
             try {
                 $donation = $this->makeDonationForMandate($mandate);
                 if ($donation) {
-                    $this->reportableEventHappened = true;
                     $io->writeln("created donation {$donation}");
                 }
             } catch (AssertionFailedException | WrongCampaignType $e) {
@@ -165,7 +150,6 @@ class TakeRegularGivingDonations extends LockingCommand
         $io->block(count($donations) . " donations are due to have Payment Intent set at this time");
 
         foreach ($donations as $donation) {
-            $this->reportableEventHappened = true;
             try {
                 $this->donationService->createAndAssociatePaymentIntent($donation);
                 $io->writeln("setting payment intent on donation {$donation->getUuid()}");
@@ -205,8 +189,6 @@ class TakeRegularGivingDonations extends LockingCommand
                 " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>
                 "
             );
-
-            $this->reportableEventHappened = true; // Only for those not skipped above.
 
             try {
                 try {
@@ -266,35 +248,5 @@ class TakeRegularGivingDonations extends LockingCommand
         $this->em->flush();
 
         return $donation;
-    }
-
-    private function sendReport(string $outputText): void
-    {
-        if ($this->environment === Environment::Regression) {
-            return;
-        }
-
-        $chatMessage = new ChatMessage('Regular giving collection report');
-
-        $options = (new SlackOptions())
-            ->block((new SlackHeaderBlock(sprintf(
-                '[%s] %s',
-                $this->environment->name,
-                'Regular giving collection report',
-            ))))
-            ->block((new SlackSectionBlock())->text($outputText));
-        $chatMessage->options($options);
-
-        $this->chatter->send($chatMessage);
-    }
-
-    /**
-     * Truncates a string to a length we can send to Slack
-     */
-    private function truncate(string $string): string
-    {
-        return (strlen($string) > 3_000) ?
-            substr($string, 0, 2_950) . "...\n\nReport truncated to fit in slack\n" :
-            $string;
     }
 }
