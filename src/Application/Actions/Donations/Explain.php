@@ -76,8 +76,21 @@ class Explain extends Action
 
         ksort($donationDetails);
 
+        // only include the most basic fields and ones about matching, to reduce stuff to read shown here.
+        $relevantFields = [
+            'amountMatchedByChampionFunds',
+            'amountMatchedByPledges',
+            'collectedTime',
+            'createdTime',
+            'donationAmount',
+            'matchReservedAmount',
+            'matchedAmount',
+            'status'
+        ];
+
         $text .=
             $donationDetails
+            |> (fn($d) => \array_filter($d, fn(string $key) => \in_array($key, $relevantFields, true), \ARRAY_FILTER_USE_KEY))
             |> (fn($d) => \array_map(function ($key, $value) use (&$i) {
                     $i++;
                     $value = json_encode($value);
@@ -113,12 +126,13 @@ class Explain extends Action
         return $response->withHeader('content-type', 'text/plain');
     }
 
-    private function renderFundingWithdrawal(FundingWithdrawal $fundingWithdrawal): string
+    private function renderFundingWithdrawal(FundingWithdrawal $fw): string
     {
-        $campaignFunding = $fundingWithdrawal->getCampaignFunding();
+        $campaignFunding = $fw->getCampaignFunding();
         $fund = $campaignFunding->getFund();
-        $fundName = $fund->getName();
-        return "   - {$fundingWithdrawal->getAmount()} from {$fund->getFundType()->name} '$fundName' (SF: {$fund->getSalesforceId()})";
+
+        return "         {$fw->getAmount()} from {$fund->getName()} {$fund->getSalesforceId()}" .
+            ($fw->isReleased() ? ", released {$fw->releasedAt->format(\DateTimeImmutable::ATOM)}" : ", not released");
     }
 
     private function renderOtherDonation(Donation $donation): string
@@ -132,9 +146,7 @@ class Explain extends Action
         if (! $fundingWithdrawals->isEmpty()) {
             $ret .= "      Funding withdrawals:\n";
             foreach ($fundingWithdrawals as $fw) {
-                $fund = $fw->getCampaignFunding()->getFund();
-                $ret .= "         {$fw->getAmount()} from {$fund->getName()} {$fund->getSalesforceId()}" .
-                    ($fw->isReleased() ? ", released {$fw->releasedAt->format(\DateTimeImmutable::ATOM)}" : ", not released");
+                $ret .= $this->renderFundingWithdrawal($fw) . "\n" ;
             }
         }
 
