@@ -51,7 +51,8 @@ return function (App $app) {
         })
             ->add(DonationPublicAuthMiddleware::class);
 
-        $versionGroup->get('/donations/{donationId:[a-z0-9-]{36}}/explain', Donations\Explain::class);
+        $versionGroup->get('/donations/{donationId:[a-z0-9-]{36}}/explain', Donations\Explain::class)
+            ->add(SalesforceAuthMiddleware::class);
 
         $versionGroup->post(
             '/donations/{donationId:[a-z0-9-]{36}}/send-donor-thanks-email',
