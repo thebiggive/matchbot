@@ -123,8 +123,21 @@ class Explain extends Action
 
     private function renderOtherDonation(Donation $donation): string
     {
-        return "   -  {$donation->getSalesforceId()}: {$donation->getAmount()}"
+        $ret = "";
+        $ret .= "   -  {$donation->getSalesforceId()}: {$donation->getAmount()}"
             . " {$donation->currency()->isoCode()} ({$donation->getDonationStatus()->name}) "
-            . "created {$donation->getCreatedDate()->format(\DateTime::ATOM)}";
+            . "created {$donation->getCreatedDate()->format(\DateTime::ATOM)}\n";
+
+        $fundingWithdrawals = $donation->getFundingWithdrawals();
+        if (! $fundingWithdrawals->isEmpty()) {
+            $ret .= "      Funding withdrawals:\n";
+            foreach ($fundingWithdrawals as $fw) {
+                $fund = $fw->getCampaignFunding()->getFund();
+                $ret .= "         {$fw->getAmount()} from {$fund->getName()} {$fund->getSalesforceId()}" .
+                    ($fw->isReleased() ? ", released {$fw->releasedAt->format(\DateTimeImmutable::ATOM)}" : ", not released");
+            }
+        }
+
+        return $ret;
     }
 }

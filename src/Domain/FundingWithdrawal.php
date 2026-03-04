@@ -41,7 +41,7 @@ class FundingWithdrawal extends Model
      * was cancelled), so is now of historical interest only and should not count towards current totals.
      */
     #[ORM\Column(nullable: true)]
-    private \DateTimeImmutable|null $releasedAt = null;
+    private(set) \DateTimeImmutable|null $releasedAt = null;
 
     /**
      * @param CampaignFunding $campaignFunding
