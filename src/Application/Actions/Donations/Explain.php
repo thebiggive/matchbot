@@ -103,9 +103,7 @@ class Explain extends Action
 
         $competingDonations = $this->donationRepository->potentiallyCompetingDonations($donation);
         $competingDonationText = $competingDonations
-            |> (fn(array $donations) => \array_map(fn(Donation $d) => "   -  {$d->getSalesforceId()}: {$d->getAmount()}"
-                    . " {$d->currency()->isoCode()} ({$d->getDonationStatus()->name}) "
-                    . "created {$d->getCreatedDate()->format(\DateTime::ATOM)}", $donations))
+            |> (fn(array $donations) => \array_map($this->renderOtherDonation(...), $donations))
             |> (fn(array $d): string => \implode("\n", $d));
 
         $text .= $competingDonations === []  ? 'None' : $competingDonationText;
@@ -121,5 +119,12 @@ class Explain extends Action
         $fund = $campaignFunding->getFund();
         $fundName = $fund->getName();
         return "   - {$fundingWithdrawal->getAmount()} from {$fund->getFundType()->name} '$fundName' (SF: {$fund->getSalesforceId()})";
+    }
+
+    private function renderOtherDonation(Donation $donation): string
+    {
+        return "   -  {$donation->getSalesforceId()}: {$donation->getAmount()}"
+            . " {$donation->currency()->isoCode()} ({$donation->getDonationStatus()->name}) "
+            . "created {$donation->getCreatedDate()->format(\DateTime::ATOM)}";
     }
 }
