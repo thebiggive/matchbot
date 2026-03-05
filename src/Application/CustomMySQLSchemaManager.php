@@ -47,7 +47,7 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
             static fn($column) => !in_array(
                 needle: [$table, $column->getName()],
                 // releasedAt is new, want to wait until its in prod DB before we allow the ORM to rely on it.
-                haystack: [...self::GENERATED_COLUMNS, ['FundingWithdrawal', 'releasedAt']],
+                haystack: self::GENERATED_COLUMNS,
                 strict: true,
             ),
         );

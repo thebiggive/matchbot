@@ -36,14 +36,12 @@ class FundingWithdrawal extends Model
     #[ORM\ManyToOne(targetEntity: CampaignFunding::class, fetch: 'EAGER', inversedBy: 'fundingWithdrawals')]
     private readonly CampaignFunding $campaignFunding; // @phpstan-ignore doctrine.associationType
 
-// Commented out for now to allow zero-downtime deployment adding the DB column first before we add the PHP field that
-// relies on it:
-//    /**
-//     * If non-null indicates that this FW has now been released (e.g. because the related inchoate donation expired or
-//     * was cancelled), so is now of historical interest only and should not count towards current totals.
-//     */
-//    #[ORM\Column(nullable: true)]
-//    private \DateTimeImmutable|null $releasedAt = null;
+    /**
+     * If non-null indicates that this FW has now been released (e.g. because the related inchoate donation expired or
+     * was cancelled), so is now of historical interest only and should not count towards current totals.
+     */
+    #[ORM\Column(nullable: true)]
+    private \DateTimeImmutable|null $releasedAt = null;
 
     /**
      * @param CampaignFunding $campaignFunding
@@ -83,5 +81,10 @@ class FundingWithdrawal extends Model
     public function getCampaignFunding(): CampaignFunding
     {
         return $this->campaignFunding;
+    }
+
+    public function isReleased(): bool
+    {
+        return $this->releasedAt !== null;
     }
 }

@@ -914,6 +914,10 @@ class Donation extends SalesforceWriteProxy
     {
         $withdrawalTotal = '0.00';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
+            if ($fundingWithdrawal->isReleased()) {
+                continue;
+            }
+
             $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
         }
 
@@ -947,6 +951,10 @@ class Donation extends SalesforceWriteProxy
         ];
 
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
+            if ($fundingWithdrawal->isReleased()) {
+                continue;
+            }
+
             $fundTypeOfThisWithdrawal = $fundingWithdrawal->getCampaignFunding()->getFund()->getFundType();
 
             // I don't think the match.unhandled error from phpstan here can be right - we handle 12 cases: 3 cases of enum * 2 values of bool * 2 values of bool
