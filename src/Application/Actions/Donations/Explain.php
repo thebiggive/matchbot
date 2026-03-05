@@ -1,0 +1,125 @@
+<?php
+
+namespace MatchBot\Application\Actions\Donations;
+
+use Assert\Assertion;
+use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Environment;
+use MatchBot\Domain\CampaignService;
+use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
+use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
+use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\MetaCampaignRepository;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
+use Slim\Exception\HttpNotFoundException;
+
+/**
+ * Provides a plain-text explanation of a donation and what happened with it for internal use by Big Give staff.
+ */
+class Explain extends Action
+{
+    public function __construct(
+        LoggerInterface $logger,
+        private DonationRepository $donationRepository,
+        private CampaignService $campaignService,
+        private MetaCampaignRepository $metaCampaignRepository,
+    ) {
+        parent::__construct($logger);
+    }
+
+    #[\Override]
+    protected function action(Request $request, Response $response, array $args): Response
+    {
+        if (Environment::current() === Environment::Production) {
+            // either work out how to do authentication and authorisation for BG staff (my preferred option - BL,
+            // probably somehow by requiring them to be logged in to Salesforce first) or ensure there are no
+            // confidential details output before removing this throw.
+            throw new HttpNotFoundException($request);
+        }
+
+        Assertion::keyExists($args, "donationId");  // shoould always exist as is defined in routes.php
+        $donationUUID = $args['donationId'];
+        Assertion::string($donationUUID);
+        if ($donationUUID === '') {
+            throw new DomainRecordNotFoundException('Missing donation ID');
+        }
+
+        $donation = $this->donationRepository->findOneByUUID(Uuid::fromString($donationUUID));
+        if (! $donation) {
+            throw new DomainRecordNotFoundException('Missing donation');
+        }
+
+
+        $text = "Donation Details\n\n";
+
+        $campaign = $donation->getCampaign();
+        $text .= "Campaign: {$campaign->getSalesforceId()} '{$campaign->getCampaignName()}' for '{$campaign->getCharity()->getName()}'\n";
+        $metaCampaignSlug = $campaign->getMetaCampaignSlug();
+        $text .= "Target (generally 2x total match funds): " .
+            $this->campaignService->campaignTarget(
+                $campaign,
+                $metaCampaignSlug ? $this->metaCampaignRepository->getBySlug($metaCampaignSlug) : null
+            )->format();
+        $text .= "\n--------------------------------------------------------\n\n";
+
+        $text .= "{$donation->getDescription()}\n--------------------------------------------------------\n\n\n";
+
+
+        $i = 0;
+
+        $donationDetails = $donation->toFrontEndApiModel() + $donation->toSFApiModel();
+
+        ksort($donationDetails);
+
+        $text .=
+            $donationDetails
+            |> (fn($d) => \array_map(function ($key, $value) use (&$i) {
+                    $i++;
+                    $value = json_encode($value);
+
+                    return sprintf('%-40s %s', $key . ':', $value) . ($i % 5 === 0 ? "\n" : "");
+            }, array_keys($d), $d)
+            |> (fn($d) => \implode("\n", $d)));
+
+
+        $text .= "\n\nFunding Withdrawals:\n\n";
+
+        $fundingWithdrawals = $donation->getFundingWithdrawals()->toArray();
+        $fundingWithdrawalText = $fundingWithdrawals
+            |> (fn(array $withdrawals) => \array_map($this->renderFundingWithdrawal(...), $withdrawals))
+            |> (fn(array $d): string => \implode("\n", $d));
+
+        $text .= $fundingWithdrawals === []  ? 'None' : $fundingWithdrawalText;
+
+        $text .= "\n\nPotentially competing donations\n\n";
+        $text .= "These are incomplete donations initiated just before this one that may have been competing for donation funds. \n";
+        $text .= "Note that the list only includes donations to the same campaign - if the campaign used shared funds ";
+        $text .= "then other donations may have affected funds available at the time.\n\n";
+
+        $competingDonations = $this->donationRepository->potentiallyCompetingDonations($donation);
+        $competingDonationText = $competingDonations
+            |> (fn(array $donations) => \array_map(fn(Donation $d) => "   -  {$d->getSalesforceId()}: {$d->getAmount()}"
+                    . " {$d->currency()->isoCode()} ({$d->getDonationStatus()->name}) "
+                    . "created {$d->getCreatedDate()->format(\DateTime::ATOM)}", $donations))
+            |> (fn(array $d): string => \implode("\n", $d));
+
+        $text .= $competingDonations === []  ? 'None' : $competingDonationText;
+
+        $response->getBody()->write($text);
+
+        return $response->withHeader('content-type', 'text/plain');
+    }
+
+    private function renderFundingWithdrawal(FundingWithdrawal $fundingWithdrawal): string
+    {
+        $campaignFunding = $fundingWithdrawal->getCampaignFunding();
+        $fund = $campaignFunding->getFund();
+        $fundName = $fund->getName();
+        return "   - {$fundingWithdrawal->getAmount()} from {$fund->getFundType()->name} '$fundName' (SF: {$fund->getSalesforceId()})";
+    }
+}

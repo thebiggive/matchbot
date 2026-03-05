@@ -219,4 +219,9 @@ class Fund extends SalesforceReadProxy
     {
         return $this->campaignFundings;
     }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
 }

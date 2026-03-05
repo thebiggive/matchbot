@@ -46,6 +46,11 @@ trait TimestampsTrait
         return $this->createdAt;
     }
 
+    public function getCreatedDateImmutable(): \DateTimeImmutable
+    {
+        return \DateTimeImmutable::createFromInterface($this->createdAt);
+    }
+
     /**
      * @return DateTime
      */
