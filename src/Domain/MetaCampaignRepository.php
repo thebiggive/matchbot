@@ -98,6 +98,7 @@ class MetaCampaignRepository
             FROM MatchBot\Domain\FundingWithdrawal fw
             JOIN fw.donation donation JOIN donation.campaign c
             WHERE c.metaCampaignSlug = :slug
+            AND fw.releasedAt is null
             AND donation.donationStatus IN (:succcessStatus)
         DQL
         );
