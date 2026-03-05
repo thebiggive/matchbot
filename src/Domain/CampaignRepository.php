@@ -341,6 +341,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             JOIN fw.donation donation
             JOIN fw.campaignFunding cf
             WHERE donation.campaign = :campaignId AND donation.donationStatus IN (:succcessStatus)
+            AND fw.releasedAt is null
             GROUP BY cf.currencyCode
         DQL
         );
