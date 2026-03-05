@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
-use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Exception\TransferException;
@@ -20,7 +19,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'matchbot:update-campaigns')]
+#[AsCommand(
+    name: 'matchbot:update-campaigns',
+    description: 'Now just loads funds for campaigns; core data is pushed by Salesforce',
+)]
 class UpdateCampaigns extends LockingCommand
 {
     public function __construct(
@@ -37,12 +39,6 @@ class UpdateCampaigns extends LockingCommand
     #[\Override]
     protected function configure(): void
     {
-        $this->setDescription(<<<EOT
-Pulls down and saves the latest details of existing, already-known Campaigns from Salesforce
-which were not expected to have ended over a week ago (unless --all option set, in which
-case that constraint is loosened)
-EOT
-        );
         $this->addOption('all', null, InputOption::VALUE_NONE, 'Expands the update to ALL historic known campaigns');
     }
 
@@ -53,7 +49,7 @@ EOT
             /** @var Campaign[] $campaigns */
             $campaigns = $this->campaignRepository->findAll();
         } else {
-            $campaigns = $this->campaignRepository->findCampaignsThatNeedToBeUpToDate();
+            $campaigns = $this->campaignRepository->findCampaignsWhereFundsNeedToBeUpToDate();
         }
 
         foreach ($campaigns as $campaign) {
@@ -121,7 +117,6 @@ EOT
      */
     protected function pull(Campaign $campaign, OutputInterface $output): void
     {
-        $this->campaignRepository->updateFromSf($campaign);
         $this->fundRepository->pullForCampaign($campaign, $this->now);
         $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
     }
