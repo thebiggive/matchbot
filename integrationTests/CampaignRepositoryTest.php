@@ -5,7 +5,6 @@ namespace MatchBot\IntegrationTests;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Assertion;
 use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -19,63 +18,7 @@ use Random\Randomizer;
 
 class CampaignRepositoryTest extends IntegrationTest
 {
-    public function testItFindsANineMonthOldCampaignForACharityAwaitingGiftAidApproval(): void
-    {
-        // arrange
-        $sut = $this->getService(CampaignRepository::class);
-
-        $campaign = new Campaign(
-            $this->randomCampaignId(),
-            metaCampaignSlug: null,
-            charity: $this->getCharityAwaitingGiftAidApproval(),
-            startDate: new \DateTimeImmutable('-10 months'), // less than the 9 month limit
-            endDate: new \DateTimeImmutable(-29 * 9 . 'days'),
-            isMatched: true,
-            ready: true,
-            status: null,
-            name: 'Campaign Name',
-            summary: 'Campaign Summary',
-            currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
-            isRegularGiving: false,
-            pinPosition: null,
-            championPagePinPosition: null,
-            relatedApplicationStatus: null,
-            relatedApplicationCharityResponseToOffer: null,
-            regularGivingCollectionEnd: null,
-            totalFundraisingTarget: Money::zero(),
-            thankYouMessage: null,
-            rawData: [],
-            hidden: false
-        );
-
-
-        $em = $this->getService(EntityManagerInterface::class);
-        $em->persist($campaign);
-        $em->flush();
-
-        $newCampaignId = $campaign->getId();
-
-        // act
-        $campaignsFromDB = $sut->findCampaignsThatNeedToBeUpToDate();
-
-        // assert
-
-        // We don't clear past data or isolate integration tests', so it is likely that there are other campaigns
-        // in this list too.
-        $idCriterion = Criteria::create()->where(Criteria::expr()->eq('id', $newCampaignId));
-        $campaignsMatchingFixture = (new ArrayCollection($campaignsFromDB))->matching($idCriterion);
-
-        $this->assertGreaterThanOrEqual(1, count($campaignsFromDB));
-        $this->assertCount(1, $campaignsMatchingFixture);
-        $this->assertSame($campaign, $campaignsMatchingFixture->first());
-        $firstCampaign = $campaignsMatchingFixture->first();
-        Assertion::isInstanceOf($firstCampaign, Campaign::class);
-        $this->assertSame('Charity Name', $firstCampaign->getCharity()->getName());
-    }
-
-    public function testItFindsNo10MonthOldCampaignEvenIfCharityAwaitingGiftAidApproval(): void
+    public function testItFindsNo10MonthOldCampaign(): void
     {
         // arrange
         $sut = $this->getService(CampaignRepository::class);
@@ -113,7 +56,7 @@ class CampaignRepositoryTest extends IntegrationTest
         $newCampaignId = $campaign->getId();
 
         // act
-        $campaignsFromDB = $sut->findCampaignsThatNeedToBeUpToDate();
+        $campaignsFromDB = $sut->findCampaignsWhereFundsNeedToBeUpToDate();
 
         // assert
 
@@ -177,8 +120,7 @@ class CampaignRepositoryTest extends IntegrationTest
             status: null,
             metaCampaignSlug: null,
             fundSlug: null,
-            jsonMatchInListConditions: [
-            ],
+            jsonMatchInListConditions: [],
             term: $query,
         );
 
