@@ -184,8 +184,8 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             ->andWhere('fw.releasedAt is null')
             ->groupBy('d.id')
             ->having(
-                '(SUM(CASE if fw.releasedAt is null THEN fw.amount ELSE 0 END) IS NULL 
-                      OR SUM(CASE if fw.releasedAt is null THEN fw.amount ELSE 0 END) < d.amount)'
+                '(SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) IS NULL
+                      OR SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) < d.amount)'
             ) // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter(
@@ -220,8 +220,8 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             ->andWhere('d.createdAt >= :checkAfter')
             ->groupBy('d.id')
             ->having(
-                '(SUM(CASE if fw.releasedAt is null THEN fw.amount ELSE 0 END) IS NULL 
-                      OR SUM(CASE if fw.releasedAt is null THEN fw.amount ELSE 0 END) < d.amount)'
+                '(SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) IS NULL 
+                      OR SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) < d.amount)'
             ) // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter(
