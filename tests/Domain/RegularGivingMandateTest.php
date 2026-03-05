@@ -399,7 +399,6 @@ class RegularGivingMandateTest extends TestCase
         // - would need a CampaignFunding which would need Fund, each with constructor params.
         $fundingWithdrawalProphecy = $this->prophesize(FundingWithdrawal::class);
         $fundingWithdrawalProphecy->getAmount()->willReturn($amount);
-        $fundingWithdrawalProphecy->isReleased()->willReturn(false);
 
         return $fundingWithdrawalProphecy->reveal();
     }
