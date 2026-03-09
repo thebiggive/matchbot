@@ -128,18 +128,18 @@
             "@docs:merge"
         ],
         "doctrine:cache:clear:live": [
-            "vendor/bin/doctrine orm:clear-cache:metadata",
-            "vendor/bin/doctrine orm:clear-cache:query",
-            "vendor/bin/doctrine orm:clear-cache:result"
+            "./doctrine orm:clear-cache:metadata",
+            "./doctrine orm:clear-cache:query",
+            "./doctrine orm:clear-cache:result"
         ],
         "doctrine:cache:clear": [
             "@doctrine:cache:clear:live",
 
             "@putenv MYSQL_SCHEMA=matchbot_test",
 
-            "vendor/bin/doctrine orm:clear-cache:metadata",
-            "vendor/bin/doctrine orm:clear-cache:query",
-            "vendor/bin/doctrine orm:clear-cache:result",
+            "./doctrine orm:clear-cache:metadata",
+            "./doctrine orm:clear-cache:query",
+            "./doctrine orm:clear-cache:result",
 
             "@putenv MYSQL_SCHEMA=matchbot"
         ],
@@ -149,8 +149,8 @@
             "doctrine orm:schema-tool:drop --full-database --force",
             "@doctrine:migrate:live",
             "./matchbot matchbot:write-schema-files",
-            "MYSQL_SCHEMA=matchbot_test vendor/bin/doctrine orm:schema-tool:drop --full-database --force",
-            "MYSQL_SCHEMA=matchbot_test vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration"
+            "MYSQL_SCHEMA=matchbot_test ./doctrine orm:schema-tool:drop --full-database --force",
+            "MYSQL_SCHEMA=matchbot_test ./doctrine-migrations migrate --no-interaction --allow-no-migration"
         ],
         "doctrine:update-schema": [
             "@doctrine:cache:clear",
@@ -160,11 +160,11 @@
         ],
         "doctrine:ensure-prod": "doctrine orm:ensure-production-settings",
         "doctrine:generate-proxies": "doctrine orm:generate-proxies",
-        "doctrine:migrate:live": "vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration -vv",
+        "doctrine:migrate:live": "./doctrine-migrations migrate --no-interaction --allow-no-migration -vv",
         "doctrine:migrate": [
             "@doctrine:migrate:live",
             "@putenv MYSQL_SCHEMA=matchbot_test",
-            "vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration",
+            "./doctrine-migrations migrate --no-interaction --allow-no-migration",
             "@putenv MYSQL_SCHEMA=matchbot"
         ],
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
@@ -279,11 +279,11 @@
         "start": "php -S localhost:8080 -t public",
         "test": "XDEBUG_MODE=coverage phpunit --order-by=random --log-junit reports/unit-test.xml",
         "integration-test": [
-            "APP_ENV=test doctrine orm:clear-cache:metadata",
-            "APP_ENV=test doctrine orm:clear-cache:query",
-            "APP_ENV=test doctrine orm:clear-cache:result",
-            "APP_ENV=test doctrine-migrations migrate --no-interaction --allow-no-migration",
-            "APP_ENV=test doctrine orm:generate-proxies",
+            "APP_ENV=test ./doctrine orm:clear-cache:metadata",
+            "APP_ENV=test ./doctrine orm:clear-cache:query",
+            "APP_ENV=test ./doctrine orm:clear-cache:result",
+            "APP_ENV=test vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration",
+            "APP_ENV=test ./doctrine orm:generate-proxies",
             "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random --log-junit reports/integration-test.xml"
         ],
         "mutation-test": [
