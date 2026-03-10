@@ -15,28 +15,24 @@ $psr11App = require __DIR__ . '/bootstrap.php';
 
 $entityManager = $psr11App->get(EntityManagerInterface::class);
 
-$commands = [];
+$migrationConfig = new PhpFile(__DIR__ . '/migrations.php');
+$dependencyFactory = DependencyFactory::fromEntityManager($migrationConfig, new ExistingEntityManager($entityManager));
 
-if (class_exists(DependencyFactory::class)) {
-    $migrationConfig = new PhpFile(__DIR__ . '/migrations.php');
-    $dependencyFactory = DependencyFactory::fromEntityManager($migrationConfig, new ExistingEntityManager($entityManager));
-
-    $commands = [
-        new Command\CurrentCommand($dependencyFactory),
-        new Command\DiffCommand($dependencyFactory),
-        new Command\DumpSchemaCommand($dependencyFactory),
-        new Command\ExecuteCommand($dependencyFactory),
-        new Command\GenerateCommand($dependencyFactory),
-        new Command\LatestCommand($dependencyFactory),
-        new Command\ListCommand($dependencyFactory),
-        new Command\MigrateCommand($dependencyFactory),
-        new Command\RollupCommand($dependencyFactory),
-        new Command\StatusCommand($dependencyFactory),
-        new Command\SyncMetadataCommand($dependencyFactory),
-        new Command\UpToDateCommand($dependencyFactory),
-        new Command\VersionCommand($dependencyFactory),
-    ];
-}
+$commands = [
+    new Command\CurrentCommand($dependencyFactory),
+    new Command\DiffCommand($dependencyFactory),
+    new Command\DumpSchemaCommand($dependencyFactory),
+    new Command\ExecuteCommand($dependencyFactory),
+    new Command\GenerateCommand($dependencyFactory),
+    new Command\LatestCommand($dependencyFactory),
+    new Command\ListCommand($dependencyFactory),
+    new Command\MigrateCommand($dependencyFactory),
+    new Command\RollupCommand($dependencyFactory),
+    new Command\StatusCommand($dependencyFactory),
+    new Command\SyncMetadataCommand($dependencyFactory),
+    new Command\UpToDateCommand($dependencyFactory),
+    new Command\VersionCommand($dependencyFactory),
+];
 
 ConsoleRunner::run(
     helperSetOrProvider: new SingleManagerProvider($entityManager),
