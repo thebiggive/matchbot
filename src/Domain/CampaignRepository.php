@@ -9,7 +9,6 @@ use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
-use MatchBot\Application\Environment;
 use MatchBot\Client;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
@@ -34,40 +33,28 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * Gets campaigns that it is particular important matchbot has up-to-date information about.
      *
      * More specifically gets those campaigns which are live now or recently closed (in the last week),
-     * based on their last known end time, and those closed semi-recently where we are
-     * awaiting HMRC agent approval for Gift Aid claims, and regular giving campaigns.
+     * based on their last known end time.
      * This allows for campaigns to receive updates shortly after closure if a decision is made to reopen them soon after the end date,
      * while keeping the number of API calls for regular update runs under control long-term.
-     * Technically future campaigns are also included if they are already known to MatchBot,
-     * though this would typically only happen after manual API call antics or if a start
-     * date was pushed back belatedly after a campaign already started.
+     * Future campaigns are also covered.
      *
-     * Regular giving campaigns are all included as they may have ongoing donations after the end date - changes
-     * in particular to the regularGivingCollectionEnd date in any direction need to be pulled quickly into matchbot
-     * to control whether we do or don't continue to collect those donations.
+     * Note that core account & campaign information important to MatchBot is now pushed, not pulled.
+     * This simplifies this query and dramatically reduces the maximum time we must look back for
+     * 'pulls' of funds.
      *
      * @return Campaign[]
      */
-    public function findCampaignsThatNeedToBeUpToDate(Environment $environment): array
+    public function findCampaignsWhereFundsNeedToBeUpToDate(): array
     {
-        // Allow up to 9 months for us to get full HMRC approval in Production, and keep checking.
-        // Give up sooner in test environments where we often won't catch the data up.
-        $extendedLookbackExpression = $environment->isProduction() ? 'P9M' : 'P14D';
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT c FROM MatchBot\Domain\Campaign c
             INNER JOIN c.charity charity
-            WHERE c.endDate >= :shortLookBackDate OR (
-                charity.tbgClaimingGiftAid = 1 AND
-                charity.tbgApprovedToClaimGiftAid = 0 AND
-                c.endDate >= :extendedLookbackDate
-            )
-            OR c.isRegularGiving = 1
+            WHERE c.endDate >= :lookBackDate
             ORDER BY c.createdAt ASC
             DQL
         );
         $query->setParameters([
-            'shortLookBackDate' => (new DateTime('now'))->sub(new \DateInterval('P7D')),
-            'extendedLookbackDate' => (new DateTime('now'))->sub(new \DateInterval($extendedLookbackExpression)),
+            'lookBackDate' => (new DateTime('now'))->sub(new \DateInterval('P7D')),
         ]);
 
         /** @var Campaign[] $campaigns */
