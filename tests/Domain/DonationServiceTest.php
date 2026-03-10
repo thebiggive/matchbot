@@ -218,11 +218,11 @@ class DonationServiceTest extends TestCase
             );
         } else {
             $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willReturn(null);
-            $this->entityManagerProphecy->flush()->willReturn(null);
+            $this->entityManagerProphecy->flush()->shouldBeCalled();
         }
 
-        $this->entityManagerProphecy->beginTransaction()->willReturn(null);
-        $this->entityManagerProphecy->commit()->willReturn(null);
+        $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
+        $this->entityManagerProphecy->commit()->shouldBeCalled();
 
         $logger = $logger ?? new NullLogger();
 

@@ -139,7 +139,7 @@ class CreateTest extends TestCase
         $configurationProphecy->getResultCache()->willReturn($this->createStub(CacheItemPoolInterface::class));
 
         $emptyUow = $this->prophesize(UnitOfWork::class);
-        $emptyUow->computeChangeSets()->willReturn(null); // void
+        $emptyUow->computeChangeSets()->shouldBeCalled();
         $emptyUow->hasPendingInsertions()->willReturn(false);
         $emptyUow->getIdentityMap()->willReturn([]);
 
@@ -247,8 +247,8 @@ class CreateTest extends TestCase
         $this->entityManagerProphecy->isOpen()->willReturn(true);
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $this->entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $this->entityManagerProphecy->beginTransaction()->willReturn(null);
-        $this->entityManagerProphecy->commit()->willReturn(null);
+        $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
+        $this->entityManagerProphecy->commit()->shouldBeCalled();
 
         $this->stripeProphecy->createPaymentIntent(Argument::any())->shouldNotBeCalled();
 
@@ -902,8 +902,8 @@ class CreateTest extends TestCase
         }
 
         $this->entityManagerProphecy->isOpen()->willReturn(true);
-        $this->entityManagerProphecy->beginTransaction()->willReturn(null);
-        $this->entityManagerProphecy->commit()->willReturn(null);
+        $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
+        $this->entityManagerProphecy->commit()->shouldBeCalled();
 
         if ($donationPersisted) {
             if (!$skipEmExpectations) {
