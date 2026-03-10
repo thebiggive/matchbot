@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Exception\TransferException;
 use MatchBot\Application\AssertionFailedException;
+use MatchBot\Application\Environment;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -19,16 +20,14 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(
-    name: 'matchbot:update-campaigns',
-    description: 'Now just loads funds for campaigns; core data is pushed by Salesforce',
-)]
+#[AsCommand(name: 'matchbot:update-campaigns')]
 class UpdateCampaigns extends LockingCommand
 {
     public function __construct(
         private CampaignRepository $campaignRepository,
         /** @var EntityManager|EntityManagerInterface $entityManager */
         private EntityManagerInterface $entityManager,
+        private Environment $environment,
         private FundRepository $fundRepository,
         private LoggerInterface $logger,
         private \DateTimeImmutable $now,
@@ -39,6 +38,12 @@ class UpdateCampaigns extends LockingCommand
     #[\Override]
     protected function configure(): void
     {
+        $this->setDescription(<<<EOT
+Pulls down and saves the latest details of existing, already-known Campaigns from Salesforce
+which were not expected to have ended over a week ago (unless --all option set, in which
+case that constraint is loosened)
+EOT
+        );
         $this->addOption('all', null, InputOption::VALUE_NONE, 'Expands the update to ALL historic known campaigns');
     }
 
@@ -49,7 +54,7 @@ class UpdateCampaigns extends LockingCommand
             /** @var Campaign[] $campaigns */
             $campaigns = $this->campaignRepository->findAll();
         } else {
-            $campaigns = $this->campaignRepository->findCampaignsWhereFundsNeedToBeUpToDate();
+            $campaigns = $this->campaignRepository->findCampaignsThatNeedToBeUpToDate($this->environment);
         }
 
         foreach ($campaigns as $campaign) {
@@ -117,6 +122,7 @@ class UpdateCampaigns extends LockingCommand
      */
     protected function pull(Campaign $campaign, OutputInterface $output): void
     {
+        $this->campaignRepository->updateFromSf($campaign);
         $this->fundRepository->pullForCampaign($campaign, $this->now);
         $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
     }

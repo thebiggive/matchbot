@@ -1,0 +1,17 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Tools\Console\ConsoleRunner;
+use Doctrine\ORM\Tools\Console\EntityManagerProvider\SingleManagerProvider;
+
+$psr11App = require __DIR__ . '/bootstrap.php';
+
+$entityManager = $psr11App->get(EntityManagerInterface::class);
+
+ConsoleRunner::run(
+    helperSetOrProvider: new SingleManagerProvider($entityManager),
+    commands: []
+);
