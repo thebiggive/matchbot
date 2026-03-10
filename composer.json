@@ -154,7 +154,7 @@
         ],
         "doctrine:update-schema": [
             "@doctrine:cache:clear",
-            "doctrine-migrations diff --allow-empty-diff",
+            "./vendor/bin/doctrine-migrations migrations:diff --allow-empty-diff",
             "@doctrine:migrate",
             "./matchbot matchbot:write-schema-files"
         ],
@@ -167,8 +167,8 @@
             "doctrine-migrations migrate --no-interaction --allow-no-migration",
             "@putenv MYSQL_SCHEMA=matchbot"
         ],
-        "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
-        "doctrine:migrate:generate": "doctrine-migrations generate",
+        "doctrine:migrate:diff": ["@doctrine:cache:clear", "./vendor/bin/doctrine-migrations migrations:diff"],
+        "doctrine:migrate:generate": "./vendor/bin/doctrine-migrations migrations:generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
         "sa:check": "vendor/bin/phpstan # psalm skipped for now awaiting Psalm 7 with PHP 8.5 support.",
         "sa:check-with-new-cache": "vendor/bin/psalm --clear-cache; vendor/bin/psalm",
