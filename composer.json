@@ -150,7 +150,7 @@
             "@doctrine:migrate:live",
             "./matchbot matchbot:write-schema-files",
             "MYSQL_SCHEMA=matchbot_test ./doctrine orm:schema-tool:drop --full-database --force",
-            "MYSQL_SCHEMA=matchbot_test ./doctrine-migrations migrate --no-interaction --allow-no-migration"
+            "MYSQL_SCHEMA=matchbot_test doctrine-migrations migrate --no-interaction --allow-no-migration"
         ],
         "doctrine:update-schema": [
             "@doctrine:cache:clear",
@@ -160,11 +160,11 @@
         ],
         "doctrine:ensure-prod": "./doctrine orm:ensure-production-settings",
         "doctrine:generate-proxies": "./doctrine orm:generate-proxies",
-        "doctrine:migrate:live": "./doctrine-migrations migrate --no-interaction --allow-no-migration -vv",
+        "doctrine:migrate:live": "doctrine-migrations migrate --no-interaction --allow-no-migration -vv",
         "doctrine:migrate": [
             "@doctrine:migrate:live",
             "@putenv MYSQL_SCHEMA=matchbot_test",
-            "./doctrine-migrations migrate --no-interaction --allow-no-migration",
+            "doctrine-migrations migrate --no-interaction --allow-no-migration",
             "@putenv MYSQL_SCHEMA=matchbot"
         ],
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
