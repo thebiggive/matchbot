@@ -519,8 +519,6 @@ abstract class IntegrationTest extends TestCase
             name: $name,
             summary: $summary,
             currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
             isRegularGiving: false,
             pinPosition: null,
             championPagePinPosition: null,

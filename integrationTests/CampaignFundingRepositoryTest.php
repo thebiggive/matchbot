@@ -57,12 +57,16 @@ class CampaignFundingRepositoryTest extends IntegrationTest
         $this->em->flush();
 
         // act
-        $amountAvailableForMetaCampaign = $this->sut->getAmountAvailableForMetaCampaign($this->metaCampaign);
+        $amountsForMetaCampaign = $this->sut->getAmountsForMetaCampaign($this->metaCampaign);
 
         // assert
         $this->assertEquals(
             Money::fromPoundsGBP(20_000),
-            $amountAvailableForMetaCampaign
+            $amountsForMetaCampaign['totalAmount']
+        );
+        $this->assertEquals(
+            Money::fromPoundsGBP(20_000),
+            $amountsForMetaCampaign['totalAmountAvailable']
         );
     }
 }

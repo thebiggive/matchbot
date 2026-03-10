@@ -166,12 +166,6 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(nullable: true)]
     protected ?\DateTimeImmutable $regularGivingCollectionEnd;
 
-    #[ORM\Embedded(columnPrefix: 'total_funding_allocation_')]
-    private Money $totalFundingAllocation;
-
-    #[ORM\Embedded(columnPrefix: 'amount_pledged_')]
-    private Money $amountPledged;
-
     #[ORM\Embedded(columnPrefix: 'total_fundraising_target_')]
     private Money $totalFundraisingTarget;
 
@@ -218,8 +212,6 @@ class Campaign extends SalesforceReadProxy
         string $name,
         ?string $summary,
         string $currencyCode,
-        Money $totalFundingAllocation,
-        Money $amountPledged,
         bool $isRegularGiving,
         ?int $pinPosition,
         ?int $championPagePinPosition,
@@ -254,8 +246,6 @@ class Campaign extends SalesforceReadProxy
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             thankYouMessage: $thankYouMessage,
             hidden: $hidden,
-            totalFundingAllocation: $totalFundingAllocation,
-            amountPledged: $amountPledged,
             totalFundraisingTarget: $totalFundraisingTarget,
             sfData: $rawData,
         );
@@ -316,8 +306,6 @@ class Campaign extends SalesforceReadProxy
             name: $title,
             summary: $campaignData['summary'],
             currencyCode: $currency->isoCode(),
-            totalFundingAllocation: Money::fromPence((int)(100.0 * ($campaignData['totalFundingAllocation'] ?? 0.0)), $currency),
-            amountPledged: Money::fromPence((int)(100.0 * ($campaignData['amountPledged'] ?? 0.0)), $currency),
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             pinPosition: $campaignData['pinPosition'] ?? null,
             championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
@@ -514,8 +502,6 @@ class Campaign extends SalesforceReadProxy
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         ?string $thankYouMessage,
         bool $hidden,
-        Money $totalFundingAllocation,
-        Money $amountPledged,
         Money $totalFundraisingTarget,
         array $sfData,
     ): void {
@@ -558,8 +544,6 @@ class Campaign extends SalesforceReadProxy
         $this->isRegularGiving = $isRegularGiving;
         $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
         $this->hidden = $hidden;
-        $this->totalFundingAllocation = $totalFundingAllocation;
-        $this->amountPledged = $amountPledged;
         $this->totalFundraisingTarget = $totalFundraisingTarget;
         $this->pinPosition = $pinPosition;
         $this->championPagePinPosition = $championPagePinPosition;
@@ -694,18 +678,13 @@ class Campaign extends SalesforceReadProxy
         return $this->totalFundraisingTarget;
     }
 
+    public function setTestStatistics(CampaignStatistics $campaignStatistics): void
+    {
+        $this->campaignStatistics = $campaignStatistics;
+    }
+
     public function getStatistics(): CampaignStatistics
     {
         return $this->campaignStatistics ?? CampaignStatistics::zeroPlaceholder($this, new \DateTimeImmutable('now'));
-    }
-
-    public function getAmountPledged(): Money
-    {
-        return $this->amountPledged;
-    }
-
-    public function getTotalFundingAllocation(): Money
-    {
-        return $this->totalFundingAllocation;
     }
 }
