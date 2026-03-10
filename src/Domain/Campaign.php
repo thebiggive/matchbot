@@ -47,7 +47,7 @@ class Campaign extends SalesforceReadProxy
     #[ORM\ManyToMany(targetEntity: CampaignFunding::class, mappedBy: 'campaigns')]
     protected Collection $campaignFundings;
 
-    #[ORM\OneToOne(mappedBy: 'campaign', targetEntity: CampaignStatistics::class, fetch: 'EAGER')]
+    #[ORM\OneToOne(mappedBy: 'campaign', targetEntity: CampaignStatistics::class, cascade: ['persist'], fetch: 'EAGER')]
     private ?CampaignStatistics $campaignStatistics = null;
 
     /**
