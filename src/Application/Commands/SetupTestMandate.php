@@ -117,6 +117,7 @@ class SetupTestMandate extends LockingCommand
             $io->error("No campaign found for {$campaignId}");
             return Command::FAILURE;
         }
+        \assert($campaign instanceof Campaign);
 
         $charity = $campaign->getCharity();
 

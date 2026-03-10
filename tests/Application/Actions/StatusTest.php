@@ -30,12 +30,6 @@ class StatusTest extends TestCase
 {
     private const string DOMAIN_DIR = __DIR__ . '/../../../src/Domain';
 
-    #[\Override]
-    public function setUp(): void
-    {
-        $this->generateORMProxiesAtRealPath();
-    }
-
     public function testOK(): void
     {
         $app = $this->getAppInstance();
@@ -163,28 +157,5 @@ class StatusTest extends TestCase
             ->willReturn($connectionProphecy->reveal());
 
         return $emProphecy->reveal();
-    }
-
-    /**
-     * Simulate the real app entrypoint's Doctrine proxy generate command, so that proxies are
-     * in-place in the unit test filesystem and we can assume that when realistic paths are provided,
-     * the `Status` Action should be able to complete a successful run through.
-     */
-    private function generateORMProxiesAtRealPath(): void
-    {
-        $app = $this->getAppInstance();
-        $container = $app->getContainer();
-        assert($container instanceof Container);
-
-        $container->set(EntityManagerInterface::class, $this->getConnectedMockEntityManager());
-
-        /** @psalm-suppress DeprecatedMethod - using Deprecated methods is almost OK in tests */
-        $helperSet = ConsoleRunner::createHelperSet($container->get(EntityManagerInterface::class));
-        $generateProxiesCommand = new GenerateProxiesCommand();
-        $generateProxiesCommand->setHelperSet($helperSet);
-        $generateProxiesCommand->run(
-            new StringInput(''),
-            new NullOutput(),
-        );
     }
 }
