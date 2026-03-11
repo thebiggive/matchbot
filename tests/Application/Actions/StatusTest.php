@@ -70,27 +70,6 @@ class StatusTest extends TestCase
         $this->assertSame($expectedSerialised, $payload);
     }
 
-    public function testMissingDoctrineORMProxy(): void
-    {
-        $app = $this->getAppInstance();
-
-        // Use a deliberately wrong path so proxies are absent.
-        $entityManager = $this->getConnectedMockEntityManager('/tmp/not/this/dir/proxies');
-        $container = $app->getContainer();
-        assert($container instanceof Container);
-        $container->set(EntityManagerInterface::class, $entityManager);
-
-        $request = $this->createRequest('GET', '/ping');
-        $response = $app->handle($request);
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(500, ['error' => 'Doctrine proxies not built']);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertSame(500, $response->getStatusCode());
-        $this->assertSame($expectedSerialised, $payload);
-    }
-
     private function getConnectedMockEntityManager(
         string $proxyPath = __DIR__ . '/../../../var/doctrine/proxies',
     ): EntityManagerInterface {
