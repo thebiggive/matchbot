@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -109,18 +110,17 @@ class Campaign extends SalesforceReadProxy
     /**
      * The first moment when donors should be able to make a donation, or a regular giving mandate
      **/
-    #[ORM\Column(type: 'datetime')]
-    protected DateTimeInterface $startDate;
+    #[ORM\Column(type: 'date_immutable')]
+    protected \DateTimeImmutable $startDate;
 
     /**
      * The last moment when donors should be able to make an ad-hoc donation, or create a new
      * regular giving mandate.
      *
      * @see self::$regularGivingCollectionEnd
-     * @var DateTimeInterface
      */
-    #[ORM\Column(type: 'datetime')]
-    protected DateTimeInterface $endDate;
+    #[ORM\Column(type: 'date_immutable')]
+    protected \DateTimeImmutable $endDate;
 
     /**
      * @var bool    Whether the Campaign was launched as a match-funded type of campaign. This does not
@@ -399,12 +399,12 @@ class Campaign extends SalesforceReadProxy
         $this->name = $name;
     }
 
-    public function setStartDate(DateTimeInterface $startDate): void
+    public function setStartDate(DateTimeImmutable $startDate): void
     {
         $this->startDate = $startDate;
     }
 
-    public function setEndDate(DateTimeInterface $endDate): void
+    public function setEndDate(DateTimeImmutable $endDate): void
     {
         $this->endDate = $endDate;
     }
@@ -491,12 +491,12 @@ class Campaign extends SalesforceReadProxy
         ?int $championPagePinPosition,
         ?ApplicationStatus $relatedApplicationStatus,
         ?CharityResponseToOffer $relatedApplicationCharityResponseToOffer,
-        \DateTimeInterface $endDate,
+        \DateTimeImmutable $endDate,
         bool $isMatched,
         string $name,
         ?string $summary,
         ?string $metaCampaignSlug,
-        \DateTimeInterface $startDate,
+        \DateTimeImmutable $startDate,
         bool $ready,
         bool $isRegularGiving,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
