@@ -28,18 +28,14 @@ class CampaignServiceTest extends TestCase
     {
         parent::setUp();
 
-        // having all these stubs here suggests probably this service class should be broken up so the part that
-        // doesn't use the dependances can be tested separately.
         $this->metaCampaignRepositoryProphecy = $this->prophesize(MetaCampaignRepository::class);
-        $matchFundsServiceProphecy = $this->prophesize(MatchFundsService::class);
-        $matchFundsServiceProphecy->getFundsRemainingForMetaCampaign(Argument::any())->willReturn(Money::zero());
 
         $this->SUT = new CampaignService(
             campaignRepository: $this->createStub(CampaignRepository::class),
             metaCampaignRepository: $this->metaCampaignRepositoryProphecy->reveal(),
             cache: new NullAdapter(),
             donationRepository: $this->createStub(DonationRepository::class),
-            matchFundsService: $matchFundsServiceProphecy->reveal(),
+            matchFundsService: $this->getMatchFundsService(Money::zero(), Money::zero()),
             log: $this->createStub(LoggerInterface::class),
             clock: new MockClock(new \DateTimeImmutable('1970-01-01')),
         );
@@ -80,7 +76,6 @@ class CampaignServiceTest extends TestCase
         ], $renderedCamapign['budgetDetails']);
     }
 
-
     public function testItRendersCampaignWithDetailsOfRelatedMetaCampaignWithNonSharedFunds(): void
     {
         // arrange
@@ -99,26 +94,36 @@ class CampaignServiceTest extends TestCase
     public function testTarget(
         bool $metaCampaignIsEmergencyIMF,
         bool $isMatched,
-        int $matchFundsTotal,
+        int $metaCampaignMatchFundsTotal,
+        int $thisCampaignMatchFundsTotal,
         int $totalFundraisingTarget,
-        int $amountPledged,
-        int $totalFundingAllocation,
         int $expectedTarget
     ): void {
+        $metaCampaignMoney = Money::fromPence($metaCampaignMatchFundsTotal, Currency::GBP);
+        $this->SUT = new CampaignService(
+            campaignRepository: $this->createStub(CampaignRepository::class),
+            metaCampaignRepository: $this->metaCampaignRepositoryProphecy->reveal(),
+            cache: new NullAdapter(),
+            donationRepository: $this->createStub(DonationRepository::class),
+            matchFundsService: $this->getMatchFundsService(
+                totalForMetacampaign: $metaCampaignMoney,
+                availableForMetacampaign: $metaCampaignMoney,
+            ),
+            log: $this->createStub(LoggerInterface::class),
+            clock: new MockClock(new \DateTimeImmutable('1970-01-01')),
+        );
+
         $metaCampaign = TestCase::someMetaCampaign(
             isRegularGiving: false,
             isEmergencyIMF: $metaCampaignIsEmergencyIMF,
         );
         $metaCampaign->setId(1); // id doesn't matter;
-        $this->metaCampaignRepositoryProphecy->matchFundsTotal($metaCampaign)
-            ->willReturn(Money::fromPence($matchFundsTotal, Currency::GBP));
 
         $campaign = self::someCampaign(
+            metaCampaignSlug: $metaCampaign->getSlug(),
             isMatched: $isMatched,
             totalFundraisingTarget: Money::fromPence($totalFundraisingTarget, Currency::GBP),
-            amountPledged: Money::fromPence($amountPledged, Currency::GBP),
-            totalFundingAllocation: Money::fromPence($totalFundingAllocation, Currency::GBP),
-            metaCampaignSlug: $metaCampaign->getSlug(),
+            withMatchFundsTotal: Money::fromPence($thisCampaignMatchFundsTotal, Currency::GBP),
         );
 
         $target = $this->SUT->campaignTarget($campaign, $metaCampaign);
@@ -127,36 +132,45 @@ class CampaignServiceTest extends TestCase
     }
 
     /**
-     * @return array<string, array{0: bool, 1: bool, 2: int, 3: int, 4: int, 5: int, 6: int}>
+     * @return array<string, array{0: bool, 1: bool, 2: int, 3: int, 4: int, 5: int}>
      */
     public function targetDataProvider(): array
     {
         // all amounts in pence
         //
         //   $metaCampaignIsEmergencyIMF, $isMatched,
-        //   $matchFundsTotal, $totalFundraisingTarget, $amountPledged, $totalFundingAllocation,
+        //   $metaCampaignMatchFundsTotal, $thisCampaignMatchFundsTotal, $totalFundraisingTarget,
         //   $expectedTarget
         return [
             'nothing will come of nothing' => [
                 false, false,
-                0_00, 0_00, 0_00, 0_00,
+                0_00, 0_00, 0_00,
                 0_00
             ],
             'uses emergency meta-campaign target' => [
                 true, false,
-                28_00, 0_00, 0_00, 0_00,
+                28_00, 0_00, 0_00,
                 56_00
             ],
-            'uses totalFundRaisingTarget for non-emergency target' => [
+            'uses totalFundRaisingTarget for unmatched campaign target' => [
                 false, false,
-                6_00, 12_35, 0_00, 0_00,
+                6_00, 0_00, 12_35,
                 12_35
             ],
-            'for matched campaign, uses double sum of pledges and funding' => [
+            'for matched campaign, uses own campaign\'s funding' => [
                 false, true,
-                6, 0_00, 150_00, 50_00, // unusual case having 150 and 50 not equal, but covers general case.
-                400_00,
+                0_00, 499_00, 200_00, // Simulate e.g. out of sync target from SF
+                998_00,
             ],
         ];
+    }
+
+    private function getMatchFundsService(Money $totalForMetacampaign, Money $availableForMetacampaign): MatchFundsService
+    {
+        $matchFundsServiceProphecy = $this->prophesize(MatchFundsService::class);
+        $matchFundsServiceProphecy->getFundsTotalForMetaCampaign(Argument::any())->willReturn($totalForMetacampaign);
+        $matchFundsServiceProphecy->getFundsRemainingForMetaCampaign(Argument::any())->willReturn($availableForMetacampaign);
+
+        return $matchFundsServiceProphecy->reveal();
     }
 }

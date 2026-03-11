@@ -180,8 +180,6 @@ trait DonationTestDataTrait
             name: 'Test campaign',
             summary: 'Test campaign summary',
             currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
             isRegularGiving: false,
             pinPosition: null,
             championPagePinPosition: null,
