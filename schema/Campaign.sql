@@ -20,7 +20,7 @@ CREATE TABLE `Campaign` (
   `ready` tinyint(1) NOT NULL DEFAULT '1',
   `status` varchar(64) DEFAULT NULL,
   `isRegularGiving` tinyint(1) NOT NULL,
-  `regularGivingCollectionEnd` datetime DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)',
+  `regularGivingCollectionEnd` datetime DEFAULT NULL,
   `thankYouMessage` varchar(500) DEFAULT NULL,
   `salesforceData` json NOT NULL,
   `hidden` tinyint(1) NOT NULL DEFAULT '0',
