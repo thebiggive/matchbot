@@ -8,6 +8,7 @@ use DI\ContainerBuilder;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager as DBALDriverManager;
 use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+use Doctrine\DBAL\Schema\AbstractAsset;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\CustomDBALDriver;
 use Doctrine\DBAL\Schema\MySQLSchemaManager;
@@ -567,6 +568,15 @@ return function (ContainerBuilder $containerBuilder) {
         ORM\EntityManager::class =>  static function (ContainerInterface $c): EntityManager {
             // DBAL configuration to ensure our custom SchemaManager is used even in CLI tooling
             $dbalConfig = new \Doctrine\DBAL\Configuration();
+
+            // Only set schema assets filter for ORM schema tool commands, not for migrations
+            if (defined('RUNNING_DOCTRINE_ORM_SCHEMA_TOOL') && RUNNING_DOCTRINE_ORM_SCHEMA_TOOL) {
+                $dbalConfig->setSchemaAssetsFilter(
+                    static fn (string|AbstractAsset $asset): bool =>
+                        (is_string($asset) ? $asset : $asset->getObjectName()) !== 'doctrine_migration_versions'
+                );
+            }
+
             $dbalConfig->setSchemaManagerFactory(new class implements \Doctrine\DBAL\Schema\SchemaManagerFactory {
                 /** @return AbstractSchemaManager<\Doctrine\DBAL\Platforms\AbstractPlatform> */
                 #[\Override]
