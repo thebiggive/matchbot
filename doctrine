@@ -12,6 +12,6 @@ $psr11App = require __DIR__ . '/bootstrap.php';
 $entityManager = $psr11App->get(EntityManagerInterface::class);
 
 ConsoleRunner::run(
-    helperSetOrProvider: new SingleManagerProvider($entityManager),
+    entityManagerProvider: new SingleManagerProvider($entityManager),
     commands: []
 );
