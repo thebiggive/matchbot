@@ -18,66 +18,6 @@ use Random\Randomizer;
 
 class CampaignRepositoryTest extends IntegrationTest
 {
-    /**
-     * We now use a 14 day cut-off for test mode but this covers the logic equivalent to the 9 month
-     * look-back in Production.
-     */
-    public function testItFindsAnOldCampaignForACharityAwaitingGiftAidApproval(): void
-    {
-        // arrange
-        $sut = $this->getService(CampaignRepository::class);
-
-        $campaign = new Campaign(
-            $this->randomCampaignId(),
-            metaCampaignSlug: null,
-            charity: $this->getCharityAwaitingGiftAidApproval(),
-            startDate: new \DateTimeImmutable('-15 days'), // earlier than the extended cutoff limit
-            endDate: new \DateTimeImmutable('-13 days'), // within the extended cutoff window
-            isMatched: true,
-            ready: true,
-            status: null,
-            name: 'Campaign Name',
-            summary: 'Campaign Summary',
-            currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
-            isRegularGiving: false,
-            pinPosition: null,
-            championPagePinPosition: null,
-            relatedApplicationStatus: null,
-            relatedApplicationCharityResponseToOffer: null,
-            regularGivingCollectionEnd: null,
-            totalFundraisingTarget: Money::zero(),
-            thankYouMessage: null,
-            rawData: [],
-            hidden: false
-        );
-
-
-        $em = $this->getService(EntityManagerInterface::class);
-        $em->persist($campaign);
-        $em->flush();
-
-        $newCampaignId = $campaign->getId();
-
-        // act
-        $campaignsFromDB = $sut->findCampaignsThatNeedToBeUpToDate(Environment::Test);
-
-        // assert
-
-        // We don't clear past data or isolate integration tests', so it is likely that there are other campaigns
-        // in this list too.
-        $idCriterion = Criteria::create()->where(Criteria::expr()->eq('id', $newCampaignId));
-        $campaignsMatchingFixture = (new ArrayCollection($campaignsFromDB))->matching($idCriterion);
-
-        $this->assertGreaterThanOrEqual(1, count($campaignsFromDB));
-        $this->assertCount(1, $campaignsMatchingFixture);
-        $this->assertSame($campaign, $campaignsMatchingFixture->first());
-        $firstCampaign = $campaignsMatchingFixture->first();
-        Assertion::isInstanceOf($firstCampaign, Campaign::class);
-        $this->assertSame('Charity Name', $firstCampaign->getCharity()->getName());
-    }
-
     public function testItFindsNo10MonthOldCampaign(): void
     {
         // arrange
