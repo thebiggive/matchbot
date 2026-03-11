@@ -25,10 +25,10 @@ class CampaignStatistics
 {
     use TimestampsTrait;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'date_immutable')]
     private ?\DateTimeImmutable $lastCheck = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'date_immutable')]
     private ?\DateTimeImmutable $lastRealUpdate = null;
 
     #[ORM\OneToOne(inversedBy: 'campaignStatistics', fetch: 'EAGER')]

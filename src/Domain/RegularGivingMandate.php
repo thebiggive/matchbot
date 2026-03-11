@@ -90,7 +90,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Embedded(columnPrefix: false)]
     private DayOfMonth $dayOfMonth;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'date_immutable')]
     private ?\DateTimeImmutable $activeFrom = null;
 
     /**
@@ -99,7 +99,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
      *
      * @psalm-suppress UnusedProperty - used in DQL
      */
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'date_immutable')]
     private ?\DateTimeImmutable $donationsCreatedUpTo = null;
 
     #[ORM\Column]
@@ -119,7 +119,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $cancellationReason = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'date_immutable')]
     private ?\DateTimeImmutable $cancelledAt = null;
 
     /**
