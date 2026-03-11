@@ -146,7 +146,7 @@
         "doctrine:delete-and-recreate": [
             "@putenv MYSQL_SCHEMA=matchbot",
             "@doctrine:cache:clear",
-            "doctrine orm:schema-tool:drop --full-database --force",
+            "./doctrine orm:schema-tool:drop --full-database --force",
             "@doctrine:migrate:live",
             "./matchbot matchbot:write-schema-files",
             "MYSQL_SCHEMA=matchbot_test ./doctrine orm:schema-tool:drop --full-database --force",
