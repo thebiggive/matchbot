@@ -31,7 +31,7 @@
         "doctrine/collections": "^2.2",
         "doctrine/common": "^3.4",
         "doctrine/dbal": "^4.4.1",
-        "doctrine/migrations": "^3.7",
+        "doctrine/migrations": "^3.9",
         "doctrine/orm": "^3.6.2",
         "fig/http-message-util": "^1.1",
         "firebase/php-jwt": "^7.0",
