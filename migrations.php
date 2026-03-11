@@ -12,7 +12,7 @@ return [
     ],
 
     'migrations_paths' => [
-        'MatchBot\Migrations' => '/src/Migrations',
+        'MatchBot\Migrations' => __DIR__ . '/src/Migrations',
     ],
 
     'all_or_nothing' => true,
