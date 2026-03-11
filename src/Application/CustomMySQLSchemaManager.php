@@ -27,25 +27,29 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
     ];
 
     #[\Override]
-    protected function _getPortableTableIndexesList($tableIndexes, $tableName = null) // phpcs:ignore
+    protected function _getPortableTableIndexesList(array $tableIndexes, ?string $tableName = null): array // phpcs:ignore
     {
         $indexes = parent::_getPortableTableIndexesList($tableIndexes, $tableName);
 
         return \array_filter(
             $indexes,
-            static fn($index) => !in_array([$tableName, $index->getName()], self::GENERATED_INDEXES, true),
+            static fn($index) => !in_array(
+                needle: [$tableName, $index->getObjectName()->toString()],
+                haystack: self::GENERATED_INDEXES,
+                strict: true
+            ),
         );
     }
 
     #[\Override]
-    protected function _getPortableTableColumnList($table, $database, $tableColumns) // phpcs:ignore
+    protected function _getPortableTableColumnList(string $table, string $database, array $tableColumns): array // phpcs:ignore
     {
         $columns = parent::_getPortableTableColumnList($table, $database, $tableColumns);
 
         return array_filter(
             $columns,
             static fn($column) => !in_array(
-                needle: [$table, $column->getName()],
+                needle: [$table, $column->getObjectName()->toString()], // @phpstan.ignore method.internalClass
                 // releasedAt is new, want to wait until its in prod DB before we allow the ORM to rely on it.
                 haystack: self::GENERATED_COLUMNS,
                 strict: true,

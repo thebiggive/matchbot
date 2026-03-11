@@ -71,7 +71,7 @@ class ResetMatchingTest extends TestCase
          */
         $campaignFundingRepoProphecy->findAll()
             ->willThrow(
-                new TableNotFoundException( // @phpstan-ignore method.internal
+                new TableNotFoundException(
                 // Doctrine PDO\Exception (a DriverException subclass) wraps native \PDOException.
                     PDOException::new( // @phpstan-ignore staticMethod.internalClass
                         new \PDOException(
