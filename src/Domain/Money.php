@@ -7,10 +7,11 @@ use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assertion;
 
 /**
+ * (not using PHP native readonly as ORM will replace properties during hydration)
  * @psalm-immutable
  */
 #[Embeddable]
-readonly class Money implements \JsonSerializable, \Stringable
+class Money implements \JsonSerializable, \Stringable
 {
     /**
      * @var numeric-string
