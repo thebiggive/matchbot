@@ -11,7 +11,7 @@ RUN apt-get update -qq && apt-get install -y awscli && \
 COPY . /var/www/html
 
 # Ensure Apache can run as www-data and still write to these when the Docker build creates them as root.
-RUN chmod 777 /var/www/html/var/cache /var/www/html/var/doctrine /var/www/html/var/doctrine/proxies
+RUN chmod 777 /var/www/html/var/cache /var/www/html/var/doctrine
 
 RUN composer install --no-interaction --quiet --optimize-autoloader --no-dev
 

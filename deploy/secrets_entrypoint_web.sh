@@ -27,7 +27,6 @@ composer doctrine:ensure-prod || exit 2
 echo "Running migrations before start if necessary..."
 composer doctrine:cache:clear:live
 composer doctrine:migrate:live || exit 3
-composer doctrine:generate-proxies || exit 4
 
 echo "Starting Apache..."
 # Call the normal web server entry-point script

@@ -488,10 +488,10 @@ return function (ContainerBuilder $containerBuilder) {
             }
 
             $config = ORM\ORMSetup::createAttributeMetadataConfiguration(
-                $settings->doctrine['metadata_dirs'],
-                $settings->doctrine['dev_mode'],
-                $settings->doctrine['cache_dir'] . '/proxies',
-                $cacheAdapter,
+                paths: $settings->doctrine['metadata_dirs'],
+                isDevMode: $settings->doctrine['dev_mode'],
+                proxyDir: null,
+                cache: $cacheAdapter,
             );
 
             $config->addCustomStringFunction(JsonExtract::FUNCTION_NAME, JsonExtract::class);
@@ -503,9 +503,7 @@ return function (ContainerBuilder $containerBuilder) {
             $config->addCustomStringFunction('FIELD', \DoctrineExtensions\Query\Mysql\Field::class);
 
 
-            // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
-            // files indefinitely.
-            $config->setAutoGenerateProxyClasses($settings->doctrine['dev_mode']);
+            $config->enableNativeLazyObjects();
 
             $config->setMetadataDriverImpl(
                 new ORM\Mapping\Driver\AttributeDriver($settings->doctrine['metadata_dirs'])

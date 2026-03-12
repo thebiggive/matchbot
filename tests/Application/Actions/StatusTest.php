@@ -14,7 +14,6 @@ use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Proxy\ProxyFactory;
-use Doctrine\ORM\Tools\Console\Command\GenerateProxiesCommand;
 use Doctrine\ORM\Tools\Console\ConsoleRunner;
 use Doctrine\ORM\UnitOfWork;
 use MatchBot\Application\Actions\ActionPayload;
@@ -70,20 +69,18 @@ class StatusTest extends TestCase
         $this->assertSame($expectedSerialised, $payload);
     }
 
-    private function getConnectedMockEntityManager(
-        string $proxyPath = __DIR__ . '/../../../var/doctrine/proxies',
-    ): EntityManagerInterface {
+    private function getConnectedMockEntityManager(): EntityManagerInterface
+    {
         $cacheAdapter = new ArrayAdapter();
 
         $config = ORMSetup::createAttributeMetadataConfiguration(
             [self::DOMAIN_DIR],
             false, // Simulate live mode for these tests.
-            $proxyPath,
+            null,
             $cacheAdapter,
         );
 
-        // No auto-generation – like live mode – for these tests.
-        $config->setAutoGenerateProxyClasses(false);
+        $config->enableNativeLazyObjects(true);
         $config->setMetadataDriverImpl(
             new AttributeDriver([self::DOMAIN_DIR]),
         );
@@ -95,9 +92,6 @@ class StatusTest extends TestCase
         );
         $connectionProphecy->isConnected()
             ->willReturn(true);
-        // *Can* be called by `GenerateProxiesCommand`.
-        $connectionProphecy->getDatabasePlatform()
-            ->willReturn(new MySQL80Platform());
 
         $emProphecy = $this->prophesize(EntityManagerInterface::class);
         $emProphecy->getConfiguration()
@@ -106,19 +100,6 @@ class StatusTest extends TestCase
         $classMetadataFactory = new ClassMetadataFactory();
         // This has to be set on both sides for `ClassMetadataFactory::initialize()` not to crash.
         $classMetadataFactory->setEntityManager($emProphecy->reveal());
-        // *Can* be called by `GenerateProxiesCommand`.
-        $emProphecy->getMetadataFactory()
-            ->willReturn($classMetadataFactory);
-
-        // *Can* be called by `GenerateProxiesCommand`.
-        $emProphecy->getEventManager()
-            ->willReturn(new EventManager());
-
-        // *Can* be called by `GenerateProxiesCommand`.
-        // Mirrors the instantiation in concrete `EntityManager`'s constructor.
-        $emProphecy->getUnitOfWork()
-            ->shouldBeCalledOnce()
-            ->willReturn(new UnitOfWork($emProphecy->reveal()));
 
         // Mirrors the instantiation in concrete `EntityManager`'s constructor.
         $proxyFactory = new ProxyFactory(
@@ -127,9 +108,6 @@ class StatusTest extends TestCase
             $config->getProxyNamespace() ?? throw new \Exception('missing proxy namespace'),
             $config->getAutoGenerateProxyClasses()
         );
-        // *Can* be called by `GenerateProxiesCommand`.
-        $emProphecy->getProxyFactory()
-            ->willReturn($proxyFactory);
 
         $emProphecy->getConnection()
             ->shouldBeCalledOnce()
