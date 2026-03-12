@@ -503,7 +503,7 @@ return function (ContainerBuilder $containerBuilder) {
             $config->addCustomStringFunction('FIELD', \DoctrineExtensions\Query\Mysql\Field::class);
 
 
-            $config->enableNativeLazyObjects();
+            $config->enableNativeLazyObjects(true);
 
             $config->setMetadataDriverImpl(
                 new ORM\Mapping\Driver\AttributeDriver($settings->doctrine['metadata_dirs'])
