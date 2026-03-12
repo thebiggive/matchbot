@@ -6,7 +6,6 @@ namespace MatchBot\Migrations;
 
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
-use MatchBot\Application\Environment;
 
 final class Version20260115172025 extends AbstractMigration
 {
@@ -17,8 +16,7 @@ final class Version20260115172025 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        if (Environment::current() !== Environment::Staging && Environment::current() !== Environment::Regression) {
-            // this line already ran in those environments so would fail if we tried to run it again.
+        if (!$schema->getTable('Campaign')->hasColumn('summary')) {
             $this->addSql('ALTER TABLE Campaign ADD summary VARCHAR(255) DEFAULT NULL');
         }
 
