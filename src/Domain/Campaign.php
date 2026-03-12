@@ -110,7 +110,7 @@ class Campaign extends SalesforceReadProxy
     /**
      * The first moment when donors should be able to make a donation, or a regular giving mandate
      **/
-    #[ORM\Column(type: 'date_immutable')]
+    #[ORM\Column(type: 'datetime_immutable')]
     protected \DateTimeImmutable $startDate;
 
     /**
@@ -119,7 +119,7 @@ class Campaign extends SalesforceReadProxy
      *
      * @see self::$regularGivingCollectionEnd
      */
-    #[ORM\Column(type: 'date_immutable')]
+    #[ORM\Column(type: 'datetime_immutable')]
     protected \DateTimeImmutable $endDate;
 
     /**

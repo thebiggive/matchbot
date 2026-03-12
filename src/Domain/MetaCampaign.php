@@ -68,10 +68,10 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Column(nullable: true)]
     private ?string $bannerURI;
 
-    #[ORM\Column(type: 'date_immutable')]
+    #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $startDate;
 
-    #[ORM\Column(type: 'date_immutable')]
+    #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $endDate;
 
     /**

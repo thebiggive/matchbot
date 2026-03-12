@@ -209,7 +209,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * Date at which we amended the donation to cancel claiming gift aid.
      */
-    #[ORM\Column(nullable: true, type: 'date_immutable')]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?DateTimeImmutable $giftAidRemovedAt = null;
 
     /**
@@ -380,7 +380,7 @@ class Donation extends SalesforceWriteProxy
      * Date at which we refunded this to the donor. Ideally will be null. Should be not null only iff status is
      * DonationStatus::Refunded
      */
-    #[ORM\Column(nullable: true, type: 'date_immutable')]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?\DateTimeImmutable $refundedAt = null;
 
     /**
@@ -389,7 +389,7 @@ class Donation extends SalesforceWriteProxy
      *
      * @see DonationStatus::PreAuthorized
      */
-    #[ORM\Column(nullable: true, type: 'date_immutable')]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?DateTimeImmutable $preAuthorizationDate = null;
 
     /**
@@ -405,7 +405,7 @@ class Donation extends SalesforceWriteProxy
      *
      * Based on {@see Payout::$arrival_date}
      */
-    #[ORM\Column(nullable: true, type: 'date_immutable')]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?DateTimeImmutable $paidOutAt = null;
 
 
