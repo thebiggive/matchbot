@@ -14,7 +14,8 @@ abstract class SalesforceProxy extends Model
 {
     /**
      * @deprecated - treat as private, access via getters and setters unless you know the instance
-     * is already loaded from the DB, to allow Doctrine Proxies to do their lazy-loading thing.
+     * is already loaded from the DB, to allow Doctrine Proxies to do their lazy-loading thing. (update - may not be
+     * an issue now doctrine proxies are replaced by PHP Lazy Objects)
      *
      * Actually setting as private breaks use of this property by the ORM for child classes.
      *

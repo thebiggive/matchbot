@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Domain;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client;
@@ -45,11 +45,17 @@ class DonationRepositoryTest extends TestCase
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $this->entityManagerProphecy->getConnection()->willReturn($connectionWhichUpdatesFine->reveal());
 
-        $salesforceIdSettingQuery = $this->prophesize(AbstractQuery::class);
-        $salesforceIdSettingQuery->setParameter(Argument::type('string'), Argument::type('string'));
-        $salesforceIdSettingQuery->execute();
+        $salesforceIdSettingQuery = $this->prophesize(Query::class);
+        $revelation = $salesforceIdSettingQuery->reveal();
+        $salesforceIdSettingQuery->setParameter(Argument::type('string'), Argument::type('string'))
+            ->willReturn($revelation);
+        $salesforceIdSettingQuery->setParameter(Argument::type('string'), Argument::type('null'))
+            ->willReturn($revelation);
+        $salesforceIdSettingQuery->setParameter(Argument::type('string'), Argument::type(\DateTimeImmutable::class))
+            ->willReturn($revelation);
+        $salesforceIdSettingQuery->execute()->willReturn(null);
         $this->entityManagerProphecy->createQuery(Argument::type('string'))
-            ->willReturn($salesforceIdSettingQuery->reveal());
+            ->willReturn($revelation);
 
         parent::setUp();
     }
@@ -228,7 +234,7 @@ class DonationRepositoryTest extends TestCase
         $this->getAppInstance();
         $container = $this->diContainer();
 
-        $query = $this->prophesize(AbstractQuery::class);
+        $query = $this->prophesize(Query::class);
         // Our test donation doesn't actually meet the conditions but as we're
         // mocking out the Doctrine bits anyway that doesn't matter; we just want
         // to check an update call is made when the result set is non-empty.
@@ -272,7 +278,7 @@ class DonationRepositoryTest extends TestCase
         // timestamp varying.
         $testDonation = $this->getTestDonation();
 
-        $query = $this->prophesize(AbstractQuery::class);
+        $query = $this->prophesize(Query::class);
         // Our test donation doesn't actually meet the conditions but as we're
         // mocking out the Doctrine bits anyway that doesn't matter; we just want
         // to check an update call is made when the result set is non-empty.
@@ -330,7 +336,7 @@ class DonationRepositoryTest extends TestCase
         // timestamp varying.
         $testDonation = $this->getTestDonation();
 
-        $query = $this->prophesize(AbstractQuery::class);
+        $query = $this->prophesize(Query::class);
         // Our test donation doesn't actually meet the conditions but as we're
         // mocking out the Doctrine bits anyway that doesn't matter; we just want
         // to check an update call is made when the result set is non-empty.

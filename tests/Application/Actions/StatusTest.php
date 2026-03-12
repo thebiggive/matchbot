@@ -14,8 +14,6 @@ use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Proxy\ProxyFactory;
-use Doctrine\ORM\Tools\Console\Command\GenerateProxiesCommand;
-use Doctrine\ORM\Tools\Console\ConsoleRunner;
 use Doctrine\ORM\UnitOfWork;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Tests\TestCase;
@@ -29,12 +27,6 @@ use function assert;
 class StatusTest extends TestCase
 {
     private const string DOMAIN_DIR = __DIR__ . '/../../../src/Domain';
-
-    #[\Override]
-    public function setUp(): void
-    {
-        $this->generateORMProxiesAtRealPath();
-    }
 
     public function testOK(): void
     {
@@ -76,41 +68,18 @@ class StatusTest extends TestCase
         $this->assertSame($expectedSerialised, $payload);
     }
 
-    public function testMissingDoctrineORMProxy(): void
+    private function getConnectedMockEntityManager(): EntityManagerInterface
     {
-        $app = $this->getAppInstance();
-
-        // Use a deliberately wrong path so proxies are absent.
-        $entityManager = $this->getConnectedMockEntityManager('/tmp/not/this/dir/proxies');
-        $container = $app->getContainer();
-        assert($container instanceof Container);
-        $container->set(EntityManagerInterface::class, $entityManager);
-
-        $request = $this->createRequest('GET', '/ping');
-        $response = $app->handle($request);
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(500, ['error' => 'Doctrine proxies not built']);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertSame(500, $response->getStatusCode());
-        $this->assertSame($expectedSerialised, $payload);
-    }
-
-    private function getConnectedMockEntityManager(
-        string $proxyPath = __DIR__ . '/../../../var/doctrine/proxies',
-    ): EntityManagerInterface {
         $cacheAdapter = new ArrayAdapter();
 
         $config = ORMSetup::createAttributeMetadataConfiguration(
-            [self::DOMAIN_DIR],
-            false, // Simulate live mode for these tests.
-            $proxyPath,
-            $cacheAdapter,
+            paths: [self::DOMAIN_DIR],
+            isDevMode: false, // Simulate live mode for these tests.
+            proxyDir: null,
+            cache: $cacheAdapter,
         );
 
-        // No auto-generation – like live mode – for these tests.
-        $config->setAutoGenerateProxyClasses(false);
+        $config->enableNativeLazyObjects(true);
         $config->setMetadataDriverImpl(
             new AttributeDriver([self::DOMAIN_DIR]),
         );
@@ -122,7 +91,7 @@ class StatusTest extends TestCase
         );
         $connectionProphecy->isConnected()
             ->willReturn(true);
-        // *Can* be called by `GenerateProxiesCommand`.
+
         $connectionProphecy->getDatabasePlatform()
             ->willReturn(new MySQL80Platform());
 
@@ -163,28 +132,5 @@ class StatusTest extends TestCase
             ->willReturn($connectionProphecy->reveal());
 
         return $emProphecy->reveal();
-    }
-
-    /**
-     * Simulate the real app entrypoint's Doctrine proxy generate command, so that proxies are
-     * in-place in the unit test filesystem and we can assume that when realistic paths are provided,
-     * the `Status` Action should be able to complete a successful run through.
-     */
-    private function generateORMProxiesAtRealPath(): void
-    {
-        $app = $this->getAppInstance();
-        $container = $app->getContainer();
-        assert($container instanceof Container);
-
-        $container->set(EntityManagerInterface::class, $this->getConnectedMockEntityManager());
-
-        /** @psalm-suppress DeprecatedMethod - using Deprecated methods is almost OK in tests */
-        $helperSet = ConsoleRunner::createHelperSet($container->get(EntityManagerInterface::class));
-        $generateProxiesCommand = new GenerateProxiesCommand();
-        $generateProxiesCommand->setHelperSet($helperSet);
-        $generateProxiesCommand->run(
-            new StringInput(''),
-            new NullOutput(),
-        );
     }
 }

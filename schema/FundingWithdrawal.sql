@@ -12,7 +12,7 @@ CREATE TABLE `FundingWithdrawal` (
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   `campaignFunding_id` int unsigned DEFAULT NULL,
-  `releasedAt` datetime DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)',
+  `releasedAt` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `IDX_5C8EAC124DC1279C` (`donation_id`),
   KEY `IDX_5C8EAC12CB9EBA34` (`campaignFunding_id`),

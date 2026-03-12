@@ -602,7 +602,7 @@ class RegularGivingServiceTest extends TestCase
         $this->donationRepositoryProphecy->findPendingAndPreAuthedForMandate($mandate->getUuid())->willReturn([$donation]);
 
         // This is how DonationService wraps the calls to cancel donations safely.
-        $this->entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))->shouldBeCalled();
+        $this->entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))->shouldBeCalled()->willReturn(null);
         $this->entityManagerProphecy->flush()->shouldBeCalled();
 
         $sut->cancelMandate(mandate: $mandate, reason: '', cancellationType: MandateCancellationType::DonorRequestedCancellation);

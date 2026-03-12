@@ -47,7 +47,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - composer-v1-{{ checksum "composer.lock" }}
+            - composer-v2-{{ checksum "composer.lock" }}
 
       - run: composer install --no-interaction
 
@@ -56,7 +56,7 @@ jobs:
       - save_cache:
           paths:
             - vendor
-          key: composer-v1-{{ checksum "composer.lock" }}
+          key: composer-v2-{{ checksum "composer.lock" }}
 
       - run: composer run lint:check
 
@@ -125,14 +125,14 @@ jobs:
 
       - restore_cache:
           keys:
-            - composer-v1-{{ checksum "composer.lock" }}
+            - composer-v2-{{ checksum "composer.lock" }}
 
       - run: composer install --no-interaction
 
       - save_cache:
           paths:
             - vendor
-          key: composer-v1-{{ checksum "composer.lock" }}
+          key: composer-v2-{{ checksum "composer.lock" }}
 
       - run:
           name: Mutation Test only changed and added files in PR

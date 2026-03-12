@@ -7,7 +7,7 @@
 
 CREATE TABLE `EmailVerificationToken` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `createdAt` datetime NOT NULL COMMENT '(DC2Type:datetime_immutable)',
+  `createdAt` datetime NOT NULL,
   `emailAddress` varchar(255) NOT NULL,
   `randomCode` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
