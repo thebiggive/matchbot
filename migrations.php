@@ -15,6 +15,6 @@ return [
         'MatchBot\Migrations' => __DIR__ . '/src/Migrations',
     ],
 
-    'all_or_nothing' => true,
+    'all_or_nothing' => false,
     'check_database_platform' => true,
 ];
