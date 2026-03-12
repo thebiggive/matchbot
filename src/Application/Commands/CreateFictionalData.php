@@ -93,11 +93,7 @@ class CreateFictionalData extends Command
         $this->em->persist($fund);
         $this->em->persist($campaignFunding);
 
-
         $metaCampaign = $this->getOrCreateMetaCampaign('local-test', CampaignFamily::emergencyMatch);
-
-
-
         $this->getOrCreateMetaCampaign('women-and-girls-2024', CampaignFamily::womenGirls);
         $this->getOrCreateMetaCampaign('christmas-challenge-2025', CampaignFamily::christmasChallenge);
         $this->getOrCreateMetaCampaign('k2m25', CampaignFamily::mentalHealthFund);
@@ -114,7 +110,6 @@ class CreateFictionalData extends Command
         } else {
             $io->writeln("Found existing fictional charity {$charity->getName()}, {$charity->getSalesforceId()}");
         }
-
 
         foreach ($this->getFictionalCampaigns($metaCampaign) as $fictionalCampaign) {
             $campaignId = Salesforce18Id::ofCampaign($fictionalCampaign['id']);
