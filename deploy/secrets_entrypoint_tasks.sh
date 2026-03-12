@@ -18,8 +18,6 @@ if [ -n "$JWT_ID_SECRETS" ]; then
   export JWT_ID_SECRETS=$(echo "$JWT_ID_SECRETS" | base64 -d)
 fi
 
-composer doctrine:ensure-prod || exit 2
-
 echo "Running migrations before start if necessary..."
 composer doctrine:cache:clear:live
 composer doctrine:migrate:live || exit 3
