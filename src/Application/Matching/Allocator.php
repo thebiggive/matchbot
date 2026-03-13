@@ -12,6 +12,7 @@ use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\FundingWithdrawal;
+use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Lock\Exception\LockConflictedException;
 use Symfony\Component\Lock\LockFactory;
@@ -24,6 +25,7 @@ class Allocator
         private LoggerInterface $logger,
         private CampaignFundingRepository $campaignFundingRepository,
         private LockFactory $lockFactory,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -221,7 +223,7 @@ class Allocator
     {
         $this->entityManager->wrapInTransaction(function () use ($donation) {
             foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                $this->entityManager->remove($fundingWithdrawal);
+                $fundingWithdrawal->release($this->clock->now());
             }
         });
     }

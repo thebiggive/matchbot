@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -47,7 +48,7 @@ class Campaign extends SalesforceReadProxy
     #[ORM\ManyToMany(targetEntity: CampaignFunding::class, mappedBy: 'campaigns')]
     protected Collection $campaignFundings;
 
-    #[ORM\OneToOne(mappedBy: 'campaign', targetEntity: CampaignStatistics::class, fetch: 'EAGER')]
+    #[ORM\OneToOne(mappedBy: 'campaign', targetEntity: CampaignStatistics::class, cascade: ['persist'], fetch: 'EAGER')]
     private ?CampaignStatistics $campaignStatistics = null;
 
     /**
@@ -109,18 +110,17 @@ class Campaign extends SalesforceReadProxy
     /**
      * The first moment when donors should be able to make a donation, or a regular giving mandate
      **/
-    #[ORM\Column(type: 'datetime')]
-    protected DateTimeInterface $startDate;
+    #[ORM\Column(type: 'datetime_immutable')]
+    protected \DateTimeImmutable $startDate;
 
     /**
      * The last moment when donors should be able to make an ad-hoc donation, or create a new
      * regular giving mandate.
      *
      * @see self::$regularGivingCollectionEnd
-     * @var DateTimeInterface
      */
-    #[ORM\Column(type: 'datetime')]
-    protected DateTimeInterface $endDate;
+    #[ORM\Column(type: 'datetime_immutable')]
+    protected \DateTimeImmutable $endDate;
 
     /**
      * @var bool    Whether the Campaign was launched as a match-funded type of campaign. This does not
@@ -165,12 +165,6 @@ class Campaign extends SalesforceReadProxy
      */
     #[ORM\Column(nullable: true)]
     protected ?\DateTimeImmutable $regularGivingCollectionEnd;
-
-    #[ORM\Embedded(columnPrefix: 'total_funding_allocation_')]
-    private Money $totalFundingAllocation;
-
-    #[ORM\Embedded(columnPrefix: 'amount_pledged_')]
-    private Money $amountPledged;
 
     #[ORM\Embedded(columnPrefix: 'total_fundraising_target_')]
     private Money $totalFundraisingTarget;
@@ -218,8 +212,6 @@ class Campaign extends SalesforceReadProxy
         string $name,
         ?string $summary,
         string $currencyCode,
-        Money $totalFundingAllocation,
-        Money $amountPledged,
         bool $isRegularGiving,
         ?int $pinPosition,
         ?int $championPagePinPosition,
@@ -254,8 +246,6 @@ class Campaign extends SalesforceReadProxy
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             thankYouMessage: $thankYouMessage,
             hidden: $hidden,
-            totalFundingAllocation: $totalFundingAllocation,
-            amountPledged: $amountPledged,
             totalFundraisingTarget: $totalFundraisingTarget,
             sfData: $rawData,
         );
@@ -316,8 +306,6 @@ class Campaign extends SalesforceReadProxy
             name: $title,
             summary: $campaignData['summary'],
             currencyCode: $currency->isoCode(),
-            totalFundingAllocation: Money::fromPence((int)(100.0 * ($campaignData['totalFundingAllocation'] ?? 0.0)), $currency),
-            amountPledged: Money::fromPence((int)(100.0 * ($campaignData['amountPledged'] ?? 0.0)), $currency),
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             pinPosition: $campaignData['pinPosition'] ?? null,
             championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
@@ -411,12 +399,12 @@ class Campaign extends SalesforceReadProxy
         $this->name = $name;
     }
 
-    public function setStartDate(DateTimeInterface $startDate): void
+    public function setStartDate(DateTimeImmutable $startDate): void
     {
         $this->startDate = $startDate;
     }
 
-    public function setEndDate(DateTimeInterface $endDate): void
+    public function setEndDate(DateTimeImmutable $endDate): void
     {
         $this->endDate = $endDate;
     }
@@ -503,19 +491,17 @@ class Campaign extends SalesforceReadProxy
         ?int $championPagePinPosition,
         ?ApplicationStatus $relatedApplicationStatus,
         ?CharityResponseToOffer $relatedApplicationCharityResponseToOffer,
-        \DateTimeInterface $endDate,
+        \DateTimeImmutable $endDate,
         bool $isMatched,
         string $name,
         ?string $summary,
         ?string $metaCampaignSlug,
-        \DateTimeInterface $startDate,
+        \DateTimeImmutable $startDate,
         bool $ready,
         bool $isRegularGiving,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         ?string $thankYouMessage,
         bool $hidden,
-        Money $totalFundingAllocation,
-        Money $amountPledged,
         Money $totalFundraisingTarget,
         array $sfData,
     ): void {
@@ -558,8 +544,6 @@ class Campaign extends SalesforceReadProxy
         $this->isRegularGiving = $isRegularGiving;
         $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
         $this->hidden = $hidden;
-        $this->totalFundingAllocation = $totalFundingAllocation;
-        $this->amountPledged = $amountPledged;
         $this->totalFundraisingTarget = $totalFundraisingTarget;
         $this->pinPosition = $pinPosition;
         $this->championPagePinPosition = $championPagePinPosition;
@@ -694,18 +678,13 @@ class Campaign extends SalesforceReadProxy
         return $this->totalFundraisingTarget;
     }
 
+    public function setTestStatistics(CampaignStatistics $campaignStatistics): void
+    {
+        $this->campaignStatistics = $campaignStatistics;
+    }
+
     public function getStatistics(): CampaignStatistics
     {
         return $this->campaignStatistics ?? CampaignStatistics::zeroPlaceholder($this, new \DateTimeImmutable('now'));
-    }
-
-    public function getAmountPledged(): Money
-    {
-        return $this->amountPledged;
-    }
-
-    public function getTotalFundingAllocation(): Money
-    {
-        return $this->totalFundingAllocation;
     }
 }

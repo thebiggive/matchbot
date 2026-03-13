@@ -76,8 +76,21 @@ class Explain extends Action
 
         ksort($donationDetails);
 
+        // only include the most basic fields and ones about matching, to reduce stuff to read shown here.
+        $relevantFields = [
+            'amountMatchedByChampionFunds',
+            'amountMatchedByPledges',
+            'collectedTime',
+            'createdTime',
+            'donationAmount',
+            'matchReservedAmount',
+            'matchedAmount',
+            'status'
+        ];
+
         $text .=
             $donationDetails
+            |> (fn($d) => \array_filter($d, fn(string $key) => \in_array($key, $relevantFields, true), \ARRAY_FILTER_USE_KEY))
             |> (fn($d) => \array_map(function ($key, $value) use (&$i) {
                     $i++;
                     $value = json_encode($value);
@@ -103,9 +116,7 @@ class Explain extends Action
 
         $competingDonations = $this->donationRepository->potentiallyCompetingDonations($donation);
         $competingDonationText = $competingDonations
-            |> (fn(array $donations) => \array_map(fn(Donation $d) => "   -  {$d->getSalesforceId()}: {$d->getAmount()}"
-                    . " {$d->currency()->isoCode()} ({$d->getDonationStatus()->name}) "
-                    . "created {$d->getCreatedDate()->format(\DateTime::ATOM)}", $donations))
+            |> (fn(array $donations) => \array_map($this->renderOtherDonation(...), $donations))
             |> (fn(array $d): string => \implode("\n", $d));
 
         $text .= $competingDonations === []  ? 'None' : $competingDonationText;
@@ -115,11 +126,30 @@ class Explain extends Action
         return $response->withHeader('content-type', 'text/plain');
     }
 
-    private function renderFundingWithdrawal(FundingWithdrawal $fundingWithdrawal): string
+    private function renderFundingWithdrawal(FundingWithdrawal $fw): string
     {
-        $campaignFunding = $fundingWithdrawal->getCampaignFunding();
+        $campaignFunding = $fw->getCampaignFunding();
         $fund = $campaignFunding->getFund();
-        $fundName = $fund->getName();
-        return "   - {$fundingWithdrawal->getAmount()} from {$fund->getFundType()->name} '$fundName' (SF: {$fund->getSalesforceId()})";
+
+        return "         {$fw->getAmount()} from {$fund->getName()} {$fund->getSalesforceId()}" .
+            ($fw->isReleased() ? ", released {$fw->releasedAt->format(\DateTimeImmutable::ATOM)}" : ", not released");
+    }
+
+    private function renderOtherDonation(Donation $donation): string
+    {
+        $ret = "";
+        $ret .= "   -  {$donation->getSalesforceId()}: {$donation->getAmount()}"
+            . " {$donation->currency()->isoCode()} ({$donation->getDonationStatus()->name}) "
+            . "created {$donation->getCreatedDate()->format(\DateTime::ATOM)}\n";
+
+        $fundingWithdrawals = $donation->getFundingWithdrawals();
+        if (! $fundingWithdrawals->isEmpty()) {
+            $ret .= "      Funding withdrawals:\n";
+            foreach ($fundingWithdrawals as $fw) {
+                $ret .= $this->renderFundingWithdrawal($fw) . "\n" ;
+            }
+        }
+
+        return $ret;
     }
 }

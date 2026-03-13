@@ -7,11 +7,17 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\Console\ConsoleRunner;
 use Doctrine\ORM\Tools\Console\EntityManagerProvider\SingleManagerProvider;
 
+if (($argv[1] ?? null) !== 'orm:schema-tool:drop') {
+    /** Distinguish from Doctrine Migrations - but if we're dropping the whole DB then
+     * we don't need this as the migrations table should also be dropped. */
+    define('RUNNING_DOCTRINE_ORM_SCHEMA_TOOL', true);
+}
+
 $psr11App = require __DIR__ . '/bootstrap.php';
 
 $entityManager = $psr11App->get(EntityManagerInterface::class);
 
 ConsoleRunner::run(
-    helperSetOrProvider: new SingleManagerProvider($entityManager),
+    entityManagerProvider: new SingleManagerProvider($entityManager),
     commands: []
 );

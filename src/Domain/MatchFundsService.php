@@ -72,8 +72,13 @@ class MatchFundsService
         return Money::fromNumericString($runningTotal, Currency::fromIsoCode($currencyCode));
     }
 
+    public function getFundsTotalForMetaCampaign(MetaCampaign $metaCampaign): Money
+    {
+        return $this->campaignFundingRepository->getAmountsForMetaCampaign($metaCampaign)['totalAmount'];
+    }
+
     public function getFundsRemainingForMetaCampaign(MetaCampaign $metaCampaign): Money
     {
-        return $this->campaignFundingRepository->getAmountAvailableForMetaCampaign($metaCampaign);
+        return $this->campaignFundingRepository->getAmountsForMetaCampaign($metaCampaign)['totalAmountAvailable'];
     }
 }

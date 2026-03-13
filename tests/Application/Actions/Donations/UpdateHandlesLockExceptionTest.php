@@ -191,7 +191,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
                  * @psalm-suppress InternalMethod - use in test to simulate failure is not a big issue. We'll
                  * fix if/when the test errors.
                  */
-                throw new LockWaitTimeoutException( // @phpstan-ignore method.internal
+                throw new LockWaitTimeoutException(
                     $testCase->createStub(DriverException::class),
                     null
                 );

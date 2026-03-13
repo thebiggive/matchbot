@@ -102,6 +102,10 @@ class DonationServiceTest extends TestCase
         $donationCreate = $this->getDonationCreate();
         $donation = $this->getDonation();
         $campaignRepoProphecy->findOneBy(['salesforceId' => self::CAMPAIGN_ID])->willReturn($donation->getCampaign());
+        $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
+        $this->entityManagerProphecy->commit()->shouldBeCalled();
+        $this->entityManagerProphecy->flush()->shouldBeCalled();
+
 
         $this->chatterProphecy->send(
             Argument::type(ChatMessage::class),
@@ -138,6 +142,7 @@ class DonationServiceTest extends TestCase
         $campaignRepoProphecy->findOneBy(['salesforceId' => self::CAMPAIGN_ID])
             ->willReturn($donation->getCampaign());
 
+        $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
         $this->stripeProphecy->createPaymentIntent(Argument::any())
             ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
 
@@ -214,15 +219,11 @@ class DonationServiceTest extends TestCase
              * @psalm-suppress InternalClass Hard to simulate `final` exception otherwise
              */
             $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willThrow(
-                new LockWaitTimeoutException(new PDOException('EXCEPTION_MESSAGE'), null) // @phpstan-ignore method.internal, method.internalClass, new.internalClass
+                new LockWaitTimeoutException(new PDOException('EXCEPTION_MESSAGE'), null) // @phpstan-ignore new.internalClass
             );
         } else {
             $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willReturn(null);
-            $this->entityManagerProphecy->flush()->willReturn(null);
         }
-
-        $this->entityManagerProphecy->beginTransaction()->willReturn(null);
-        $this->entityManagerProphecy->commit()->willReturn(null);
 
         $logger = $logger ?? new NullLogger();
 
@@ -363,6 +364,8 @@ class DonationServiceTest extends TestCase
         $donation = TestCase::someDonation(amount: '15.00');
         $donation->setTransactionId($paymentIntentId);
 
+        $this->entityManagerProphecy->flush()->shouldBeCalled();
+
         $this->stripeProphecy->retrieveConfirmationToken($confirmationTokenId)
             ->will(function () {
                 $confirmationToken = new ConfirmationToken();
@@ -465,6 +468,7 @@ class DonationServiceTest extends TestCase
             StripeCustomerId::of('cus_someCustomerID'),
             StripePaymentMethodId::of('pm_paymentmethodid')
         )->willReturn($currentPaymentMethod);
+        $this->entityManagerProphecy->flush()->shouldBeCalled();
 
         $this->sut->confirmOnSessionDonation($donation, $stripeConfirmationTokenId, null);
 

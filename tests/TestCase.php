@@ -11,6 +11,7 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFamily;
+use MatchBot\Domain\CampaignStatistics;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityResponseToOffer;
 use MatchBot\Domain\Currency;
@@ -413,14 +414,13 @@ class TestCase extends PHPUnitTestCase
         bool $isMatched = false,
         ?bool $charityRejected = false,
         ?Money $totalFundraisingTarget = null,
-        ?Money $amountPledged = null,
-        ?Money $totalFundingAllocation = null,
         string $status = 'Active',
+        ?Money $withMatchFundsTotal = null,
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         $sfId ??= Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
 
-        return new Campaign(
+        $campaign = new Campaign(
             $sfId,
             metaCampaignSlug: $metaCampaignSlug?->slug,
             charity: $charity ?? self::someCharity(stripeAccountId: $stripeAccountId),
@@ -432,8 +432,6 @@ class TestCase extends PHPUnitTestCase
             name: 'someCampaign',
             summary: 'Some Campaign Summary',
             currencyCode: 'GBP',
-            totalFundingAllocation: $totalFundingAllocation ?? Money::zero(),
-            amountPledged: $amountPledged ?? Money::zero(),
             isRegularGiving: $isRegularGiving,
             pinPosition: null,
             championPagePinPosition: null,
@@ -445,6 +443,16 @@ class TestCase extends PHPUnitTestCase
             rawData: self::CAMPAIGN_FROM_SALESFORCE,
             hidden: false,
         );
+        $campaign->setTestStatistics(new CampaignStatistics(
+            at: new \DateTimeImmutable('2020-01-01'),
+            campaign: $campaign,
+            donationSum: Money::zero(),
+            amountRaised: Money::zero(),
+            matchFundsUsed: Money::zero(),
+            matchFundsTotal: $withMatchFundsTotal ?? Money::zero(),
+        ));
+
+        return $campaign;
     }
 
     /**
