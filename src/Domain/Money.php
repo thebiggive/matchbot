@@ -38,9 +38,10 @@ class Money implements \JsonSerializable, \Stringable
         // Almost 10 trillion £ is well Over the Max. fund value we use in regtest Salesforce sandboxes - these have very high sums of fictional money to allow continous automated donations for a long time.
         // other envs of course don't use use sums anywhere near this big.
         Assertion::between(
-            $this->amountInPence,
-            0,
-            9_999_999_999_999_00,
+            value: $this->amountInPence,
+            lowerLimit: 0,
+            upperLimit: 9_999_999_999_999_00,
+            message: "Cannot construct a negative or extremely large amount of money"
         );
     }
 
