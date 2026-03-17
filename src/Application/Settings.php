@@ -70,7 +70,13 @@ class Settings
     private function __construct(array $env)
     {
         $doctrineConnectionOptions = [];
-        $appEnv = $this->getNonEmptyStringEnv($env, 'APP_ENV', true);
+
+        try {
+            $appEnv = $this->getNonEmptyStringEnv($env, 'APP_ENV', true);
+        } catch (\Exception) {
+            // default to prod for safety:
+            $appEnv = 'production';
+        }
 
         $this->appEnv = $appEnv;
         if (!in_array($appEnv, ['local', 'test'], true)) {
