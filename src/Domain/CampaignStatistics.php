@@ -156,6 +156,7 @@ class CampaignStatistics
         bool $alwaysConsiderChanged,
     ): bool {
         if ($this->campaign->getId() !== 31646) {
+            // @todo resolve issue and remove hard-coded campaign ID conditional.
             // known issue with possible small over-matching on this campaign.
             // MAT-481
             Assertion::greaterOrEqualThan(
