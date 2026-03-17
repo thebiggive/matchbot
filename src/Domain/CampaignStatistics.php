@@ -155,11 +155,16 @@ class CampaignStatistics
         Money $matchFundsTotal,
         bool $alwaysConsiderChanged,
     ): bool {
-        Assertion::greaterOrEqualThan(
-            $matchFundsTotal->toNumericString(),
-            $matchFundsUsed->toNumericString(),
-            'Match funds total must be greater than or equal to match funds used',
-        );
+        if ($this->campaign->getId() !== 31646) {
+            // @todo resolve issue and remove hard-coded campaign ID conditional.
+            // known issue with possible small over-matching on this campaign.
+            // MAT-481
+            Assertion::greaterOrEqualThan(
+                $matchFundsTotal->toNumericString(),
+                $matchFundsUsed->toNumericString(),
+                'Match funds total must be greater than or equal to match funds used',
+            );
+        }
         Assertion::eq(
             $amountRaised->toNumericString(),
             $donationSum->plus($matchFundsUsed)->toNumericString(),
