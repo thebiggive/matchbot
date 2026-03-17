@@ -35,13 +35,6 @@ class Explain extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        if (Environment::current() === Environment::Production) {
-            // either work out how to do authentication and authorisation for BG staff (my preferred option - BL,
-            // probably somehow by requiring them to be logged in to Salesforce first) or ensure there are no
-            // confidential details output before removing this throw.
-            throw new HttpNotFoundException($request);
-        }
-
         Assertion::keyExists($args, "donationId");  // shoould always exist as is defined in routes.php
         $donationUUID = $args['donationId'];
         Assertion::string($donationUUID);
