@@ -36,7 +36,7 @@ final class Version20260318113924 extends AbstractMigration
                                   WHERE FundingWithdrawal.releasedAt is null
                                   GROUP BY FundingWithdrawal.campaignFunding_id) AS FundingWithdrawalTotals
                       ON FundingWithdrawalTotals.campaignFunding_id = CampaignFunding.id
-                SET CampaignFunding.amountAvailable = GREATEST(0, CampaignFunding.amount - FundingWithdrawalTotals.withdrawn_total)
+                SET CampaignFunding.amountAvailable = GREATEST(0, CampaignFunding.amount - COALESCE(FundingWithdrawalTotals.withdrawn_total, 0))
         WHERE CampaignFunding.id IN ($idsString)
         SQL
         );
