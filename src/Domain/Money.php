@@ -216,4 +216,13 @@ class Money implements \JsonSerializable, \Stringable
     {
         return new self(bcmul($this->amountInPence, (string) $multiplier, 0), $this->currency);
     }
+
+    public function greaterThan(Money $that): bool
+    {
+        if ($this->currency !== $that->currency) {
+            throw new \Exception('Cannot compare money in different currencies');
+        }
+
+        return $this->amountInPence > $that->amountInPence;
+    }
 }
