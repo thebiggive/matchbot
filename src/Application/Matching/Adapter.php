@@ -268,6 +268,10 @@ class Adapter
     {
         $totalAmountReleased = '0.00';
         foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+            if ($fundingWithdrawal->isReleased()) {
+                continue;
+            }
+
             $funding = $fundingWithdrawal->getCampaignFunding();
             $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
 
@@ -276,6 +280,8 @@ class Adapter
 
             $this->logger->info("Released {$fundingWithDrawalAmount} to funding {$funding->getId()}");
             $this->logger->info("New fund total for {$funding->getId()}: $newTotal");
+
+            $fundingWithdrawal->release($this->clock->now());
         }
 
         return $totalAmountReleased;
