@@ -10,6 +10,7 @@ use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundType;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Symfony\Component\Clock\MockClock;
 
 class AdapterTest extends TestCase
 {
@@ -24,6 +25,7 @@ class AdapterTest extends TestCase
         $this->sut = new Adapter(
             $this->storage,
             new NullLogger(),
+            new MockClock(),
         );
     }
 
@@ -49,7 +51,7 @@ class AdapterTest extends TestCase
             amountAvailable: '50',
         );
         $funding->setId(1);
-        $this->sut->addAmount($funding, '12.53');
+        $this->sut->addAmount($funding, '12.53', null);
 
         // set the amount available in the funding to something different so we know the
         // amount returned in the getAmountAvailable call has to be from the realtime storage.
@@ -69,7 +71,7 @@ class AdapterTest extends TestCase
         $funding->setId(1);
         $amountToSubtract = "10.10";
 
-        $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
+        $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract, null);
 
         \assert(50.0 - 10.10 === 39.9); // @phpstan-ignore identical.alwaysTrue, function.alreadyNarrowedType
         $this->assertSame('39.90', $this->sut->getAmountAvailable($funding));
@@ -86,12 +88,12 @@ class AdapterTest extends TestCase
         $funding->setId(1);
         $amountToSubtract = "30";
 
-        $this->sut->subtractAmount($funding, $amountToSubtract);
+        $this->sut->subtractAmount($funding, $amountToSubtract, null);
 
         try {
             // this second subtraction will take the fund negative in redis temporarily, but our Adapter will add
             // back the 30 just subtracted.
-            $this->sut->subtractAmount($funding, $amountToSubtract);
+            $this->sut->subtractAmount($funding, $amountToSubtract, null);
             $this->fail("should have thrown exception on attempt to allocate more than available");
         } catch (LessThanRequestedAllocatedException $exception) {
             $this->assertStringContainsString("Less than requested was allocated", $exception->getMessage());
@@ -120,10 +122,10 @@ class AdapterTest extends TestCase
         $funding->setAmountAvailable('50');
         $amountToSubtract = "30";
 
-        $this->sut->subtractAmount($funding, $amountToSubtract);
+        $this->sut->subtractAmount($funding, $amountToSubtract, null);
 
         try {
-            $this->sut->subtractAmount($funding, $amountToSubtract);
+            $this->sut->subtractAmount($funding, $amountToSubtract, null);
             $this->fail("should have thrown exception on attempt to allocate more than available");
         } catch (TerminalLockException $exception) {
             // this -140_00 number is not very important - we already released part of the funds earlier,
@@ -153,7 +155,7 @@ class AdapterTest extends TestCase
             amountAvailable: '1',
         );
         $funding->setId(1);
-        $this->sut->addAmount($funding, '5');
+        $this->sut->addAmount($funding, '5', null);
 
         $funding->setAmountAvailable('53');
         $this->sut->delete($funding);
@@ -173,10 +175,10 @@ class AdapterTest extends TestCase
         $funding->setId(1);
         $amountToSubtract = "10.10";
 
-        $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
+        $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract, null);
 
         // act
-        $this->sut->releaseNewlyAllocatedFunds();
+        $this->sut->releaseNewlyAllocatedFunds(null);
 
         // assert
         $this->assertSame('50.00', $this->sut->getAmountAvailable($funding));

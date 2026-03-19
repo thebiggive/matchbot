@@ -388,8 +388,9 @@ return function (ContainerBuilder $containerBuilder) {
         Matching\Adapter::class =>
             static function (ContainerInterface $c): Matching\Adapter {
                 return new Matching\Adapter(
-                    $c->get(RealTimeMatchingStorage::class),
-                    $c->get(LoggerInterface::class)
+                    storage: $c->get(RealTimeMatchingStorage::class),
+                    logger: $c->get(LoggerInterface::class),
+                    clock: $c->get(\Psr\Clock\ClockInterface::class),
                 );
             },
 
