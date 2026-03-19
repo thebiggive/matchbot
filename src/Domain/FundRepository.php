@@ -290,7 +290,12 @@ EOT;
         // Increase
         if (bccomp($increaseInAmount, '0.00', 2) === 1) {
             // This sets CampaignFunding::$amountAvailable as a side effect.
-            $newTotal = $this->matchingAdapter->addAmount($campaignFunding, $increaseInAmount);
+            $newTotal = $this->matchingAdapter->addAmount(
+                funding: $campaignFunding,
+                amount: $increaseInAmount,
+                donationId: null,
+                extraComment: 'applyFundBalanceChange'
+            );
 
             $this->getLogger()->info(
                 "Campaign Funding ID {$campaignFunding->getId()} balance increased " .
@@ -316,7 +321,12 @@ EOT;
         }
 
         // This sets CampaignFunding::$amountAvailable as a side effect.
-        $newTotal = $this->matchingAdapter->subtractAmount($campaignFunding, $decreaseInAmount);
+        $newTotal = $this->matchingAdapter->subtractAmount(
+            funding: $campaignFunding,
+            amount: $decreaseInAmount,
+            donationId: null,
+            extraComment: 'applyFundBalanceChange',
+        );
 
         $this->getLogger()->info(
             "Campaign Funding ID {$campaignFunding->getId()} balance decreased " .

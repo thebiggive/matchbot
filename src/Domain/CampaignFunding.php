@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use BcMath\Number;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -62,9 +63,23 @@ class CampaignFunding extends Model
      *
      * @psalm-var numeric-string Use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see CampaignFunding::$currencyCode
+     *
+     * Whenver writing to this also call self::logAdjustment to help us track what's going on.
+     *
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $amountAvailable;
+
+
+    /**
+     * Logs increments, decrements etc to this CampaignFunding - not currently used in business logic but
+     * intended to help us track what's wrong if the amountAvailable at any time does not match what it should
+     * based on adding up all fundingWithdrawals.
+     *
+     * @var list<array<string, string>>
+     */
+    #[ORM\Column(type: 'json', nullable: true)]
+    protected array $adjustmentLog = [];
 
     /**
      * @var Collection<int, FundingWithdrawal>
@@ -90,12 +105,36 @@ class CampaignFunding extends Model
         $this->campaigns = new ArrayCollection();
         $this->fundingWithdrawals = new ArrayCollection();
         $this->createdNow();
+
+        $this->logAdjustment(
+            incrementAmount: $amountAvailable,
+            balance: $amountAvailable,
+            relatedDonationId: null,
+            at: new \DateTimeImmutable(),
+            comment: 'Constructing new record'
+        );
     }
 
     public function __toString(): string
     {
         return "CampaignFunding, ID #{$this->id}, created {$this->createdAt->format('c')} " .
             "of fund SF ID {$this->fund->getSalesforceId()}";
+    }
+
+    /**
+     * @param numeric-string $incrementAmount - increase to amountAvailable. Will be more often than not be negative.
+     * @param numeric-string $balance - the amaount available at the time of saving this adjustment.
+     * @return void
+     */
+    public function logAdjustment(string $incrementAmount, string $balance, ?int $relatedDonationId, \DateTimeImmutable $at, ?string $comment = null)
+    {
+        $this->adjustmentLog[] = [
+            'incr' => $incrementAmount,
+            'balance' => $balance,
+            'd-id' => $relatedDonationId,
+            'at' => $at->format(\DateTimeImmutable::ATOM),
+            'c' => $comment,
+        ];
     }
 
     /**
@@ -125,6 +164,7 @@ class CampaignFunding extends Model
 
     /**
      * @psalm-param numeric-string $amountAvailable
+     * Also call x
      */
     public function setAmountAvailable(string $amountAvailable): void
     {
