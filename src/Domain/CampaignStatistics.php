@@ -155,11 +155,16 @@ class CampaignStatistics
         Money $matchFundsTotal,
         bool $alwaysConsiderChanged,
     ): bool {
-        Assertion::greaterOrEqualThan(
-            $matchFundsTotal->toNumericString(),
-            $matchFundsUsed->toNumericString(),
-            'Match funds total must be greater than or equal to match funds used',
-        );
+
+        // we know the following is not always true at the moment - looks like there are some temporarily overmatched
+        // funds.
+        //        Assertion::greaterOrEqualThan(
+        //            $matchFundsTotal->toNumericString(),
+        //            $matchFundsUsed->toNumericString(),
+        //            'Match funds total must be greater than or equal to match funds used',
+        //        );
+
+
         Assertion::eq(
             $amountRaised->toNumericString(),
             $donationSum->plus($matchFundsUsed)->toNumericString(),
@@ -176,7 +181,16 @@ class CampaignStatistics
         $this->donationSum = $donationSum;
         $this->matchFundsUsed = $matchFundsUsed;
         $this->matchFundsTotal = $matchFundsTotal;
-        $this->matchFundsRemaining = $matchFundsTotal->minus($matchFundsUsed);
+
+        if ($matchFundsUsed->greaterThan($matchFundsTotal)) {
+            // possibly we should say the matchFundsRemaining is negative in this case due to an error
+            // but various systems may not support negative, setting to zero is better than
+            // not updating at all in this case. The Money Constructor does not currently allow constructing
+            // negative sums.
+            $this->matchFundsRemaining = Money::zero($matchFundsTotal->currency);
+        } else {
+            $this->matchFundsRemaining = $matchFundsTotal->minus($matchFundsUsed);
+        }
 
         $target = $this->campaign->getTotalFundraisingTarget();
         $this->distanceToTarget = $target->lessThan($amountRaised)

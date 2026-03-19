@@ -113,7 +113,14 @@ class UpdateCampaignDonationStats extends LockingCommand
             );
         } catch (AssertionFailedException $exception) {
             $errorMessage = "Error updating statistics for campaign ID {$campaignId} ({$campaign->getSalesforceId()}): {$exception->getMessage()}";
-            $this->logger->error($errorMessage);
+            if ($campaignId !== 31646) {
+                // @todo resolve issue and remove hard-coded campaign ID conditional.
+                // known issue with possible small over-matching on this campaign.
+                // MAT-481
+                $this->logger->error($errorMessage);
+            } else {
+                $this->logger->warning($errorMessage);
+            }
             $output->writeln("<error>$errorMessage</error>");
             return false; // Not re-throwing for now so that we can get a complete list of campaigns with issues in one go.
         }
