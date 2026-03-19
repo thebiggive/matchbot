@@ -83,7 +83,7 @@ class Allocator
             // Flush `$newWithdrawals` if any and updates to DB copies of CampaignFundings.
             $this->entityManager->flush();
         } catch (\Throwable $exception) {
-            $this->adapter->releaseNewlyAllocatedFunds();
+            $this->adapter->releaseNewlyAllocatedFunds($donation->getId());
 
             // Ensure nothing later tries to persist the pending Donation or CampaignFunding changes.
             $this->entityManager->close();
@@ -189,7 +189,11 @@ class Allocator
 
             $newTotal = '[new total not defined]';
             try {
-                $newTotal = $this->adapter->subtractAmount($funding, $amountToAllocateNow);
+                $newTotal = $this->adapter->subtractAmount(
+                    funding: $funding,
+                    amount: $amountToAllocateNow,
+                    donationId: $donation->getId(),
+                );
                 $amountAllocated = $amountToAllocateNow; // If no exception thrown
             } catch (LessThanRequestedAllocatedException $exception) {
                 $amountAllocated = $exception->getAmountAllocated();

@@ -8,6 +8,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Donation;
+use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,6 +45,7 @@ class Adapter
     public function __construct(
         private RealTimeMatchingStorage $storage,
         private LoggerInterface $logger,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -55,7 +57,7 @@ class Adapter
      * @param numeric-string $amount
      * @return numeric-string New fund balance
      */
-    public function addAmount(CampaignFunding $funding, string $amount): string
+    public function addAmount(CampaignFunding $funding, string $amount, ?int $donationId, string $extraComment = ''): string
     {
         $incrementFractional = $this->toCurrencyFractionalUnit($amount);
 
@@ -76,6 +78,14 @@ class Adapter
         $fundBalance = $this->toCurrencyWholeUnit((int)$fundBalanceFractional);
         $funding->setAmountAvailable($fundBalance);
 
+        $funding->logAdjustment(
+            incrementAmount: $amount,
+            balance: $fundBalance,
+            relatedDonationId: $donationId,
+            at: $this->clock->now(),
+            comment: $extraComment ? "addAmount - $extraComment" : 'addAmount',
+        );
+
         return $fundBalance;
     }
 
@@ -87,7 +97,7 @@ class Adapter
      * @param numeric-string $amount
      * @return numeric-string New fund balance as bcmath-ready string
      */
-    public function subtractAmount(CampaignFunding $funding, string $amount): string
+    public function subtractAmount(CampaignFunding $funding, string $amount, ?int $donationId, string $extraComment = ''): string
     {
         $decrementFractional = $this->toCurrencyFractionalUnit($amount);
 
@@ -154,6 +164,14 @@ class Adapter
 
         $fundBalance = $this->toCurrencyWholeUnit($fundBalanceFractional);
         $funding->setAmountAvailable($fundBalance);
+
+        $funding->logAdjustment(
+            incrementAmount: \bcmul('-1', $amount, 2),
+            balance: $fundBalance,
+            relatedDonationId: $donationId,
+            at: $this->clock->now(),
+            comment: $extraComment ? "subtractAmount - $extraComment" : 'subtractAmount',
+        );
 
         return $fundBalance;
     }
@@ -226,7 +244,7 @@ class Adapter
      * For use only in case of errors, to release allocated funds in redis that would otherwise be out of sync with
      * what we have in MySQL.
      */
-    public function releaseNewlyAllocatedFunds(): void
+    public function releaseNewlyAllocatedFunds(?int $donationId): void
     {
         foreach ($this->amountsSubtractedInCurrentProcess as $fundingAndAmount) {
             $amount = $fundingAndAmount['amount'];
@@ -234,7 +252,12 @@ class Adapter
 
             $this->logger->warning("Released newly allocated funds of $amount for funding ID {$funding->getId()}");
 
-            $this->addAmount($funding, $amount);
+            $this->addAmount(
+                funding: $funding,
+                amount: $amount,
+                donationId: $donationId,
+                extraComment: 'releaseNewlyAllocatedFunds'
+            );
         }
     }
 
@@ -248,7 +271,7 @@ class Adapter
             $funding = $fundingWithdrawal->getCampaignFunding();
             $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
 
-            $newTotal = $this->addAmount($funding, $fundingWithDrawalAmount);
+            $newTotal = $this->addAmount($funding, $fundingWithDrawalAmount, $donation->getId(), 'releaseAllFundsForDonation');
             $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithDrawalAmount, 2);
 
             $this->logger->info("Released {$fundingWithDrawalAmount} to funding {$funding->getId()}");

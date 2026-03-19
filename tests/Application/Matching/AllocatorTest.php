@@ -55,6 +55,7 @@ class AllocatorTest extends TestCase
         $matchingAdapter = new Adapter(
             new ArrayMatchingStorage(),
             new NullLogger(),
+            new MockClock('2020-01-01T00:00:00'),
         );
 
         $this->sut = new Allocator(

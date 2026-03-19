@@ -8,8 +8,12 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
- * Exact copy of Version20260318113924 from yesterday - running again in prod should mitigate issues with live
+ * Almost exact copy of Version20260318113924 from yesterday - running again in prod should mitigate issues with live
  * campaign while we work on a more general fix.
+ *
+ * One and only change is addition of LOWER function on line 45, to make sure that we're only reduce amounts available
+ * here, not increasing them which maybe could happen if this runs at the same time as another process and would make
+ * issues worse not better.
  */
 final class Version20260319102359 extends AbstractMigration
 {

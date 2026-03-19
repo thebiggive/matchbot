@@ -947,7 +947,7 @@ class DonationService
             $this->allocator->allocateMatchFunds($donation);
         } catch (\Throwable $throwable) {
             $this->logger->info(sprintf('Releasing allocated funds after match error for UUID %s', $donation->getUuid()));
-            $this->matchingAdapter->releaseNewlyAllocatedFunds();
+            $this->matchingAdapter->releaseNewlyAllocatedFunds($donation->getId());
             throw $throwable;
         }
     }

@@ -133,7 +133,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $matchingAdapter = $this->getService(Adapter::class);
 
         // Also calls Doctrine model's `setAmountAvailable()` in a not-guaranteed-realtime way.
-        $matchingAdapter->addAmount($campaignFunding, (string) $amount);
+        $matchingAdapter->addAmount($campaignFunding, (string) $amount, null, 'RedistributeMatchingCommandTest::prepareInRedis');
     }
 
     /**
@@ -176,7 +176,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
         // Withdraw the donation value from the champion fund in Redis.
         $matchingAdapter = $this->getService(Adapter::class);
-        $matchingAdapter->subtractAmount($championFundCampaignFunding, (string) $amount);
+        $matchingAdapter->subtractAmount($championFundCampaignFunding, (string) $amount, null);
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($championFundWithdrawal);
