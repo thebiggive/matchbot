@@ -6,6 +6,7 @@ namespace MatchBot\Application\Actions\Hooks;
 
 use Assert\Assertion;
 use DateTimeImmutable;
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Messenger\DonationUpserted;
@@ -122,7 +123,13 @@ class StripePaymentsUpdate extends Stripe
         $this->entityManager->beginTransaction();
 
         if (is_string($intentId)) {
-            $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+            try {
+                $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+            } catch (LockWaitTimeoutException $exception) {
+                $this->logger->warning(sprintf('Failed to acquire lock on donation with Payment Intent ID %s', $intentId));
+                $this->entityManager->rollback();
+                return $this->respond($response, new ActionPayload(503));
+            }
         } else {
             $donation = null;
         }
