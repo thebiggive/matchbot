@@ -119,7 +119,9 @@ class Explain extends Action
 
         $text .= $fundingWithdrawals === []  ? 'None' : $fundingWithdrawalText;
 
-        $text .= $this->generateCompetingDonationsText($donation);
+        if (! $donation->isFullyMatched()) {
+            $text .= $this->generateCompetingDonationsText($donation);
+        }
 
         $response->getBody()->write($text);
 
