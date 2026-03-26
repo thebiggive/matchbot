@@ -481,7 +481,7 @@ class Donation extends SalesforceWriteProxy
 
         $this->paymentMethodType = $paymentMethodType;
         $this->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
-        $this->setPsp(PaymentServiceProvider::Stripe->value);
+        $this->setPsp($campaign->getCharity()->psp->value);
         $this->campaign = $campaign; // Charity & match expectation determined implicitly from this
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
