@@ -26,6 +26,7 @@ use MatchBot\Domain\MetaCampaignSlug;
      * instagram: ?string,
      * optInStatement: ?string,
      * stripeAccountId: string,
+     * psp?: string,
      * hmrcReferenceNumber: string|null,
      * giftAidOnboardingStatus: string,
      * regulatorRegion: string,

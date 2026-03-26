@@ -91,7 +91,7 @@ class UpsertMany extends Action
         $stripeAccountId = $charityData['stripeAccountId'];
         $regulatorRegion = $charityData['regulatorRegion'];
         $regulatorNumber = self::nullOrStringValue($charityData, 'regulatorNumber');
-        $psp = PaymentServiceProvider::Stripe; // @todo BG2-3107 - pull this from SF instead of hard-coding.
+        $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
 
         // Optional fields
         $hmrcReferenceNumber = self::nullOrStringValue($charityData, 'hmrcReferenceNumber');
