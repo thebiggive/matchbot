@@ -60,7 +60,7 @@ class Donation extends SalesforceWriteProxy
      */
     public const string OVERSEAS = 'OVERSEAS';
 
-    private const array POSSIBLE_PSPS = ['stripe'];
+    private const array POSSIBLE_PSPS = [PaymentServiceProvider::Stripe->value];
 
     /**
      * The donation ID for PSPs and public APIs. Not the same as the internal auto-increment $id used
@@ -481,7 +481,7 @@ class Donation extends SalesforceWriteProxy
 
         $this->paymentMethodType = $paymentMethodType;
         $this->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
-        $this->setPsp('stripe');
+        $this->setPsp(PaymentServiceProvider::Stripe->value);
         $this->campaign = $campaign; // Charity & match expectation determined implicitly from this
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
@@ -527,7 +527,7 @@ class Donation extends SalesforceWriteProxy
      */
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign, PersonId $donorId): Donation
     {
-        Assertion::eq($donationData->psp, 'stripe');
+        Assertion::eq($donationData->psp, PaymentServiceProvider::Stripe->value);
         return new self(
             amount: $donationData->donationAmount,
             currencyCode: $donationData->currencyCode,
@@ -1284,7 +1284,7 @@ class Donation extends SalesforceWriteProxy
             return null;
         };
 
-        if ($this->psp !== 'stripe') {
+        if ($this->psp !== PaymentServiceProvider::Stripe->value) {
             throw new \RuntimeException('Unexpected PSP');
         }
 
@@ -1771,7 +1771,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function createStripePaymentIntentPayload(): array
     {
-        Assertion::same('stripe', $this->psp);
+        Assertion::same(PaymentServiceProvider::Stripe->value, $this->psp);
 
         $payload = [
             ...$this->getStripeMethodProperties(),

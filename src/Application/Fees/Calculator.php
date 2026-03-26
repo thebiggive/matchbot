@@ -8,6 +8,7 @@ use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
+use MatchBot\Domain\PaymentServiceProvider;
 
 /**
  * Calculates fees to charge charities per donation. For public facing explanation of fee structure see
@@ -50,7 +51,7 @@ class Calculator
     ): Fees {
         Assertion::eq(
             $psp,
-            'stripe',
+            PaymentServiceProvider::Stripe->value,
             'Only Stripe PSP is supported as don\'t know what fees to charge for other PSPs.'
         );
 

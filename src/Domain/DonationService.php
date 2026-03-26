@@ -160,7 +160,7 @@ class DonationService
             return $this->fakeDonationProviderForTestUseOnly->__invoke();
         }
 
-        if (!in_array($donationData->psp, ['stripe'], true)) {
+        if (!in_array($donationData->psp, [PaymentServiceProvider::Stripe->value], true)) {
             throw new \UnexpectedValueException(sprintf(
                 'PSP %s is invalid',
                 $donationData->psp,
@@ -455,7 +455,7 @@ class DonationService
         $this->entityManager->commit();
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
-        if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {
+        if ($donation->getPsp() === PaymentServiceProvider::Stripe->value && $donation->getDonationStatus() === DonationStatus::Pending) {
             $this->loadCampaignsStripeId($campaign);
             $this->createAndAssociatePaymentIntent($donation);
         }
@@ -533,7 +533,7 @@ class DonationService
      */
     public function createAndAssociatePaymentIntent(Donation $donation): void
     {
-        Assertion::same($donation->getPsp(), 'stripe');
+        Assertion::same($donation->getPsp(), PaymentServiceProvider::Stripe->value);
 
         $now = $this->clock->now();
 
@@ -628,7 +628,7 @@ class DonationService
         }
 
         $transactionId = $donation->getTransactionId();
-        if ($donation->getPsp() === 'stripe' && $transactionId !== null) {
+        if ($donation->getPsp() === PaymentServiceProvider::Stripe->value && $transactionId !== null) {
             try {
                 $this->stripe->cancelPaymentIntent($transactionId);
             } catch (ApiErrorException $exception) {

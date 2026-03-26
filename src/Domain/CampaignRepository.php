@@ -221,21 +221,23 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $emailString = $charityData['emailAddress'] ?? null;
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
+        $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
 
         return new Charity(
             salesforceId: $charityData['id'],
             charityName: $charityData['name'],
             stripeAccountId: $charityData['stripeAccountId'],
+            psp: $psp,
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
             regulator: self::getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
             regulatorNumber: $charityData['regulatorNumber'],
             time: new \DateTime('now'),
-            rawData: $charityData,
+            emailAddress: $emailAddress,
             websiteUri: $charityData['website'],
             logoUri: $charityData['logoUri'],
             phoneNumber: $charityData['phoneNumber'] ?? null,
-            emailAddress: $emailAddress,
+            rawData: $charityData,
         );
     }
 
@@ -250,12 +252,14 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $emailString = $charityData['emailAddress'] ?? null;
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
+        $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
 
         $charity->updateFromSfPull(
             charityName: $charityData['name'],
             websiteUri: $charityData['website'],
             logoUri: $charityData['logoUri'],
             stripeAccountId: $charityData['stripeAccountId'],
+            psp: $psp,
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
             regulator: self::getRegulatorHMRCIdentifier($charityData['regulatorRegion']),

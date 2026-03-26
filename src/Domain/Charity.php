@@ -114,6 +114,9 @@ class Charity extends SalesforceReadProxy
     #[ORM\Column(type: 'boolean')]
     private bool $tbgApprovedToClaimGiftAid = false;
 
+    #[ORM\Column]
+    private(set) PaymentServiceProvider $psp;
+
     /**
      * @param EmailAddress|null $emailAddress
      * @param array<string,mixed> $rawData - data about the charity as sent from Salesforce
@@ -122,6 +125,7 @@ class Charity extends SalesforceReadProxy
         string $salesforceId,
         string $charityName,
         ?string $stripeAccountId,
+        PaymentServiceProvider $psp,
         ?string $hmrcReferenceNumber,
         ?string $giftAidOnboardingStatus,
         ?string $regulator,
@@ -143,6 +147,7 @@ class Charity extends SalesforceReadProxy
             websiteUri: $websiteUri,
             logoUri: $logoUri,
             stripeAccountId: $stripeAccountId,
+            psp: $psp,
             hmrcReferenceNumber: $hmrcReferenceNumber,
             giftAidOnboardingStatus: $giftAidOnboardingStatus,
             regulator: $regulator,
@@ -273,6 +278,7 @@ class Charity extends SalesforceReadProxy
 
     /**
      *
+     * @param PaymentServiceProvider $psp
      * @param EmailAddress|null $emailAddress
      * @param array<string,mixed> $rawData Data about the charity as received directly from SF.
      *
@@ -283,6 +289,7 @@ class Charity extends SalesforceReadProxy
         ?string $websiteUri,
         ?string $logoUri,
         ?string $stripeAccountId,
+        PaymentServiceProvider $psp,
         ?string $hmrcReferenceNumber,
         ?string $giftAidOnboardingStatus,
         ?string $regulator,
@@ -300,6 +307,7 @@ class Charity extends SalesforceReadProxy
 
         $this->setName($charityName);
         $this->setStripeAccountId($stripeAccountId);
+        $this->psp = $psp;
 
         $tbgCanClaimGiftAid = (
             $hmrcReferenceNumber !== null && $hmrcReferenceNumber !== '' &&

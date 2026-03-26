@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\PostalAddress;
 use MatchBot\Tests\TestCase;
 use PHPUnit\Util\Test;
@@ -20,6 +21,7 @@ class CharityTest extends TestCase
             websiteUri: null,
             logoUri: null,
             stripeAccountId: null,
+            psp: PaymentServiceProvider::Stripe,
             hmrcReferenceNumber: 'not-empty',
             giftAidOnboardingStatus: Charity::GIFT_AID_APPROVED_STATUS,
             regulator: null,
@@ -41,6 +43,7 @@ class CharityTest extends TestCase
             websiteUri: null,
             logoUri: null,
             stripeAccountId: null,
+            psp: PaymentServiceProvider::Stripe,
             hmrcReferenceNumber: '',
             giftAidOnboardingStatus: Charity::GIFT_AID_APPROVED_STATUS,
             regulator: null,
@@ -63,6 +66,7 @@ class CharityTest extends TestCase
             websiteUri: null,
             logoUri: null,
             stripeAccountId: null,
+            psp: PaymentServiceProvider::Stripe,
             hmrcReferenceNumber: 'not-empty',
             giftAidOnboardingStatus: 'Onboarded',
             regulator: null,
@@ -109,16 +113,17 @@ class CharityTest extends TestCase
             salesforceId: 'sfID',
             charityName: "Charity Name",
             stripeAccountId: "accountid",
+            psp: PaymentServiceProvider::Stripe,
             hmrcReferenceNumber: "hmrcref",
             giftAidOnboardingStatus: "NOT_A_POSSIBLE_STATUS",
             regulator: null,
             regulatorNumber: null,
             time: new \DateTime(),
-            rawData: [],
+            emailAddress: null,
             websiteUri: null,
             logoUri: null,
             phoneNumber: null,
-            emailAddress: null
+            rawData: []
         );
     }
 
@@ -136,6 +141,7 @@ class CharityTest extends TestCase
             websiteUri: null,
             logoUri: null,
             stripeAccountId: "accountid",
+            psp: PaymentServiceProvider::Stripe,
             hmrcReferenceNumber: $hmrcReference,
             giftAidOnboardingStatus: $giftaidOnboardingStatus,
             regulator: null,

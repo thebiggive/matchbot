@@ -14,6 +14,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\PostalAddress;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -79,6 +80,7 @@ class Put extends Action
         $stripeAccountId = $charityData['stripeAccountId'];
         $regulatorRegion = $charityData['regulatorRegion'];
         $regulatorNumber = self::nullOrStringValue($charityData, 'regulatorNumber');
+        $psp = PaymentServiceProvider::Stripe; // @todo BG2-3107 - pull this from SF instead of hard-coding.
 
         // Optional fields
         $hmrcReferenceNumber = self::nullOrStringValue($charityData, 'hmrcReferenceNumber');
@@ -93,21 +95,23 @@ class Put extends Action
 
         $charity = $this->charityRepository->findOneBySalesforceId($charitySfId);
 
+
         if (! $charity) {
             $charity = new Charity(
                 salesforceId: $charitySfId->value,
                 charityName: $name,
                 stripeAccountId: $stripeAccountId,
+                psp: $psp,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
                 giftAidOnboardingStatus: $giftAidOnboardingStatus,
                 regulator: CampaignRepository::getRegulatorHMRCIdentifier($regulatorRegion),
                 regulatorNumber: $regulatorNumber,
                 time: \DateTime::createFromInterface($this->clock->now()),
-                rawData: $charityData,
+                emailAddress: $emailAddress,
                 websiteUri: $website,
                 logoUri: $logoUri,
                 phoneNumber: $phoneNumber,
-                emailAddress: $emailAddress,
+                rawData: $charityData,
             );
             $this->entityManager->persist($charity);
 
@@ -118,6 +122,7 @@ class Put extends Action
                 websiteUri: $website,
                 logoUri: $logoUri,
                 stripeAccountId: $stripeAccountId,
+                psp: $psp,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
                 giftAidOnboardingStatus: $giftAidOnboardingStatus,
                 regulator: CampaignRepository::getRegulatorHMRCIdentifier($regulatorRegion),
