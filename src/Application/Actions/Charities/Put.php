@@ -95,7 +95,6 @@ class Put extends Action
 
         $charity = $this->charityRepository->findOneBySalesforceId($charitySfId);
 
-
         if (! $charity) {
             $charity = new Charity(
                 salesforceId: $charitySfId->value,
