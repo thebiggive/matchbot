@@ -114,7 +114,7 @@ class Charity extends SalesforceReadProxy
     #[ORM\Column(type: 'boolean')]
     private bool $tbgApprovedToClaimGiftAid = false;
 
-    #[ORM\Column]
+    #[ORM\Column(options: ['default' => 'stripe'])]
     private(set) PaymentServiceProvider $psp;
 
     /**

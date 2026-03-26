@@ -25,7 +25,7 @@ CREATE TABLE `Charity` (
   `emailAddress` varchar(255) DEFAULT NULL,
   `normalisedName` varchar(255) GENERATED ALWAYS AS (regexp_replace(`name`,_utf8mb4'[\'`‘’]+',_utf8mb4'')) STORED,
   `searchable_text` text GENERATED ALWAYS AS (concat_ws(_utf8mb4' ',`normalisedName`,`regulatorNumber`,`websiteUri`)) STORED,
-  `psp` varchar(255) NOT NULL,
+  `psp` varchar(255) NOT NULL DEFAULT 'stripe',
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_4CC08E82D8961D21` (`salesforceId`),
   UNIQUE KEY `UNIQ_4CC08E8293A8A818` (`stripeAccountId`),
