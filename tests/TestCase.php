@@ -387,6 +387,7 @@ class TestCase extends PHPUnitTestCase
             salesforceId: $salesforceId->value ?? ('123CharityId' . self::randomHex(3)),
             charityName: $name,
             stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
+            ryftAccountId: null,
             psp: PaymentServiceProvider::Stripe,
             hmrcReferenceNumber: 'H' . self::randomHex(3),
             giftAidOnboardingStatus: 'Onboarded',
