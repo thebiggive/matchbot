@@ -49,6 +49,8 @@ class Calculator
         string $currencyCode,
         bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
     ): Fees {
+        // @todo BG2-3107 - decide what fee levels to charge for Ryft and allow that as an alternative to
+        // stripe below.
         Assertion::eq(
             $psp,
             PaymentServiceProvider::Stripe->value,
