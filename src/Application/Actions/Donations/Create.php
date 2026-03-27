@@ -194,17 +194,20 @@ class Create extends Action
             );
         }
 
-        $stripeCustomerId = $donation->getPspCustomerId();
-        \assert($stripeCustomerId !== null);
-        $customerSession = $this->stripe->createCustomerSession($stripeCustomerId);
+        if ($donation->getPsp() === 'stripe') {
+            $stripeCustomerId = $donation->getPspCustomerId();
+            \assert($stripeCustomerId !== null);
+            $customerSession = $this->stripe->createCustomerSession($stripeCustomerId);
+            $this->logger->info('Stripe customer session expiry: ' . $customerSession->expires_at);
+        } else {
+            $customerSession = null;
+        }
 
         $data = new DonationCreatedResponse(
             donation: $donation->toFrontEndApiModel($this->enableNoReservationsMode),
             jwt: DonationToken::create($donation->getUuid()->toString()),
-            stripeSessionSecret: $customerSession->client_secret,
+            stripeSessionSecret: $customerSession?->client_secret,
         );
-
-        $this->logger->info('Stripe customer session expiry: ' . $customerSession->expires_at);
 
         return $this->respondWithData($response, $data, 201);
     }

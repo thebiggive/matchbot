@@ -229,6 +229,7 @@ class RegularGivingNotifierTest extends TestCase
             charityComms: false,
             championComms: false,
             pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            psp: \MatchBot\Domain\PaymentServiceProvider::Stripe,
             optInTbgEmail: false,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
@@ -236,12 +237,12 @@ class RegularGivingNotifierTest extends TestCase
             tipAmount: '0',
             mandate: $mandate,
             mandateSequenceNumber: DonationSequenceNumber::of(1),
+            donorId: $donor->id(),
             giftAid: true,
             tipGiftAid: null,
             homeAddress: null,
             homePostcode: null,
             billingPostcode: null,
-            donorId: $donor->id(),
         );
         $firstDonation->setTransactionId('[PSP Transaction ID]');
         $this->addFundingWithdrawal($firstDonation, '64');

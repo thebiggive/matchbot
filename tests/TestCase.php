@@ -486,6 +486,7 @@ class TestCase extends PHPUnitTestCase
             charityComms: null,
             championComms: null,
             pspCustomerId: null,
+            psp: \MatchBot\Domain\PaymentServiceProvider::Stripe,
             optInTbgEmail: null,
             donorName: $donorName,
             emailAddress: $emailAddress,
@@ -493,12 +494,12 @@ class TestCase extends PHPUnitTestCase
             tipAmount: $tipAmount,
             mandate: $regularGivingMandate,
             mandateSequenceNumber: is_int($mandateSequenceNumber) ? DonationSequenceNumber::of($mandateSequenceNumber) : null,
+            donorId: PersonId::of(Uuid::NIL),
             giftAid: $giftAid,
             tipGiftAid: null,
             homeAddress: null,
             homePostcode: null,
             billingPostcode: null,
-            donorId: PersonId::of(Uuid::NIL),
         );
 
         $donation->setUuid($uuid ?? Uuid::uuid4());

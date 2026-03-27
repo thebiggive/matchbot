@@ -60,8 +60,6 @@ class Donation extends SalesforceWriteProxy
      */
     public const string OVERSEAS = 'OVERSEAS';
 
-    private const array POSSIBLE_PSPS = [PaymentServiceProvider::Stripe->value];
-
     /**
      * The donation ID for PSPs and public APIs. Not the same as the internal auto-increment $id used
      * by Doctrine internally for fast joins.
@@ -441,6 +439,7 @@ class Donation extends SalesforceWriteProxy
         ?bool $charityComms,
         ?bool $championComms,
         ?string $pspCustomerId,
+        PaymentServiceProvider $psp,
         ?bool $optInTbgEmail,
         ?DonorName $donorName,
         ?EmailAddress $emailAddress,
@@ -518,6 +517,7 @@ class Donation extends SalesforceWriteProxy
         $this->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
 
         $this->deriveFees();
+        $this->psp = $psp->value;
     }
 
     /**
@@ -527,7 +527,8 @@ class Donation extends SalesforceWriteProxy
      */
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign, PersonId $donorId): Donation
     {
-        Assertion::eq($donationData->psp, PaymentServiceProvider::Stripe->value);
+        Assertion::inArray($donationData->psp, PaymentServiceProvider::VALUES);
+
         return new self(
             amount: $donationData->donationAmount,
             currencyCode: $donationData->currencyCode,
@@ -536,23 +537,24 @@ class Donation extends SalesforceWriteProxy
             charityComms: $donationData->optInCharityEmail,
             championComms: $donationData->optInChampionEmail,
             pspCustomerId: $donationData->pspCustomerId,
+            psp: PaymentServiceProvider::from($donationData->psp),
             optInTbgEmail: $donationData->optInTbgEmail,
             donorName: $donationData->donorName,
             emailAddress: $donationData->emailAddress,
             countryCode: $donationData->countryCode,
             tipAmount: $donationData->tipAmount,
             mandate: null,
-            mandateSequenceNumber: null,
             // Main form starts off with this null on init in the API model, so effectively it's ignored here
             // then as `false` is also the constructor's default. Donation Funds tips should send a bool value
             // from the start.
-            donorId: $donorId,
+            mandateSequenceNumber: null,
             // Not meaningfully used yet (typical donations set it on Update instead; Donation Funds
             // tips don't have a "tip" because the donation is to BG), but map just in case.
+            donorId: $donorId,
             giftAid: $donationData->giftAid ?? false,
             tipGiftAid: $donationData->tipGiftAid,
-            homeAddress: $donationData->homeAddress,
-            homePostcode: $donationData->homePostcode, // no support for billing post code on donation creation in API - only on update.
+            homeAddress: $donationData->homeAddress, // no support for billing post code on donation creation in API - only on update.
+            homePostcode: $donationData->homePostcode,
             billingPostcode: null
         );
     }
@@ -1052,7 +1054,7 @@ class Donation extends SalesforceWriteProxy
      */
     private function setPsp(string $psp): void
     {
-        if (!in_array($psp, self::POSSIBLE_PSPS, true)) {
+        if (!in_array($psp, PaymentServiceProvider::VALUES, true)) {
             throw new \UnexpectedValueException("Unexpected PSP '$psp'");
         }
 
@@ -1280,12 +1282,16 @@ class Donation extends SalesforceWriteProxy
 
     public function getPspCustomerId(): ?StripeCustomerId
     {
+        // I think it may make sense to retrospectively redefine 'PspCustomerID' to mean 'stripe customer ID'
+        // hence now returning null if the PSP is not stripe. Since stripe CustomerID and a Ryft customer ID
+        // can not be used interchangably it may not be useful to mix them into the samre static type.
+
         if ($this->pspCustomerId === null) {
             return null;
         };
 
         if ($this->psp !== PaymentServiceProvider::Stripe->value) {
-            throw new \RuntimeException('Unexpected PSP');
+            return null;
         }
 
         return StripeCustomerId::of($this->pspCustomerId);
