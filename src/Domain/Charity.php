@@ -200,6 +200,11 @@ class Charity extends SalesforceReadProxy
         return $this->stripeAccountId;
     }
 
+    public function getRyftAccountId(): ?RyftAccountId
+    {
+        return is_null($this->ryftAccountId) ? null : RyftAccountId::of($this->ryftAccountId);
+    }
+
     /**
      * @param string|null $stripeAccountId
      */
