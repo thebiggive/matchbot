@@ -191,6 +191,8 @@ class CampaignService
             regulatorRegion: $this->getRegionForRegulator($charity->getRegulator()),
             logoUri: $charity->getLogoUri()?->__toString(),
             stripeAccountId: $charity->getStripeAccountId(),
+            ryftAccountId: $charity->getRyftAccountId()?->ryftAccountId,
+            psp: $charity->psp->value,
         );
 
         if ($metaCampaign && $metaCampaign->usesSharedFunds()) {

@@ -24,6 +24,7 @@ use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Random\Randomizer;
@@ -49,6 +50,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class CreateFictionalData extends Command
 {
     public const string SF_ID_ZERO = '000000000000000000';
+    public const string SF_ID_ONE = '000000000000000001';
 
     public function __construct(
         private EntityManagerInterface $em,
@@ -84,7 +86,8 @@ class CreateFictionalData extends Command
         $io = new SymfonyStyle($input, $output);
         $io->writeln("Creating fictional data for local developer testing");
 
-        $charity = $this->charityRepository->findOneBy(['salesforceId' => self::SF_ID_ZERO]);
+        $charityOnStripe = $this->charityRepository->findOneBy(['salesforceId' => self::SF_ID_ZERO]);
+        $charityOnRyft = $this->charityRepository->findOneBy(['salesforceId' => self::SF_ID_ONE]);
 
         $fund = $this->fundRepository->findOneBy(['salesforceId' => '000000000000000001']) ??
             new Fund('GBP', 'test fund', null, Salesforce18Id::ofFund('000000000000000001'), FundType::Pledge);
@@ -99,26 +102,40 @@ class CreateFictionalData extends Command
         $this->getOrCreateMetaCampaign('k2m25', CampaignFamily::mentalHealthFund);
         $this->getOrCreateMetaCampaign('middle-east-humanitarian-appeal-2024', CampaignFamily::emergencyMatch);
 
-        if (!$charity) {
+        if (!$charityOnStripe) {
             /** @psalm-suppress ArgumentTypeCoercion */
-            $charity = $this->campaignRepository->newCharityFromCampaignData(
-                ['charity' => $this->getFictionalCharityData($io)] // @phpstan-ignore argument.type
+            $charityOnStripe = $this->campaignRepository->newCharityFromCampaignData(
+                ['charity' => $this->getFictionalCharityData($io, PaymentServiceProvider::Stripe)] // @phpstan-ignore argument.type
             );
 
-            $io->writeln("Created fictional charity {$charity->getName()}, {$charity->getSalesforceId()}");
-            $this->em->persist($charity);
+            $io->writeln("Created fictional charity {$charityOnStripe->getName()}, {$charityOnStripe->getSalesforceId()}");
+            $this->em->persist($charityOnStripe);
         } else {
-            $io->writeln("Found existing fictional charity {$charity->getName()}, {$charity->getSalesforceId()}");
+            $io->writeln("Found existing fictional charity {$charityOnStripe->getName()}, {$charityOnStripe->getSalesforceId()}");
         }
 
+        if (!$charityOnRyft) {
+            /** @psalm-suppress ArgumentTypeCoercion */
+            $charityOnRyft = $this->campaignRepository->newCharityFromCampaignData(
+                ['charity' => $this->getFictionalCharityData($io, PaymentServiceProvider::Ryft)] // @phpstan-ignore argument.type
+            );
+
+            $io->writeln("Created fictional charity {$charityOnRyft->getName()}, {$charityOnRyft->getSalesforceId()}");
+            $this->em->persist($charityOnRyft);
+        } else {
+            $io->writeln("Found existing fictional charity {$charityOnRyft->getName()}, {$charityOnRyft->getSalesforceId()}");
+        }
+
+        $i = 0;
         foreach ($this->getFictionalCampaigns($metaCampaign) as $fictionalCampaign) {
+            $i++;
             $campaignId = Salesforce18Id::ofCampaign($fictionalCampaign['id']);
             $campaign = $this->campaignRepository->findOneBySalesforceId($campaignId);
             if (!$campaign) {
                 $campaign = Campaign::fromSfCampaignData(
                     $fictionalCampaign,
                     $campaignId,
-                    $charity
+                    $i % 2 === 0 ? $charityOnStripe : $charityOnRyft
                 );
 
                 $campaign->setSalesforceLastPull(new \DateTime());
@@ -248,14 +265,28 @@ class CreateFictionalData extends Command
     /**
      * @return array<string,mixed>
      */
-    private function getFictionalCharityData(SymfonyStyle $io): array
+    private function getFictionalCharityData(SymfonyStyle $io, PaymentServiceProvider $psp): array
     {
         $randomSeed = \random_int(1, 100);
 
-        $stripeAccountId = $this->createStripeAccount($io);
+        $id = null;
+
+        if ($psp === PaymentServiceProvider::Stripe) {
+            $id = self::SF_ID_ZERO;
+            $stripeAccountId = $this->createStripeAccount($io);
+        } else {
+            $stripeAccountId = null;
+        }
+
+        if ($psp === PaymentServiceProvider::Ryft) {
+            $id = self::SF_ID_ONE;
+            $ryftAccountId = 'ac_b83f2653-06d7-44a9-a548-5825e8186004'; // random placeholder for now.
+        } else {
+            $ryftAccountId = null;
+        }
 
         return [
-            'id' => self::SF_ID_ZERO,
+            'id' => $id,
             'name' => 'Society for the advancement of bots and matches',
             'logoUri' =>  "https://picsum.photos/seed/$randomSeed/200/200",
             'twitter' => null,
@@ -269,6 +300,8 @@ class CreateFictionalData extends Command
             'regulatorNumber' => '1000000',
             'regulatorRegion' => 'England and Wales',
             'stripeAccountId' => $stripeAccountId,
+            'ryftAccountId' => $ryftAccountId,
+            'psp' => $psp->value,
             'hmrcReferenceNumber' => null,
             'giftAidOnboardingStatus' => 'Invited to Onboard',
         ];

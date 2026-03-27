@@ -110,7 +110,19 @@ readonly class Charity
             description: "Stripe account ID for the charity",
             example: "acct_123456789"
         )]
-        public ?string $stripeAccountId
+        public ?string $stripeAccountId,
+        #[OA\Property(
+            property: "ryftAccountId",
+            description: "Ryft account ID for the charity",
+            example: "acct_123456789"
+        )]
+        public ?string $ryftAccountId,
+        #[OA\Property(
+            property: "psp",
+            description: "Identifier for the PaymentServiceProvider used to donate to this charity",
+            example: "stripe"
+        )]
+        public ?string $psp,
     ) {
     }
 }
