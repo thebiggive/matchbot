@@ -8,6 +8,7 @@ use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
+use MatchBot\Domain\PaymentServiceProvider;
 
 /**
  * Calculates fees to charge charities per donation. For public facing explanation of fee structure see
@@ -48,9 +49,11 @@ class Calculator
         string $currencyCode,
         bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
     ): Fees {
+        // @todo BG2-3107 - decide what fee levels to charge for Ryft and allow that as an alternative to
+        // stripe below.
         Assertion::eq(
             $psp,
-            'stripe',
+            PaymentServiceProvider::Stripe->value,
             'Only Stripe PSP is supported as don\'t know what fees to charge for other PSPs.'
         );
 

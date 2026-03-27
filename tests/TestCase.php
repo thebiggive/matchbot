@@ -24,6 +24,7 @@ use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
@@ -386,15 +387,17 @@ class TestCase extends PHPUnitTestCase
             salesforceId: $salesforceId->value ?? ('123CharityId' . self::randomHex(3)),
             charityName: $name,
             stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
+            ryftAccountId: null,
+            psp: PaymentServiceProvider::Stripe,
             hmrcReferenceNumber: 'H' . self::randomHex(3),
             giftAidOnboardingStatus: 'Onboarded',
             regulator: 'CCEW',
             regulatorNumber: 'Reg-no',
             time: new \DateTime('2023-10-06T18:51:27'),
+            emailAddress: $emailAddress,
             websiteUri: 'https://charityname.com',
             logoUri: 'https://some-logo-host/charityname/logo.png',
             phoneNumber: $phoneNumber,
-            emailAddress: $emailAddress,
             rawData: self::CAMPAIGN_FROM_SALESFORCE['charity'],
         );
     }
