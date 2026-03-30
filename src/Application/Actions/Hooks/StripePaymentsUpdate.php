@@ -176,7 +176,18 @@ class StripePaymentsUpdate extends Stripe
 
         $this->entityManager->persist($donation);
         $this->entityManager->commit();
-        $this->entityManager->flush();
+        try {
+            $this->entityManager->flush();
+        } catch (LockWaitTimeoutException) {
+            if ($charge->created < (\time() - 600)) {
+                $this->logger->error(sprintf('Lock Wait timeout attempting to flush changes processing charge over ten minutes old %s', $charge->id));
+            } else {
+                $this->logger->warning(sprintf('Lock Wait timeout attempting to flush changes to processing charge ID %s', $charge->id));
+            }
+            $this->entityManager->rollback();
+
+            return $this->respond($response, new ActionPayload(503));
+        }
         $this->queueSalesforceUpdate($donation);
 
         return $this->respondWithData($response, $charge);
