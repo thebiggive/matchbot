@@ -160,7 +160,7 @@ class DonationService
             return $this->fakeDonationProviderForTestUseOnly->__invoke();
         }
 
-        if (!in_array($donationData->psp, [PaymentServiceProvider::Stripe->value], true)) {
+        if (!in_array($donationData->psp, \array_map(fn($psp) => $psp->value, PaymentServiceProvider::cases()), true)) {
             throw new \UnexpectedValueException(sprintf(
                 'PSP %s is invalid',
                 $donationData->psp,
@@ -1032,7 +1032,7 @@ class DonationService
             throw new DonationCreateModelLoadFailure(previous: $e);
         }
 
-        if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
+        if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId && $donation->getPsp() === 'stripe') {
             throw new \UnexpectedValueException(sprintf(
                 'Route customer ID %s did not match %s in donation body',
                 $pspCustomerId,
