@@ -1015,11 +1015,19 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return Collection<int, FundingWithdrawal>
+     * @return Collection<int, FundingWithdrawal> All withdrawals *including* any released / soft deleted.
+     */
+    public function getFundingWithdrawalsIncludingReleased(): Collection
+    {
+        return $this->fundingWithdrawals;
+    }
+
+    /**
+     * @return Collection<int, FundingWithdrawal> Withdrawals that have not been released i.e. soft deleted.
      */
     public function getFundingWithdrawals(): Collection
     {
-        return $this->fundingWithdrawals;
+        return $this->fundingWithdrawals->filter(static fn(FundingWithdrawal $fw) => !$fw->isReleased());
     }
 
     /**
