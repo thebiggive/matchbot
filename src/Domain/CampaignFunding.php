@@ -76,6 +76,9 @@ class CampaignFunding extends Model
      * intended to help us track what's wrong if the amountAvailable at any time does not match what it should
      * based on adding up all fundingWithdrawals.
      *
+     * Currently, we are not writing anything to this to avoid performance impacts, so we should
+     * either remove fully or bring back into use soon.
+     *
      * @var list<array<string, string>>
      */
     #[ORM\Column(type: 'json', nullable: true)]
@@ -106,7 +109,7 @@ class CampaignFunding extends Model
         $this->fundingWithdrawals = new ArrayCollection();
         $this->createdNow();
 
-        $this->logAdjustment(
+        $this->logAdjustmentNoOPForNow(
             incrementAmount: $amountAvailable,
             balance: $amountAvailable,
             relatedDonationId: null,
@@ -122,19 +125,22 @@ class CampaignFunding extends Model
     }
 
     /**
+     * Currently no-op, in past and potentially in future added to a record of how the fund was incremented and
+     * deceremtend. See doc on self:::$adjustmentLog
      * @param numeric-string $incrementAmount - increase to amountAvailable. Will be more often than not be negative.
      * @param numeric-string $balance - the amaount available at the time of saving this adjustment.
      * @return void
      */
-    public function logAdjustment(string $incrementAmount, string $balance, ?int $relatedDonationId, \DateTimeImmutable $at, ?string $comment = null)
+    public function logAdjustmentNoOPForNow(string $incrementAmount, string $balance, ?int $relatedDonationId, \DateTimeImmutable $at, ?string $comment = null)
     {
-        $this->adjustmentLog[] = [
-            'incr' => $incrementAmount,
-            'balance' => $balance,
-            'd-id' => $relatedDonationId,
-            'at' => $at->format(\DateTimeImmutable::ATOM),
-            'c' => $comment,
-        ];
+        return;
+//        $this->adjustmentLog[] = [
+//            'incr' => $incrementAmount,
+//            'balance' => $balance,
+//            'd-id' => $relatedDonationId,
+//            'at' => $at->format(\DateTimeImmutable::ATOM),
+//            'c' => $comment,
+//        ];
     }
 
     /**

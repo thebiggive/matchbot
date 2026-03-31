@@ -78,7 +78,7 @@ class Adapter
         $fundBalance = $this->toCurrencyWholeUnit((int)$fundBalanceFractional);
         $funding->setAmountAvailable($fundBalance);
 
-        $funding->logAdjustment(
+        $funding->logAdjustmentNoOPForNow(
             incrementAmount: $amount,
             balance: $fundBalance,
             relatedDonationId: $donationId,
@@ -165,7 +165,7 @@ class Adapter
         $fundBalance = $this->toCurrencyWholeUnit($fundBalanceFractional);
         $funding->setAmountAvailable($fundBalance);
 
-        $funding->logAdjustment(
+        $funding->logAdjustmentNoOPForNow(
             incrementAmount: \bcmul('-1', $amount, 2),
             balance: $fundBalance,
             relatedDonationId: $donationId,
