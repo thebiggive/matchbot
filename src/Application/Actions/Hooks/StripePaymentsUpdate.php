@@ -141,8 +141,6 @@ class StripePaymentsUpdate extends Stripe
             return $this->respond($response, new ActionPayload(204));
         }
 
-        // For now we support the happy success path –
-        // as this is the only event type we're handling right now besides refunds.
         if ($charge->status === 'succeeded') {
             $donationService = $this->donationService;
             $donationService->updateDonationStatusFromSuccessfulCharge($charge, $donation);
@@ -175,8 +173,8 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->entityManager->persist($donation);
-        $this->entityManager->commit();
         $this->entityManager->flush();
+        $this->entityManager->commit();
         $this->queueSalesforceUpdate($donation);
 
         return $this->respondWithData($response, $charge);
@@ -230,8 +228,8 @@ class StripePaymentsUpdate extends Stripe
         ));
 
         $this->entityManager->persist($donation);
-        $this->entityManager->commit();
         $this->entityManager->flush();
+        $this->entityManager->commit();
         $this->queueSalesforceUpdate($donation);
 
         return $this->respondWithData($response, $charge);
