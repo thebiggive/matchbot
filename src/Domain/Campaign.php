@@ -10,13 +10,18 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Mapping\Index;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Client\Campaign as CampaignClient;
 
 /**
+ * Note that mutation tracking seems not quite right, possibly related to the use
+ * of a JSON field and/or @link https://github.com/doctrine/dbal/issues/6651
+ * So to avoid donations incorrectly leading to Campaign updates we use deferred
+ * explicit change tracking here. Callers that actually need to update Campaign must
+ * call persist().
+ *
  * @psalm-import-type SFCampaignApiResponse from CampaignClient
  *
  * @psalm-suppress UnusedProperty - new properties to be used in MAT-405 campaign.parentTarget rendering.
@@ -28,6 +33,7 @@ use MatchBot\Client\Campaign as CampaignClient;
 #[ORM\Index(name: 'relatedApplicationCharityResponseToOffer', columns: ['relatedApplicationCharityResponseToOffer'])]
 #[ORM\Entity(repositoryClass: CampaignRepository::class)]
 #[ORM\HasLifecycleCallbacks]
+#[ORM\ChangeTrackingPolicy('DEFERRED_EXPLICIT')]
 class Campaign extends SalesforceReadProxy
 {
     use TimestampsTrait;
