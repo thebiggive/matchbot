@@ -660,6 +660,18 @@ return function (ContainerBuilder $containerBuilder) {
             ]);
         },
 
+        Client\RyftClient::class => static function (ContainerInterface $c): Client\RyftClient {
+            $settings = $c->get(Settings::class);
+
+            return new Client\RyftClient(
+                publicKey: $settings->ryft['publicKey'],
+                secretKey: $settings->ryft['secretKey'],
+                client: $c->get(\GuzzleHttp\Client::class),
+                environment: $c->get(Environment::class),
+                log: $c->get(LoggerInterface::class)
+            );
+        },
+
         Transports::TRANSPORT_HIGH_PRIORITY => static function (): TransportInterface {
             return Transports::buildTransport(Transports::TRANSPORT_HIGH_PRIORITY);
         },
