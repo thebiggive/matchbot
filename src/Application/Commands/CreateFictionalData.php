@@ -70,9 +70,6 @@ class CreateFictionalData extends Command
         parent::__construct(null);
     }
 
-    /**
-     * @return string
-     */
     public function createRyftAccount(SymfonyStyle $io): string
     {
         $ryftURIPrefix = "https://sandbox-api.ryftpay.com/v1";

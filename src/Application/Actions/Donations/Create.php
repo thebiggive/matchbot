@@ -9,6 +9,8 @@ use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Assert;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
@@ -16,6 +18,7 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Application\Matching\DbErrorPreventedMatch;
 use MatchBot\Application\Settings;
+use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
@@ -23,7 +26,9 @@ use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -41,6 +46,7 @@ class Create extends Action
         private SerializerInterface $serializer,
         LoggerInterface $logger,
         private Stripe $stripe,
+        private RyftClient $ryftClient,
         Settings $settings,
     ) {
         parent::__construct($logger);
@@ -197,16 +203,29 @@ class Create extends Action
         if ($donation->getPsp() === 'stripe') {
             $stripeCustomerId = $donation->getPspCustomerId();
             \assert($stripeCustomerId !== null);
-            $customerSession = $this->stripe->createCustomerSession($stripeCustomerId);
-            $this->logger->info('Stripe customer session expiry: ' . $customerSession->expires_at);
+            $stripeCustomerSession = $this->stripe->createCustomerSession($stripeCustomerId);
+            $this->logger->info('Stripe customer session expiry: ' . $stripeCustomerSession->expires_at);
         } else {
-            $customerSession = null;
+            $stripeCustomerSession = null;
         }
+
+        if ($donation->getPsp() === 'ryft') {
+            $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
+            Assertion::notNull($ryftAccountId, 'Ryft account ID cannot be null for ryft payment method');
+            $ryftClientSecret = $this->ryftClient->createPaymentSession(
+                $ryftAccountId,
+                Money::fromPence($donation->getAmountForCharityFractional(), $donation->currency()),
+            );
+        } else {
+            $ryftClientSecret = null;
+        }
+
 
         $data = new DonationCreatedResponse(
             donation: $donation->toFrontEndApiModel($this->enableNoReservationsMode),
             jwt: DonationToken::create($donation->getUuid()->toString()),
-            stripeSessionSecret: $customerSession?->client_secret,
+            stripeSessionSecret: $stripeCustomerSession?->client_secret,
+            ryftClientSecret: $ryftClientSecret,
         );
 
         return $this->respondWithData($response, $data, 201);
