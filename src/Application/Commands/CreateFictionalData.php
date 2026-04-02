@@ -3,9 +3,13 @@
 namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Psr7\Request;
 use Laminas\Diactoros\Uri;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
+use MatchBot\Application\Settings;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
@@ -60,8 +64,71 @@ class CreateFictionalData extends Command
         private CampaignService $campaignService,
         private StripeClient $stripeClient,
         private FundRepository $fundRepository,
+        private Client $guzzleClient,
+        private Settings $settings,
     ) {
         parent::__construct(null);
+    }
+
+    /**
+     * @return string
+     */
+    public function createRyftAccount(SymfonyStyle $io): string
+    {
+        $ryftURIPrefix = "https://sandbox-api.ryftpay.com/v1";
+
+        $secretKey = $this->settings->ryft['secretKey'];
+        Assertion::notEmpty($secretKey);
+
+        // see https://developer.ryftpay.com/documentation/api/reference/openapi/accounts/subaccountcreate
+        $headers = ['Authorization' => $secretKey];
+        $request = new Request(
+            method: 'POST',
+            uri: $ryftURIPrefix . '/accounts',
+            headers: $headers,
+            body: json_encode(
+                [
+                'onboardingFlow' => 'NonHosted',
+                'email' => null,
+                'entityType' => 'Business',
+                'business' => [
+                    'name' => 'Test Charity',
+                    'type' => 'Charity',
+                    'contactEmail' => 'test-' . TestCase::randomString() . '@biggive.org', // must be unique.
+                    'registrationNumber' => '1234', // this is required for business accounts, may be a problem since some of our charities are exempt and might not be registered as companies either.
+                    'registeredAddress' => [
+                        "lineOne" => "123 Test Street",
+                "lineTwo" => null,
+                "city" => "Manchester",
+                "country" => "GB",
+                "postalCode" => "SP4 7DE",
+                "region" => null
+                    ],
+                ],
+                'metadata' => [
+                    'example-sub-account-metadata' => 42,
+                ],
+                ],
+                \JSON_THROW_ON_ERROR
+            )
+        );
+
+        try {
+            $response = $this->guzzleClient->send($request);
+        } catch (ClientException $e) {
+            $io->error($e->getResponse()->getBody()->getContents());
+
+            $id = "ac_b83f2653-06d7-44a9-a548-5825e8186004";
+            $io->writeln("Could not create ryft account, using placeholder account ID $id");
+
+            return $id;
+        }
+        $contents = $response->getBody()->getContents();
+        $io->writeln($contents);
+        $ryftData = json_decode($contents, true, 512, \JSON_THROW_ON_ERROR);
+
+
+        return $ryftData['id']; // @phpstan-ignore offsetAccess.nonOffsetAccessible
     }
 
     /**
@@ -280,7 +347,7 @@ class CreateFictionalData extends Command
 
         if ($psp === PaymentServiceProvider::Ryft) {
             $id = self::SF_ID_ONE;
-            $ryftAccountId = 'ac_b83f2653-06d7-44a9-a548-5825e8186004'; // random placeholder for now.
+            $ryftAccountId = $this->createRyftAccount($io);
         } else {
             $ryftAccountId = null;
         }

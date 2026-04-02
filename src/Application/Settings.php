@@ -55,6 +55,9 @@ class Settings
     /** @var array{apiKey: non-empty-string, accountWebhookSecret: string, connectAppWebhookSecret: string} */
     public array $stripe;
 
+    /** @var array{publicKey?: non-empty-string, secretKey?: non-empty-string} */
+    public array $ryft;
+
     /** @var array{site_key: string, secret_key: string} */
     public array $friendlyCaptchaSettings;
 
@@ -187,6 +190,11 @@ class Settings
             'apiKey' => $this->getNonEmptyStringEnv($env, 'STRIPE_SECRET_KEY', false),
             'accountWebhookSecret' => $this->getStringEnv($env, 'STRIPE_WEBHOOK_SIGNING_SECRET', false),
             'connectAppWebhookSecret' => $this->getStringEnv($env, 'STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET', false),
+        ];
+
+        $this->ryft = [
+            'publicKey' => $this->getNonEmptyStringEnv($env, 'RYFT_PUBLIC_KEY', false),
+            'secretKey' => $this->getNonEmptyStringEnv($env, 'RYFT_SECRET_KEY', false),
         ];
 
         $this->salesforce = [
