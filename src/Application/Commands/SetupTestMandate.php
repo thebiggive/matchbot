@@ -209,6 +209,7 @@ class SetupTestMandate extends LockingCommand
             charityComms: false,
             championComms: false,
             pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            psp: $campaign->getCharity()->psp,
             optInTbgEmail: false,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,

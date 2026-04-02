@@ -168,7 +168,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $campaign = $this->findOneBySalesforceId($id);
 
             if ($campaign) {
-                $this->updateFromSf($campaign, withCache: false, autoSave: true);
+                $this->updateFromSf($campaign, withCache: false);
                 $updatedCount++;
             } else {
                 $campaign = $this->pullNewFromSf($id);
@@ -221,21 +221,24 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $emailString = $charityData['emailAddress'] ?? null;
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
+        $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
 
         return new Charity(
             salesforceId: $charityData['id'],
             charityName: $charityData['name'],
             stripeAccountId: $charityData['stripeAccountId'],
+            ryftAccountId: is_string($charityData['ryftAccountId'] ?? null) ? RyftAccountId::of($charityData['ryftAccountId']) : null,
+            psp: $psp,
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
             regulator: self::getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
             regulatorNumber: $charityData['regulatorNumber'],
             time: new \DateTime('now'),
-            rawData: $charityData,
+            emailAddress: $emailAddress,
             websiteUri: $charityData['website'],
             logoUri: $charityData['logoUri'],
             phoneNumber: $charityData['phoneNumber'] ?? null,
-            emailAddress: $emailAddress,
+            rawData: $charityData,
         );
     }
 
@@ -250,12 +253,15 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $emailString = $charityData['emailAddress'] ?? null;
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
+        $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
 
         $charity->updateFromSfPull(
             charityName: $charityData['name'],
             websiteUri: $charityData['website'],
             logoUri: $charityData['logoUri'],
             stripeAccountId: $charityData['stripeAccountId'],
+            ryftAccountId: null,
+            psp: $psp,
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
             regulator: self::getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
@@ -534,6 +540,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
             sfData: $campaignData,
         );
+
+        $this->getEntityManager()->persist($campaign);
     }
 
     /**
@@ -757,11 +765,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @throws Client\NotFoundException
      * @throws AssertionFailedException if data in SF does not fit in our campaign or charity model.
      */
-    public function updateFromSf(
-        Campaign $campaign,
-        bool $withCache = true,
-        bool $autoSave = true,
-    ): void {
+    public function updateFromSf(Campaign $campaign, bool $withCache = true): void
+    {
         // Make sure we update existing object if passed in a partial copy and we already have that Salesforce object
         // persisted, otherwise we'll try to insert a duplicate and get an ORM crash.
         $salesforceId = $campaign->getSalesforceId();
@@ -780,17 +785,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $this->updateCampaignFromSFData($campaign, $campaignData);
 
+        $campaign->setSalesforceLastPull(new DateTime('now'));
+        $this->getEntityManager()->persist($campaign);
         try {
             $this->getEntityManager()->flush();
         } catch (\PDOException $e) {
             $this->logger?->error("PDOException generated trying to update campaign SFID {$campaign->getSalesforceId()} (reg no {$campaign->getCharity()->getRegulatorNumber()}); {$e->getMessage()}");
             throw $e;
-        }
-
-        $campaign->setSalesforceLastPull(new DateTime('now'));
-        $this->getEntityManager()->persist($campaign);
-        if ($autoSave) {
-            $this->getEntityManager()->flush();
         }
 
         $this->logInfo('Done persisting ' . get_class($campaign) . ' ' . $salesforceId);

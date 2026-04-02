@@ -5,7 +5,6 @@ namespace MatchBot\IntegrationTests;
 use Aws\CloudWatch\CloudWatchClient;
 use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\CancelStaleDonationFundTips;
-use MatchBot\Application\Commands\CorrectFundAmounts;
 use MatchBot\Application\Commands\DeleteOldTestFunds;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\ExpirePendingMandates;
@@ -63,9 +62,6 @@ class CallFrequentCommandsTest extends IntegrationTest
             'matchbot:update-campaign-donation-stats complete!',
             'matchbot:delete-old-test-funds starting!',
             'matchbot:delete-old-test-funds complete!',
-            'matchbot:correct-fund-amounts starting!',
-            'Correct fund amounts already run, not re-running',
-            'matchbot:correct-fund-amounts complete!',
             'matchbot:tick complete!',
             '',
         ]);
@@ -92,7 +88,6 @@ class CallFrequentCommandsTest extends IntegrationTest
             $this->getService(CancelStaleDonationFundTips::class),
             $this->getService(ExpirePendingMandates::class),
             $this->getService(UpdateCampaignDonationStats::class),
-            $this->getService(CorrectFundAmounts::class),
         ];
 
         foreach ($commands as $command) {
