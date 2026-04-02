@@ -10,7 +10,6 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Domain\Campaign;
-use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -35,7 +34,6 @@ class RetrospectivelyMatchCommandTest extends IntegrationTest
 {
     private CampaignFundingRepository $campaignFundingRepository;
     private Campaign $closedCampaign;
-    private CampaignFunding $closedCampaignChampionFunding;
     /** @var ObjectProphecy<RoutableMessageBus> */
     private ObjectProphecy $messageBusProphecy;
 
@@ -46,7 +44,7 @@ class RetrospectivelyMatchCommandTest extends IntegrationTest
 
         $this->campaignFundingRepository = $this->getService(CampaignFundingRepository::class);
 
-        [$this->closedCampaign, $this->closedCampaignChampionFunding] = $this->prepareCampaign();
+        $this->closedCampaign = $this->prepareCampaign();
 
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
         $this->messageBusProphecy->dispatch(Argument::type(Envelope::class), Argument::cetera())
@@ -65,7 +63,7 @@ class RetrospectivelyMatchCommandTest extends IntegrationTest
         $this->assertSame(0.00, $hook['amountMatchedByChampionFunds']);
 
         // act
-        $output = $this->runCommand([]);
+        $output = $this->runCommand();
 
         // assert
         $updatedDonation = $this->getService(DonationRepository::class)->find($donation->getId());
@@ -132,10 +130,7 @@ class RetrospectivelyMatchCommandTest extends IntegrationTest
         return $donation;
     }
 
-    /**
-     * @psalm-return array{0: Campaign, 1: CampaignFunding}
-     */
-    private function prepareCampaign(): array
+    private function prepareCampaign(): Campaign
     {
         ['campaignId' => $campaignId] = $this->addCampaignAndCharityToDB(
             campaignSfId: $this->randomString(),
@@ -165,10 +160,10 @@ class RetrospectivelyMatchCommandTest extends IntegrationTest
         $em->persist($campaign);
         $em->flush();
 
-        return [$campaign, $championFundCampaignFunding];
+        return $campaign;
     }
 
-    public function runCommand(array $arguments): BufferedOutput
+    private function runCommand(): BufferedOutput
     {
         $output = new BufferedOutput();
 
@@ -193,7 +188,7 @@ class RetrospectivelyMatchCommandTest extends IntegrationTest
             matchFundsRedistributor: $matchFundsRedistributor,
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $command->run(new ArrayInput($arguments), $output);
+        $command->run(new ArrayInput([]), $output);
 
         return $output;
     }
