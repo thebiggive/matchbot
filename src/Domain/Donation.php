@@ -30,7 +30,6 @@ use Stripe\Payout;
 use function bccomp;
 use function sprintf;
 
-#[ORM\Table]
 #[ORM\UniqueConstraint(fields: ['mandateSequenceNumber', 'mandate'])]
 #[ORM\Index(name: 'campaign_and_status', columns: ['campaign_id', 'donationStatus'])]
 #[ORM\Index(name: 'date_and_status', columns: ['createdAt', 'donationStatus'])]

@@ -78,7 +78,7 @@ class PullMetaCampaignFromSF extends LockingCommand
             // create new one from SF data
             $this->entityManager->persist($metaCampaign);
         } else {
-            // todo update existing from SF data
+            $existingMetaCampaignInDB->updateFromSfData($data);
         }
 
         $this->entityManager->flush();

@@ -26,7 +26,6 @@ use MatchBot\Client\Campaign as CampaignClient;
  *
  * @psalm-suppress UnusedProperty - new properties to be used in MAT-405 campaign.parentTarget rendering.
  */
-#[ORM\Table]
 #[ORM\Index(name: 'end_date_and_is_matched', columns: ['endDate', 'isMatched'])]
 #[ORM\Index(name: 'metaCampaignSlug', columns: ['metaCampaignSlug'])]
 #[ORM\Index(name: 'relatedApplicationStatus', columns: ['relatedApplicationStatus'])]
@@ -37,8 +36,6 @@ use MatchBot\Client\Campaign as CampaignClient;
 class Campaign extends SalesforceReadProxy
 {
     use TimestampsTrait;
-
-    public final const array CHARITY_RESPONSES_TO_OFFER = ['Accepted', 'Rejected'];
 
     /**
      * @var Charity

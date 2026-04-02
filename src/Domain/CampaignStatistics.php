@@ -15,7 +15,6 @@ use MatchBot\Application\Assertion;
  * @psalm-suppress UnusedProperty Properties are used in DQL & for manual DB queries
  * @psalm-suppress PossiblyUnusedProperty
  */
-#[ORM\Table]
 #[ORM\Entity(
     repositoryClass: null // we construct our own repository
 )]
