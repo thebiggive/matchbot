@@ -16,6 +16,7 @@ use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels;
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Application\Settings;
+use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
@@ -24,6 +25,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PaymentServiceProvider;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -52,6 +54,7 @@ class Update extends Action
     private const int MAX_UPDATE_RETRY_COUNT = 4;
 
     private bool $enableNoReservationsMode;
+    private RyftClient $ryftClient;
 
     #[Pure]
     public function __construct(
@@ -59,6 +62,7 @@ class Update extends Action
         private EntityManagerInterface $entityManager,
         private SerializerInterface $serializer,
         private Stripe $stripe,
+        RyftClient $ryftClient,
         LoggerInterface $logger,
         private ClockInterface $clock,
         private DonationService $donationService,
@@ -66,6 +70,7 @@ class Update extends Action
     ) {
         parent::__construct($logger);
         $this->enableNoReservationsMode = $settings->enableNoReservationsMode;
+        $this->ryftClient = $ryftClient;
     }
 
     /**
@@ -464,6 +469,16 @@ class Update extends Action
                     throw $exception;
                 }
             }
+        } elseif ($donation->getPsp() === 'ryft') {
+            // For now this is still going to be always set a fee as if they're using the cheapest card type,
+            // i.e. EU/UK Visa/MasterCard. Since the ryft donations are initiated from the client side I'm
+            // not sure if we actually have any good way to vary fees according to card brand and country
+            // as we do with stripe.
+            $this->ryftClient->updatePaymentSession(
+                $donation->getCampaign()->getCharity()->getRyftAccountId(),
+                $donation->getTransactionId(),
+                Money::fromPence($donation->getAmountToDeductFractional(), $donation->currency())
+            );
         }
 
         $this->donationService->save($donation);

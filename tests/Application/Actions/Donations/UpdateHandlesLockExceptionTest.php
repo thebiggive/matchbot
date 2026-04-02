@@ -12,6 +12,7 @@ use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Settings;
+use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -232,6 +233,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
             $entityManager,
             new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
             $this->createStub(Stripe::class),
+            $this->createStub(RyftClient::class),
             new NullLogger(),
             new MockClock(),
             new DonationService(

@@ -1147,7 +1147,7 @@ class DonationService
      * card: null|object{country: string, brand: string, fingerprint: string},
      * pay_by_bank: null|StripeObject
      * } $paymentMethodPreview $paymentMethodPreview
-     * /
+     *
      */
     public function updatePaymentMethodFromStripe(Donation $donation, string $paymentMethodId, StripeObject $paymentMethodPreview, string $paymentIntentId, PaymentIntent $paymentIntent): PaymentIntent
     {

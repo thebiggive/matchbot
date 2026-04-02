@@ -35,12 +35,20 @@ class RyftClient
 
     /**
      * @param RyftAccountId $ryftAccountId Ryft sub-account ID of the charity that will receive the payment
-     * @return string client secret
+     * @return array{clientSecret: string, paymentSessionID: string}
      *
      * See https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionCreate
      */
-    public function createPaymentSession(RyftAccountId $ryftAccountId, Money $amount): string
+    public function createPaymentSession(RyftAccountId $ryftAccountId, Money $amount, Money $platformFee): array
     {
+        Assertion::same(
+            $amount->currency,
+            $platformFee->currency,
+            'Amount and platform fee must be in the same currency'
+        );
+
+        Assertion::true($amount->greaterThan($platformFee), 'Amount must be greater than platform fee');
+
         $headers = [
             'Authorization' => $this->secretKey,
             'Account' => $ryftAccountId->ryftAccountId,
@@ -54,7 +62,7 @@ class RyftClient
                 [
                 'amount' => $amount->amountInPence(),
                 'currency' => $amount->currency->isoCode(),
-
+                'platformFee' => $platformFee->amountInPence(),
                 ],
                 \JSON_THROW_ON_ERROR
             )
@@ -74,9 +82,42 @@ class RyftClient
         $response = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
         Assertion::isArray($response);
         $clientSecret = $response['clientSecret'];
+        $paymentSessionID = $response['id'];
 
         \assert(\is_string($clientSecret));
 
-        return $clientSecret;
+        return compact('clientSecret', 'paymentSessionID');
+    }
+
+    /**
+     * See https://developer.ryftpay.com/documentation/api/reference/openapi/payments/paymentsessionupdate
+     */
+    public function updatePaymentSession(RyftAccountId $ryftAccountId, string $paymentSessionId, Money $platformFee): void
+    {
+        $headers = [
+            'Authorization' => $this->secretKey,
+            'Account' => $ryftAccountId->ryftAccountId,
+        ];
+
+        $request = new Request(
+            method: 'PATCH',
+            uri: $this->apiPrefix . 'payment-sessions/' . $paymentSessionId,
+            headers: $headers,
+            body: json_encode(
+                [
+                    'platformFee' => $platformFee->amountInPence(),
+                ],
+                \JSON_THROW_ON_ERROR
+            )
+        );
+
+        $response = $this->client->send($request);
+        $responseContents = $response->getBody()->getContents();
+        $response = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
+        Assertion::isArray($response);
+
+        $this->log->info(
+            'Ryft payment session updated, response: ' . json_encode($response, \JSON_THROW_ON_ERROR)
+        );
     }
 }
