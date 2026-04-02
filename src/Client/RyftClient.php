@@ -39,8 +39,16 @@ class RyftClient
      *
      * See https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionCreate
      */
-    public function createPaymentSession(RyftAccountId $ryftAccountId, Money $amount): string
+    public function createPaymentSession(RyftAccountId $ryftAccountId, Money $amount, Money $platformFee): string
     {
+        Assertion::same(
+            $amount->currency,
+            $platformFee->currency,
+            'Amount and platform fee must be in the same currency'
+        );
+
+        Assertion::true($amount->greaterThan($platformFee), 'Amount must be greater than platform fee');
+
         $headers = [
             'Authorization' => $this->secretKey,
             'Account' => $ryftAccountId->ryftAccountId,
@@ -54,7 +62,7 @@ class RyftClient
                 [
                 'amount' => $amount->amountInPence(),
                 'currency' => $amount->currency->isoCode(),
-
+                'platformFee' => $platformFee->amountInPence(),
                 ],
                 \JSON_THROW_ON_ERROR
             )

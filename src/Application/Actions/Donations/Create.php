@@ -208,6 +208,7 @@ class Create extends Action
         } else {
             $stripeCustomerSession = null;
         }
+        /** @var Donation $donation */
 
         if ($donation->getPsp() === 'ryft') {
             $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
@@ -215,6 +216,7 @@ class Create extends Action
             $ryftClientSecret = $this->ryftClient->createPaymentSession(
                 $ryftAccountId,
                 Money::fromPence($donation->getAmountForCharityFractional(), $donation->currency()),
+                Money::fromPence($donation->getAmountToDeductFractional(), $donation->currency()),
             );
         } else {
             $ryftClientSecret = null;
