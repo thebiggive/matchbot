@@ -20,7 +20,6 @@ use Doctrine\ORM\Mapping as ORM;
  * Pledges are used before Champion funds, which are used before topup funds.
  * See {@see FundType::allocationOrder()}
  */
-#[ORM\Table]
 #[ORM\Index(name: 'available_fundings', columns: ['amountAvailable', 'id'])]
 #[ORM\Entity(repositoryClass: CampaignFundingRepository::class)]
 #[ORM\HasLifecycleCallbacks]

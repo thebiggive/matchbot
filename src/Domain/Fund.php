@@ -16,7 +16,6 @@ use MatchBot\Domain\DomainException\DisallowedFundTypeChange;
  * MatchBot doesn't contain an allocated amount and is mostly a container for metadata to help understand
  * where any linked {@see CampaignFunding}s' money comes from.
  */
-#[ORM\Table]
 #[ORM\Entity(repositoryClass: FundRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Index(columns: ['allocationOrder'], name: 'allocationOrder')]
