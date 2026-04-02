@@ -210,7 +210,6 @@ class Create extends Action
         } else {
             $stripeCustomerSession = null;
         }
-        /** @var Donation $donation */
 
         if ($donation->getPsp() === 'ryft') {
             $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
