@@ -94,6 +94,9 @@ class RetrospectivelyMatch extends LockingCommand
         $totalNewMatching = '0.00';
 
         foreach ($toCheckForMatching as $donation) {
+            // todo start putting each one in a queued message instead, with the final one told
+            // to report the overall results.
+
             $amountAllocated = $this->allocator->allocateMatchFunds($donation);
 
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
