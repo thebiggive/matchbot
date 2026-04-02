@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
@@ -48,6 +49,7 @@ class Create extends Action
         private Stripe $stripe,
         private RyftClient $ryftClient,
         Settings $settings,
+        private EntityManagerInterface $entityManager
     ) {
         parent::__construct($logger);
         $this->enableNoReservationsMode = $settings->enableNoReservationsMode;
@@ -213,11 +215,18 @@ class Create extends Action
         if ($donation->getPsp() === 'ryft') {
             $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
             Assertion::notNull($ryftAccountId, 'Ryft account ID cannot be null for ryft payment method');
-            $ryftClientSecret = $this->ryftClient->createPaymentSession(
+            [
+                'clientSecret' => $ryftClientSecret,
+                'paymentSessionID' => $ryftPaymentSessionId
+            ] = $this->ryftClient->createPaymentSession(
                 $ryftAccountId,
                 Money::fromPence($donation->getAmountForCharityFractional(), $donation->currency()),
                 Money::fromPence($donation->getAmountToDeductFractional(), $donation->currency()),
             );
+
+            $donation->setTransactionId($ryftPaymentSessionId);
+
+            $this->entityManager->flush();
         } else {
             $ryftClientSecret = null;
         }
