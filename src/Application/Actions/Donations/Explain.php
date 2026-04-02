@@ -112,7 +112,7 @@ class Explain extends Action
 
         $text .= "\n\nFunding Withdrawals:\n\n";
 
-        $fundingWithdrawals = $donation->getFundingWithdrawals()->toArray();
+        $fundingWithdrawals = $donation->getFundingWithdrawalsIncludingReleased()->toArray();
         $fundingWithdrawalText = $fundingWithdrawals
             |> (fn(array $withdrawals) => \array_map($this->renderFundingWithdrawal(...), $withdrawals))
             |> (fn(array $d): string => \implode("\n", $d));
@@ -144,7 +144,7 @@ class Explain extends Action
             . " {$donation->currency()->isoCode()} ({$donation->getDonationStatus()->name}) "
             . "created {$donation->getCreatedDate()->format(\DateTime::ATOM)}\n";
 
-        $fundingWithdrawals = $donation->getFundingWithdrawals();
+        $fundingWithdrawals = $donation->getFundingWithdrawalsIncludingReleased();
         if (! $fundingWithdrawals->isEmpty()) {
             $ret .= "      Funding withdrawals:\n";
             foreach ($fundingWithdrawals as $fw) {
