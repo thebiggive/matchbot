@@ -540,6 +540,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
             sfData: $campaignData,
         );
+
+        $this->getEntityManager()->persist($campaign);
     }
 
     /**
