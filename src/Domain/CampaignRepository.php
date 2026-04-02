@@ -168,7 +168,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $campaign = $this->findOneBySalesforceId($id);
 
             if ($campaign) {
-                $this->updateFromSf($campaign, withCache: false, autoSave: true);
+                $this->updateFromSf($campaign, withCache: false);
                 $updatedCount++;
             } else {
                 $campaign = $this->pullNewFromSf($id);
@@ -765,11 +765,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @throws Client\NotFoundException
      * @throws AssertionFailedException if data in SF does not fit in our campaign or charity model.
      */
-    public function updateFromSf(
-        Campaign $campaign,
-        bool $withCache = true,
-        bool $autoSave = true,
-    ): void {
+    public function updateFromSf(Campaign $campaign, bool $withCache = true): void
+    {
         // Make sure we update existing object if passed in a partial copy and we already have that Salesforce object
         // persisted, otherwise we'll try to insert a duplicate and get an ORM crash.
         $salesforceId = $campaign->getSalesforceId();
@@ -788,17 +785,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $this->updateCampaignFromSFData($campaign, $campaignData);
 
+        $campaign->setSalesforceLastPull(new DateTime('now'));
+        $this->getEntityManager()->persist($campaign);
         try {
             $this->getEntityManager()->flush();
         } catch (\PDOException $e) {
             $this->logger?->error("PDOException generated trying to update campaign SFID {$campaign->getSalesforceId()} (reg no {$campaign->getCharity()->getRegulatorNumber()}); {$e->getMessage()}");
             throw $e;
-        }
-
-        $campaign->setSalesforceLastPull(new DateTime('now'));
-        $this->getEntityManager()->persist($campaign);
-        if ($autoSave) {
-            $this->getEntityManager()->flush();
         }
 
         $this->logInfo('Done persisting ' . get_class($campaign) . ' ' . $salesforceId);
