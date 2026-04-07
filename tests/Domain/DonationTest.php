@@ -171,7 +171,7 @@ class DonationTest extends TestCase
     public function testInvalidPspRejected(): void
     {
         $this->expectException(AssertionFailedException::class);
-        $this->expectExceptionMessage('Value "paypal" does not equal expected value "stripe".');
+        $this->expectExceptionMessage('Value "paypal" is not an element of the valid values: stripe, ryft');
 
         Donation::fromApiModel(
             new DonationCreate(

@@ -10,10 +10,11 @@ use MatchBot\Application\Assertion;
  * We keep copies so search ordering can stay performant, and to keep sync from Salesforce to charity
  * Campaigns one-way.
  *
+ * @see Campaign for notes on deferred explicit change tracking.
+ *
  * @psalm-suppress UnusedProperty Properties are used in DQL & for manual DB queries
  * @psalm-suppress PossiblyUnusedProperty
  */
-#[ORM\Table]
 #[ORM\Entity(
     repositoryClass: null // we construct our own repository
 )]
@@ -21,6 +22,7 @@ use MatchBot\Application\Assertion;
 #[ORM\Index(columns: ['amount_raised_amountInPence'], name: 'amount_raised_amountInPence')]
 #[ORM\Index(columns: ['match_funds_used_amountInPence'], name: 'match_funds_used_amountInPence')]
 #[ORM\Index(columns: ['lastCheck'], name: 'lastCheck')]
+#[ORM\ChangeTrackingPolicy('DEFERRED_EXPLICIT')]
 class CampaignStatistics
 {
     use TimestampsTrait;

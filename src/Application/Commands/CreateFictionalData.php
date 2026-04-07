@@ -3,9 +3,13 @@
 namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Psr7\Request;
 use Laminas\Diactoros\Uri;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
+use MatchBot\Application\Settings;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
@@ -24,6 +28,7 @@ use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Random\Randomizer;
@@ -49,6 +54,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class CreateFictionalData extends Command
 {
     public const string SF_ID_ZERO = '000000000000000000';
+    public const string SF_ID_ONE = '000000000000000001';
 
     public function __construct(
         private EntityManagerInterface $em,
@@ -58,8 +64,68 @@ class CreateFictionalData extends Command
         private CampaignService $campaignService,
         private StripeClient $stripeClient,
         private FundRepository $fundRepository,
+        private Client $guzzleClient,
+        private Settings $settings,
     ) {
         parent::__construct(null);
+    }
+
+    public function createRyftAccount(SymfonyStyle $io): string
+    {
+        $ryftURIPrefix = "https://sandbox-api.ryftpay.com/v1";
+
+        $secretKey = $this->settings->ryft['secretKey'];
+        Assertion::notEmpty($secretKey);
+
+        // see https://developer.ryftpay.com/documentation/api/reference/openapi/accounts/subaccountcreate
+        $headers = ['Authorization' => $secretKey];
+        $request = new Request(
+            method: 'POST',
+            uri: $ryftURIPrefix . '/accounts',
+            headers: $headers,
+            body: json_encode(
+                [
+                'onboardingFlow' => 'NonHosted',
+                'email' => null,
+                'entityType' => 'Business',
+                'business' => [
+                    'name' => 'Test Charity',
+                    'type' => 'Charity',
+                    'contactEmail' => 'test-' . TestCase::randomString() . '@biggive.org', // must be unique.
+                    'registrationNumber' => '1234', // this is required for business accounts, may be a problem since some of our charities are exempt and might not be registered as companies either.
+                    'registeredAddress' => [
+                        "lineOne" => "123 Test Street",
+                "lineTwo" => null,
+                "city" => "Manchester",
+                "country" => "GB",
+                "postalCode" => "SP4 7DE",
+                "region" => null
+                    ],
+                ],
+                'metadata' => [
+                    'example-sub-account-metadata' => 42,
+                ],
+                ],
+                \JSON_THROW_ON_ERROR
+            )
+        );
+
+        try {
+            $response = $this->guzzleClient->send($request);
+        } catch (ClientException $e) {
+            $io->error($e->getResponse()->getBody()->getContents());
+
+            $id = "ac_b83f2653-06d7-44a9-a548-5825e8186004";
+            $io->writeln("Could not create ryft account, using placeholder account ID $id");
+
+            return $id;
+        }
+        $contents = $response->getBody()->getContents();
+        $io->writeln($contents);
+        $ryftData = json_decode($contents, true, 512, \JSON_THROW_ON_ERROR);
+
+
+        return $ryftData['id']; // @phpstan-ignore offsetAccess.nonOffsetAccessible
     }
 
     /**
@@ -84,7 +150,8 @@ class CreateFictionalData extends Command
         $io = new SymfonyStyle($input, $output);
         $io->writeln("Creating fictional data for local developer testing");
 
-        $charity = $this->charityRepository->findOneBy(['salesforceId' => self::SF_ID_ZERO]);
+        $charityOnStripe = $this->charityRepository->findOneBy(['salesforceId' => self::SF_ID_ZERO]);
+        $charityOnRyft = $this->charityRepository->findOneBy(['salesforceId' => self::SF_ID_ONE]);
 
         $fund = $this->fundRepository->findOneBy(['salesforceId' => '000000000000000001']) ??
             new Fund('GBP', 'test fund', null, Salesforce18Id::ofFund('000000000000000001'), FundType::Pledge);
@@ -99,26 +166,40 @@ class CreateFictionalData extends Command
         $this->getOrCreateMetaCampaign('k2m25', CampaignFamily::mentalHealthFund);
         $this->getOrCreateMetaCampaign('middle-east-humanitarian-appeal-2024', CampaignFamily::emergencyMatch);
 
-        if (!$charity) {
+        if (!$charityOnStripe) {
             /** @psalm-suppress ArgumentTypeCoercion */
-            $charity = $this->campaignRepository->newCharityFromCampaignData(
-                ['charity' => $this->getFictionalCharityData($io)] // @phpstan-ignore argument.type
+            $charityOnStripe = $this->campaignRepository->newCharityFromCampaignData(
+                ['charity' => $this->getFictionalCharityData($io, PaymentServiceProvider::Stripe)] // @phpstan-ignore argument.type
             );
 
-            $io->writeln("Created fictional charity {$charity->getName()}, {$charity->getSalesforceId()}");
-            $this->em->persist($charity);
+            $io->writeln("Created fictional charity {$charityOnStripe->getName()}, {$charityOnStripe->getSalesforceId()}");
+            $this->em->persist($charityOnStripe);
         } else {
-            $io->writeln("Found existing fictional charity {$charity->getName()}, {$charity->getSalesforceId()}");
+            $io->writeln("Found existing fictional charity {$charityOnStripe->getName()}, {$charityOnStripe->getSalesforceId()}");
         }
 
+        if (!$charityOnRyft) {
+            /** @psalm-suppress ArgumentTypeCoercion */
+            $charityOnRyft = $this->campaignRepository->newCharityFromCampaignData(
+                ['charity' => $this->getFictionalCharityData($io, PaymentServiceProvider::Ryft)] // @phpstan-ignore argument.type
+            );
+
+            $io->writeln("Created fictional charity {$charityOnRyft->getName()}, {$charityOnRyft->getSalesforceId()}");
+            $this->em->persist($charityOnRyft);
+        } else {
+            $io->writeln("Found existing fictional charity {$charityOnRyft->getName()}, {$charityOnRyft->getSalesforceId()}");
+        }
+
+        $i = 0;
         foreach ($this->getFictionalCampaigns($metaCampaign) as $fictionalCampaign) {
+            $i++;
             $campaignId = Salesforce18Id::ofCampaign($fictionalCampaign['id']);
             $campaign = $this->campaignRepository->findOneBySalesforceId($campaignId);
             if (!$campaign) {
                 $campaign = Campaign::fromSfCampaignData(
                     $fictionalCampaign,
                     $campaignId,
-                    $charity
+                    $i % 2 === 0 ? $charityOnStripe : $charityOnRyft
                 );
 
                 $campaign->setSalesforceLastPull(new \DateTime());
@@ -248,14 +329,28 @@ class CreateFictionalData extends Command
     /**
      * @return array<string,mixed>
      */
-    private function getFictionalCharityData(SymfonyStyle $io): array
+    private function getFictionalCharityData(SymfonyStyle $io, PaymentServiceProvider $psp): array
     {
         $randomSeed = \random_int(1, 100);
 
-        $stripeAccountId = $this->createStripeAccount($io);
+        $id = null;
+
+        if ($psp === PaymentServiceProvider::Stripe) {
+            $id = self::SF_ID_ZERO;
+            $stripeAccountId = $this->createStripeAccount($io);
+        } else {
+            $stripeAccountId = null;
+        }
+
+        if ($psp === PaymentServiceProvider::Ryft) {
+            $id = self::SF_ID_ONE;
+            $ryftAccountId = $this->createRyftAccount($io);
+        } else {
+            $ryftAccountId = null;
+        }
 
         return [
-            'id' => self::SF_ID_ZERO,
+            'id' => $id,
             'name' => 'Society for the advancement of bots and matches',
             'logoUri' =>  "https://picsum.photos/seed/$randomSeed/200/200",
             'twitter' => null,
@@ -269,6 +364,8 @@ class CreateFictionalData extends Command
             'regulatorNumber' => '1000000',
             'regulatorRegion' => 'England and Wales',
             'stripeAccountId' => $stripeAccountId,
+            'ryftAccountId' => $ryftAccountId,
+            'psp' => $psp->value,
             'hmrcReferenceNumber' => null,
             'giftAidOnboardingStatus' => 'Invited to Onboard',
         ];

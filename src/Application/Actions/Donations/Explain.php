@@ -32,6 +32,23 @@ class Explain extends Action
         parent::__construct($logger);
     }
 
+    private function generateCompetingDonationsText(Donation $donation): string
+    {
+        $text = "\n\nPotentially competing donations\n\n";
+        $text .= "These are incomplete donations initiated just before this one that may have been competing for donation funds. \n";
+        $text .= "Note that the list only includes donations to the same campaign - if the campaign used shared funds ";
+        $text .= "then other donations may have affected funds available at the time.\n\n";
+
+        $competingDonations = $this->donationRepository->potentiallyCompetingDonations($donation);
+        $competingDonationText = $competingDonations
+                |> (fn(array $donations) => \array_map($this->renderOtherDonation(...), $donations))
+                |> (fn(array $d): string => \implode("\n", $d));
+
+        $text .= $competingDonations === [] ? 'None' : $competingDonationText;
+
+        return $text;
+    }
+
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
@@ -95,24 +112,16 @@ class Explain extends Action
 
         $text .= "\n\nFunding Withdrawals:\n\n";
 
-        $fundingWithdrawals = $donation->getFundingWithdrawals()->toArray();
+        $fundingWithdrawals = $donation->getFundingWithdrawalsIncludingReleased()->toArray();
         $fundingWithdrawalText = $fundingWithdrawals
             |> (fn(array $withdrawals) => \array_map($this->renderFundingWithdrawal(...), $withdrawals))
             |> (fn(array $d): string => \implode("\n", $d));
 
         $text .= $fundingWithdrawals === []  ? 'None' : $fundingWithdrawalText;
 
-        $text .= "\n\nPotentially competing donations\n\n";
-        $text .= "These are incomplete donations initiated just before this one that may have been competing for donation funds. \n";
-        $text .= "Note that the list only includes donations to the same campaign - if the campaign used shared funds ";
-        $text .= "then other donations may have affected funds available at the time.\n\n";
-
-        $competingDonations = $this->donationRepository->potentiallyCompetingDonations($donation);
-        $competingDonationText = $competingDonations
-            |> (fn(array $donations) => \array_map($this->renderOtherDonation(...), $donations))
-            |> (fn(array $d): string => \implode("\n", $d));
-
-        $text .= $competingDonations === []  ? 'None' : $competingDonationText;
+        if (! $donation->isFullyMatched()) {
+            $text .= $this->generateCompetingDonationsText($donation);
+        }
 
         $response->getBody()->write($text);
 
@@ -135,7 +144,7 @@ class Explain extends Action
             . " {$donation->currency()->isoCode()} ({$donation->getDonationStatus()->name}) "
             . "created {$donation->getCreatedDate()->format(\DateTime::ATOM)}\n";
 
-        $fundingWithdrawals = $donation->getFundingWithdrawals();
+        $fundingWithdrawals = $donation->getFundingWithdrawalsIncludingReleased();
         if (! $fundingWithdrawals->isEmpty()) {
             $ret .= "      Funding withdrawals:\n";
             foreach ($fundingWithdrawals as $fw) {

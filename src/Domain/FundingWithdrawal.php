@@ -9,7 +9,6 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @psalm-suppress PropertyNotSetInConstructor Not requiring all props on construct for now.
  */
-#[ORM\Table]
 #[ORM\Entity(repositoryClass: FundingWithdrawalRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class FundingWithdrawal extends Model

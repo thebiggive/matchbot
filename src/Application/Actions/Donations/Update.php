@@ -25,6 +25,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PaymentServiceProvider;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -373,7 +374,7 @@ class Update extends Action
             );
         }
 
-        if ($donation->getPsp() === 'stripe') {
+        if ($donation->getPsp() === PaymentServiceProvider::Stripe->value) {
             try {
                 $this->updatePaymentIntent($donation);
             } catch (ApiErrorException $exception) {

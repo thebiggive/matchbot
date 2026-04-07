@@ -76,7 +76,7 @@ class RegularGivingMandateTest extends TestCase
         $mandate->createPreAuthorizedDonation(
             DonationSequenceNumber::of(1),
             $donor,
-            $this->createStub(Campaign::class)
+            self::someCampaign(),
         );
     }
 
@@ -148,7 +148,7 @@ class RegularGivingMandateTest extends TestCase
         $donation = $mandate->createPreAuthorizedDonation(
             DonationSequenceNumber::of($sequenceNo),
             $donor,
-            $this->createStub(Campaign::class)
+            self::someCampaign(),
         );
         $this->assertEquals(
             (new \DateTimeImmutable(

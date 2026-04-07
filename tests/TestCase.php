@@ -24,6 +24,7 @@ use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
@@ -386,15 +387,17 @@ class TestCase extends PHPUnitTestCase
             salesforceId: $salesforceId->value ?? ('123CharityId' . self::randomHex(3)),
             charityName: $name,
             stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
+            ryftAccountId: null,
+            psp: PaymentServiceProvider::Stripe,
             hmrcReferenceNumber: 'H' . self::randomHex(3),
             giftAidOnboardingStatus: 'Onboarded',
             regulator: 'CCEW',
             regulatorNumber: 'Reg-no',
             time: new \DateTime('2023-10-06T18:51:27'),
+            emailAddress: $emailAddress,
             websiteUri: 'https://charityname.com',
             logoUri: 'https://some-logo-host/charityname/logo.png',
             phoneNumber: $phoneNumber,
-            emailAddress: $emailAddress,
             rawData: self::CAMPAIGN_FROM_SALESFORCE['charity'],
         );
     }
@@ -483,6 +486,7 @@ class TestCase extends PHPUnitTestCase
             charityComms: null,
             championComms: null,
             pspCustomerId: null,
+            psp: \MatchBot\Domain\PaymentServiceProvider::Stripe,
             optInTbgEmail: null,
             donorName: $donorName,
             emailAddress: $emailAddress,
@@ -490,12 +494,12 @@ class TestCase extends PHPUnitTestCase
             tipAmount: $tipAmount,
             mandate: $regularGivingMandate,
             mandateSequenceNumber: is_int($mandateSequenceNumber) ? DonationSequenceNumber::of($mandateSequenceNumber) : null,
+            donorId: PersonId::of(Uuid::NIL),
             giftAid: $giftAid,
             tipGiftAid: null,
             homeAddress: null,
             homePostcode: null,
             billingPostcode: null,
-            donorId: PersonId::of(Uuid::NIL),
         );
 
         $donation->setUuid($uuid ?? Uuid::uuid4());

@@ -22,7 +22,6 @@ use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityTokenService;
-use MatchBot\Application\CustomMySQLSchemaManager;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\CharityUpdated;
@@ -658,6 +657,18 @@ return function (ContainerBuilder $containerBuilder) {
                 'api_key' => $c->get(Settings::class)->stripe['apiKey'],
                 'stripe_version' => ApiVersion::CURRENT,
             ]);
+        },
+
+        Client\RyftClient::class => static function (ContainerInterface $c): Client\RyftClient {
+            $settings = $c->get(Settings::class);
+
+            return new Client\RyftClient(
+                publicKey: $settings->ryft['publicKey'],
+                secretKey: $settings->ryft['secretKey'],
+                client: $c->get(\GuzzleHttp\Client::class),
+                environment: $c->get(Environment::class),
+                log: $c->get(LoggerInterface::class)
+            );
         },
 
         Transports::TRANSPORT_HIGH_PRIORITY => static function (): TransportInterface {
