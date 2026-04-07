@@ -12,7 +12,6 @@ use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use UnexpectedValueException;
 
-#[ORM\Table]
 #[ORM\Index(name: 'uuid', columns: ['uuid'])]
 #[ORM\Index(name: 'donationsCreatedUpTo', columns: ['donationsCreatedUpTo'])]
 #[ORM\Entity(

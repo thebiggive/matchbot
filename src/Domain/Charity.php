@@ -11,7 +11,6 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 use Psr\Http\Message\UriInterface;
 
-#[ORM\Table]
 #[ORM\Entity(repositoryClass: CharityRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Index(columns: ["salesforceId"])]
