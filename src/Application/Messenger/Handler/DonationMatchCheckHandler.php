@@ -119,7 +119,7 @@ class DonationMatchCheckHandler
 
         // If we did any new matching allocation, whether because of campaigns just closed or because
         // the command was run manually, send the results to Slack.
-        if ($numDistinctCampaigns > 0) {
+        if ($numDistinctCampaigns > 0 && $this->environment !== Environment::Test) {
             $chatMessage = new ChatMessage('Retrospective matching');
             $options = (new SlackOptions())
                 ->block(new SlackHeaderBlock(sprintf('[%s] %s', $this->environment->name, 'Retrospective matching completed')))
