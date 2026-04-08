@@ -54,7 +54,7 @@ class RyftClient
                 [
                 'amount' => $amount->amountInPence(),
                 'currency' => $amount->currency->isoCode(),
-
+                'captureFlow' => 'Manual', // should allow setting platform fee when we capture from matchbot code later.
                 ],
                 \JSON_THROW_ON_ERROR
             )
