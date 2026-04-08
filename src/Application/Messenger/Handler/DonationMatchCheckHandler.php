@@ -79,7 +79,7 @@ class DonationMatchCheckHandler
             message: $message,
             campaignIdsWithAllocations: $campaignIds,
             numberAllocated: $numWithMatchingAllocated,
-            penceAllocated: (int) (string) $totalNewMatching->mul(num: new Number(100), scale: 2),
+            penceAllocated: (int) (string) $totalNewMatching->mul(new Number(100)),
         );
 
         if ($message->areFinalDonations) {
