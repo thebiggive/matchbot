@@ -42,6 +42,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * This simplifies this query and dramatically reduces the maximum time we must look back for
      * 'pulls' of funds.
      *
+     * To ensure champion names are up to date core Campaigns are also temporarily pulled again but
+     * just for the narrower new date range.
+     * @todo Once Salesforce pushes changes to that, we will remove pulls of campaign data again.
+     *
      * @return Campaign[]
      */
     public function findCampaignsWhereFundsNeedToBeUpToDate(): array
