@@ -126,7 +126,7 @@ class StripePaymentsUpdate extends Stripe
             try {
                 $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
             } catch (LockWaitTimeoutException $exception) {
-                $this->logger->warning(sprintf('Failed to acquire lock on donation with Payment Intent ID %s', $intentId));
+                $this->logger->warning(sprintf('charge.succeeded: Failed to acquire lock on donation with Payment Intent ID %s', $intentId));
                 $this->entityManager->rollback();
                 return $this->respond($response, new ActionPayload(503));
             }
@@ -196,7 +196,13 @@ class StripePaymentsUpdate extends Stripe
         $this->entityManager->beginTransaction();
 
         if (is_string($intentId)) {
-            $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+            try {
+                $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+            } catch (LockWaitTimeoutException $exception) {
+                $this->logger->warning(sprintf('charge.updated: Failed to acquire lock on donation with Payment Intent ID %s', $intentId));
+                $this->entityManager->rollback();
+                return $this->respond($response, new ActionPayload(503));
+            }
         } else {
             $donation = null;
         }
