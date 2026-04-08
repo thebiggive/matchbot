@@ -2,7 +2,7 @@
 
 namespace MatchBot\Application\Messenger\Handler;
 
-use DateTime;
+use BcMath\Number;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Application\Environment;
@@ -35,15 +35,15 @@ class DonationMatchCheckHandler
     private const int MAX_STAT_SECONDS = 60 * 60 * 24 * 7; // 1 week, much longer than any command expected to need.
 
     public function __construct(
-        private Allocator $allocator,
-        private ChatterInterface $chatter,
-        private EntityManagerInterface $entityManager,
-        private Environment $environment,
-        private LoggerInterface $logger,
-        private MatchFundsRedistributor $matchFundsRedistributor,
-        private \Redis $redis,
-        private RoutableMessageBus $bus,
-        private ContainerInterface $container, // apparently at the time this is constructed in tests
+        private readonly Allocator $allocator,
+        private readonly ChatterInterface $chatter,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly Environment $environment,
+        private readonly LoggerInterface $logger,
+        private readonly MatchFundsRedistributor $matchFundsRedistributor,
+        private readonly \Redis $redis,
+        private readonly RoutableMessageBus $bus,
+        private readonly ContainerInterface $container, // apparently at the time this is constructed in tests
         // the container isn't ready to give us a donation or fund repo, so taking a ref to the container
         // instead and getting the repository inside __invoke etc.
     ) {
@@ -56,26 +56,31 @@ class DonationMatchCheckHandler
         // Instantiate stats for this specific message of e.g. 10 donations. This invocation's
         // figures will be combined with those from other messages in Redis.
         $numWithMatchingAllocated = 0;
-        /** @var int[] Fine to include duplicates; use of Redis set in `addToStats()` will efficiently discard them. */
+        /** @var int[] $campaignIds Fine to include duplicates; use of Redis set in `addToStats()` will efficiently discard them. */
         $campaignIds = [];
-        $totalNewMatching = '0.00';
+        $totalNewMatching = new Number('0.00');
 
         $donationRepository = $this->container->get(DonationRepository::class);
         $donations = $donationRepository->findByUuids($message->donationUuids);
         foreach ($donations as $donation) {
-            $amountAllocated = $this->allocator->allocateMatchFunds($donation);
+            $amountAllocatedNumericString = $this->allocator->allocateMatchFunds($donation);
+            $amountAllocated = new Number($amountAllocatedNumericString);
 
-            if (bccomp($amountAllocated, '0.00', 2) === 1) {
+            if ($amountAllocated > new Number('0.00')) {
                 $this->entityManager->flush();
                 $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donation));
                 $numWithMatchingAllocated++;
-                $totalNewMatching = bcadd($totalNewMatching, $amountAllocated, 2);
+                $totalNewMatching = $totalNewMatching->add(num: $amountAllocated, scale: 2);
                 $campaignIds[] = $donation->getCampaign()->getId();
             }
         }
 
-        // todo decide on keeping bcmath for this or just using int pence.
-        $this->addToStats($message, $campaignIds, $numWithMatchingAllocated, (int) bcmul($totalNewMatching, '100', 0));
+        $this->addToStats(
+            message: $message,
+            campaignIdsWithAllocations: $campaignIds,
+            numberAllocated: $numWithMatchingAllocated,
+            penceAllocated: (int) (string) $totalNewMatching->mul(num: new Number(100), scale: 2),
+        );
 
         if ($message->areFinalDonations) {
             $this->reportStats($message);
@@ -94,7 +99,8 @@ class DonationMatchCheckHandler
         int $penceAllocated
     ): void {
         $this->redis->incrBy($this->keyForStat('numChecked', $message), count($message->donationUuids));
-        // todo probably only do rest of operations when changes non zero
+        // Below are sometimes no-ops, but should be fast and it's more complicated to expire() usefully if they're conditional.
+        // incrBy() and sAdd() also initialise to 0 and empty set as necessary.
         $this->redis->incrBy($this->keyForStat('numAllocated', $message), $numberAllocated);
         $this->redis->incrBy($this->keyForStat('penceAllocated', $message), $penceAllocated);
         foreach ($campaignIdsWithAllocations as $campaignId) {
@@ -106,14 +112,16 @@ class DonationMatchCheckHandler
 
     private function reportStats(DonationMatchingShouldBeChecked $message): void
     {
-        /** @var int $numChecked */
+        // Redis returns even what should internally be ints from get() as numeric strings.
         $numChecked = $this->redis->get($this->keyForStat('numChecked', $message));
-        /** @var int $numWithMatchingAllocated */
+        \assert(is_numeric($numChecked));
         $numWithMatchingAllocated = $this->redis->get($this->keyForStat('numAllocated', $message));
-        /** @var numeric-string $totalNewMatching */
-        $totalNewMatching = bcdiv($this->redis->get($this->keyForStat('penceAllocated', $message)), '100', 2); // todo see above
-        /** @var int $numDistinctCampaigns */
+        \assert(is_numeric($numWithMatchingAllocated));
+        $totalNewMatchingPence = $this->redis->get($this->keyForStat('penceAllocated', $message));
+        \assert(is_numeric($totalNewMatchingPence));
+        $totalNewMatching = new Number($totalNewMatchingPence)->div(num: new Number(100), scale: 2);
         $numDistinctCampaigns = $this->redis->scard($this->keyForStat('campaignIdsWithChanges', $message));
+        \assert(is_int($numDistinctCampaigns));
 
         // @todo-multi-currency This message assumes GBP for now but the actual reallocation would use
         // Campaign/Donation currency if we were live with others.
