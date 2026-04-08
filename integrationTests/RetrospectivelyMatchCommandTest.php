@@ -14,11 +14,11 @@ use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
+use MatchBot\Tests\TestLogger;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
@@ -61,11 +61,14 @@ class RetrospectivelyMatchCommandTest extends IntegrationTest
         $hook = $donation->toFrontEndApiModel();
         $this->assertSame('0.00', $donation->getFundingWithdrawalTotal());
         $this->assertSame(0.00, $hook['amountMatchedByChampionFunds']);
+        $testLogger = new TestLogger();
+        $this->setInContainer(LoggerInterface::class, $testLogger);
 
         // act
         $output = $this->runCommand();
 
         // assert
+        $this->getService(EntityManagerInterface::class)->clear();
         $updatedDonation = $this->getService(DonationRepository::class)->find($donation->getId());
         Assertion::notNull($updatedDonation);
         $this->assertSame('250.00', $updatedDonation->getFundingWithdrawalTotal());
@@ -73,15 +76,44 @@ class RetrospectivelyMatchCommandTest extends IntegrationTest
         $hook = $updatedDonation->toFrontEndApiModel();
         $this->assertSame(250.00, $hook['amountMatchedByChampionFunds']);
 
+        // Only the consumer logger will print anything more interesting.
         $expectedOutput = [
             'matchbot:retrospectively-match starting!',
             'Automatically evaluating campaigns which closed in the past hour',
-            'Retrospectively matched 1 of 1 donations. £250.00 total new matching, across 1 campaigns.',
+            'matchbot:retrospectively-match complete!',
         ];
 
         $actualOutput = $output->fetch();
         foreach ($expectedOutput as $expectedLine) {
             $this->assertStringContainsString($expectedLine, $actualOutput);
+        }
+
+        $expectedConsumerFullLogs = [
+            'Retrospectively matched 1 of 1 donations. £250.00 total new matching, across 1 campaigns.',
+            'Checked 0 donations and redistributed matching for 0',
+            '{class} was handled successfully (acknowledging to transport).',
+            'Stopping worker.', // test worker only does 1 message then exits.
+        ];
+        $expectedConsumerLogPrefixes = [
+            'Successfully withdrew 250.00 from funding ID ',
+            'Pushed fund totals to Salesforce for 1 funds: ',
+        ];
+        $testLoggerMessages = array_map(fn ($messageMeta) => $messageMeta['message'], $testLogger->messages);
+
+        foreach ($expectedConsumerFullLogs as $expectedLine) {
+            $this->assertContains($expectedLine, $testLoggerMessages);
+        }
+
+        foreach ($expectedConsumerLogPrefixes as $expectedLine) {
+            $foundLine = false;
+            foreach ($testLoggerMessages as $actualLine) {
+                if (str_starts_with($actualLine, $expectedLine)) {
+                    $foundLine = true;
+                    break;
+                }
+            }
+
+            $this->assertTrue($foundLine);
         }
     }
 
@@ -179,16 +211,19 @@ class RetrospectivelyMatchCommandTest extends IntegrationTest
         );
 
         $command = new RetrospectivelyMatch(
-            allocator: $this->getService(Allocator::class),
             donationRepository: $this->getService(DonationRepository::class),
-            fundRepository: $this->getService(FundRepository::class),
-            chatter: $this->createStub(ChatterInterface::class),
-            bus: $this->messageBusProphecy->reveal(),
-            entityManager: $this->getService(EntityManagerInterface::class),
-            matchFundsRedistributor: $matchFundsRedistributor,
+            bus: $this->getService(RoutableMessageBus::class),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->run(new ArrayInput([]), $output);
+
+        $consumerOutput = new BufferedOutput();
+        $consumer = $this->getService(\Symfony\Component\Messenger\Command\ConsumeMessagesCommand::class);
+        $consumer->run(new ArrayInput([
+            'receivers' => [\MatchBot\Application\Messenger\Transports::TRANSPORT_HIGH_PRIORITY],
+            '--limit' => 1,
+            '-vv',
+        ]), $consumerOutput);
 
         return $output;
     }

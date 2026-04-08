@@ -39,7 +39,7 @@ class FundRepository extends SalesforceReadProxyRepository
      * @param DateTimeImmutable $at
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      */
-    public function pullForCampaign(Campaign $campaign, \DateTimeImmutable $at): void
+    public function pullForCampaign(Campaign $campaign, DateTimeImmutable $at): void
     {
         $fundsData = $this->getClient()->getForCampaign($campaign->getSalesforceId());
 
@@ -186,11 +186,11 @@ class FundRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @param DateTime $closedBeforeDate Typically now
-     * @param DateTime $closedSinceDate Typically 1 hour ago as determined at the point retro match script started
+     * @param DateTimeImmutable $closedBeforeDate Typically now
+     * @param DateTimeImmutable $closedSinceDate Typically 1 hour ago as determined at the point retro match script started
      * @return Fund[]
      */
-    public function findForCampaignsClosedSince(DateTime $closedBeforeDate, DateTime $closedSinceDate): array
+    public function findForCampaignsClosedSince(DateTimeImmutable $closedBeforeDate, DateTimeImmutable $closedSinceDate): array
     {
         $query = <<<EOT
             SELECT fund FROM MatchBot\Domain\Fund fund

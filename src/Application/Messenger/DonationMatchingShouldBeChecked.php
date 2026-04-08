@@ -16,9 +16,10 @@ class DonationMatchingShouldBeChecked implements MessageDeduplicationAwareInterf
     /**
      * @param array<string> $donationUuids
      */
-    protected function __construct(
+    public function __construct(
         public array $donationUuids,
         public string $retroMatchJobUuid,
+        public \DateTimeImmutable $includesCampaignsClosedSince,
         public bool $areFinalDonations, // Implies responsibility for reporting the whole command's result.
     ) {
         foreach ($this->donationUuids as $uuid) {
