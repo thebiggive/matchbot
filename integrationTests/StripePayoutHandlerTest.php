@@ -15,7 +15,6 @@ use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\Application\StripeFormattingTrait;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestLogger;
-use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Stripe\Service\BalanceTransactionService;

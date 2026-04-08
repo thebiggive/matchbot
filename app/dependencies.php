@@ -8,13 +8,9 @@ use DI\ContainerBuilder;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager as DBALDriverManager;
 use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
-use Doctrine\DBAL\Schema\AbstractAsset;
 use Doctrine\DBAL\Schema\AbstractNamedObject;
 use Doctrine\DBAL\Schema\AbstractOptionallyNamedObject;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
-use Doctrine\DBAL\Schema\CustomDBALDriver;
-use Doctrine\DBAL\Schema\MySQLSchemaManager;
-use Doctrine\DBAL\Schema\SchemaManagerFactory;
 use Doctrine\ORM;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,9 +21,11 @@ use MatchBot\Application\Auth\IdentityTokenService;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\CharityUpdated;
+use MatchBot\Application\Messenger\DonationMatchingShouldBeChecked;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\FundTotalUpdated;
 use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
+use MatchBot\Application\Messenger\Handler\DonationMatchCheckHandler;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\FundTotalUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
@@ -405,6 +403,7 @@ return function (ContainerBuilder $containerBuilder) {
                     // `CharityUpdated` does call out to Salesforce, to read data, but it's rarer and
                     // occasionally more time-sensitive than the group below which push data.
                     CharityUpdated::class => [Transports::TRANSPORT_HIGH_PRIORITY],
+                    DonationMatchingShouldBeChecked::class => [Transports::TRANSPORT_HIGH_PRIORITY],
 
                     // Outbound, payout processing and Salesforce pushes (lower priority). For MatchBot worker; SQS
                     // queue in Production. Payouts are low priority solely because they can be slow due to numerous
@@ -429,6 +428,7 @@ return function (ContainerBuilder $containerBuilder) {
                 /** We lazy-load the handlers from the container to avoid circular dependencies. */
                 [
                     CharityUpdated::class => [fn($msg) => $c->get(CharityUpdatedHandler::class)($msg)],
+                    DonationMatchingShouldBeChecked::class => [fn($msg) => $c->get(DonationMatchCheckHandler::class)($msg)],
                     Messages\Donation::class => [fn($msg) => $c->get(GiftAidResultHandler::class)($msg)],
                     Messages\Person::class => [fn($msg) => $c->get(PersonHandler::class)($msg)],
                     Messages\EmailVerificationToken::class => [fn($msg) => $c->get(EmailVerificationTokenHandler::class)($msg)],
@@ -625,6 +625,7 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer->set('claimbot.donation.result', $bus);
             $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
             $busContainer->set(CharityUpdated::class, $bus);
+            $busContainer->set(DonationMatchCheckHandler::class, $bus);
             $busContainer->set(DonationUpserted::class, $bus);
 
             return new RoutableMessageBus($busContainer, $bus);

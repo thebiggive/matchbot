@@ -127,6 +127,21 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     }
 
     #[\Override]
+    public function findByUuids(array $uuids): array
+    {
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT d FROM MatchBot\Domain\Donation d
+            WHERE d.uuid IN (:uuids)
+            ORDER BY d.createdAt ASC
+DQL);
+        $query->setParameter('uuids', $uuids);
+        /** @var Donation[] $donations */
+        $donations = $query->getResult();
+
+        return $donations;
+    }
+
+    #[\Override]
     public function findReadyToClaimGiftAid(bool $withResends): array
     {
         if ($withResends && getenv('APP_ENV') === 'production') {
@@ -169,7 +184,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     }
 
     #[\Override]
-    public function findNotFullyMatchedToCampaignsWhichClosedSince(DateTime $closedSinceDate): array
+    public function findNotFullyMatchedToCampaignsWhichClosedSince(\DateTimeImmutable $closedSinceDate): array
     {
         $now = (new DateTime('now'));
         $qb = $this->getEntityManager()->createQueryBuilder()
@@ -208,7 +223,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
      * @psalm-suppress MixedReturnTypeCoercion
      */
     #[\Override]
-    public function findRecentNotFullyMatchedToMatchCampaigns(DateTime $sinceDate): array
+    public function findRecentNotFullyMatchedToMatchCampaigns(\DateTimeImmutable $sinceDate): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
