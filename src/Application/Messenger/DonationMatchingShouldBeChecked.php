@@ -14,7 +14,7 @@ use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;
 class DonationMatchingShouldBeChecked implements MessageDeduplicationAwareInterface, MessageGroupAwareInterface
 {
     /**
-     * @param array<string> $donationUuids
+     * @param list<string> $donationUuids
      */
     public function __construct(
         public array $donationUuids,
