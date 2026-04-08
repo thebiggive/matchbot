@@ -79,4 +79,31 @@ class RyftClient
 
         return $clientSecret;
     }
+
+    /**
+     * See https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionGet
+     */
+    public function fetchPaymentSession(RyftAccountId $ryftAccountId, string $ryftPaymentSessionId)
+    {
+        $headers = [
+            'Authorization' => $this->secretKey,
+            'Account' => $ryftAccountId->ryftAccountId,
+        ];
+
+        $request = new Request(
+            method: 'GET',
+            uri: $this->apiPrefix . 'payment-sessions/' . $ryftPaymentSessionId,
+            headers: $headers,
+        );
+
+        $response = $this->client->send($request);
+
+        $responseContents = $response->getBody()->getContents();
+        $responseData = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
+        $cardBrand = $responseData['paymentMethod']['card']['scheme'];
+        $cardCountryIso2 = $responseData['paymentMethod']['card']['billingAddress']['country']; // looks like in manual tests billing address is null.
+
+
+        $this->log->info(\compact('cardBrand', 'cardCountryIso2', 'responseData'));
+    }
 }

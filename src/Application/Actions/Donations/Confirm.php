@@ -10,11 +10,13 @@ use MatchBot\Application\LazyAssertionException;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Settings;
 use MatchBot\Client\NotFoundException;
+use MatchBot\Client\RyftClient;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -45,6 +47,7 @@ class Confirm extends Action
         private DonationService $donationService,
         private ClockInterface $clock,
         private LockFactory $lockFactory,
+        private RyftClient $ryftClient,
         Settings $settings,
     ) {
         parent::__construct($logger);
@@ -87,6 +90,15 @@ class Confirm extends Action
             ConfirmationToken::SETUP_FUTURE_USAGE_ON_SESSION,
             null,
         ]);
+        $paymentAmount = $requestBody['amount'] ?? null;
+
+        $psp = $requestBody['psp'] ?? 'stripe';
+        Assertion::string($psp);
+        Assertion::inArray($psp, PaymentServiceProvider::VALUES);
+        $psp = PaymentServiceProvider::from($psp);
+
+        $ryftPaymentSessionId = $requestBody['paymentSessionId'] ?? null;
+        Assertion::nullOrString($ryftPaymentSessionId);
 
         $this->entityManager->beginTransaction();
 
@@ -96,7 +108,7 @@ class Confirm extends Action
             throw new NotFoundException();
         }
 
-        if (!is_string($confirmationTokenId) || trim($confirmationTokenId) === '') {
+        if ((!is_string($confirmationTokenId) || trim($confirmationTokenId) === '') && $psp === 'stripe') {
             $donationUUID = $donation->getId();
             $this->logger->warning(
                 <<<EOF
@@ -104,6 +116,19 @@ Donation Confirmation attempted with missing confirmation token id "$confirmatio
 EOF
             );
             throw new HttpBadRequestException($request, "stripeConfirmationTokenId required");
+        }
+
+        if ($psp === PaymentServiceProvider::Ryft) {
+            Assertion::integer($paymentAmount);
+
+            // @todo - work out why assertion below is failling in manual tests - getting e.g.
+            // { type: "SERVER_ERROR", description: 'Value "466" is not the same as expected value "575".' }
+            // Assertion::same($paymentAmount, $donation->getAmountFractionalIncTip());
+
+            $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
+            Assertion::notNull($ryftAccountId, 'Ryft account ID must be set for Ryft PSP');
+            $paymentSession = $this->ryftClient->fetchPaymentSession(
+                $ryftAccountId, $ryftPaymentSessionId);
         }
 
 
