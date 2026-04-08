@@ -32,6 +32,8 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 #[AsMessageHandler]
 class DonationMatchCheckHandler
 {
+    private const int MAX_STAT_SECONDS = 60 * 60 * 24 * 7; // 1 week, much longer than any command expected to need.
+
     public function __construct(
         private Allocator $allocator,
         private ChatterInterface $chatter,
@@ -99,7 +101,7 @@ class DonationMatchCheckHandler
             $this->redis->sAdd($this->keyForStat('campaignIdsWithChanges', $message), $campaignId);
         }
 
-        // todo possibly set a 1 week expire on all stats as belt and braces
+        $this->expireStatsEventually($message);
     }
 
     private function reportStats(DonationMatchingShouldBeChecked $message): void
@@ -113,6 +115,8 @@ class DonationMatchCheckHandler
         /** @var int $numDistinctCampaigns */
         $numDistinctCampaigns = $this->redis->scard($this->keyForStat('campaignIdsWithChanges', $message));
 
+        // @todo-multi-currency This message assumes GBP for now but the actual reallocation would use
+        // Campaign/Donation currency if we were live with others.
         $summary = "Retrospectively matched $numWithMatchingAllocated of $numChecked donations. " .
             "£$totalNewMatching total new matching, across $numDistinctCampaigns campaigns.";
         $this->logger->info($summary);
@@ -159,5 +163,15 @@ class DonationMatchCheckHandler
     private function keyForStat(string $string, DonationMatchingShouldBeChecked $message): string
     {
         return 'retro-match-' . $message->retroMatchJobUuid . '-' . $string;
+    }
+
+    /**
+     * Set a 1 week expiry, much longer than we expect to use them to report back, on all stats.
+     */
+    private function expireStatsEventually(DonationMatchingShouldBeChecked $message): void
+    {
+        foreach (['numChecked', 'numAllocated', 'penceAllocated', 'campaignIdsWithChanges'] as $type) {
+            $this->redis->expire($this->keyForStat($type, $message), self::MAX_STAT_SECONDS);
+        }
     }
 }
