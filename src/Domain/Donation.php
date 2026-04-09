@@ -1612,6 +1612,22 @@ class Donation extends SalesforceWriteProxy
         $this->totalPaidByDonor = bcdiv((string)$totalPaidFractional, '100', 2);
     }
 
+
+    /**
+     * @param array<string, mixed> $paymentSession
+     */
+    public function collectFromRyftPaymentSession(
+        array $paymentSession,
+        Money $totalPaidByDonor,
+        Money $originalFeeFractional,
+        \DateTimeImmutable $at,
+    ): void {
+        $this->donationStatus = DonationStatus::Collected;
+        $this->collectedAt = $at;
+        $this->totalPaidByDonor = $totalPaidByDonor->toNumericString();
+        $this->setOriginalPspFeeFractional((string) $originalFeeFractional->amountInPence());
+    }
+
     /**
      * Updates a pending donation to reflect changes made in the donation form.
      */

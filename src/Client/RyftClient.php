@@ -112,10 +112,10 @@ class RyftClient
     /**
      * see https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionCaptureById
      *
-     * @param array{id: string} $paymentSession
-     * @return void
+     * @param array{id: string, ...} $paymentSession
+     * @return array{id: string, amount: int, platformFee: int, currency: string}
      */
-    public function capturePayment(RyftAccountId $ryftAccountId, array $paymentSession, Money $platformFee): void
+    public function capturePayment(RyftAccountId $ryftAccountId, array $paymentSession, Money $platformFee): array
     {
         // https://api.ryftpay.com/v1/payment-sessions/{paymentSessionId}/captures
 
@@ -123,10 +123,12 @@ class RyftClient
             method: 'POST',
             uri: $this->apiPrefix . 'payment-sessions/' . $paymentSession['id'] . '/captures/',
             headers: $this->headers($ryftAccountId),
-            body: json_encode([
+            body: json_encode(
+                [
                 // ammount not set hereto capture full amount
                     'platformFee' => $platformFee->amountInPence(),
-                ]
+                ],
+                \JSON_THROW_ON_ERROR,
             ),
         );
 
@@ -141,7 +143,7 @@ class RyftClient
             throw new \Exception('Couldn ot capture Ryft payment');
         }
 
-        return;
+        return $responseData;
     }
 
     /**

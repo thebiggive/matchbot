@@ -13,6 +13,7 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Client\RyftClient;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
+use MatchBot\Domain\Currency;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -132,10 +133,12 @@ EOF
             $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
             Assertion::notNull($ryftAccountId, 'Ryft account ID must be set for Ryft PSP');
             $paymentSession = $this->ryftClient->fetchPaymentSession(
-                $ryftAccountId, $ryftPaymentSessionId);
+                $ryftAccountId,
+                $ryftPaymentSessionId
+            );
 
             $card = new PaymentCard(
-                CardBrand::from($paymentSession['paymentMethod']['card']['scheme']),
+                CardBrand::from(strtolower($paymentSession['paymentMethod']['card']['scheme'])),
                 Country::fromAlpha2($paymentSession['paymentMethod']['card']['binDetails']['issuerCountry'])
             );
 
@@ -143,15 +146,24 @@ EOF
 
             $donation->assertIsReadyToConfirm($this->clock->now());
 
-            $this->ryftClient->capturePayment(
+            $capture = $this->ryftClient->capturePayment(
                 $ryftAccountId,
                 $paymentSession,
                 Money::fromPence($donation->getAmountToDeductFractional(), $donation->currency()),
             );
 
-            // todo - capture the payment.
+            $donation->collectFromRyftPaymentSession(
+                paymentSession: $paymentSession,
+                totalPaidByDonor: Money::fromPence($capture['amount'], Currency::fromIsoCode($capture['currency'])),
+                originalFeeFractional: Money::fromPence($capture['platformFee'], Currency::fromIsoCode($capture['currency'])),
+                at: $this->clock->now(),
+            );
 
-//            $donation->collectFromRyftPaymentSession($paymentSession);
+           // @todo - integrate with locking / unlocking, expected match amount checks etc below,
+            // instead of letting them only happen for Stripe payments.
+            $this->entityManager->flush();
+            $this->entityManager->commit();
+            return new JsonResponse([]);
         }
 
 
