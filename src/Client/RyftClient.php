@@ -101,9 +101,8 @@ class RyftClient
         $responseContents = $response->getBody()->getContents();
         $responseData = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
         $cardBrand = $responseData['paymentMethod']['card']['scheme'];
-        $cardCountryIso2 = $responseData['paymentMethod']['card']['billingAddress']['country']; // looks like in manual tests billing address is null.
+        $cardCountryIso2 = $responseData['paymentMethod']['card']['binDetails']['issuerCountry'];
 
-
-        $this->log->info(\compact('cardBrand', 'cardCountryIso2', 'responseData'));
+        $this->log->info(\var_export(\compact('cardBrand', 'cardCountryIso2', 'responseData'), true));
     }
 }

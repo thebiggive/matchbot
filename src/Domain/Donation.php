@@ -1703,11 +1703,15 @@ class Donation extends SalesforceWriteProxy
      */
     public function assertIsReadyToConfirm(\DateTimeImmutable $at): true
     {
-        $this->assertionsForConfirmOrPreAuth()
-            ->that($this->transactionId)->notNull('Missing Transaction ID')
+        $assertions = $this->assertionsForConfirmOrPreAuth()
             ->that($this->getCampaign()->isOpenForFinalising($at))
-            ->that($this->hasCharityFee())
-            ->verifyNow();
+            ->that($this->hasCharityFee());
+
+        if ($this->psp === PaymentServiceProvider::Stripe->value) {
+            $assertions = $assertions->that($this->transactionId)->notNull('Missing Transaction ID');
+        }
+
+        $assertions->verifyNow();
 
         return true;
     }
