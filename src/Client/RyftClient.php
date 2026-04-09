@@ -82,8 +82,18 @@ class RyftClient
 
     /**
      * See https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionGet
+     *
+     * @return array{
+     *     id: string,
+     *     paymentMethod: array{
+     *       card: array{
+     *          scheme: string,
+     *          binDetails: array{issuerCountry: string}
+     *     }
+     *   }
+     * }
      */
-    public function fetchPaymentSession(RyftAccountId $ryftAccountId, string $ryftPaymentSessionId)
+    public function fetchPaymentSession(RyftAccountId $ryftAccountId, string $ryftPaymentSessionId): array
     {
         $headers = [
             'Authorization' => $this->secretKey,
@@ -104,5 +114,7 @@ class RyftClient
         $cardCountryIso2 = $responseData['paymentMethod']['card']['binDetails']['issuerCountry'];
 
         $this->log->info(\var_export(\compact('cardBrand', 'cardCountryIso2', 'responseData'), true));
+
+        return $responseData;
     }
 }

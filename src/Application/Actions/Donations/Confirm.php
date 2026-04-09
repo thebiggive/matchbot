@@ -11,11 +11,14 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Settings;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Client\RyftClient;
+use MatchBot\Domain\CardBrand;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\PaymentCard;
 use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -129,6 +132,19 @@ EOF
             Assertion::notNull($ryftAccountId, 'Ryft account ID must be set for Ryft PSP');
             $paymentSession = $this->ryftClient->fetchPaymentSession(
                 $ryftAccountId, $ryftPaymentSessionId);
+
+            $card = new PaymentCard(
+                CardBrand::from($paymentSession['paymentMethod']['card']['scheme']),
+                Country::fromAlpha2($paymentSession['paymentMethod']['card']['binDetails']['issuerCountry'])
+            );
+
+            $donation->setPaymentCard($card);
+
+            $donation->assertIsReadyToConfirm($this->clock->now());
+
+            // todo - capture the payment.
+
+            $donation->collectFromRyftPaymentSession($paymentSession);
         }
 
 
