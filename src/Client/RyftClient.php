@@ -41,15 +41,10 @@ class RyftClient
      */
     public function createPaymentSession(RyftAccountId $ryftAccountId, Money $amount): string
     {
-        $headers = [
-            'Authorization' => $this->secretKey,
-            'Account' => $ryftAccountId->ryftAccountId,
-        ];
-
         $request = new Request(
             method: 'POST',
             uri: $this->apiPrefix . 'payment-sessions',
-            headers: $headers,
+            headers: $this->headers($ryftAccountId),
             body: json_encode(
                 [
                 'amount' => $amount->amountInPence(),
@@ -95,26 +90,68 @@ class RyftClient
      */
     public function fetchPaymentSession(RyftAccountId $ryftAccountId, string $ryftPaymentSessionId): array
     {
-        $headers = [
-            'Authorization' => $this->secretKey,
-            'Account' => $ryftAccountId->ryftAccountId,
-        ];
-
         $request = new Request(
             method: 'GET',
             uri: $this->apiPrefix . 'payment-sessions/' . $ryftPaymentSessionId,
-            headers: $headers,
+            headers: $this->headers($ryftAccountId),
         );
 
         $response = $this->client->send($request);
 
         $responseContents = $response->getBody()->getContents();
         $responseData = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
-        $cardBrand = $responseData['paymentMethod']['card']['scheme'];
-        $cardCountryIso2 = $responseData['paymentMethod']['card']['binDetails']['issuerCountry'];
+        $cardBrand = $responseData['paymentMethod']['card']['scheme']; // @phpstan-ignore-line
+        $cardCountryIso2 = $responseData['paymentMethod']['card']['binDetails']['issuerCountry']; // @phpstan-ignore-line
 
         $this->log->info(\var_export(\compact('cardBrand', 'cardCountryIso2', 'responseData'), true));
 
         return $responseData;
+    }
+
+
+    /**
+     * see https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionCaptureById
+     *
+     * @param array{id: string} $paymentSession
+     * @return void
+     */
+    public function capturePayment(RyftAccountId $ryftAccountId, array $paymentSession, Money $platformFee): void
+    {
+        // https://api.ryftpay.com/v1/payment-sessions/{paymentSessionId}/captures
+
+        $request = new Request(
+            method: 'POST',
+            uri: $this->apiPrefix . 'payment-sessions/' . $paymentSession['id'] . '/captures/',
+            headers: $this->headers($ryftAccountId),
+            body: json_encode([
+                // ammount not set hereto capture full amount
+                    'platformFee' => $platformFee->amountInPence(),
+                ]
+            ),
+        );
+
+        $response = $this->client->send($request);
+        $responseContents = $response->getBody()->getContents();
+        $responseData = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
+
+        $this->log->info(\var_export(\compact('responseData'), true));
+
+        $status = $responseData['status']; // @phpstan-ignore-line
+        if ($status !== 'Succeeded') {
+            throw new \Exception('Couldn ot capture Ryft payment');
+        }
+
+        return;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    private function headers(RyftAccountId $ryftAccountId): array
+    {
+        return [
+            'Authorization' => $this->secretKey,
+            'Account' => $ryftAccountId->ryftAccountId,
+        ];
     }
 }

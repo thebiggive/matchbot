@@ -18,6 +18,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentCard;
 use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\StripeConfirmationTokenId;
@@ -142,9 +143,15 @@ EOF
 
             $donation->assertIsReadyToConfirm($this->clock->now());
 
+            $this->ryftClient->capturePayment(
+                $ryftAccountId,
+                $paymentSession,
+                Money::fromPence($donation->getAmountToDeductFractional(), $donation->currency()),
+            );
+
             // todo - capture the payment.
 
-            $donation->collectFromRyftPaymentSession($paymentSession);
+//            $donation->collectFromRyftPaymentSession($paymentSession);
         }
 
 
