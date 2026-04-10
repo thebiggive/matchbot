@@ -126,9 +126,10 @@ EOF
         if ($psp === PaymentServiceProvider::Ryft) {
             Assertion::integer($paymentAmount);
 
-            // @todo - work out why assertion below is failling in manual tests - getting e.g.
-            // { type: "SERVER_ERROR", description: 'Value "466" is not the same as expected value "575".' }
-            // Assertion::same($paymentAmount, $donation->getAmountFractionalIncTip());
+
+            // seams confusing that the amount Ryft tells us is just the amount for the charity
+            // (i.e. exclusive of tip & fees) but that's what tests so far show:
+            Assertion::same($paymentAmount, $donation->getAmountForCharityFractional());
 
             $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
             Assertion::notNull($ryftAccountId, 'Ryft account ID must be set for Ryft PSP');
