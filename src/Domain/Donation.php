@@ -1612,6 +1612,22 @@ class Donation extends SalesforceWriteProxy
         $this->totalPaidByDonor = bcdiv((string)$totalPaidFractional, '100', 2);
     }
 
+
+    /**
+     * @param array<string, mixed> $paymentSession
+     */
+    public function collectFromRyftPaymentSession(
+        array $paymentSession,
+        Money $totalPaidByDonor,
+        Money $originalFeeFractional,
+        \DateTimeImmutable $at,
+    ): void {
+        $this->donationStatus = DonationStatus::Collected;
+        $this->collectedAt = $at;
+        $this->totalPaidByDonor = $totalPaidByDonor->toNumericString();
+        $this->setOriginalPspFeeFractional((string) $originalFeeFractional->amountInPence());
+    }
+
     /**
      * Updates a pending donation to reflect changes made in the donation form.
      */
@@ -1703,11 +1719,15 @@ class Donation extends SalesforceWriteProxy
      */
     public function assertIsReadyToConfirm(\DateTimeImmutable $at): true
     {
-        $this->assertionsForConfirmOrPreAuth()
-            ->that($this->transactionId)->notNull('Missing Transaction ID')
+        $assertions = $this->assertionsForConfirmOrPreAuth()
             ->that($this->getCampaign()->isOpenForFinalising($at))
-            ->that($this->hasCharityFee())
-            ->verifyNow();
+            ->that($this->hasCharityFee());
+
+        if ($this->psp === PaymentServiceProvider::Stripe->value) {
+            $assertions = $assertions->that($this->transactionId)->notNull('Missing Transaction ID');
+        }
+
+        $assertions->verifyNow();
 
         return true;
     }
