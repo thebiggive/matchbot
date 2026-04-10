@@ -103,8 +103,6 @@ class RyftClient
         $cardBrand = $responseData['paymentMethod']['card']['scheme']; // @phpstan-ignore-line
         $cardCountryIso2 = $responseData['paymentMethod']['card']['binDetails']['issuerCountry']; // @phpstan-ignore-line
 
-        $this->log->info(\var_export(\compact('cardBrand', 'cardCountryIso2', 'responseData'), true));
-
         return $responseData;
     }
 
@@ -134,9 +132,11 @@ class RyftClient
 
         $response = $this->client->send($request);
         $responseContents = $response->getBody()->getContents();
+
+        /** @var array{id: string, amount: int, platformFee: int, currency: string} $responseData */
         $responseData = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
 
-        $this->log->info(\var_export(\compact('responseData'), true));
+        $this->log->info('Captured Ryft payment or ' . $responseData['amount'] . ' for payment session ' . $responseData['id']);
 
         $status = $responseData['status']; // @phpstan-ignore-line
         if ($status !== 'Succeeded') {
