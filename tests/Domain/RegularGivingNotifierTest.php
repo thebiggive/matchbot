@@ -9,6 +9,7 @@ use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Client\Mailer;
+use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
@@ -362,6 +363,7 @@ class RegularGivingNotifierTest extends TestCase
             $this->createStub(\Redis::class),
             $rateLimiterFactory,
             $this->sut,
+            $this->createStub(RyftClient::class),
         );
 
         $paymentIntent = new PaymentIntent();

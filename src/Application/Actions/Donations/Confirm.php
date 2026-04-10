@@ -52,7 +52,6 @@ class Confirm extends Action
         private DonationService $donationService,
         private ClockInterface $clock,
         private LockFactory $lockFactory,
-        private RyftClient $ryftClient,
         Settings $settings,
     ) {
         parent::__construct($logger);
@@ -130,41 +129,6 @@ EOF
             // seams confusing that the amount Ryft tells us is just the amount for the charity
             // (i.e. exclusive of tip & fees) but that's what tests so far show:
             Assertion::same($paymentAmount, $donation->getAmountForCharityFractional());
-
-            $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
-            Assertion::notNull($ryftAccountId, 'Ryft account ID must be set for Ryft PSP');
-            $paymentSession = $this->ryftClient->fetchPaymentSession(
-                $ryftAccountId,
-                $ryftPaymentSessionId
-            );
-
-            $card = new PaymentCard(
-                CardBrand::from(strtolower($paymentSession['paymentMethod']['card']['scheme'])),
-                Country::fromAlpha2($paymentSession['paymentMethod']['card']['binDetails']['issuerCountry'])
-            );
-
-            $donation->setPaymentCard($card);
-
-            $donation->assertIsReadyToConfirm($this->clock->now());
-
-            $capture = $this->ryftClient->capturePayment(
-                $ryftAccountId,
-                $paymentSession,
-                Money::fromPence($donation->getAmountToDeductFractional(), $donation->currency()),
-            );
-
-            $donation->collectFromRyftPaymentSession(
-                paymentSession: $paymentSession,
-                totalPaidByDonor: Money::fromPence($capture['amount'], Currency::fromIsoCode($capture['currency'])),
-                originalFeeFractional: Money::fromPence($capture['platformFee'], Currency::fromIsoCode($capture['currency'])),
-                at: $this->clock->now(),
-            );
-
-           // @todo - integrate with locking / unlocking, expected match amount checks etc below,
-            // instead of letting them only happen for Stripe payments.
-            $this->entityManager->flush();
-            $this->entityManager->commit();
-            return new JsonResponse([]);
         }
 
 
@@ -223,13 +187,16 @@ EOF
         }
 
         $paymentIntentId = $donation->getTransactionId();
-        Assertion::notNull($paymentIntentId);
+        if ($psp === 'stripe') {
+            Assertion::notNull($paymentIntentId);
+        }
 
         try {
             $updatedIntent = $this->donationService->confirmOnSessionDonation(
                 $donation,
                 StripeConfirmationTokenId::of($confirmationTokenId),
                 $confirmationTokenFutureUsage,
+                $ryftPaymentSessionId,
             );
         } catch (CardException $exception) {
             $this->entityManager->rollback();
@@ -322,8 +289,8 @@ EOF
 
         return new JsonResponse([
             'paymentIntent' => [
-                'status' => $updatedIntent->status,
-                'client_secret' => $updatedIntent->status === 'requires_action'
+                'status' => $updatedIntent?->status,
+                'client_secret' => $updatedIntent?->status === 'requires_action'
                     ?  $updatedIntent->client_secret
                     : null,
             ],
