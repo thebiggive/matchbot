@@ -115,11 +115,9 @@ class RyftClient
      */
     public function capturePayment(RyftAccountId $ryftAccountId, array $paymentSession, Money $platformFee): array
     {
-        // https://api.ryftpay.com/v1/payment-sessions/{paymentSessionId}/captures
-
         $request = new Request(
             method: 'POST',
-            uri: $this->apiPrefix . 'payment-sessions/' . $paymentSession['id'] . '/captures/',
+            uri: $this->apiPrefix . 'payment-sessions/' . $paymentSession['id'] . '/captures',
             headers: $this->headers($ryftAccountId),
             body: json_encode(
                 [
