@@ -2145,4 +2145,9 @@ class Donation extends SalesforceWriteProxy
 
         return $this->mandateSequenceNumber > 1;
     }
+
+    public function paymentServiceProvider(): ?PaymentServiceProvider
+    {
+        return PaymentServiceProvider::tryFrom($this->psp);
+    }
 }

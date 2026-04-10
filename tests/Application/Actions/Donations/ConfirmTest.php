@@ -116,11 +116,11 @@ class ConfirmTest extends TestCase
                 redis: $redisProphecy->reveal(),
                 confirmRateLimitFactory: $stubRateLimiter,
                 regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
+                ryftClient: $this->createStub(RyftClient::class),
             ),
             clock: new MockClock('2025-01-01'),
             lockFactory: $this->createStub(LockFactory::class),
             settings: Settings::fromEnvVars(\getenv()),
-            ryftClient: $this->createStub(RyftClient::class),
         );
     }
 
