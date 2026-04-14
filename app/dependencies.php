@@ -42,6 +42,7 @@ use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Application\Settings;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
+use MatchBot\Client\RyftClient;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationNotifier;
@@ -735,6 +736,7 @@ return function (ContainerBuilder $containerBuilder) {
                     redis: $c->get(Redis::class),
                     confirmRateLimitFactory: $confirmRateLimiterFactory,
                     regularGivingNotifier: $c->get(RegularGivingNotifier::class),
+                    ryftClient: $c->get(RyftClient::class),
                 );
             },
 

@@ -161,7 +161,7 @@ class Campaign extends Common
      */
     public function getBySlug(MetaCampaignSlug $slug): array
     {
-        $uri = $this->getUri("{$this->baseUriCached()}/slug/$slug->slug", true);
+        $uri = $this->getUri("{$this->baseUriCached()}/slug/{$slug->slug}", true);
         try {
             $response = $this->getHttpClient()->get($uri);
         } catch (RequestException $exception) {

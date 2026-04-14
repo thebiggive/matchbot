@@ -201,7 +201,12 @@ readonly class RegularGivingService
             if ($confirmationTokenId) {
                 // The client should be setting every RG card to off_session so we don't need to compare the token's
                 // `setup_future_usage` for the 3rd arg here.
-                $this->donationService->confirmOnSessionDonation($firstDonation, $confirmationTokenId, ConfirmationToken::SETUP_FUTURE_USAGE_OFF_SESSION);
+                $this->donationService->confirmOnSessionDonation(
+                    donation: $firstDonation,
+                    tokenId: $confirmationTokenId,
+                    confirmationTokenSetupFutureUsage: ConfirmationToken::SETUP_FUTURE_USAGE_OFF_SESSION,
+                    ryftPaymentSessionId: null,
+                );
             } else {
                 \assert($donorsSavedPaymentMethod !== null);
                 $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod, false);

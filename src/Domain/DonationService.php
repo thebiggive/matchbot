@@ -16,6 +16,7 @@ use MatchBot\Application\Matching\DbErrorPreventedMatch;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Client\NotFoundException;
+use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
@@ -107,6 +108,7 @@ class DonationService
         private \Redis $redis,
         private RateLimiterFactory $confirmRateLimitFactory,
         private RegularGivingNotifier $regularGivingNotifier,
+        private RyftClient $ryftClient,
     ) {
     }
 
@@ -262,28 +264,70 @@ class DonationService
      * @throws RegularGivingDonationTooOldToCollect
      * @throws PaymentIntentNotSucceeded
      * @throws RateLimitExceededException
+     * @return \Stripe\PaymentIntent|null payment intent for stripe, null for ryft.
      */
     public function confirmOnSessionDonation(
         Donation $donation,
-        StripeConfirmationTokenId $tokenId,
+        ?StripeConfirmationTokenId $tokenId,
         ?string $confirmationTokenSetupFutureUsage,
-    ): \Stripe\PaymentIntent {
+        ?string $ryftPaymentSessionId,
+    ): ?\Stripe\PaymentIntent {
         $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
+        $psp = $donation->paymentServiceProvider();
+        Assertion::notNull($psp, 'Donation must have a payment service provider');
+        if ($psp == PaymentServiceProvider::Stripe) {
+            Assertion::notNull($tokenId);
 
-        /**
-         * phpstan is newly reporting a variable type issue here, hard to see at a glance exactly what the issue
-         * is as the type involved is rather complicated.
-         *
-         * @var StripeObject&object{
-         *     card: null|object{country: string, brand: string, fingerprint: string},
-         *     pay_by_bank: null|StripeObject
-         * } $paymentMethodPreview
-         */
-        $paymentMethodPreview = $confirmationToken->payment_method_preview; // @phpstan-ignore varTag.type
+            /**
+             * phpstan is newly reporting a variable type issue here, hard to see at a glance exactly what the issue
+             * is as the type involved is rather complicated.
+             *
+             * @var StripeObject&object{
+             *     card: null|object{country: string, brand: string, fingerprint: string},
+             *     pay_by_bank: null|StripeObject
+             * } $paymentMethodPreview
+             */
+            $paymentMethodPreview = $confirmationToken->payment_method_preview; // @phpstan-ignore varTag.type
 
-        $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
+            $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
+            $card = null;
+        } elseif ($psp === PaymentServiceProvider::Ryft) {
+            Assertion::notNull($ryftPaymentSessionId, 'Ryft payment session ID must be set for Ryft PSP');
 
-        $this->updateDonationFeesFromConfirmationToken($donation, $confirmationToken);
+            $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
+            Assertion::notNull($ryftAccountId, 'Ryft account ID must be set for Ryft PSP');
+            $paymentSession = $this->ryftClient->fetchPaymentSession(
+                $ryftAccountId,
+                $ryftPaymentSessionId
+            );
+
+            $card = new PaymentCard(
+                CardBrand::from(strtolower($paymentSession['paymentMethod']['card']['scheme'])),
+                Country::fromAlpha2($paymentSession['paymentMethod']['card']['binDetails']['issuerCountry'])
+            );
+        } else {
+            throw new \InvalidArgumentException('Unsupported payment service provider: ' . $psp->name);
+        }
+
+        $this->updateDonationFeesFromConfirmationTokenOrCard($donation, $confirmationToken, $card);
+
+        if ($psp === PaymentServiceProvider::Ryft) {
+            \assert(isset($paymentSession));
+            \assert(isset($ryftAccountId));
+
+            $capture = $this->ryftClient->capturePayment(
+                $ryftAccountId,
+                $paymentSession,
+                Money::fromPence($donation->getAmountToDeductFractional(), $donation->currency()),
+            );
+
+            $donation->collectFromRyftPaymentSession(
+                paymentSession: $paymentSession,
+                totalPaidByDonor: Money::fromPence($capture['amount'], Currency::fromIsoCode($capture['currency'])),
+                originalFeeFractional: Money::fromPence($capture['platformFee'], Currency::fromIsoCode($capture['currency'])),
+                at: $this->clock->now(),
+            );
+        }
 
         // We flush now to make sure the actual fees we're charging are recorded. If there's any DB error at this point
         // we prefer to crash without collecting the donation over collecting the donation without a proper record
@@ -300,36 +344,50 @@ class DonationService
         // following line has no mutation coverage but I think its fine to delete anyway given new assertion above.
         $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
 
-        $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
+        if ($psp == PaymentServiceProvider::Stripe) {
+            \assert(isset($paymentMethodPreview));
+            $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
 
-        // Check if PaymentIntent has a payment_method of a different type
-        /** @var string|null $paymentMethodId */
-        $paymentMethodId = $paymentIntent->payment_method ?? null;
-        if ($paymentMethodId !== null) {
-            $paymentIntent = $this->updatePaymentMethodFromStripe(
-                donation: $donation,
-                paymentMethodId: $paymentMethodId,
-                paymentMethodPreview: $paymentMethodPreview,
-                paymentIntentId: $paymentIntentId,
-                paymentIntent: $paymentIntent
+            // Check if PaymentIntent has a payment_method of a different type
+            /** @var string|null $paymentMethodId */
+            $paymentMethodId = $paymentIntent->payment_method ?? null;
+            if ($paymentMethodId !== null) {
+                $paymentIntent = $this->updatePaymentMethodFromStripe(
+                    donation: $donation,
+                    paymentMethodId: $paymentMethodId,
+                    paymentMethodPreview: $paymentMethodPreview,
+                    paymentIntentId: $paymentIntentId,
+                    paymentIntent: $paymentIntent
+                );
+            }
+
+            if ($confirmationTokenSetupFutureUsage === null && $paymentIntent->setup_future_usage !== null) {
+                $paymentIntentId = $this->replacePaymentIntent($donation, $paymentIntentId);
+            }
+
+            $updatedIntent = $this->stripe->confirmPaymentIntent(
+                $paymentIntentId, // May have changed just above, if setup_future_usage did.
+                [
+                    'confirmation_token' => $tokenId->stripeConfirmationTokenId,
+                    'return_url' => $donation->getReturnUrl(),
+                ]
+            );
+
+            $this->throwIfUnsuccessful($updatedIntent);
+        } else {
+            // @phpstan-ignore-next-line - (phpstan reasonably wants us to use match to check this statically)
+            \assert($psp === PaymentServiceProvider::Ryft, 'Unexpected payment service provider');
+            \assert(isset($paymentSession));
+            \assert(isset($ryftAccountId));
+
+            $this->ryftClient->capturePayment(
+                $ryftAccountId,
+                $paymentSession,
+                Money::fromPence($donation->getAmountToDeductFractional(), $donation->currency()),
             );
         }
 
-        if ($confirmationTokenSetupFutureUsage === null && $paymentIntent->setup_future_usage !== null) {
-            $paymentIntentId = $this->replacePaymentIntent($donation, $paymentIntentId);
-        }
-
-        $updatedIntent = $this->stripe->confirmPaymentIntent(
-            $paymentIntentId, // May have changed just above, if setup_future_usage did.
-            [
-                'confirmation_token' => $tokenId->stripeConfirmationTokenId,
-                'return_url' => $donation->getReturnUrl(),
-            ]
-        );
-
-        $this->throwIfUnsuccessful($updatedIntent);
-
-        return $updatedIntent;
+        return $updatedIntent ?? null;
     }
 
     /**
@@ -489,9 +547,10 @@ class DonationService
         }
     }
 
-    private function updateDonationFeesFromConfirmationToken(
+    private function updateDonationFeesFromConfirmationTokenOrCard(
         Donation $donation,
-        ConfirmationToken $confirmationToken
+        ?ConfirmationToken $confirmationToken,
+        ?PaymentCard $paymentCard,
     ): void {
         /**
          *  phpstan is newly reporting a variable type issue here, hard to see at a glance exactly what the issue
@@ -501,9 +560,11 @@ class DonationService
          *     pay_by_bank: null|StripeObject
          * } $paymentMethodPreview
          */
-        $paymentMethodPreview = $confirmationToken->payment_method_preview; // @phpstan-ignore varTag.type
+        $paymentMethodPreview = $confirmationToken?->payment_method_preview; // @phpstan-ignore varTag.type
 
-        if ($paymentMethodPreview->card !== null) {
+        if ($paymentCard !== null) {
+            $card = $paymentCard;
+        } elseif ($paymentMethodPreview->card !== null) {
             $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception('Missing card brand');
             $cardCountry = Country::fromAlpha2OrNull($paymentMethodPreview->card->country) ?? throw new \Exception('Missing card country');
 
@@ -514,13 +575,14 @@ class DonationService
                 $cardCountry,
             ));
 
-            $donation->setPaymentCard(new PaymentCard($cardBrand, $cardCountry));
+            $card = new PaymentCard($cardBrand, $cardCountry);
         } else {
             // if we had a ctoken at all we're not using Donation Funds so must be using Pay By Bank, which
             // has no card / default fees.
             \assert($paymentMethodPreview->pay_by_bank !== null);
-            $donation->setPaymentCard(null);
+            $card = null;
         }
+        $donation->setPaymentCard($card);
 
         $this->doUpdateDonationFees(
             donation: $donation,

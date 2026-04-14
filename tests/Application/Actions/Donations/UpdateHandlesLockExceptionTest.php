@@ -12,6 +12,7 @@ use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Settings;
+use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -252,6 +253,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
                 redis: $this->prophesize(\Redis::class)->reveal(),
                 confirmRateLimitFactory: $stubRateLimiter,
                 regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
+                ryftClient: $this->createStub(RyftClient::class),
             ),
             settings: Settings::fromEnvVars(getenv()),
         );

@@ -47,6 +47,7 @@ use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
+use MatchBot\Client\RyftClient;
 
 class ConfirmTest extends TestCase
 {
@@ -115,6 +116,7 @@ class ConfirmTest extends TestCase
                 redis: $redisProphecy->reveal(),
                 confirmRateLimitFactory: $stubRateLimiter,
                 regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
+                ryftClient: $this->createStub(RyftClient::class),
             ),
             clock: new MockClock('2025-01-01'),
             lockFactory: $this->createStub(LockFactory::class),
