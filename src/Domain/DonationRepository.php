@@ -41,14 +41,20 @@ interface DonationRepository
     public function findReadyToClaimGiftAid(bool $withResends): array;
 
     /**
+     * @param string[] $uuids
      * @return Donation[]
      */
-    public function findNotFullyMatchedToCampaignsWhichClosedSince(DateTime $closedSinceDate): array;
+    public function findByUuids(array $uuids): array;
 
     /**
      * @return Donation[]
      */
-    public function findRecentNotFullyMatchedToMatchCampaigns(DateTime $sinceDate): array;
+    public function findNotFullyMatchedToCampaignsWhichClosedSince(\DateTimeImmutable $closedSinceDate): array;
+
+    /**
+     * @return Donation[]
+     */
+    public function findRecentNotFullyMatchedToMatchCampaigns(\DateTimeImmutable $sinceDate): array;
 
     /**
      * @param string[]  $transferIds

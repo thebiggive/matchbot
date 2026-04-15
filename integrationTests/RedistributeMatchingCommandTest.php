@@ -221,7 +221,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         return [$campaign, $championFundCampaignFunding];
     }
 
-    public function runCommand(): BufferedOutput
+    private function runCommand(): BufferedOutput
     {
         $output = new BufferedOutput();
         $command = new RedistributeMatchFunds(

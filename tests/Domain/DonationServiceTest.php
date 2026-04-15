@@ -9,6 +9,7 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -253,6 +254,7 @@ class DonationServiceTest extends TestCase
             redis: $redisProphecy->reveal(),
             confirmRateLimitFactory: $stubRateLimiter,
             regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
+            ryftClient: $this->createStub(RyftClient::class),
         );
     }
 
@@ -297,6 +299,7 @@ class DonationServiceTest extends TestCase
             redis: $redisProphecy->reveal(),
             confirmRateLimitFactory: $rateLimiterFactory,
             regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
+            ryftClient: $this->createStub(RyftClient::class),
         );
 
 
@@ -323,7 +326,8 @@ class DonationServiceTest extends TestCase
             $sut->confirmOnSessionDonation(
                 donation: $donation,
                 tokenId: $tokenId,
-                confirmationTokenSetupFutureUsage: 'on_session'
+                confirmationTokenSetupFutureUsage: 'on_session',
+                ryftPaymentSessionId: null,
             );
         }
     }
@@ -422,6 +426,7 @@ class DonationServiceTest extends TestCase
             $donation,
             $confirmationTokenId,
             ConfirmationToken::SETUP_FUTURE_USAGE_ON_SESSION,
+            null,
         );
 
         $this->assertSame('0.52', $donation->getCharityFeeGross());
@@ -470,7 +475,7 @@ class DonationServiceTest extends TestCase
         )->willReturn($currentPaymentMethod);
         $this->entityManagerProphecy->flush()->shouldBeCalled();
 
-        $this->sut->confirmOnSessionDonation($donation, $stripeConfirmationTokenId, null);
+        $this->sut->confirmOnSessionDonation($donation, $stripeConfirmationTokenId, null, null);
 
         // then the existing payment method at stripe should be set to null before any futher update.
         if ($shouldClearPaymentMethod) {

@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Campaigns;
 
-use Doctrine\DBAL\Logging\DebugStack;
-use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\Environment;
 use MatchBot\Client\Campaign as SfCampaignClient;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
@@ -46,7 +43,13 @@ class GetEarlyPreview extends Action
             $args['salesforceId'] ?? throw new HttpNotFoundException($request)
         );
 
-        $campaignData = $this->salesforceCampaignClient->getById($sfId->value, false);
+        try {
+            $campaignData = $this->salesforceCampaignClient->getById($sfId->value, false);
+        } catch (NotFoundException $_exception) {
+            $this->logger->info("Campaign ID $sfId->value not found, likely deleted");
+            throw new HttpNotFoundException($request);
+        }
+
         if ($campaignData['isMetaCampaign']) {
             throw new HttpNotFoundException($request);
         }
