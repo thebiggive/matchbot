@@ -39,7 +39,6 @@ class UpdateCampaignsTest extends TestCase
         $campaignRepoProphecy->findCampaignsWhereFundsNeedToBeUpToDate()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
-        $campaignRepoProphecy->updateFromSf($campaign)->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
         $fundRepoProphecy->pullForCampaign($campaign, $this->now)->shouldBeCalledOnce();
@@ -77,7 +76,6 @@ class UpdateCampaignsTest extends TestCase
         $campaignRepoProphecy->findCampaignsWhereFundsNeedToBeUpToDate()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
-        $campaignRepoProphecy->updateFromSf($campaign)->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
         $fundRepoProphecy->pullForCampaign($campaign, $this->now)
@@ -122,7 +120,6 @@ class UpdateCampaignsTest extends TestCase
         $campaignRepoProphecy->findCampaignsWhereFundsNeedToBeUpToDate()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
-        $campaignRepoProphecy->updateFromSf($campaign)->shouldBeCalledTimes(2);
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
         $fundRepoProphecy->pullForCampaign($campaign, $this->now)
@@ -177,7 +174,6 @@ class UpdateCampaignsTest extends TestCase
         $campaignRepoProphecy->findCampaignsWhereFundsNeedToBeUpToDate()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
-        $campaignRepoProphecy->updateFromSf($campaign)->shouldBeCalledTimes(2);
 
         $fundRepoMockBuilder = $this->getMockBuilder(FundRepository::class);
         $fundRepoMockBuilder->setConstructorArgs([$entityManagerProphecy->reveal(), new ClassMetadata(Campaign::class)]);
@@ -224,7 +220,6 @@ class UpdateCampaignsTest extends TestCase
         $campaignRepoProphecy->findAll()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
-        $campaignRepoProphecy->updateFromSf($campaign)->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
         $fundRepoProphecy->pullForCampaign($campaign, $this->now)->shouldBeCalledOnce();
