@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use DateInterval;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -213,24 +214,26 @@ EOT;
     }
 
     /**
-     * @param DateTimeImmutable $openAtDate Typically now
-     * @return Fund[]
+     * @param DateTimeImmutable $openNearDate Typically now
+     * @return Fund[] For campaigns either open at $openNearDate or which closed less than 8 days before.
      */
-    public function findForCampaignsOpenAt(DateTimeImmutable $openAtDate): array
+    public function findForCampaignsRecentlyOpenAt(DateTimeImmutable $openNearDate): array
     {
+        $eightDaysPrior = $openNearDate->sub(new DateInterval('P8D'));
         $query = <<<EOT
             SELECT fund FROM MatchBot\Domain\Fund fund
             JOIN fund.campaignFundings campaignFunding
             JOIN campaignFunding.campaigns campaign
             WHERE
-                campaign.startDate < :openAtDate AND
-                campaign.endDate > :openAtDate
+                campaign.startDate < :latestStart AND
+                campaign.endDate > :earliestEnd
             GROUP BY fund
         EOT;
 
         /** @var Fund[] $result */
         $result = $this->getEntityManager()->createQuery($query)
-            ->setParameter('openAtDate', $openAtDate)
+            ->setParameter('latestStart', $openNearDate)
+            ->setParameter('earliestEnd', $eightDaysPrior)
             ->disableResultCache()
             ->getResult();
 
