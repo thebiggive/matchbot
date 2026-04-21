@@ -114,7 +114,9 @@ class WebsiteExamplesCalculatorTest extends TestCase
             cardCountry: $cardCountry,
             amount: $donation_amount,
             currencyCode:'GBP',
-            hasGiftAid: $with_gift_aid
+            hasGiftAid: $with_gift_aid,
+            donationCreationDate: new \DateTimeImmutable('2026-06-30T23:59:59 Europe/London'),
+            mandateActivationDate: null,
         );
 
         if ($with_gift_aid) {

@@ -1575,6 +1575,8 @@ class Donation extends SalesforceWriteProxy
             $this->getAmount(),
             $this->currency()->isoCode(),
             $incursGiftAidFee,
+            $this->getCreatedDateImmutable(),
+            $this->mandate?->getActiveFrom(),
         );
 
         $this->charityFee = $fees->coreFee;
@@ -2149,5 +2151,14 @@ class Donation extends SalesforceWriteProxy
     public function paymentServiceProvider(): ?PaymentServiceProvider
     {
         return PaymentServiceProvider::tryFrom($this->psp);
+    }
+
+    #[ORM\PrePersist]
+    final public function createdNow(): void
+    {
+        // this duplicates function from TimestampsTrait but it is easier for PHPStan to follow to know
+        // that the properties are intialised at construction.
+        $this->createdAt = new \DateTime('now');
+        $this->updatedAt = new \DateTime('now');
     }
 }

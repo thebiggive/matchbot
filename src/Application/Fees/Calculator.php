@@ -49,6 +49,8 @@ class Calculator
         string $amount,
         string $currencyCode,
         bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
+        \DateTimeImmutable $donationCreationDate,
+        ?\DateTimeImmutable $mandateActivationDate,
     ): Fees {
         if (Environment::current()->isProduction()) {
             // @todo BG2-3107 - decide what fee levels to charge for Ryft and allow that as an alternative to

@@ -11,6 +11,13 @@ use MatchBot\Tests\TestCase;
 
 class CalculatorTest extends TestCase
 {
+    private \DateTimeImmutable $preIncreaseDate;
+
+    public function setUp(): void
+    {
+        $this->preIncreaseDate = new \DateTimeImmutable('2026-06-30T23:59:59 Europe/London');
+    }
+
     public function testStripeUKCardGBPDonation(): void
     {
         $fees = Calculator::calculate(
@@ -20,6 +27,8 @@ class CalculatorTest extends TestCase
             '123',
             'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
             false,
+            $this->preIncreaseDate,
+            null,
         );
 
         // 1.5% + 20p
@@ -36,6 +45,8 @@ class CalculatorTest extends TestCase
             '123',
             'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
             false,
+            $this->preIncreaseDate,
+            null,
         );
 
         // 3.2% + 20p
@@ -51,6 +62,8 @@ class CalculatorTest extends TestCase
             '100',
             'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
             true,
+            $this->preIncreaseDate,
+            null,
         );
 
         // 3.2% + 20p + 0.75% (net)
@@ -66,6 +79,8 @@ class CalculatorTest extends TestCase
             '123',
             'sek',
             false,
+            $this->preIncreaseDate,
+            null,
         );
 
         // 1.5% + 1.80 SEK
@@ -81,6 +96,8 @@ class CalculatorTest extends TestCase
             '123',
             'SEK', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
             false,
+            $this->preIncreaseDate,
+            null,
         );
 
         // 3.2% + 1.80 SEK
@@ -99,6 +116,8 @@ class CalculatorTest extends TestCase
             '100',
             'USD',
             false,
+            $this->preIncreaseDate,
+            null,
         );
 
         $this->assertSame('3.50', $fees->coreFee);
@@ -118,7 +137,9 @@ class CalculatorTest extends TestCase
             cardCountry: Country::fromAlpha2('GB'),
             amount: $donationAmount,
             currencyCode: 'GBP',
-            hasGiftAid: false
+            hasGiftAid: false,
+            donationCreationDate: $this->preIncreaseDate,
+            mandateActivationDate: null,
         );
 
         $this->assertSame('0.35', $fees->coreFee);
@@ -142,6 +163,8 @@ class CalculatorTest extends TestCase
             amount: $donationAmount,
             currencyCode: 'GBP',
             hasGiftAid: true,
+            donationCreationDate: $this->preIncreaseDate,
+            mandateActivationDate: null,
         );
 
         $this->assertSame('0.43', $fees->coreFee);
@@ -163,7 +186,9 @@ class CalculatorTest extends TestCase
             cardCountry: Country::fromAlpha2('US'),
             amount: $donationAmount,
             currencyCode: 'GBP',
-            hasGiftAid: false
+            hasGiftAid: false,
+            donationCreationDate: $this->preIncreaseDate,
+            mandateActivationDate: null,
         );
 
         $this->assertSame('0.52', $fees->coreFee);
