@@ -39,7 +39,7 @@ class WebsiteExamplesCalculatorTest extends TestCase
             'mandate_activation_date' => null,
         ],
         //
-        'Donation made with UK Visa Card, with gift aid, new fees' => [
+        'Donation made with UK Visa Card, with gift aid' => [
             'donation_amount' => '10',
             'country' => 'United_Kingdom',
             'card_brand' => 'VISA',
