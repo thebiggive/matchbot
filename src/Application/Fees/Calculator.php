@@ -25,18 +25,28 @@ class Calculator
 
     private const string FEE_GIFT_AID_PERCENTAGE = '0.75'; // 3% of Gift Aid amount.
 
-    private const string FEE_MAIN_PERCENTAGE_STANDARD = '1.5';
+    private const string FEE_MAIN_PERCENTAGE_STANDARD_PRE_JULY_2026 = '1.5';
+    private const string FEE_MAIN_PERCENTAGE_STANDARD_NEW = '1.9';
+
+    private const JULY_2026 = '2026-07-01T00:00:00 Europe/London';
+
 
     /** @var string[]   Major currency unit (e.g. pounds) fee charged *by us* for Stripe credit/debit
      *                  card donations. These values were chosen based on a Stripe support email about
      *                  their own core fees in mid 2021 BUT they don't necessarily reflect what Stripe
      *                  charge *us* due to special contract arrangements.
      */
-    private const array FEES_FIXED = [
+    private const array FEES_FIXED_PRE_JULY_2026 = [
         'EUR' => '0.25',
         'GBP' => '0.2', // Baseline fee in pounds for recharge; not necessarily exactly what Stripe charged BG.
         'SEK' => '1.8',
         'USD' => '0.3',
+    ];
+
+    /** @var string[]   Replaces FEES_FIXED_PRE_JULY_2026 for donations / mandates from during and after July 2026.
+     */
+    private const array FEES_FIXED_NEW = [
+        'GBP' => '0.25',
     ];
 
     /**
@@ -71,7 +81,8 @@ class Calculator
             currencyCode: $currencyCode,
             cardBrand: $cardBrand,
             cardCountry: $cardCountry,
-            hasGiftAid: $hasGiftAid
+            hasGiftAid: $hasGiftAid,
+            effectiveDate: $mandateActivationDate ?? $donationCreationDate,
         );
 
         // note at this point coreFee has been rounded to the nearest penny before we calculate VAT.
@@ -96,7 +107,8 @@ class Calculator
         string $currencyCode,
         ?CardBrand $cardBrand,
         ?Country $cardCountry,
-        bool $hasGiftAid
+        bool $hasGiftAid,
+        \DateTimeImmutable $effectiveDate,
     ): string {
         $giftAidFee = '0.00';
 
@@ -108,12 +120,24 @@ class Calculator
         self::assertIsGBPOrInUnitTest($currencyCode);
 
         // Currency code has been compulsory for some time.
-        Assertion::keyExists(self::FEES_FIXED, $currencyCode);
-        $feeAmountFixed = self::FEES_FIXED[$currencyCode];
+        Assertion::keyExists(self::FEES_FIXED_PRE_JULY_2026, $currencyCode);
+        $useNewFees = $effectiveDate >= new \DateTimeImmutable(self::JULY_2026);
 
-        $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
+        $feeAmountFixed = $useNewFees ?
+            self::FEES_FIXED_NEW[$currencyCode] : self::FEES_FIXED_PRE_JULY_2026[$currencyCode];
+
+        $feeRatio = bcdiv(
+            $useNewFees ? self::FEE_MAIN_PERCENTAGE_STANDARD_NEW : self::FEE_MAIN_PERCENTAGE_STANDARD_PRE_JULY_2026,
+            '100',
+            3
+        );
+
         if ($cardBrand?->isAmex() || !self::isEU($cardCountry)) {
-            $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU, '100', 3);
+            $feeRatio = bcdiv(
+                self::FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU, // same pre and post july 2026
+                '100',
+                3
+            );
         }
 
         if ($hasGiftAid) {
