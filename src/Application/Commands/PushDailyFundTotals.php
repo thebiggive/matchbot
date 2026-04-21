@@ -29,7 +29,7 @@ class PushDailyFundTotals extends LockingCommand
     #[\Override]
     public function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $funds = $this->fundRepository->findForCampaignsOpenAt(new \DateTimeImmutable('now'));
+        $funds = $this->fundRepository->findForCampaignsRecentlyOpenAt(new \DateTimeImmutable('now'));
         foreach ($funds as $fund) {
             if ($fund->getFundType()->isPledge()) {
                 // Skip pledges from daily total push as Salesforce doesn't yet do anything with that info
