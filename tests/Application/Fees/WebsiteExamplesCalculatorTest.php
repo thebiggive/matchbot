@@ -25,7 +25,7 @@ class WebsiteExamplesCalculatorTest extends TestCase
      * are in GBP.
      */
     public const array WORKED_EXAMPLES = [
-        'Donation made with UK Visa Card, without gift aid, with new fees' => [
+        'Donation made with UK Visa Card, without gift aid' => [
             'donation_amount' => '10',
             'country' => 'United_Kingdom',
             'card_brand' => 'VISA',
