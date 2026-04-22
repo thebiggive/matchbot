@@ -85,6 +85,11 @@ interface Stripe
     /**
      * @throws ApiErrorException
      */
+    public function retrievePendingPaymentMethod(StripePaymentMethodId $methodId): PaymentMethod;
+
+    /**
+     * @throws ApiErrorException
+     */
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void;
 
     /**

@@ -137,6 +137,12 @@ class StubStripeClient implements Stripe
     }
 
     #[\Override]
+    public function retrievePendingPaymentMethod(StripePaymentMethodId $methodId): PaymentMethod
+    {
+        throw new \Exception("Retrieve Pending Payment Method not implemented in stub - not currently used in load tests");
+    }
+
+    #[\Override]
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void
     {
         throw new \Exception("Detatch Payment Method not implemented in stub - not currently used in load tests");
