@@ -21,7 +21,12 @@ final class Version20260422140404 extends AbstractMigration
 
         $this->addSql(<<<EOT
             UPDATE Donation
-            SET tbgGiftAidRequestQueuedAt = NULL
+            SET tbgGiftAidRequestQueuedAt = NULL,
+                tbgGiftAidRequestFailedAt = NULL,
+                tbgGiftAidRequestConfirmedCompleteAt = NULL,
+                tbgGiftAidRequestCorrelationId = NULL,
+                tbgGiftAidResponseDetail = NULL,
+                salesforcePushStatus = 'pending-update'
             WHERE
                 donationStatus in ('Paid', 'Collected') AND 
                 giftAid = 1 AND 
