@@ -1575,6 +1575,8 @@ class Donation extends SalesforceWriteProxy
             $this->getAmount(),
             $this->currency()->isoCode(),
             $incursGiftAidFee,
+            $this->getCreatedDateImmutable(),
+            $this->mandate?->getActiveFrom(),
         );
 
         $this->charityFee = $fees->coreFee;
