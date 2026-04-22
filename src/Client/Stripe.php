@@ -78,11 +78,15 @@ interface Stripe
     public function createSetupIntent(StripeCustomerId $stripeCustomerId): SetupIntent;
 
     /**
+     * Gets a specific Customer's Payment Method which must be attached. Generally for saved methods.
+     * @link https://docs.stripe.com/api/payment_methods/customer
      * @throws InvalidRequestException
      */
     public function retrievePaymentMethod(StripeCustomerId $customerId, StripePaymentMethodId $methodId): PaymentMethod;
 
     /**
+     * Gets a Payment Method that is not necessarily attached to a Customer yet.
+     * @link https://docs.stripe.com/api/payment_methods/retrieve
      * @throws ApiErrorException
      */
     public function retrievePendingPaymentMethod(StripePaymentMethodId $methodId): PaymentMethod;
