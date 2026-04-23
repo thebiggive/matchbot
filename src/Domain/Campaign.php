@@ -74,6 +74,12 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
     private ?string $status = null; // @phpstan-ignore doctrine.columnType
 
+    /**
+     * Has this campaign been published to the public? Currently, corrosponds to a status of any of 'Preview, 'Active', or 'Expired' in SF.
+     */
+    #[ORM\Column]
+    private bool $isPublished;
+
     #[ORM\Column(nullable:true, options: ['default' => null])]
     private ?ApplicationStatus $relatedApplicationStatus;
 
@@ -545,6 +551,7 @@ class Campaign extends SalesforceReadProxy
         $this->startDate = $startDate;
         $this->ready = $ready;
         $this->status = $status;
+        $this->isPublished = in_array($status, ['Preview', 'Active', 'Expired'], true);
         $this->thankYouMessage = $thankYouMessage;
         $this->isRegularGiving = $isRegularGiving;
         $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
