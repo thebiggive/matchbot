@@ -24,6 +24,7 @@ CREATE TABLE `CampaignStatistics` (
   `distance_to_target_currency` varchar(3) NOT NULL,
   `lastCheck` datetime DEFAULT NULL,
   `lastRealUpdate` datetime DEFAULT NULL,
+  `approxStatus` varchar(255) NOT NULL,
   PRIMARY KEY (`campaign_id`),
   UNIQUE KEY `UNIQ_7DDC8DA446D048DD` (`campaignSalesforceId`),
   KEY `amount_raised_amountInPence` (`amount_raised_amountInPence`),

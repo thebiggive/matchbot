@@ -473,7 +473,7 @@ class Campaign extends SalesforceReadProxy
         return Currency::fromIsoCode($this->currencyCode);
     }
 
-    public function getEndDate(): DateTimeInterface
+    public function getEndDate(): DateTimeImmutable
     {
         return $this->endDate;
     }
