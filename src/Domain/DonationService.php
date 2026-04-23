@@ -275,7 +275,7 @@ class DonationService
         $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
         $psp = $donation->paymentServiceProvider();
         Assertion::notNull($psp, 'Donation must have a payment service provider');
-        if ($psp == PaymentServiceProvider::Stripe) {
+        if ($psp === PaymentServiceProvider::Stripe) {
             Assertion::notNull($tokenId);
 
             /**
@@ -344,13 +344,14 @@ class DonationService
         // following line has no mutation coverage but I think its fine to delete anyway given new assertion above.
         $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
 
-        if ($psp == PaymentServiceProvider::Stripe) {
+        if ($psp === PaymentServiceProvider::Stripe) {
             \assert(isset($paymentMethodPreview));
             $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
 
             // Check if PaymentIntent has a payment_method of a different type
             /** @var string|null $paymentMethodId */
             $paymentMethodId = $paymentIntent->payment_method ?? null;
+
             if ($paymentMethodId !== null) {
                 $paymentIntent = $this->updatePaymentMethodFromStripe(
                     donation: $donation,
@@ -1108,7 +1109,10 @@ class DonationService
     }
 
     /**
-     * @throws CouldNotRetrievePaymentMethod
+     * For use only with saved methods, because they'll only be attached to Customers reliably in that case and
+     * we use https://docs.stripe.com/api/payment_methods/customer
+     *
+     * @throws CouldNotRetrievePaymentMethod if e.g. the method ID doesn't meet the condition above.
      */
     private function updateDonationFeesFromPaymentMethodId(Donation $donation, StripePaymentMethodId $paymentMethodId): void
     {
@@ -1214,13 +1218,12 @@ class DonationService
 
         $paymentMethod = null;
         try {
-            $paymentMethod = $this->stripe->retrievePaymentMethod(
-                $donation->getPspCustomerId() ?? throw new \LogicException('Missing customer ID'),
+            $paymentMethod = $this->stripe->retrievePendingPaymentMethod(
                 StripePaymentMethodId::of($paymentMethodId),
             );
-        } catch (ApiErrorException $exception) { // e.g. a 404 from a detached-by-Stripe.js method is an InvalidRequestException.
-            $this->logger->info(sprintf(
-                'Donation UUID %s: Could not retrieve probably detached payment method %s: %s',
+        } catch (ApiErrorException $exception) {
+            $this->logger->error(sprintf(
+                'Donation UUID %s: Could not retrieve payment method %s: %s',
                 $donation->getUuid(),
                 $paymentMethodId,
                 $exception->getMessage()
