@@ -68,6 +68,8 @@ class Campaign extends SalesforceReadProxy
      * @var 'Active' | 'Expired' | 'Preview' | null
      *
      * Default null because campaigns not recently updated in matchbot have not pulled this field from SF.
+     *
+     * Currently only used in database queries, hoping to remove all usages.
      */
     #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
     private ?string $status = null; // @phpstan-ignore doctrine.columnType
@@ -557,10 +559,19 @@ class Campaign extends SalesforceReadProxy
         $this->salesforceData = $sfData;
     }
 
-    /** @return  'Active' | 'Expired' | 'Preview' | null */
-    public function getStatus(): ?string
+    /**
+     * This *does not* use the campaign status in the DB as received from Salesforce, as that may be outated,
+     * instead it works out the current status based on start & end date.
+     */
+    public function getStatus(\DateTimeImmutable $at): CampaignStatus
     {
-        return $this->status;
+        if ($at < $this->startDate) {
+            return CampaignStatus::Preview;
+        } elseif ($at <= $this->endDate) {
+            return CampaignStatus::Active;
+        } else {
+            return CampaignStatus::Expired;
+        }
     }
 
     #[\Override]
