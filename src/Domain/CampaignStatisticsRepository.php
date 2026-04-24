@@ -13,7 +13,7 @@ class CampaignStatisticsRepository
     /**
      * @psalm-suppress PossiblyUnusedMethod Called by DI container
      */
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(private EntityManagerInterface $em)
     {
         $this->doctrineRepository = $em->getRepository(CampaignStatistics::class);
     }
@@ -31,5 +31,41 @@ class CampaignStatisticsRepository
         }
 
         return $statistics;
+    }
+
+    public function updateApproxStatuses(): void
+    {
+        $preview = CampaignStatus::Preview->value;
+
+        $active = CampaignStatus::Active->value;
+
+        $query = $this->em->createQuery(
+            <<<DQL
+                UPDATE MatchBot\Domain\CampaignStatistics cs
+                JOIN cs.campaign
+                SET cs.approxStatus = '$active'
+                WHERE cs.campaign.published
+                AND cs.campaign.startDate < DATE_SUB(NOW(), INTERVAL 1 DAY)
+                AND cs.campaign.endDate > NOW();
+                AND cs.approxStatus = '$preview'
+            DQL
+        );
+
+        $expired = CampaignStatus::Expired->value;
+        $query->execute();
+
+        $query = $this->em->createQuery(
+            <<<DQL
+                UPDATE MatchBot\Domain\CampaignStatistics cs
+                JOIN cs.campaign
+                SET cs.approxStatus = '$expired'
+                WHERE cs.campaign.published
+                AND cs.campaign.startDate < DATE_SUB(NOW(), INTERVAL 1 DAY)
+                AND cs.campaign.endDate > NOW();
+                AND cs.approxStatus = '$preview'
+            DQL
+        );
+
+        $query->execute();
     }
 }
