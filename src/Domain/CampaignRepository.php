@@ -383,17 +383,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function findCampaignsForCharityPage(Charity $charity, \DateTimeImmutable $at): array
     {
-        // @todo MAT-483 - remove usage of status field below and replace with use of new isPublished
-        // field. Not doing right now as we need to deploy and run the DB migration from this commit first before
-        // that can work.
-
         $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
             SELECT campaign FROM MatchBot\Domain\Campaign campaign
             JOIN campaign.campaignStatistics statistics
             WHERE 
              campaign.charity = :charity
-             AND campaign.status IN ('Active', 'Preview', 'Expired')
+             AND campaign.isPublished = true
              AND (statistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
              ORDER BY campaign.status ASC, campaign.endDate ASC 
             DQL
@@ -411,16 +407,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     public function countCampaignsInMetaCampaign(MetaCampaign $metaCampaign): int
     {
-        // @todo MAT-483 - remove usage of status field below and replace with use of new isPublished
-        // field. Not doing right now as we need to deploy and run the DB migration from this commit first before
-        // that can work.
-
-        // query copied from SOQL query in Salesforce function CampaignService.campaignSfToApi
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
             SELECT COUNT(c.id)
             FROM MatchBot\Domain\Campaign c
             WHERE c.metaCampaignSlug = :slug
-            AND c.status IN ('Active', 'Preview', 'Expired')
+            AND campaign.isPublished = true
             AND c.relatedApplicationStatus = 'Approved'
             AND c.relatedApplicationCharityResponseToOffer = 'Accepted'
         DQL
@@ -564,7 +555,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     private function filterForSearch(
         QueryBuilder $qb,
-        ?string $status,
         ?string $metaCampaignSlug,
         ?string $fundSlug,
         array $jsonMatchInListConditions,
@@ -572,20 +562,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $term,
     ): array|null {
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
+        $qb->andWhere($qb->expr()->eq('campaign.isPublished', '1'));
         $qb->andWhere($qb->expr()->eq('campaign.isMatched', '1'));
 
-        // @todo MAT-483 - remove marked usage of status field below and replace with use of new isPublished
-        // field. Not doing right now as we need to deploy and run the DB migration from this commit first before
-        // that can work.
-
-        if ($status !== null) {
-            $qb->andWhere($qb->expr()->eq('campaign.status', ':status'));
-            $qb->setParameter('status', $status);
-        } elseif ($metaCampaignSlug === null) {
-            $qb->andWhere('campaign.status IN (:nonExpired)');
-            // we can't rely on the status being updated when the campaign expires, so also check that the end-date is not past:
+        if ($metaCampaignSlug === null) {
             $qb->andWhere($qb->expr()->gt('campaign.endDate', ':now'));
-            $qb->setParameter('nonExpired', ['Active', 'Preview']);
             $qb->setParameter('now', $this->clock->now());
         } else {
             $qb->andWhere('campaign.status IS NOT NULL'); // <- marked usage
@@ -701,7 +682,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         string $sortDirection,
         int $offset,
         int $limit,
-        ?string $status,
         ?string $metaCampaignSlug,
         ?string $fundSlug,
         array $jsonMatchInListConditions,
@@ -743,7 +723,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $idsOrderedByRelavence = $this->filterForSearch(
             qb: $qb,
-            status: $status,
             metaCampaignSlug: $metaCampaignSlug,
             fundSlug: $fundSlug,
             jsonMatchInListConditions: $jsonMatchInListConditions,

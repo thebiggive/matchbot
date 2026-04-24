@@ -45,7 +45,6 @@ class Sitemap extends Action
             sortDirection:  'asc',
             offset: 0,
             limit: 100_000,
-            status: null,
             metaCampaignSlug: null,
             fundSlug: null,
             jsonMatchInListConditions: [],
