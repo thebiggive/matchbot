@@ -2,16 +2,21 @@
 
 namespace MatchBot\Application\Commands;
 
-use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\CampaignStatistics;
 use MatchBot\Domain\CampaignStatisticsRepository;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Finds campaigns that with approx status of 'Preview' that are open or will be open soon and updates
- * to Active, and finds campaigns that with approx status of 'Active' that are closed and updates to 'Expired'
+ * Updates approximate campaign statuses to support search results ordering.
+ *
+ * Will update any campaigns that are due to start within the next 24 hours to active, so doesn't need to be run
+ * very frequently, suggested cadence is once every six hours.
  */
+#[AsCommand(
+    name: 'matchbot:update-approx-campaign-stats',
+    description: "Updates approximate campaign statuses to support search results ordering.",
+)]
 class UpdateApproxCampaignStatus extends LockingCommand
 {
     public function __construct(

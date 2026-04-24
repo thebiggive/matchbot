@@ -108,8 +108,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign = Campaign::fromSfCampaignData($campaignData, $salesforceId, $charity);
 
         $campaign->setSalesforceLastPull(new \DateTime());
+        $campaignStatistics = $campaign->getStatistics();
 
         $this->getEntityManager()->persist($campaign);
+        $this->getEntityManager()->persist($campaignStatistics);
         $this->getEntityManager()->flush();
 
         $this->logInfo('Done persisting new campiagn ' . $campaign->getSalesforceId());

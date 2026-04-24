@@ -39,32 +39,57 @@ class CampaignStatisticsRepository
 
         $active = CampaignStatus::Active->value;
 
+        // find stats for Campaigns about to become active
         $query = $this->em->createQuery(
             <<<DQL
-                UPDATE MatchBot\Domain\CampaignStatistics cs
-                JOIN cs.campaign
-                SET cs.approxStatus = '$active'
-                WHERE cs.campaign.published
-                AND cs.campaign.startDate < DATE_SUB(NOW(), INTERVAL 1 DAY)
-                AND cs.campaign.endDate > NOW();
+                SELECT IDENTITY(cs)
+                FROM MatchBot\Domain\CampaignStatistics cs
+                JOIN cs.campaign c
+                WHERE c.isPublished = true
+                AND c.startDate < :tommorrow
+                AND c.endDate > CURRENT_TIMESTAMP()
                 AND cs.approxStatus = '$preview'
             DQL
         );
+        $query->setParameter('tommorrow', new \DateTimeImmutable('+1 day'));
+        $campaignsStatisticstoSetActive = $query->getSingleColumnResult();
 
-        $expired = CampaignStatus::Expired->value;
+        // mark them active in the stats table
+        $query = $this->em->createQuery(
+            <<<DQL
+                UPDATE MatchBot\Domain\CampaignStatistics cs
+                SET cs.approxStatus = '$active'
+                WHERE cs.campaign in (:campaignsStatisticstoSetActive)
+            DQL
+        );
+        $query->setParameter('campaignsStatisticstoSetActive', $campaignsStatisticstoSetActive);
+
         $query->execute();
 
+        $expired = CampaignStatus::Expired->value;
+
+        // find stats for Campaigns that have expired
+        $query = $this->em->createQuery(
+            <<<DQL
+                SELECT IDENTITY(cs)
+                FROM MatchBot\Domain\CampaignStatistics cs
+                JOIN cs.campaign c
+                WHERE c.isPublished = true
+                AND c.endDate < CURRENT_TIMESTAMP()
+                AND cs.approxStatus != '$expired'
+            DQL
+        );
+        $campaignsStatisticstoSetExpired = $query->getSingleColumnResult();
+
+        // mark them expired in the stats table
         $query = $this->em->createQuery(
             <<<DQL
                 UPDATE MatchBot\Domain\CampaignStatistics cs
-                JOIN cs.campaign
                 SET cs.approxStatus = '$expired'
-                WHERE cs.campaign.published
-                AND cs.campaign.startDate < DATE_SUB(NOW(), INTERVAL 1 DAY)
-                AND cs.campaign.endDate > NOW();
-                AND cs.approxStatus = '$preview'
+                WHERE cs.campaign in (:campaignsStatisticstoSetExpired)
             DQL
         );
+        $query->setParameter('campaignsStatisticstoSetExpired', $campaignsStatisticstoSetExpired);
 
         $query->execute();
     }
