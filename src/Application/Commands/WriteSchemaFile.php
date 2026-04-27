@@ -114,12 +114,10 @@ class WriteSchemaFile extends Command
                 try {
                     Assert::assertSame($sql, file_get_contents($filename));
                     $io->writeln("$filename matches db schema");
-                } catch (ExpectationFailedException $exception) { // @phpstan-ignore catch.internalClass
+                } catch (ExpectationFailedException $exception) {
                     $io->error("$filename content not as expected based on DB schema");
-
-                    /** @psalm-suppress InternalMethod */
                     $io->writeln(
-                        $exception->getComparisonFailure()?->getDiff() // @phpstan-ignore method.internalClass
+                        $exception->getComparisonFailure()?->getDiff()
                             ?? throw new \Exception('Missing diff')
                     );
                     $hasError = true;
