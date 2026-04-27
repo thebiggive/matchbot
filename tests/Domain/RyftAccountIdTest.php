@@ -1,7 +1,8 @@
 <?php
 
-namespace MatchBot\Domain;
+namespace MatchBot\Tests\Domain;
 
+use MatchBot\Domain\RyftAccountId;
 use PHPUnit\Framework\TestCase;
 
 class RyftAccountIdTest extends TestCase
