@@ -10,8 +10,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Updates approximate campaign statuses to support search results ordering.
  *
- * Will update any campaigns that are due to start within the next 24 hours to active, so doesn't need to be run
- * very frequently, suggested cadence is once every six hours.
+ * Will update any campaigns that are due to start within the next 24 hours to active.
+ *
+ * Called from {@see CallFrequentTasks}
  */
 #[AsCommand(
     name: 'matchbot:update-approx-campaign-stats',
