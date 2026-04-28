@@ -128,7 +128,7 @@ class StripePaymentsUpdate extends Stripe
             } catch (LockWaitTimeoutException $exception) {
                 $this->logger->warning(sprintf('charge.succeeded: Failed to acquire lock on donation with Payment Intent ID %s', $intentId));
                 $this->entityManager->rollback();
-                return $this->respond($response, new ActionPayload(503));
+                return $this->respond($response, new ActionPayload(409));
             }
         } else {
             $donation = null;
@@ -201,7 +201,7 @@ class StripePaymentsUpdate extends Stripe
             } catch (LockWaitTimeoutException $exception) {
                 $this->logger->warning(sprintf('charge.updated: Failed to acquire lock on donation with Payment Intent ID %s', $intentId));
                 $this->entityManager->rollback();
-                return $this->respond($response, new ActionPayload(503));
+                return $this->respond($response, new ActionPayload(409));
             }
         } else {
             $donation = null;

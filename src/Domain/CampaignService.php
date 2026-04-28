@@ -89,7 +89,7 @@ class CampaignService
             'isMatched' => $campaign->isMatched(),
             'matchFundsRemaining' => $stats->getMatchFundsRemaining()->toMajorUnitFloat(),
             'startDate' => $this->formatDate($campaign->getStartDate()),
-            'status' => $campaign->getStatus(),
+            'status' => $campaign->getStatus($this->clock->now())->value,
             'title' => $campaign->getCampaignName(),
             // fields below are all directly entered through the SF UI and not involved in business logic, so no need to
             // do anything more than this with them in matchbot for now.
@@ -152,10 +152,6 @@ class CampaignService
     public function renderCampaign(CampaignDomainModel $campaign, ?MetaCampaign $metaCampaign): array
     {
         $charity = $campaign->getCharity();
-
-        $campaignStatus = $campaign->getStatus();
-
-        Assertion::inArray($campaignStatus, ['Active','Expired','Preview', null]);
 
         // the next two vars are the data as originally served to matchbot by Salesforce. For now we
         // repeat many parts of them verbatim, but its likely we may want to replace several fields with things
@@ -255,7 +251,7 @@ class CampaignService
             ready: $campaign->isReady(),
             solution: $sfCampaignData['solution'],
             startDate: $this->formatDate($campaign->getStartDate()),
-            status: $campaignStatus,
+            status: $campaign->getStatus($this->clock->now())->value,
             isRegularGiving: $campaign->isRegularGiving(),
             regularGivingCollectionEnd: $this->formatDate($campaign->getRegularGivingCollectionEnd()),
             summary: $sfCampaignData['summary'],

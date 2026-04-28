@@ -68,9 +68,17 @@ class Campaign extends SalesforceReadProxy
      * @var 'Active' | 'Expired' | 'Preview' | null
      *
      * Default null because campaigns not recently updated in matchbot have not pulled this field from SF.
+     *
+     * Currently only used in database queries, hoping to remove all usages.
      */
     #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
     private ?string $status = null; // @phpstan-ignore doctrine.columnType
+
+    /**
+     * Has this campaign been published to the public? Currently, corrosponds to a status of any of 'Preview, 'Active', or 'Expired' in SF.
+     */
+    #[ORM\Column]
+    private bool $isPublished;
 
     #[ORM\Column(nullable:true, options: ['default' => null])]
     private ?ApplicationStatus $relatedApplicationStatus;
@@ -465,7 +473,7 @@ class Campaign extends SalesforceReadProxy
         return Currency::fromIsoCode($this->currencyCode);
     }
 
-    public function getEndDate(): DateTimeInterface
+    public function getEndDate(): DateTimeImmutable
     {
         return $this->endDate;
     }
@@ -543,6 +551,7 @@ class Campaign extends SalesforceReadProxy
         $this->startDate = $startDate;
         $this->ready = $ready;
         $this->status = $status;
+        $this->isPublished = in_array($status, ['Preview', 'Active', 'Expired'], true);
         $this->thankYouMessage = $thankYouMessage;
         $this->isRegularGiving = $isRegularGiving;
         $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
@@ -557,10 +566,19 @@ class Campaign extends SalesforceReadProxy
         $this->salesforceData = $sfData;
     }
 
-    /** @return  'Active' | 'Expired' | 'Preview' | null */
-    public function getStatus(): ?string
+    /**
+     * This *does not* use the campaign status in the DB as received from Salesforce, as that may be outated,
+     * instead it works out the current status based on start & end date.
+     */
+    public function getStatus(\DateTimeImmutable $at): CampaignStatus
     {
-        return $this->status;
+        if ($at < $this->startDate) {
+            return CampaignStatus::Preview;
+        } elseif ($at <= $this->endDate) {
+            return CampaignStatus::Active;
+        } else {
+            return CampaignStatus::Expired;
+        }
     }
 
     #[\Override]

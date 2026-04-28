@@ -469,8 +469,7 @@ class DonationServiceTest extends TestCase
         $currentPaymentMethod->type = $currentPaymentMethodType;
 
         // When we confirm the donation
-        $this->stripeProphecy->retrievePaymentMethod(
-            StripeCustomerId::of('cus_someCustomerID'),
+        $this->stripeProphecy->retrievePendingPaymentMethod(
             StripePaymentMethodId::of('pm_paymentmethodid')
         )->willReturn($currentPaymentMethod);
         $this->entityManagerProphecy->flush()->shouldBeCalled();

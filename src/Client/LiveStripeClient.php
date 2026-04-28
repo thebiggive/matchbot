@@ -141,6 +141,11 @@ class LiveStripeClient implements Stripe
         );
     }
 
+    #[\Override]
+    public function retrievePendingPaymentMethod(StripePaymentMethodId $methodId): PaymentMethod
+    {
+        return $this->stripeClient->paymentMethods->retrieve($methodId->stripePaymentMethodId);
+    }
 
     #[\Override]
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void

@@ -324,11 +324,11 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<SQL
             INSERT INTO Campaign (charity_id, name, summary, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
-                                  createdAt, updatedAt, currencyCode, isRegularGiving, salesforceData,
+                                  createdAt, updatedAt, isPublished, currencyCode, isRegularGiving, salesforceData,
                                   total_fundraising_target_amountInPence, total_fundraising_target_currency
                                   )
             VALUES ('$charityId', 'some charity', 'campaign summary', '$nyd', '$closeDate', '$matched', '$campaignSfId',
-                    '$nyd', '$nyd', '$nyd', 'GBP',  '$isRegularGivingInt', '{}', 0, 'GBP')
+                    '$nyd', '$nyd', '$nyd', true, 'GBP',  '$isRegularGivingInt', '{}', 0, 'GBP')
             SQL
         );
 

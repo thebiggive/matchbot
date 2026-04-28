@@ -46,9 +46,11 @@ trait TimestampsTrait
         return $this->createdAt;
     }
 
-    public function getCreatedDateImmutable(): \DateTimeImmutable
+    final public function getCreatedDateImmutable(): \DateTimeImmutable
     {
-        return \DateTimeImmutable::createFromInterface($this->createdAt);
+        // PHPStan issue suppressed - this would cause a crash if any users of this trait don't call
+        // self::createdNow at construction.
+        return \DateTimeImmutable::createFromInterface($this->createdAt); // @phpstan-ignore property.uninitialized
     }
 
     /**
