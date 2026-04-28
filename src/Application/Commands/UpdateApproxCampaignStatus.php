@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Called from {@see CallFrequentTasks}
  */
 #[AsCommand(
-    name: 'matchbot:update-approx-campaign-stats',
+    name: 'matchbot:update-approx-campaign-status',
     description: "Updates approximate campaign statuses to support search results ordering.",
 )]
 class UpdateApproxCampaignStatus extends LockingCommand

@@ -63,8 +63,8 @@ class CallFrequentCommandsTest extends IntegrationTest
             'matchbot:update-campaign-donation-stats complete!',
             'matchbot:delete-old-test-funds starting!',
             'matchbot:delete-old-test-funds complete!',
-            'matchbot:update-approx-campaign-stats starting!',
-            'matchbot:update-approx-campaign-stats complete!',
+            'matchbot:update-approx-campaign-status starting!',
+            'matchbot:update-approx-campaign-status complete!',
             'matchbot:tick complete!',
             '',
         ]);
