@@ -383,6 +383,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function findCampaignsForCharityPage(Charity $charity, \DateTimeImmutable $at): array
     {
+        // @todo MAT-483 - remove usage of status field below and replace with use of new isPublished
+        // field. Not doing right now as we need to deploy and run the DB migration from this commit first before
+        // that can work.
+
         $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
             SELECT campaign FROM MatchBot\Domain\Campaign campaign
@@ -407,6 +411,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     public function countCampaignsInMetaCampaign(MetaCampaign $metaCampaign): int
     {
+        // @todo MAT-483 - remove usage of status field below and replace with use of new isPublished
+        // field. Not doing right now as we need to deploy and run the DB migration from this commit first before
+        // that can work.
+
         // query copied from SOQL query in Salesforce function CampaignService.campaignSfToApi
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
             SELECT COUNT(c.id)
@@ -566,6 +574,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
         $qb->andWhere($qb->expr()->eq('campaign.isMatched', '1'));
 
+        // @todo MAT-483 - remove marked usage of status field below and replace with use of new isPublished
+        // field. Not doing right now as we need to deploy and run the DB migration from this commit first before
+        // that can work.
+
         if ($status !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.status', ':status'));
             $qb->setParameter('status', $status);
@@ -576,7 +588,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('nonExpired', ['Active', 'Preview']);
             $qb->setParameter('now', $this->clock->now());
         } else {
-            $qb->andWhere('campaign.status IS NOT NULL');
+            $qb->andWhere('campaign.status IS NOT NULL'); // <- marked usage
         }
 
         $qb->andWhere(<<<DQL

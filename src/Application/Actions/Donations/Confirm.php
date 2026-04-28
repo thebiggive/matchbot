@@ -10,17 +10,11 @@ use MatchBot\Application\LazyAssertionException;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Settings;
 use MatchBot\Client\NotFoundException;
-use MatchBot\Client\RyftClient;
-use MatchBot\Domain\CardBrand;
-use MatchBot\Domain\Country;
-use MatchBot\Domain\Currency;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
-use MatchBot\Domain\Money;
-use MatchBot\Domain\PaymentCard;
 use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -112,7 +106,7 @@ class Confirm extends Action
             throw new NotFoundException();
         }
 
-        if ((!is_string($confirmationTokenId) || trim($confirmationTokenId) === '') && $psp === 'stripe') {
+        if ((!is_string($confirmationTokenId) || trim($confirmationTokenId) === '') && $psp === PaymentServiceProvider::Stripe) {
             $donationUUID = $donation->getId();
             $this->logger->warning(
                 <<<EOF
@@ -187,7 +181,7 @@ EOF
         }
 
         $paymentIntentId = $donation->getTransactionId();
-        if ($psp === 'stripe') {
+        if ($psp === PaymentServiceProvider::Stripe) {
             Assertion::notNull($paymentIntentId);
         }
 
