@@ -46,12 +46,12 @@ class CampaignStatisticsRepository
                 FROM MatchBot\Domain\CampaignStatistics cs
                 JOIN cs.campaign c
                 WHERE c.isPublished = true
-                AND c.startDate < :tommorrow
+                AND c.startDate < :tomorrow
                 AND c.endDate > CURRENT_TIMESTAMP()
                 AND cs.approxStatus = '$preview'
             DQL
         );
-        $query->setParameter('tommorrow', new \DateTimeImmutable('+1 day'));
+        $query->setParameter('tomorrow', new \DateTimeImmutable('+1 day'));
         $campaignsStatisticstoSetActive = $query->getSingleColumnResult();
 
         // mark them active in the stats table
