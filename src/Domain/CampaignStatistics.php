@@ -22,6 +22,7 @@ use MatchBot\Application\Assertion;
 #[ORM\Index(columns: ['amount_raised_amountInPence'], name: 'amount_raised_amountInPence')]
 #[ORM\Index(columns: ['match_funds_used_amountInPence'], name: 'match_funds_used_amountInPence')]
 #[ORM\Index(columns: ['lastCheck'], name: 'lastCheck')]
+#[ORM\Index(columns: ['approxStatus'], name: 'approxStatus')]
 #[ORM\ChangeTrackingPolicy('DEFERRED_EXPLICIT')]
 class CampaignStatistics
 {

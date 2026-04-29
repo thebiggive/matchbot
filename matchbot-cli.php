@@ -25,6 +25,7 @@ use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
 use MatchBot\Application\Commands\SendStatistics;
 use MatchBot\Application\Commands\SetupTestMandate;
 use MatchBot\Application\Commands\TakeRegularGivingDonations;
+use MatchBot\Application\Commands\UpdateApproxCampaignStatus;
 use MatchBot\Application\Commands\UpdateCampaignDonationStats;
 use MatchBot\Application\Commands\UpdateCampaigns;
 use MatchBot\Application\Commands\WriteSchemaFile;
@@ -66,6 +67,7 @@ $commands = array_map($psr11App->get(...), [
     SendStatistics::class,
     SetupTestMandate::class,
     TakeRegularGivingDonations::class,
+    UpdateApproxCampaignStatus::class,
     UpdateCampaignDonationStats::class,
     UpdateCampaigns::class,
     WriteSchemaFile::class,
