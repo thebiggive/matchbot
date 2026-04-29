@@ -967,35 +967,34 @@ class DonationService
     {
         $txn = $this->stripe->retrieveBalanceTransaction($balanceTransactionId);
 
-        if (count($txn->fee_details) !== 1) {
-            $this->logger->warning(sprintf(
-                'StripeChargeUpdate::getFee: Unexpected composite fee with %d parts: %s',
-                count($txn->fee_details),
+        /**
+         * @var list<StripeObject&object{amount: int, application?: string, currency: string, description: string, type: string}> $feeDetails
+         * @link https://docs.stripe.com/api/balance_transactions/object#balance_transaction_object-fee_details
+         * @phpstan-ignore varTag.type
+         */
+        $feeDetails = $txn->fee_details;
+        // Even with zero tax, the Stripe API now (at least sometimes) includes a 'tax' line; and the order of the
+        // line items is not guaranteed. May be that it gets added on charge.updated after some time.
+        $primaryFeeDetails = array_values(array_filter($feeDetails, static fn($fee) => $fee->type === 'stripe_fee'));
+
+        if (count($primaryFeeDetails) === 0) {
+            $this->logger->error(sprintf(
+                'Stripe getOriginalFeeFractional: No stripe_fee. All lines: %s',
                 json_encode($txn->fee_details, \JSON_THROW_ON_ERROR),
             ));
+            return 0;
         }
 
-        /**
-         * See https://docs.stripe.com/api/balance_transactions/object#balance_transaction_object-fee_details
-         * @var object{currency: string, type: string} $feeDetail
-         * // @phpstan-ignore varTag.type
-         */
-        $feeDetail = $txn->fee_details[0];
-
-        if ($feeDetail->currency !== strtolower($expectedCurrencyCode)) {
+        if ($primaryFeeDetails[0]->currency !== strtolower($expectedCurrencyCode)) {
             // `fee` should presumably still be in parent account's currency, so don't bail out.
-            $this->logger->warning(sprintf(
+            $this->logger->error(sprintf(
                 'StripeChargeUpdate::getFee: Unexpected fee currency %s',
-                $feeDetail->currency,
+                $primaryFeeDetails[0]->currency,
             ));
         }
 
-        if ($feeDetail->type !== 'stripe_fee') {
-            $this->logger->warning(sprintf(
-                'StripeChargeUpdate::getFee: Unexpected type %s',
-                $feeDetail->type,
-            ));
-        }
+        // Because the tax line is either omitted or zero, these should always match.
+        \assert($primaryFeeDetails[0]->amount === $txn->fee);
 
         return $txn->fee;
     }
