@@ -117,7 +117,6 @@ class UpdateCampaigns extends LockingCommand
      */
     protected function pull(Campaign $campaign, OutputInterface $output): void
     {
-        $this->campaignRepository->updateFromSf($campaign);
         $this->fundRepository->pullForCampaign($campaign, $this->now);
         $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
     }
