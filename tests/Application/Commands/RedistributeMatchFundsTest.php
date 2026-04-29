@@ -23,6 +23,7 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
@@ -273,7 +274,7 @@ class RedistributeMatchFundsTest extends TestCase
                 allocator: $allocatorProphecy->reveal(),
                 chatter: $this->createStub(ChatterInterface::class),
                 donationRepository: $donationRepoProphecy->reveal(),
-                now: $now,
+                clock: new MockClock($now),
                 campaignFundingRepository: $campaignFundingRepoProphecy->reveal(),
                 logger: $loggerProphecy->reveal(),
                 entityManager: $this->createStub(EntityManagerInterface::class),
