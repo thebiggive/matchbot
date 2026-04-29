@@ -409,7 +409,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             SELECT COUNT(c.id)
             FROM MatchBot\Domain\Campaign c
             WHERE c.metaCampaignSlug = :slug
-            AND campaign.isPublished = true
+            AND c.isPublished = true
             AND c.relatedApplicationStatus = 'Approved'
             AND c.relatedApplicationCharityResponseToOffer = 'Accepted'
         DQL
