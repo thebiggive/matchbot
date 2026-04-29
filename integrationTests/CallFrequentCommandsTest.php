@@ -9,6 +9,7 @@ use MatchBot\Application\Commands\DeleteOldTestFunds;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\ExpirePendingMandates;
 use MatchBot\Application\Commands\SendStatistics;
+use MatchBot\Application\Commands\UpdateApproxCampaignStatus;
 use MatchBot\Application\Commands\UpdateCampaignDonationStats;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
@@ -62,6 +63,8 @@ class CallFrequentCommandsTest extends IntegrationTest
             'matchbot:update-campaign-donation-stats complete!',
             'matchbot:delete-old-test-funds starting!',
             'matchbot:delete-old-test-funds complete!',
+            'matchbot:update-approx-campaign-status starting!',
+            'matchbot:update-approx-campaign-status complete!',
             'matchbot:tick complete!',
             '',
         ]);
@@ -88,6 +91,7 @@ class CallFrequentCommandsTest extends IntegrationTest
             $this->getService(CancelStaleDonationFundTips::class),
             $this->getService(ExpirePendingMandates::class),
             $this->getService(UpdateCampaignDonationStats::class),
+            $this->getService(UpdateApproxCampaignStatus::class),
         ];
 
         foreach ($commands as $command) {

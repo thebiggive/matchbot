@@ -30,7 +30,6 @@ class SitemapTest extends TestCase
             100_000,
             null,
             null,
-            null,
             [],
             null,
         )->willReturn([

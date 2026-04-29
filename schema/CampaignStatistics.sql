@@ -30,5 +30,6 @@ CREATE TABLE `CampaignStatistics` (
   KEY `amount_raised_amountInPence` (`amount_raised_amountInPence`),
   KEY `match_funds_used_amountInPence` (`match_funds_used_amountInPence`),
   KEY `lastCheck` (`lastCheck`),
+  KEY `approxStatus` (`approxStatus`),
   CONSTRAINT `FK_7DDC8DA4F639F774` FOREIGN KEY (`campaign_id`) REFERENCES `Campaign` (`id`)
 )

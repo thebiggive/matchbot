@@ -31,13 +31,10 @@ class Search extends Action
         $params = $request->getQueryParams();
         $sortField = $params['sortField'] ?? 'distanceToTarget';
         $sortDirection = $params['sortDirection'] ?? 'desc';
-        /** @var 'Active'|'Expired'|'Preview'|null */
-        $status = $params['status'] ?? null;
         /** @var ?string */
         $term = $params['term'] ?? null;
         Assertion::string($sortDirection);
         Assertion::string($sortField);
-        Assertion::inArray($status, ['Active','Expired','Preview', null]);
         Assertion::nullOrString($term);
 
         if (!\in_array($sortDirection, ['asc', 'desc'], true)) {
@@ -81,7 +78,6 @@ class Search extends Action
                 sortDirection: $sortDirection,
                 offset: (int)($params['offset'] ?? 0),
                 limit: $limit,
-                status: $status,
                 metaCampaignSlug: $parentSlug,
                 fundSlug: $fundSlug,
                 jsonMatchInListConditions: $jsonMatchInListConditions,

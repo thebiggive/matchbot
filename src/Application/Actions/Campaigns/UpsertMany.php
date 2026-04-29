@@ -128,8 +128,10 @@ class UpsertMany extends Action
 
         if (!$campaign) {
             $campaign = Campaign::fromSfCampaignData($campaignData, $campaignSfId, $charity);
+            $campaignStatistics = $campaign->getStatistics();
             $this->logger->info("Saving new campaign from SF: {$charity->getName()} {$charity->getSalesforceId()}");
             $this->entityManager->persist($campaign);
+            $this->entityManager->persist($campaignStatistics);
         } else {
             // don't update the charity, won't work if we are updating many at once in parallel and the charity gets updated separatley.
             $this->campaignRepository->updateCampaignFromSFData($campaign, $campaignData, alsoUpdateCharity: false);
