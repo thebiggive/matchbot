@@ -676,10 +676,6 @@ return function (ContainerBuilder $containerBuilder) {
             return $c->get(EntityManagerInterface::class)->getConnection();
         },
 
-        DateTimeImmutable::class => fn() => throw new \RuntimeException('Do not inject a timestamp as services may be longer-lived in message handlers, inject a clock instead'),
-        DateTime::class => fn() => throw new \RuntimeException('Do not inject a timestamp as services may be longer-lived in message handlers, inject a clock instead'),
-        DateTimeInterface::class => fn() => throw new \RuntimeException('Do not inject a timestamp as services may be longer-lived in message handlers, inject a clock instead'),
-
         ClockInterface::class => fn() => new NativeClock(),
         Psr\Clock\ClockInterface::class  => fn() => new NativeClock(),
 
