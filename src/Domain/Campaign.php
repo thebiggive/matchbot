@@ -69,8 +69,7 @@ class Campaign extends SalesforceReadProxy
      *
      * Default null because campaigns not recently updated in matchbot have not pulled this field from SF.
      *
-     * @deprecated - there should now be no usages of this. In the next deploy we should be able to remove it from the
-     * DB. Note that {@see self::getStatus } does not use this field.
+     * Currently only used in database queries, hoping to remove all usages.
      */
     #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
     private ?string $status = null; // @phpstan-ignore doctrine.columnType
