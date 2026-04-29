@@ -196,7 +196,6 @@ DQL);
             ->andWhere('c.isMatched = true')
             ->andWhere('c.endDate < :now')
             ->andWhere('c.endDate > :campaignClosedSince')
-            ->andWhere('fw.releasedAt is null')
             ->groupBy('d.id')
             ->having(
                 '(SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) IS NULL
