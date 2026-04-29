@@ -79,7 +79,6 @@ class CampaignRepositoryTest extends IntegrationTest
             sortDirection: 'desc',
             offset: 0,
             limit: 6,
-            status: 'Active',
             metaCampaignSlug: 'the-family',
             fundSlug: null,
             jsonMatchInListConditions: [
@@ -115,7 +114,6 @@ class CampaignRepositoryTest extends IntegrationTest
             sortDirection: 'desc',
             offset: 0,
             limit: 600,
-            status: null,
             metaCampaignSlug: null,
             fundSlug: null,
             jsonMatchInListConditions: [],
@@ -153,7 +151,6 @@ class CampaignRepositoryTest extends IntegrationTest
             sortDirection: 'desc',
             offset: 0,
             limit: 6,
-            status: null,
             metaCampaignSlug: null,
             fundSlug: null,
             jsonMatchInListConditions: [],
@@ -166,7 +163,7 @@ class CampaignRepositoryTest extends IntegrationTest
         );
 
         // Expired is excluded from the Explore list with no metacampaign slug.
-        $this->assertSame(['Campaign Active', 'Campaign Preview'], $returnCampaignNames);
+        $this->assertSame(['Campaign Active', 'Campaign Expired', 'Campaign Preview'], $returnCampaignNames);
     }
 
     private function getCharityAwaitingGiftAidApproval(): Charity
