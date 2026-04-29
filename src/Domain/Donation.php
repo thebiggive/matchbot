@@ -1584,6 +1584,8 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
+     * Typically called multiple times per donation, on charge success & updates.
+     * @see DonationService::updateDonationStatusFromSuccessfulCharge()
      * @param numeric-string|null $originalFeeFractional In pence or similar, if known
      */
     public function collectFromStripeCharge(

@@ -92,7 +92,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $stripeProphecy->retrieveBalanceTransaction('balance_transaction_id')->willReturn(
             BalanceTransaction::constructFrom([
                 'id' => 'balance_transaction_id',
-                'fee_details' => [['currency' => 'gbp', 'type' => 'stripe_fee']],
+                'fee_details' => [['amount' => 1, 'currency' => 'gbp', 'type' => 'stripe_fee']],
                 'fee' => 1,
             ])
         );

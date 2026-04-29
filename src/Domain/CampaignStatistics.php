@@ -75,6 +75,14 @@ class CampaignStatistics
     private Money $distanceToTarget;
 
     /**
+     * Roughly what the campaign status is, but as we can't update all campaigns instantaneously, at campaign start time
+     * this will be updated to Active shortly before the campaign opens, and not updated to Expired until some time
+     * after the campaign closes. Used to determine sort order. For precise status {@see Campaign::getStatus}
+     */
+    #[ORM\Column]
+    protected CampaignStatus $approxStatus;
+
+    /**
      * @param Campaign $campaign
      * @param Money $amountRaised
      * @param Money $matchFundsUsed
@@ -93,6 +101,7 @@ class CampaignStatistics
         $this->createdNow();
         $this->campaign = $campaign;
         $this->campaignSalesforceId = $campaign->getSalesforceId();
+        $this->approxStatus = $this->approximateStatus($campaign, $at);
 
         $this->setTotals(
             at: $at,
@@ -217,5 +226,22 @@ class CampaignStatistics
         $this->lastRealUpdate = $at;
 
         return true;
+    }
+
+    /**
+      * Returns a status based on a very rough approximation of the time, with a bias towards making the campaign
+     *  appear open for longer than it really is not shorter, to make sure it's easy to find before and after opening.
+     */
+    private function approximateStatus(Campaign $campaign, \DateTimeImmutable $at): CampaignStatus
+    {
+        $oneDay = new \DateInterval('P1D');
+
+        if ($at < $campaign->getStartDate()->sub($oneDay)) {
+            return CampaignStatus::Preview;
+        } elseif ($at <= $campaign->getEndDate()) { // no need to approximate this part, it's not expected to change again
+            return CampaignStatus::Active;
+        } else {
+            return CampaignStatus::Expired;
+        }
     }
 }
