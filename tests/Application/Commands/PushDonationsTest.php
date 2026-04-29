@@ -12,6 +12,7 @@ use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\RoutableMessageBus;
@@ -24,7 +25,7 @@ class PushDonationsTest extends TestCase
 
         $command = new PushDonations(
             bus: $bus,
-            now: $now,
+            clock: new MockClock($now),
             donationRepository: $donationRepoProphecy->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
@@ -48,7 +49,7 @@ class PushDonationsTest extends TestCase
 
         $command = new PushDonations(
             bus: $bus,
-            now: $now,
+            clock: new MockClock($now),
             donationRepository: $donationRepoProphecy->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));

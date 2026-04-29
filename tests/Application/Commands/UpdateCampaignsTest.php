@@ -15,7 +15,9 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
+use Psr\Clock\ClockInterface;
 use Psr\Log\NullLogger;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
@@ -24,12 +26,12 @@ use Symfony\Component\Lock\LockFactory;
  */
 class UpdateCampaignsTest extends TestCase
 {
-    private \DateTimeImmutable $now;
+    private ClockInterface $clock;
 
     #[\Override]
     public function setUp(): void
     {
-        $this->now = new \DateTimeImmutable('2020-01-01T00:00:00z');
+        $this->clock = new MockClock(new \DateTimeImmutable('2020-01-01T00:00:00z'));
     }
 
     public function testSingleUpdateSuccess(): void
@@ -41,14 +43,14 @@ class UpdateCampaignsTest extends TestCase
             ->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
-        $fundRepoProphecy->pullForCampaign($campaign, $this->now)->shouldBeCalledOnce();
+        $fundRepoProphecy->pullForCampaign($campaign, $this->clock->now())->shouldBeCalledOnce();
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
             $this->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
             new NullLogger(),
-            $this->now,
+            $this->clock,
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -78,7 +80,7 @@ class UpdateCampaignsTest extends TestCase
             ->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
-        $fundRepoProphecy->pullForCampaign($campaign, $this->now)
+        $fundRepoProphecy->pullForCampaign($campaign, $this->clock->now())
             ->willThrow(NotFoundException::class)
             ->shouldBeCalledOnce();
 
@@ -87,7 +89,7 @@ class UpdateCampaignsTest extends TestCase
             $this->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
             new NullLogger(),
-            $this->now
+            $this->clock
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -122,7 +124,7 @@ class UpdateCampaignsTest extends TestCase
             ->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
-        $fundRepoProphecy->pullForCampaign($campaign, $this->now)
+        $fundRepoProphecy->pullForCampaign($campaign, $this->clock->now())
             ->willThrow($exception)
             ->shouldBeCalledTimes(2);
 
@@ -131,7 +133,7 @@ class UpdateCampaignsTest extends TestCase
             $this->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
             new NullLogger(),
-            $this->now
+            $this->clock
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -191,7 +193,7 @@ class UpdateCampaignsTest extends TestCase
             $this->getContainer()->get(EntityManagerInterface::class),
             $fundRepo,
             new NullLogger(),
-            $this->now
+            $this->clock
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -222,14 +224,14 @@ class UpdateCampaignsTest extends TestCase
             ->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
-        $fundRepoProphecy->pullForCampaign($campaign, $this->now)->shouldBeCalledOnce();
+        $fundRepoProphecy->pullForCampaign($campaign, $this->clock->now())->shouldBeCalledOnce();
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
             $this->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
             new NullLogger(),
-            $this->now
+            $this->clock
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
