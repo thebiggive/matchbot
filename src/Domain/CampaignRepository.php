@@ -389,7 +389,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
              campaign.charity = :charity
              AND campaign.isPublished = true
              AND (statistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
-             ORDER BY campaign.status ASC, campaign.endDate ASC 
+             ORDER BY statistics.approxStatus ASC, campaign.endDate ASC 
             DQL
         );
 
@@ -567,7 +567,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->andWhere($qb->expr()->gt('campaign.endDate', ':now'));
             $qb->setParameter('now', $this->clock->now());
         } else {
-            $qb->andWhere('campaign.status IS NOT NULL'); // <- marked usage
+            $qb->andWhere('campaign.isPublished = true');
         }
 
         $qb->andWhere(<<<DQL
@@ -644,7 +644,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         array|null $idsOrderedByRelavence
     ): void {
         // Active, Expired, Preview in that order; status sort takes highest precedence.
-        $qb->addOrderBy('campaign.status', 'asc');
+        $qb->addOrderBy('campaignStatistics.approxStatus', 'asc');
 
         if ($applyPinSort) {
             $qb->addOrderBy('pinPosition', 'asc');
