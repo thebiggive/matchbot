@@ -13,6 +13,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 use MatchBot\Domain\FundRepository;
+use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -31,7 +32,7 @@ class UpdateCampaigns extends LockingCommand
         private EntityManagerInterface $entityManager,
         private FundRepository $fundRepository,
         private LoggerInterface $logger,
-        private \DateTimeImmutable $now,
+        private ClockInterface $clock,
     ) {
         parent::__construct();
     }
@@ -117,7 +118,7 @@ class UpdateCampaigns extends LockingCommand
      */
     protected function pull(Campaign $campaign, OutputInterface $output): void
     {
-        $this->fundRepository->pullForCampaign($campaign, $this->now);
+        $this->fundRepository->pullForCampaign($campaign, $this->clock->now());
         $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
     }
 }

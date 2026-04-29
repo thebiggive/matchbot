@@ -12,6 +12,7 @@ use MatchBot\Domain\RegularGivingMandateRepository;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
+use Psr\Clock\ClockInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -25,7 +26,7 @@ class Get extends Action
         private readonly RegularGivingMandateRepository $regularGivingMandateRepository,
         private readonly Environment $environment,
         private CampaignRepository $campaignRepository,
-        private \DateTimeImmutable $now,
+        private ClockInterface $clock,
         LoggerInterface $logger,
         private Security $securityService,
     ) {
@@ -67,7 +68,7 @@ class Get extends Action
         assert($campaign !== null);
         $charity = $campaign->getCharity();
         return new JsonResponse([
-            'mandate' => $mandate->toFrontEndApiModel($charity, $this->now)
+            'mandate' => $mandate->toFrontEndApiModel($charity, $this->clock->now())
         ]);
     }
 }

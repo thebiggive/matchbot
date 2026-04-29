@@ -19,6 +19,8 @@ use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Clock\MockClock;
 
 /**
  * The action for listing a donation is pretty straighforward CRUD, so doesn't need much testing IMHO
@@ -55,7 +57,8 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         $container = $this->getContainer();
 
         // Assume current date is 27th July in UTC, and 28th July in UK:
-        $container->set(\DateTimeImmutable::class, new \DateTimeImmutable('2024-07-27T23:00:00+00:00'));
+        $container->set(ClockInterface::class, new MockClock(new \DateTimeImmutable('2024-07-27T23:00:00+00:00')));
+        $container->set(\Psr\Clock\ClockInterface::class, new MockClock(new \DateTimeImmutable('2024-07-27T23:00:00+00:00')));
 
         list($campaignSfId1, $charitySfId1, $charityName1) = $this->createCampagaign();
         list($campaignSfId2, $charitySfId2, $_charityName2) = $this->createCampagaign();

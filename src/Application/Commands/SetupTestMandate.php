@@ -25,6 +25,7 @@ use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
+use Psr\Clock\ClockInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -60,10 +61,10 @@ class SetupTestMandate extends LockingCommand
         private CampaignRepository $campaignRepository,
         private DonorAccountRepository $donorAccountRepository,
         private DonationService $donationService,
-        \DateTimeImmutable $now,
+        ClockInterface $clock,
     ) {
         parent::__construct();
-        $this->now = $now->setTimezone(new \DateTimeZone('Europe/London'));
+        $this->now = $clock->now()->setTimezone(new \DateTimeZone('Europe/London'));
     }
 
     #[\Override]

@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Actions\Hooks;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
+use Hoa\Iterator\Mock;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -25,12 +26,14 @@ use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Tests\Domain\InMemoryDonationRepository;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Ramsey\Uuid\Uuid;
 use Stripe\BalanceTransaction;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\StripeClient;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\InMemoryStore;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
@@ -163,6 +166,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(EmailVerificationTokenRepository::class, $this->createStub(EmailVerificationTokenRepository::class));
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
         $container->set(Mailer::class, $this->mailerClientProphecy->reveal());
+        $container->set(ClockInterface::class, new MockClock());
 
         $chargeSucceededData = $this->getWebhookData('ch_succeeded');
         /** @psalm-suppress MixedArrayAssignment */
@@ -619,6 +623,8 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
 
         $container->set(LockFactory::class, new LockFactory(new InMemoryStore()));
+        $container->set(ClockInterface::class, new MockClock());
+        $container->set(\Symfony\Component\Clock\ClockInterface::class, new MockClock());
 
         return $container;
     }

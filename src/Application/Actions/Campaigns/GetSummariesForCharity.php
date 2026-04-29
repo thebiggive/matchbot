@@ -11,6 +11,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpNotFoundException;
+use Symfony\Component\Clock\Clock;
 
 use const true;
 
@@ -25,7 +26,7 @@ class GetSummariesForCharity extends Action
         private CharityRepository $charityRepository,
         private CampaignRepository $campaignRepository,
         private CampaignService $campaignService,
-        private \DateTimeImmutable $at,
+        private Clock $clock,
     ) {
         parent::__construct($logger);
     }
@@ -38,7 +39,7 @@ class GetSummariesForCharity extends Action
 
         $charity = $this->charityRepository->findOneBySalesforceIdOrThrow($sfId);
 
-        $campaigns = $this->campaignRepository->findCampaignsForCharityPage($charity, $this->at);
+        $campaigns = $this->campaignRepository->findCampaignsForCharityPage($charity, $this->clock->now());
 
         return $this->respondWithData($response, [
             'charityName' => $charity->getName(),

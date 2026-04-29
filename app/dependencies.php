@@ -703,7 +703,7 @@ return function (ContainerBuilder $containerBuilder) {
                 return new DonationNotifier(
                     mailer: $c->get(Client\Mailer::class),
                     emailVerificationTokenRepository: $c->get(EmailVerificationTokenRepository::class),
-                    now: new \DateTimeImmutable('now'),
+                    clock: $c->get(ClockInterface::class),
                     donateBaseUri: $donateBaseUri,
                 );
             },
