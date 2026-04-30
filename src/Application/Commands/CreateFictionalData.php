@@ -410,8 +410,6 @@ class CreateFictionalData extends Command
             salesforceId: Salesforce18Id::ofMetaCampaign(TestCase::randomString()),
             title: "Local test MetaCampaign", // feel free to replace if you have a more creative idea
             currency: Currency::GBP,
-            status: 'Active',
-            masterCampaignStatus: MetaCampaign::STATUS_VIEW_CAMPAIGN,
             hidden: false,
             summary: 'These campaigns exist in the local Matchbot Database, they are not real and not currently expected to exist in any Salesforce org',
             bannerURI: new Uri($bannerURI),
