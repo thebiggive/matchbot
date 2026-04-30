@@ -11,8 +11,11 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Settings;
 use MatchBot\Client\Mandate as MandateSFClient;
+use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignStatus;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\CharityResponseToOffer;
 use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundType;
@@ -493,37 +496,43 @@ abstract class IntegrationTest extends TestCase
         return $fakeStripeClient;
     }
 
-    /**
-     * @param 'Active'|'Expired'|'Preview' $status
-     */
     protected function createCampaign(
         ?Charity $charity = null,
         string $name = 'Campaign Name',
         string $summary = 'Campaign Summary',
-        string $status = 'Active',
+        CampaignStatus $status = CampaignStatus::Active,
         bool $withUniqueSalesforceId = false,
+        ?string $metaCampaignSlug = null,
+        ?ApplicationStatus $relatedApplicationStatus = null,
+        ?CharityResponseToOffer $relatedApplicationCharityResponseToOffer = null
     ): Campaign {
         $salesforceId = $withUniqueSalesforceId
             ? Salesforce18Id::ofCampaign(self::randomString())
             : Salesforce18Id::ofCampaign('campaignId12345678');
 
+        [$startDate, $endDate] = match ($status) {
+            CampaignStatus::Preview => [new \DateTimeImmutable('now')->add(new \DateInterval('P2D')), new \DateTimeImmutable('now')->add(new \DateInterval('P3D'))],
+            CampaignStatus::Active => [new \DateTimeImmutable('now')->sub(new \DateInterval('P1D')), new \DateTimeImmutable('now')->add(new \DateInterval('P1D'))],
+            CampaignStatus::Expired => [new \DateTimeImmutable('now')->sub(new \DateInterval('P3D')),  new \DateTimeImmutable('now')->sub(new \DateInterval('P2D'))],
+        };
+
         return new Campaign(
             $salesforceId,
-            metaCampaignSlug: null,
+            metaCampaignSlug: $metaCampaignSlug,
             charity: $charity ?? \MatchBot\Tests\TestCase::someCharity(),
-            startDate: new \DateTimeImmutable('now'),
-            endDate: (new \DateTimeImmutable('now'))->modify('+1 minute'),
+            startDate: $startDate,
+            endDate: $endDate,
             isMatched: true,
             ready: true,
-            status: $status,
+            status: $status->value,
             name: $name,
             summary: $summary,
             currencyCode: 'GBP',
             isRegularGiving: false,
             pinPosition: null,
             championPagePinPosition: null,
-            relatedApplicationStatus: null,
-            relatedApplicationCharityResponseToOffer: null,
+            relatedApplicationStatus: $relatedApplicationStatus,
+            relatedApplicationCharityResponseToOffer: $relatedApplicationCharityResponseToOffer,
             regularGivingCollectionEnd: null,
             totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,

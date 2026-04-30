@@ -9,6 +9,7 @@ use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignStatistics;
+use MatchBot\Domain\CampaignStatus;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityResponseToOffer;
 use MatchBot\Domain\Money;
@@ -133,12 +134,15 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $charity = TestCase::someCharity();
 
-        foreach (['Expired', 'Active', 'Preview'] as $status) {
+        foreach ([CampaignStatus::Expired, CampaignStatus::Active, CampaignStatus::Preview] as $status) {
             $campaign = $this->createCampaign(
                 charity: $charity,
-                name: 'Campaign ' . $status,
+                name: 'Campaign ' . $status->value,
                 status: $status,
                 withUniqueSalesforceId: true,
+                metaCampaignSlug: 'some-slug',
+                relatedApplicationStatus: ApplicationStatus::Approved,
+                relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted
             );
             $stats = CampaignStatistics::zeroPlaceholder($campaign, new \DateTimeImmutable('now'));
             $em->persist($campaign);
@@ -151,7 +155,7 @@ class CampaignRepositoryTest extends IntegrationTest
             sortDirection: 'desc',
             offset: 0,
             limit: 6,
-            metaCampaignSlug: null,
+            metaCampaignSlug: 'some-slug',
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
