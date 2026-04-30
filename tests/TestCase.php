@@ -135,6 +135,7 @@ class TestCase extends PHPUnitTestCase
             'regulatorNumber' => '1000000',
             'regulatorRegion' => 'England and Wales',
             'stripeAccountId' => 'acc_123456',
+            'ryftAccountId' => null,
             'hmrcReferenceNumber' => null,
             'giftAidOnboardingStatus' => 'Invited to Onboard',
         ]
@@ -196,6 +197,7 @@ class TestCase extends PHPUnitTestCase
         'budgetDetails' => [],
         'beneficiaries' => [],
         'parentTarget' => null,
+        'ryftAccountId' => null,
     ];
 
     /**
