@@ -196,6 +196,7 @@ class TestCase extends PHPUnitTestCase
         'budgetDetails' => [],
         'beneficiaries' => [],
         'parentTarget' => null,
+        'ryftAccountId' => null,
     ];
 
     /**
