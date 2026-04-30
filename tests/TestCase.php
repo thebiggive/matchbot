@@ -120,7 +120,6 @@ class TestCase extends PHPUnitTestCase
         'championPagePinPosition' => null,
         'relatedApplicationStatus' => null,
         'relatedApplicationCharityResponseToOffer' => null,
-        'ryftAccountId' => null,
         'charity' => [
             'id' => 'xxxxxxxxxxxxxxxxxx',
             'name' => 'Society for the advancement of bots and matches',
@@ -136,6 +135,7 @@ class TestCase extends PHPUnitTestCase
             'regulatorNumber' => '1000000',
             'regulatorRegion' => 'England and Wales',
             'stripeAccountId' => 'acc_123456',
+            'ryftAccountId' => null,
             'hmrcReferenceNumber' => null,
             'giftAidOnboardingStatus' => 'Invited to Onboard',
         ]
