@@ -120,6 +120,7 @@ class TestCase extends PHPUnitTestCase
         'championPagePinPosition' => null,
         'relatedApplicationStatus' => null,
         'relatedApplicationCharityResponseToOffer' => null,
+        'ryftAccountId' => null,
         'charity' => [
             'id' => 'xxxxxxxxxxxxxxxxxx',
             'name' => 'Society for the advancement of bots and matches',
