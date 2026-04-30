@@ -20,6 +20,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Symfony\Component\Clock\Clock;
+use MatchBot\Domain\RyftAccountId;
 
 /**
  * @psalm-import-type SFCharityApiResponse from \MatchBot\Client\Campaign
@@ -77,8 +78,11 @@ class Put extends Action
         $stripeAccountId = $charityData['stripeAccountId'];
         $regulatorRegion = $charityData['regulatorRegion'];
         $regulatorNumber = self::nullOrStringValue($charityData, 'regulatorNumber');
-        $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
+        $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);            
         $ryftAccountId = $charityData['ryftAccountId'];
+        if ($ryftAccountId != null) {
+            $ryftAccountId = RyftAccountId::of($ryftAccountId);
+        } 
 
         // Optional fields
         $hmrcReferenceNumber = self::nullOrStringValue($charityData, 'hmrcReferenceNumber');
