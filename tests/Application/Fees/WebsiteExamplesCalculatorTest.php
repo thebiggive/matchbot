@@ -67,16 +67,16 @@ class WebsiteExamplesCalculatorTest extends TestCase
             'creation_datetime' => '2026-07-01T00:00:00 Europe/London',
             'mandate_activation_date' => null,
         ],
-        'Donation made with UK Visa Card, without gift aid, with new fees' => [
+        'Donation made with UK Visa Card, with gift aid, new fees' => [
             'donation_amount' => '10',
             'country' => 'United_Kingdom',
             'card_brand' => 'VISA',
-            'with_gift_aid' => false,
-            'processing_fee' => '0.44',
-            'fee_vat' => '0.09',
+            'with_gift_aid' => true,
+            'processing_fee' => '0.52',
+            'fee_vat' => '0.10',
             //-------------------//
-            'total_fee' => '0.53',
-            'total_transferred_to_charity' => '9.47',
+            'total_fee' => '0.62',
+            'total_transferred_to_charity' => '11.88',
             'creation_datetime' => '2026-07-01T00:00:00 Europe/London',
             'mandate_activation_date' => null,
         ],
