@@ -78,11 +78,11 @@ class Put extends Action
         $stripeAccountId = $charityData['stripeAccountId'];
         $regulatorRegion = $charityData['regulatorRegion'];
         $regulatorNumber = self::nullOrStringValue($charityData, 'regulatorNumber');
-        $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);            
+        $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
         $ryftAccountId = $charityData['ryftAccountId'];
         if ($ryftAccountId != null) {
             $ryftAccountId = RyftAccountId::of($ryftAccountId);
-        } 
+        }
 
         // Optional fields
         $hmrcReferenceNumber = self::nullOrStringValue($charityData, 'hmrcReferenceNumber');
