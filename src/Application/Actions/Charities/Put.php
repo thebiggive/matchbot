@@ -78,6 +78,7 @@ class Put extends Action
         $regulatorRegion = $charityData['regulatorRegion'];
         $regulatorNumber = self::nullOrStringValue($charityData, 'regulatorNumber');
         $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
+        $ryftAccountId = $charityData['ryftAccountId'];
 
         // Optional fields
         $hmrcReferenceNumber = self::nullOrStringValue($charityData, 'hmrcReferenceNumber');
@@ -97,7 +98,7 @@ class Put extends Action
                 salesforceId: $charitySfId->value,
                 charityName: $name,
                 stripeAccountId: $stripeAccountId,
-                ryftAccountId: null,
+                ryftAccountId: $ryftAccountId,
                 psp: $psp,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
                 giftAidOnboardingStatus: $giftAidOnboardingStatus,
@@ -119,7 +120,7 @@ class Put extends Action
                 websiteUri: $website,
                 logoUri: $logoUri,
                 stripeAccountId: $stripeAccountId,
-                ryftAccountId: null,
+                ryftAccountId: $ryftAccountId,
                 psp: $psp,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
                 giftAidOnboardingStatus: $giftAidOnboardingStatus,
