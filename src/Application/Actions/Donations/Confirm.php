@@ -106,7 +106,7 @@ class Confirm extends Action
             throw new NotFoundException();
         }
 
-        if ((!is_string($confirmationTokenId) || trim($confirmationTokenId) === '') && $psp === PaymentServiceProvider::Stripe) {
+        if ((!is_string($confirmationTokenId) || trim($confirmationTokenId) === '') && $psp === 'stripe') {
             $donationUUID = $donation->getId();
             $this->logger->warning(
                 <<<EOF
@@ -181,7 +181,7 @@ EOF
         }
 
         $paymentIntentId = $donation->getTransactionId();
-        if ($psp === PaymentServiceProvider::Stripe) {
+        if ($psp === 'stripe') {
             Assertion::notNull($paymentIntentId);
         }
 
