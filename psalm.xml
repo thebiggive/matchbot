@@ -8,6 +8,7 @@
     findUnusedBaselineEntry="false"
     findUnusedCode="true"
     findUnusedPsalmSuppress="true"
+    errorBaseline=".psalm/baseline.xml"
 >
     <stubs>
         <file name=".psalm/containers.php.stub" preloadClasses="true"/>
@@ -67,6 +68,34 @@
                 <directory name="integrationTests"/>
             </errorLevel>
         </UnevaluatedCode>
+
+        <!-- It looks like since the PHP version Upgrade Psalm is no longer able to understand Prophecy objectProphecy
+         usages, hence suppressing the following issues in tests only. Maybe this will be fixed in Psalm 7 when that
+         has a full release -->
+        <MixedMethodCall>
+            <errorLevel type="suppress">
+                <directory name="tests"/>
+                <directory name="integrationTests"/>
+            </errorLevel>
+        </MixedMethodCall>
+        <UndefinedMagicMethod>
+            <errorLevel type="suppress">
+                <directory name="tests"/>
+                <directory name="integrationTests"/>
+            </errorLevel>
+        </UndefinedMagicMethod>
+        <UndefinedMagicPropertyAssignment>
+            <errorLevel type="suppress">
+                <directory name="tests"/>
+                <directory name="integrationTests"/>
+            </errorLevel>
+        </UndefinedMagicPropertyAssignment>
+        <MixedAssignment>
+            <errorLevel type="suppress">
+                <directory name="tests"/>
+                <directory name="integrationTests"/>
+            </errorLevel>
+        </MixedAssignment>
     </issueHandlers>
     <plugins>
         <pluginClass class="Psalm\PhpUnitPlugin\Plugin"/>
