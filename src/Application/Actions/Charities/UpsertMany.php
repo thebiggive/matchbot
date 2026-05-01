@@ -14,6 +14,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PaymentServiceProvider;
+use MatchBot\Domain\RyftAccountId;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -92,6 +93,7 @@ class UpsertMany extends Action
         $regulatorRegion = $charityData['regulatorRegion'];
         $regulatorNumber = self::nullOrStringValue($charityData, 'regulatorNumber');
         $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
+        $ryftAccountId = $charityData['ryftAccountId'] ? RyftAccountId::of($charityData['ryftAccountId']) : null;
 
         // Optional fields
         $hmrcReferenceNumber = self::nullOrStringValue($charityData, 'hmrcReferenceNumber');
@@ -111,7 +113,7 @@ class UpsertMany extends Action
                 salesforceId: $charitySfId->value,
                 charityName: $name,
                 stripeAccountId: $stripeAccountId,
-                ryftAccountId: null,
+                ryftAccountId: $ryftAccountId,
                 psp: $psp,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
                 giftAidOnboardingStatus: $giftAidOnboardingStatus,
@@ -133,7 +135,7 @@ class UpsertMany extends Action
                 websiteUri: $website,
                 logoUri: $logoUri,
                 stripeAccountId: $stripeAccountId,
-                ryftAccountId: null,
+                ryftAccountId: $ryftAccountId,
                 psp: $psp,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
                 giftAidOnboardingStatus: $giftAidOnboardingStatus,
