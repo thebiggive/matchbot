@@ -11,6 +11,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Client\Campaign as CampaignClient;
@@ -551,7 +552,6 @@ class Campaign extends SalesforceReadProxy
         $this->metaCampaignSlug = $metaCampaignSlug;
         $this->startDate = $startDate;
         $this->ready = $ready;
-        $this->status = $status;
         $this->isPublished = in_array($status, ['Preview', 'Active', 'Expired'], true);
         $this->thankYouMessage = $thankYouMessage;
         $this->isRegularGiving = $isRegularGiving;
