@@ -11,6 +11,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Client\Campaign as CampaignClient;
@@ -69,7 +70,8 @@ class Campaign extends SalesforceReadProxy
      *
      * Default null because campaigns not recently updated in matchbot have not pulled this field from SF.
      *
-     * Currently only used in database queries, hoping to remove all usages.
+     * @deprecated - there should now be no usages of this. In the next deploy we should be able to remove it from the
+     * DB. Note that {@see self::getStatus } does not use this field.
      */
     #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
     private ?string $status = null; // @phpstan-ignore doctrine.columnType
@@ -550,7 +552,6 @@ class Campaign extends SalesforceReadProxy
         $this->metaCampaignSlug = $metaCampaignSlug;
         $this->startDate = $startDate;
         $this->ready = $ready;
-        $this->status = $status;
         $this->isPublished = in_array($status, ['Preview', 'Active', 'Expired'], true);
         $this->thankYouMessage = $thankYouMessage;
         $this->isRegularGiving = $isRegularGiving;

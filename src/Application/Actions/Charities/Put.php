@@ -20,6 +20,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Symfony\Component\Clock\Clock;
+use MatchBot\Domain\RyftAccountId;
 
 /**
  * @psalm-import-type SFCharityApiResponse from \MatchBot\Client\Campaign
@@ -78,6 +79,10 @@ class Put extends Action
         $regulatorRegion = $charityData['regulatorRegion'];
         $regulatorNumber = self::nullOrStringValue($charityData, 'regulatorNumber');
         $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
+        $ryftAccountId = $charityData['ryftAccountId'];
+        if ($ryftAccountId != null) {
+            $ryftAccountId = RyftAccountId::of($ryftAccountId);
+        }
 
         // Optional fields
         $hmrcReferenceNumber = self::nullOrStringValue($charityData, 'hmrcReferenceNumber');
@@ -97,7 +102,7 @@ class Put extends Action
                 salesforceId: $charitySfId->value,
                 charityName: $name,
                 stripeAccountId: $stripeAccountId,
-                ryftAccountId: null,
+                ryftAccountId: $ryftAccountId,
                 psp: $psp,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
                 giftAidOnboardingStatus: $giftAidOnboardingStatus,
@@ -119,7 +124,7 @@ class Put extends Action
                 websiteUri: $website,
                 logoUri: $logoUri,
                 stripeAccountId: $stripeAccountId,
-                ryftAccountId: null,
+                ryftAccountId: $ryftAccountId,
                 psp: $psp,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
                 giftAidOnboardingStatus: $giftAidOnboardingStatus,

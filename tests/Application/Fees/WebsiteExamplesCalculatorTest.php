@@ -67,6 +67,19 @@ class WebsiteExamplesCalculatorTest extends TestCase
             'creation_datetime' => '2026-07-01T00:00:00 Europe/London',
             'mandate_activation_date' => null,
         ],
+        'Donation made with UK Visa Card, with gift aid, new fees' => [
+            'donation_amount' => '10',
+            'country' => 'United_Kingdom',
+            'card_brand' => 'VISA',
+            'with_gift_aid' => true,
+            'processing_fee' => '0.52',
+            'fee_vat' => '0.10',
+            //-------------------//
+            'total_fee' => '0.62',
+            'total_transferred_to_charity' => '11.88',
+            'creation_datetime' => '2026-07-01T00:00:00 Europe/London',
+            'mandate_activation_date' => null,
+        ],
 //
         'Donation made with American Express Card from any country, without Gift Aid, with old fees' => [
             'donation_amount' => '10',
@@ -123,6 +136,21 @@ class WebsiteExamplesCalculatorTest extends TestCase
             'creation_datetime' => '2026-07-01T00:00:00 Europe/London',
             'mandate_activation_date' => null,
         ],
+        //
+        'Donation made with UK Visa Card, without Gift Aid, with old fees based on old mandate' => [
+            'donation_amount' => '10',
+            'country' => 'United_Kingdom',
+            'card_brand' => 'Visa',
+            'processing_fee' => '0.35',
+            'with_gift_aid' => false,
+            'fee_vat' => '0.07',
+            //-------------------//
+            'total_fee' => '0.42',
+            'total_transferred_to_charity' => '9.58',
+            'creation_datetime' => '2026-07-01T00:00:00 Europe/London',
+            'mandate_activation_date' => '2026-06-30T23:59:59 Europe/London',
+        ],
+        //
         'Donation made with Brazilian Visa Card, without Gift Aid, with old fees based on old mandate' => [
             'donation_amount' => '10',
             'country' => 'Brazil',

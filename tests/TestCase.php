@@ -135,6 +135,7 @@ class TestCase extends PHPUnitTestCase
             'regulatorNumber' => '1000000',
             'regulatorRegion' => 'England and Wales',
             'stripeAccountId' => 'acc_123456',
+            'ryftAccountId' => null,
             'hmrcReferenceNumber' => null,
             'giftAidOnboardingStatus' => 'Invited to Onboard',
         ]
@@ -196,6 +197,7 @@ class TestCase extends PHPUnitTestCase
         'budgetDetails' => [],
         'beneficiaries' => [],
         'parentTarget' => null,
+        'ryftAccountId' => null,
     ];
 
     /**
@@ -573,8 +575,6 @@ class TestCase extends PHPUnitTestCase
             salesforceId: IntegrationTest::randomSalesForce18Id(MetaCampaign::class),
             title: 'not relevant ' . TestCase::randomHex(),
             currency: Currency::GBP,
-            status: 'Active',
-            masterCampaignStatus: MetaCampaign::STATUS_VIEW_CAMPAIGN,
             hidden: false,
             summary: 'not relevant',
             bannerURI: null,

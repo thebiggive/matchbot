@@ -5,13 +5,14 @@ namespace MatchBot\Domain;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Client\Mailer;
+use Psr\Clock\ClockInterface;
 
 class DonationNotifier
 {
     public function __construct(
         private Mailer $mailer,
         private EmailVerificationTokenRepository $emailVerificationTokenRepository,
-        private \DateTimeImmutable $now,
+        private ClockInterface $clock,
         private string $donateBaseUri,
     ) {
     }
@@ -124,7 +125,7 @@ class DonationNotifier
         if ($sendRegisterUri) {
             $emailVerificationToken = $this->emailVerificationTokenRepository->findRecentTokenForEmailAddress(
                 $emailAddress,
-                $this->now,
+                $this->clock->now(),
             );
         }
 

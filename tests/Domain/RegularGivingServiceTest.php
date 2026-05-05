@@ -46,6 +46,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Stripe\ConfirmationToken;
 use Stripe\PaymentIntent;
+use Symfony\Component\Clock\MockClock;
 
 /**
 
@@ -591,7 +592,7 @@ class RegularGivingServiceTest extends TestCase
         $this->assertSame(MandateStatus::Cancelled, $mandate->getStatus());
         $this->assertSame('Because I don\'t have any more money to give', $mandate->cancellationReason());
         $this->assertSame(MandateCancellationType::DonorRequestedCancellation, $mandate->cancellationType());
-        $this->assertSame($now, $mandate->cancelledAt());
+        $this->assertEquals($now, $mandate->cancelledAt());
     }
 
     public function testCancellingMandateCancelsPendingDonations(): void
@@ -648,7 +649,7 @@ class RegularGivingServiceTest extends TestCase
     private function makeSut(?\DateTimeImmutable $simulatedNow = null): RegularGivingService
     {
         return new RegularGivingService(
-            now: $simulatedNow ?? new \DateTimeImmutable('2025-01-01T00:00:00'),
+            clock: new MockClock($simulatedNow ?? new \DateTimeImmutable('2025-01-01T00:00:00')),
             donationRepository: $this->donationRepositoryProphecy->reveal(),
             donorAccountRepository: $this->donorAccountRepositoryProphecy->reveal(),
             campaignRepository: $this->campaignRepositoryProphecy->reveal(),

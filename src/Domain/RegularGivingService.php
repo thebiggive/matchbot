@@ -21,6 +21,7 @@ use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\WrongCampaignType;
+use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Stripe\ConfirmationToken;
 use Stripe\Exception\ApiErrorException as StripeApiErrorException;
@@ -32,7 +33,7 @@ use UnexpectedValueException;
 readonly class RegularGivingService
 {
     public function __construct(
-        private \DateTimeImmutable $now,
+        private ClockInterface $clock,
         private DonationRepository $donationRepository,
         private DonorAccountRepository $donorAccountRepository,
         private CampaignRepository $campaignRepository,
@@ -115,7 +116,7 @@ readonly class RegularGivingService
 
         $donor->assertHasRequiredInfoForRegularGiving();
 
-        $dayOfMonth = DayOfMonth::forMandateStartingAt($this->now);
+        $dayOfMonth = DayOfMonth::forMandateStartingAt($this->clock->now());
 
         $mandate = new RegularGivingMandate(
             donorId: $donor->id(),
@@ -282,15 +283,15 @@ readonly class RegularGivingService
             return null;
         }
 
-        $campaign->checkIsReadyToAcceptDonation($donation, $this->now);
+        $campaign->checkIsReadyToAcceptDonation($donation, $this->clock->now());
 
         $preAuthorizationDate = $donation->getPreAuthorizationDate();
         \assert($preAuthorizationDate instanceof \DateTimeImmutable);
 
-        if ($preAuthorizationDate > $this->now) {
+        if ($preAuthorizationDate > $this->clock->now()) {
             $this->log->info(
                 "Mandate #{$mandateId}: Not creating donation yet as will only be authorized to pay on " .
-                $preAuthorizationDate->format("Y-m-d") . ' and now is ' . $this->now->format("Y-m-d")
+                $preAuthorizationDate->format("Y-m-d") . ' and now is ' . $this->clock->now()->format("Y-m-d")
             );
 
             // Throw this donation away without persisting, we can create it again when the authorization date is
@@ -310,7 +311,7 @@ readonly class RegularGivingService
     {
         $mandatesWithCharities = $this->regularGivingMandateRepository->allMandatesForDisplayToDonor($donor);
 
-        $currentUKTime = $this->now->setTimezone(new \DateTimeZone("Europe/London"));
+        $currentUKTime = $this->clock->now()->setTimezone(new \DateTimeZone("Europe/London"));
 
         return array_map(/**
          * @param array{0: RegularGivingMandate, 1: Charity} $tuple
@@ -327,7 +328,7 @@ readonly class RegularGivingService
             $donor,
             $campaign,
             requireActiveMandate: false,
-            expectedActivationDate: $this->now
+            expectedActivationDate: $this->clock->now()
         );
     }
 
@@ -411,7 +412,7 @@ readonly class RegularGivingService
         string $reason,
         MandateCancellationType $cancellationType,
     ): void {
-        $mandate->cancel(reason: $reason, at: $this->now, type: $cancellationType);
+        $mandate->cancel(reason: $reason, at: $this->clock->now(), type: $cancellationType);
 
         $cancellableDonations = $this->donationRepository->findPendingAndPreAuthedForMandate($mandate->getUuid());
 
@@ -439,7 +440,7 @@ readonly class RegularGivingService
         StripePaymentMethodId $paymentMethodId
     ): void {
         $donor->setRegularGivingPaymentMethod($paymentMethodId);
-        $mandate->activate($this->now);
+        $mandate->activate($this->clock->now());
 
         $this->entityManager->flush();
 
@@ -524,7 +525,7 @@ readonly class RegularGivingService
      */
     private function ensureCampaignIsOpen(Campaign $campaign): void
     {
-        if (! $campaign->isOpenForFinalising($this->now)) {
+        if (! $campaign->isOpenForFinalising($this->clock->now())) {
             throw new CampaignNotOpen();
         }
     }

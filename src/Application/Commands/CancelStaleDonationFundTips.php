@@ -9,6 +9,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
+use Psr\Clock\ClockInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,7 +32,7 @@ class CancelStaleDonationFundTips extends LockingCommand
         private DonationRepository $donationRepository,
         private DonationService $donationService,
         private EntityManagerInterface $entityManager,
-        private \DateTimeImmutable $now,
+        private ClockInterface $clock,
         private Environment $environment,
     ) {
         parent::__construct();
@@ -46,7 +47,7 @@ class CancelStaleDonationFundTips extends LockingCommand
 
         $cancelationDelay = $this->environment == Environment::Production ? $twoWeeks : $tenMinutes;
 
-        $staleDonationTipsUUIDS = $this->donationRepository->findStaleDonationFundsTips($this->now, $cancelationDelay);
+        $staleDonationTipsUUIDS = $this->donationRepository->findStaleDonationFundsTips($this->clock->now(), $cancelationDelay);
 
         foreach ($staleDonationTipsUUIDS as $tipDonationUUID) {
             $this->entityManager->wrapInTransaction(function () use ($tipDonationUUID): void {

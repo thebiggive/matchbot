@@ -21,6 +21,7 @@ use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\RegularGivingService;
+use Psr\Clock\ClockInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -40,7 +41,7 @@ class Create extends Action
         private CampaignRepository $campaignRepository,
         private SerializerInterface $serializer,
         private EntityManagerInterface $em,
-        private \DateTimeImmutable $now,
+        private ClockInterface $clock,
         private Security $securityService,
     ) {
         parent::__construct($logger);
@@ -171,7 +172,7 @@ class Create extends Action
             \assert($intent->status === PaymentIntent::STATUS_REQUIRES_ACTION);
 
             return new JsonResponse([
-                'mandate' => $exception->mandate?->toFrontEndApiModel($charity, $this->now),
+                'mandate' => $exception->mandate?->toFrontEndApiModel($charity, $this->clock->now()),
                 'paymentIntent' => [
                     'status' => $intent->status,
                     'client_secret' =>  $intent->client_secret
@@ -208,6 +209,6 @@ class Create extends Action
         // when the mandate is active.
 
         $this->em->flush();
-        return new JsonResponse(['mandate' => $mandate->toFrontEndApiModel($charity, $this->now)], 201);
+        return new JsonResponse(['mandate' => $mandate->toFrontEndApiModel($charity, $this->clock->now())], 201);
     }
 }

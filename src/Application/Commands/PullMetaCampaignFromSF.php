@@ -12,6 +12,7 @@ use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\MetaCampaignSlug;
 use DateTimeImmutable;
+use Psr\Clock\ClockInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -34,7 +35,7 @@ class PullMetaCampaignFromSF extends LockingCommand
         private FundRepository $fundRepository,
         private EntityManagerInterface $entityManager,
         private CampaignClient $campaignClient,
-        private DateTimeImmutable $now,
+        private ClockInterface $clock,
     ) {
         parent::__construct();
     }
@@ -55,7 +56,7 @@ class PullMetaCampaignFromSF extends LockingCommand
         foreach ($campaigns as $campaign) {
             $i++;
             $output->writeln("Pulling funds for ($i of $total) '{$campaign->getCampaignName()}'");
-            $this->fundRepository->pullForCampaign($campaign, $this->now);
+            $this->fundRepository->pullForCampaign($campaign, $this->clock->now());
         }
 
         $output->writeln("Fetched $total campaigns total from Salesforce for '$metaCampaginSlug->slug'");
@@ -74,7 +75,7 @@ class PullMetaCampaignFromSF extends LockingCommand
 
         if (\is_null($existingMetaCampaignInDB)) {
             $metaCampaign = MetaCampaign::fromSfCampaignData($slug, $data);
-            $metaCampaign->setSalesforceLastPull(\DateTime::createFromInterface($this->now));
+            $metaCampaign->setSalesforceLastPull(\DateTime::createFromInterface($this->clock->now()));
             // create new one from SF data
             $this->entityManager->persist($metaCampaign);
         } else {

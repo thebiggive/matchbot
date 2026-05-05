@@ -24,6 +24,7 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Random\Randomizer;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Lock\LockFactory;
@@ -229,7 +230,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
                 allocator: $this->getService(Allocator::class),
                 chatter: $this->createStub(ChatterInterface::class),
                 donationRepository: $this->getService(DonationRepository::class),
-                now: new \DateTimeImmutable('now'),
+                clock: new MockClock(),
                 campaignFundingRepository: $this->campaignFundingRepository,
                 logger: $this->getService(LoggerInterface::class),
                 entityManager: $this->createStub(EntityManagerInterface::class),

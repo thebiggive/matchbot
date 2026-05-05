@@ -383,13 +383,19 @@ class CampaignRepository extends SalesforceReadProxyRepository
     {
         $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
-            SELECT campaign FROM MatchBot\Domain\Campaign campaign
+            SELECT campaign,
+            CASE
+                WHEN statistics.approxStatus = 'Active' THEN 0 
+                WHEN statistics.approxStatus = 'Expired' THEN 1
+                WHEN statistics.approxStatus = 'Preview' THEN 2
+                ELSE 2 END AS HIDDEN approxStatusRank
+            FROM MatchBot\Domain\Campaign campaign
             JOIN campaign.campaignStatistics statistics
             WHERE 
              campaign.charity = :charity
              AND campaign.isPublished = true
              AND (statistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
-             ORDER BY campaign.status ASC, campaign.endDate ASC 
+             ORDER BY approxStatusRank ASC, campaign.endDate ASC
             DQL
         );
 
@@ -567,7 +573,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->andWhere($qb->expr()->gt('campaign.endDate', ':now'));
             $qb->setParameter('now', $this->clock->now());
         } else {
-            $qb->andWhere('campaign.status IS NOT NULL'); // <- marked usage
+            $qb->andWhere('campaign.isPublished = true');
         }
 
         $qb->andWhere(<<<DQL
@@ -643,8 +649,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         string $sortDirection,
         array|null $idsOrderedByRelavence
     ): void {
-        // Active, Expired, Preview in that order; status sort takes highest precedence.
-        $qb->addOrderBy('campaign.status', 'asc');
+        $qb->addOrderBy('approxStatusRank', 'asc');
 
         if ($applyPinSort) {
             $qb->addOrderBy('pinPosition', 'asc');
@@ -702,7 +707,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $qb->select(<<<SELECT
               campaign,
-              COALESCE(campaign.pinPosition, 999999999) AS HIDDEN pinPosition
+              COALESCE(campaign.pinPosition, 999999999) AS HIDDEN pinPosition,
+              CASE
+                WHEN campaignStatistics.approxStatus = 'Active' THEN 0
+                WHEN campaignStatistics.approxStatus = 'Expired' THEN 1
+                WHEN campaignStatistics.approxStatus = 'Preview' THEN 2
+                ELSE 2 END AS HIDDEN approxStatusRank
             SELECT)
             ->from(Campaign::class, 'campaign')
             ->join('campaign.charity', 'charity')

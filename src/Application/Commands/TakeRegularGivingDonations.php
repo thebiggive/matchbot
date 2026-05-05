@@ -20,8 +20,8 @@ use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
+use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -70,7 +70,6 @@ class TakeRegularGivingDonations extends LockingCommand
     public function setSimulatedNow(string $simulateDateInput, OutputInterface $output): void
     {
         $simulatedNow = new \DateTimeImmutable($simulateDateInput);
-        $this->container->set(\DateTimeImmutable::class, $simulatedNow);
         $this->container->set(ClockInterface::class, new MockClock($simulatedNow));
         $output->writeln("Simulating running on {$simulatedNow->format('Y-m-d H:i:s')}");
     }
@@ -99,7 +98,7 @@ class TakeRegularGivingDonations extends LockingCommand
         $io = new SymfonyStyle($input, $bufferedOutput);
         /** @psalm-suppress MixedArgument */
         $this->applySimulatedDate($input->getOption('simulated-date'), $bufferedOutput);
-        $now = $this->container->get(\DateTimeImmutable::class);
+        $now = $this->container->get(ClockInterface::class)->now();
 
         $this->createNewDonationsAccordingToRegularGivingMandates($now, $io);
         $this->createPaymentIntentWhenReachedPaymentDate($now, $io);

@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="6.16.1@f1f5de594dc76faf8784e02d3dc4716c91c6f6ac">
+  <file src="app/dependencies.php">
+    <InvalidArgument>
+      <code><![CDATA[$c->get(Settings::class)->doctrine['connection'] +
+                [
+                    'platform' => new \MatchBot\Application\CustomMysqlPlatform(),
+                ]]]></code>
+    </InvalidArgument>
+    <InvalidPropertyAssignmentValue>
+      <code><![CDATA[$c->get(Settings::class)->doctrine]]></code>
+    </InvalidPropertyAssignmentValue>
+    <PossiblyNullArgument>
+      <code><![CDATA[$settings->ryft['publicKey']]]></code>
+      <code><![CDATA[$settings->ryft['secretKey']]]></code>
+    </PossiblyNullArgument>
+    <PossiblyUndefinedArrayOffset>
+      <code><![CDATA[$settings->ryft['publicKey']]]></code>
+      <code><![CDATA[$settings->ryft['secretKey']]]></code>
+    </PossiblyUndefinedArrayOffset>
+  </file>
+  <file src="integrationTests/AcceptCampaignPushFromSFTest.php">
+    <InvalidArgument>
+      <code><![CDATA[$campaignData['campaigns'][0]]]></code>
+    </InvalidArgument>
+  </file>
+  <file src="integrationTests/AllocatorTest.php">
+    <InternalMethod>
+      <code><![CDATA[releaseMatchFunds]]></code>
+      <code><![CDATA[releaseMatchFunds]]></code>
+      <code><![CDATA[releaseMatchFunds]]></code>
+    </InternalMethod>
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function setUp(): void]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="integrationTests/CampaignRepositoryTest.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[randomCampaignId]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="integrationTests/RetrospectivelyMatchCommandTest.php">
+    <UnusedVariable>
+      <code><![CDATA[$matchFundsRedistributor]]></code>
+    </UnusedVariable>
+  </file>
+  <file src="src/Application/Actions/Campaigns/Get.php">
+    <MixedArgument>
+      <code><![CDATA[$campaign]]></code>
+      <code><![CDATA[$slug]]></code>
+    </MixedArgument>
+    <MixedAssignment>
+      <code><![CDATA[$campaign]]></code>
+      <code><![CDATA[$slug]]></code>
+    </MixedAssignment>
+    <MixedMethodCall>
+      <code><![CDATA[getMetaCampaignSlug]]></code>
+      <code><![CDATA[isSfDataMissing]]></code>
+    </MixedMethodCall>
+  </file>
+  <file src="src/Application/Actions/Campaigns/Search.php">
+    <MixedReturnStatement>
+      <code><![CDATA[\array_filter($campaigns, static fn(Campaign $c) => ! $c->isSfDataMissing())
+            |> \array_values(...)
+            |> (fn(array $campaignsWithSfData) => \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData))
+            |> (fn(array $campaignSummaries) => new JsonResponse(['campaignSummaries' => $campaignSummaries], 200))]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Application/Actions/Charities/Put.php">
+    <PossiblyInvalidArgument>
+      <code><![CDATA[$ryftAccountId]]></code>
+      <code><![CDATA[$ryftAccountId]]></code>
+    </PossiblyInvalidArgument>
+  </file>
+  <file src="src/Application/Actions/Charities/UpsertMany.php">
+    <RiskyTruthyFalsyComparison>
+      <code><![CDATA[$charityData['ryftAccountId']]]></code>
+    </RiskyTruthyFalsyComparison>
+  </file>
+  <file src="src/Application/Actions/Donations/CancelAll.php">
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA[isInstanceOf]]></code>
+    </RedundantConditionGivenDocblockType>
+  </file>
+  <file src="src/Application/Actions/Donations/Confirm.php">
+    <MixedArgument>
+      <code><![CDATA[$ryftPaymentSessionId]]></code>
+    </MixedArgument>
+    <MixedAssignment>
+      <code><![CDATA[$ryftPaymentSessionId]]></code>
+    </MixedAssignment>
+    <PossiblyNullArgument>
+      <code><![CDATA[$confirmationTokenId]]></code>
+      <code><![CDATA[$paymentIntentId]]></code>
+      <code><![CDATA[$paymentIntentId]]></code>
+      <code><![CDATA[$paymentIntentId]]></code>
+      <code><![CDATA[$paymentIntentId]]></code>
+    </PossiblyNullArgument>
+    <PossiblyNullPropertyFetch>
+      <code><![CDATA[$updatedIntent->client_secret]]></code>
+    </PossiblyNullPropertyFetch>
+  </file>
+  <file src="src/Application/Actions/Donations/Explain.php">
+    <InvalidOperand>
+      <code><![CDATA[$key]]></code>
+    </InvalidOperand>
+    <MissingClosureParamType>
+      <code><![CDATA[$d]]></code>
+      <code><![CDATA[$d]]></code>
+      <code><![CDATA[$d]]></code>
+      <code><![CDATA[$value]]></code>
+    </MissingClosureParamType>
+    <MissingClosureReturnType>
+      <code><![CDATA[fn($d) => \array_filter($d, fn(string $key) => \in_array($key, $relevantFields, true), \ARRAY_FILTER_USE_KEY)]]></code>
+      <code><![CDATA[fn($d) => \array_map(function ($key, $value) use (&$i) {]]></code>
+      <code><![CDATA[fn(array $donations) => \array_map($this->renderOtherDonation(...), $donations)]]></code>
+      <code><![CDATA[fn(array $withdrawals) => \array_map($this->renderFundingWithdrawal(...), $withdrawals)]]></code>
+    </MissingClosureReturnType>
+    <MixedArgument>
+      <code><![CDATA[$d]]></code>
+      <code><![CDATA[$d]]></code>
+      <code><![CDATA[$d]]></code>
+      <code><![CDATA[$d]]></code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$d]]></code>
+      <code><![CDATA[$d]]></code>
+      <code><![CDATA[fn(string $key) => \in_array($key, $relevantFields, true)]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedAssignment>
+      <code><![CDATA[$competingDonationText]]></code>
+      <code><![CDATA[$fundingWithdrawalText]]></code>
+    </MixedAssignment>
+    <MixedOperand>
+      <code><![CDATA[$competingDonations === [] ? 'None' : $competingDonationText]]></code>
+      <code><![CDATA[$fundingWithdrawals === []  ? 'None' : $fundingWithdrawalText]]></code>
+    </MixedOperand>
+    <PossiblyFalseArgument>
+      <code><![CDATA[$value]]></code>
+    </PossiblyFalseArgument>
+    <PossiblyNullOperand>
+      <code><![CDATA[$donation->toSFApiModel()]]></code>
+    </PossiblyNullOperand>
+    <PossiblyNullReference>
+      <code><![CDATA[format]]></code>
+    </PossiblyNullReference>
+  </file>
+  <file src="src/Application/Actions/Donations/RemoveMatchingExpecation.php">
+    <UnevaluatedCode>
+      <code><![CDATA[\assert($donation !== null);]]></code>
+      <code><![CDATA[return new JsonResponse([
+            'status' => 'success',
+            'donation' => $donation->toFrontEndApiModel($this->enableNoReservationsMode),
+        ]);]]></code>
+    </UnevaluatedCode>
+    <UnusedProperty>
+      <code><![CDATA[$enableNoReservationsMode]]></code>
+    </UnusedProperty>
+  </file>
+  <file src="src/Application/Commands/CreateFictionalData.php">
+    <MixedArrayAccess>
+      <code><![CDATA[$ryftData['id']]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$ryftData]]></code>
+    </MixedAssignment>
+    <MixedReturnStatement>
+      <code><![CDATA[$ryftData['id']]]></code>
+    </MixedReturnStatement>
+    <PossiblyUndefinedArrayOffset>
+      <code><![CDATA[$this->settings->ryft['secretKey']]]></code>
+    </PossiblyUndefinedArrayOffset>
+  </file>
+  <file src="src/Application/Commands/SetupTestMandate.php">
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA[\assert($campaign instanceof Campaign)]]></code>
+    </RedundantConditionGivenDocblockType>
+  </file>
+  <file src="src/Application/CustomMySQLSchemaManager.php">
+    <ParamNameMismatch>
+      <code><![CDATA[$tableColumns]]></code>
+      <code><![CDATA[$tableIndexes]]></code>
+      <code><![CDATA[$tableIndexes]]></code>
+    </ParamNameMismatch>
+    <PossiblyNullArgument>
+      <code><![CDATA[$tableName]]></code>
+    </PossiblyNullArgument>
+  </file>
+  <file src="src/Application/CustomMysqlPlatform.php">
+    <DeprecatedClass>
+      <code><![CDATA[\Doctrine\DBAL\Platforms\MySQL84Platform]]></code>
+    </DeprecatedClass>
+  </file>
+  <file src="src/Application/Fees/Calculator.php">
+    <MissingClassConstType>
+      <code><![CDATA[JULY_2026 = '2026-07-01T00:00:00 Europe/London']]></code>
+    </MissingClassConstType>
+  </file>
+  <file src="src/Application/Messenger/CharityUpdated.php">
+    <UnusedClass>
+      <code><![CDATA[CharityUpdated]]></code>
+    </UnusedClass>
+  </file>
+  <file src="src/Application/Messenger/Handler/DonationMatchCheckHandler.php">
+    <InvalidArgument>
+      <code><![CDATA[$campaignIds]]></code>
+    </InvalidArgument>
+    <InvalidScalarArgument>
+      <code><![CDATA[$campaignId]]></code>
+    </InvalidScalarArgument>
+    <PossiblyNullOperand>
+      <code><![CDATA[$message->getMessageDeduplicationId()]]></code>
+    </PossiblyNullOperand>
+  </file>
+  <file src="src/Client/RyftClient.php">
+    <InvalidArrayOffset>
+      <code><![CDATA[$responseData['status']]]></code>
+    </InvalidArrayOffset>
+    <MixedArrayAccess>
+      <code><![CDATA[$responseData['paymentMethod']]]></code>
+      <code><![CDATA[$responseData['paymentMethod']]]></code>
+      <code><![CDATA[$responseData['paymentMethod']['card']]]></code>
+      <code><![CDATA[$responseData['paymentMethod']['card']]]></code>
+      <code><![CDATA[$responseData['paymentMethod']['card']['binDetails']]]></code>
+      <code><![CDATA[$responseData['paymentMethod']['card']['binDetails']['issuerCountry']]]></code>
+      <code><![CDATA[$responseData['paymentMethod']['card']['scheme']]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$cardBrand]]></code>
+      <code><![CDATA[$cardCountryIso2]]></code>
+      <code><![CDATA[$response]]></code>
+      <code><![CDATA[$responseData]]></code>
+    </MixedAssignment>
+    <MixedReturnStatement>
+      <code><![CDATA[$responseData]]></code>
+    </MixedReturnStatement>
+    <UnusedProperty>
+      <code><![CDATA[$publicKey]]></code>
+    </UnusedProperty>
+    <UnusedVariable>
+      <code><![CDATA[$cardBrand]]></code>
+      <code><![CDATA[$cardCountryIso2]]></code>
+    </UnusedVariable>
+  </file>
+  <file src="src/Domain/CampaignFunding.php">
+    <PossiblyUnusedParam>
+      <code><![CDATA[$at]]></code>
+      <code><![CDATA[$balance]]></code>
+      <code><![CDATA[$comment]]></code>
+      <code><![CDATA[$incrementAmount]]></code>
+      <code><![CDATA[$relatedDonationId]]></code>
+    </PossiblyUnusedParam>
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$adjustmentLog]]></code>
+    </PossiblyUnusedProperty>
+  </file>
+  <file src="src/Domain/CampaignRepository.php">
+    <PossiblyNullArgument>
+      <code><![CDATA[$charityData['ryftAccountId']]]></code>
+    </PossiblyNullArgument>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[findUpdatableForCharity]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="src/Domain/DoctrineDonationRepository.php">
+    <InvalidArgument>
+      <code><![CDATA[LockMode::PESSIMISTIC_WRITE]]></code>
+    </InvalidArgument>
+  </file>
+  <file src="src/Domain/Donation.php">
+    <PossiblyUnusedParam>
+      <code><![CDATA[$paymentSession]]></code>
+    </PossiblyUnusedParam>
+    <RiskyTruthyFalsyComparison>
+      <code><![CDATA[$this->getDonorLastName(true)]]></code>
+      <code><![CDATA[empty($this->donorFirstName)]]></code>
+    </RiskyTruthyFalsyComparison>
+  </file>
+  <file src="src/Domain/DonationService.php">
+    <MixedArgument>
+      <code><![CDATA[$paymentMethodPreview]]></code>
+      <code><![CDATA[$paymentSession]]></code>
+      <code><![CDATA[$paymentSession]]></code>
+      <code><![CDATA[$ryftAccountId]]></code>
+      <code><![CDATA[$ryftAccountId]]></code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$paymentSession]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedPropertyFetch>
+      <code><![CDATA[$psp->name]]></code>
+    </MixedPropertyFetch>
+    <MixedReturnStatement>
+      <code><![CDATA[$updatedIntent ?? null]]></code>
+      <code><![CDATA[$updatedIntent ?? null]]></code>
+    </MixedReturnStatement>
+    <PossiblyNullArgument>
+      <code><![CDATA[$tokenId]]></code>
+    </PossiblyNullArgument>
+    <RedundantCondition>
+      <code><![CDATA[notNull]]></code>
+    </RedundantCondition>
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA[$psp === PaymentServiceProvider::Ryft]]></code>
+      <code><![CDATA[\assert($psp === PaymentServiceProvider::Ryft, 'Unexpected payment service provider')]]></code>
+    </RedundantConditionGivenDocblockType>
+    <UndefinedMagicPropertyFetch>
+      <code><![CDATA[$fee->type]]></code>
+    </UndefinedMagicPropertyFetch>
+  </file>
+  <file src="src/Domain/DonorName.php">
+    <PossiblyNullArgument>
+      <code><![CDATA[$firstName]]></code>
+      <code><![CDATA[$lastName]]></code>
+      <code><![CDATA[$lastName]]></code>
+    </PossiblyNullArgument>
+    <RiskyTruthyFalsyComparison>
+      <code><![CDATA[empty($firstName)]]></code>
+      <code><![CDATA[empty($lastName)]]></code>
+    </RiskyTruthyFalsyComparison>
+  </file>
+  <file src="src/Domain/MetaCampaign.php">
+    <UnusedProperty>
+      <code><![CDATA[$masterCampaignStatus]]></code>
+      <code><![CDATA[$status]]></code>
+    </UnusedProperty>
+  </file>
+  <file src="src/Migrations/Version20260318113924.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$afi2026Ids]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/Migrations/Version20260319102359.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$afi2026Ids]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="tests/Application/Actions/Donations/UpdateHandlesLockExceptionTest.php">
+    <UnusedPsalmSuppress>
+      <code><![CDATA[InternalMethod]]></code>
+    </UnusedPsalmSuppress>
+  </file>
+  <file src="tests/Application/Actions/StatusTest.php">
+    <DeprecatedClass>
+      <code><![CDATA[new MySQL80Platform()]]></code>
+    </DeprecatedClass>
+  </file>
+  <file src="tests/Application/Fees/CalculatorTest.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function setUp(): void]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="tests/Application/Fees/WebsiteExamplesCalculatorTest.php">
+    <RiskyTruthyFalsyComparison>
+      <code><![CDATA[$mandate_activation_date]]></code>
+    </RiskyTruthyFalsyComparison>
+  </file>
+  <file src="tests/Domain/DonationServiceTest.php">
+    <UnusedPsalmSuppress>
+      <code><![CDATA[InternalMethod]]></code>
+    </UnusedPsalmSuppress>
+  </file>
+  <file src="tests/Domain/RegularGivingNotifierTest.php">
+    <UnusedPsalmSuppress>
+      <code><![CDATA[UndefinedMagicPropertyAssignment]]></code>
+      <code><![CDATA[UndefinedMagicPropertyAssignment]]></code>
+    </UnusedPsalmSuppress>
+  </file>
+  <file src="tests/TestCase.php">
+    <InvalidConstantAssignmentValue>
+      <code><![CDATA[META_CAMPAIGN_FROM_SALESFORCE = [
+        'id' => 'a05xxxxxxxxxxxxxxx',
+        'isMetaCampaign' => true,
+        'ready' => true,
+        'title' => 'This is a meta campaign',
+        'video' => null,
+        'hidden' => false,
+        'quotes' => [],
+        'status' => 'Active',
+        'target' => 100.0,
+        'endDate' => '2095-08-01T00:00:00.000Z',
+        'logoUri' => null,
+        'problem' => '',
+        'summary' => '',
+        'updates' => [],
+        'solution' => 'do the saving',
+        'bannerUri' => null,
+        'countries' => [0 => 'United Kingdom',],
+        'isMatched' => true,
+        'parentRef' => null,
+        'startDate' => '2015-08-01T00:00:00.000Z',
+        'categories' => ['Education/Training/Employment', 'Religious'],
+        'championRef' => null,
+        'amountRaised' => 0.0,
+        'championName' => '',
+        'currencyCode' => 'GBP',
+        'campaignCount' => null,
+        'donationCount' => 0,
+        'impactSummary' => null,
+        'impactReporting' => null,
+        'isRegularGiving' => false,
+        'isEmergencyIMF' => false,
+        'slug' => 'some-slug',
+        'campaignFamily' => 'summerGive',
+        'matchFundsTotal' => 50.0,
+        'thankYouMessage' => 'Thank you for helping us save matchbot! We will be able to match twice as many bots now!',
+        'usesSharedFunds' => false,
+        'alternativeFundUse' => null,
+        'parentAmountRaised' => null,
+        'additionalImages' => [],
+        'additionalImageUris' => [],
+        'matchFundsRemaining' => 50.0,
+        'parentDonationCount' => null,
+        'surplusDonationInfo' => '',
+        'parentUsesSharedFunds' => false,
+        'championOptInStatement' => '',
+        'parentMatchFundsRemaining' => null,
+        'regularGivingCollectionEnd' => null,
+        'totalAdjustment' => 0.0,
+        'charity' => null,
+        'aims' => [],
+        'budgetDetails' => [],
+        'beneficiaries' => [],
+        'parentTarget' => null,
+        'ryftAccountId' => null,
+    ]]]></code>
+    </InvalidConstantAssignmentValue>
+  </file>
+</files>
