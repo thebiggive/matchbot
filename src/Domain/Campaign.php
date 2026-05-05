@@ -544,10 +544,6 @@ class Campaign extends SalesforceReadProxy
         $this->salesforceData = $sfData;
     }
 
-    /**
-     * This *does not* use the campaign status as received from Salesforce, as that may be outated,
-     * instead it works out the current status based on start & end date.
-     */
     public function getStatus(\DateTimeImmutable $at): CampaignStatus
     {
         if ($at < $this->startDate) {
