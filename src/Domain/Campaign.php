@@ -62,21 +62,6 @@ class Campaign extends SalesforceReadProxy
     protected string $currencyCode;
 
     /**
-     * Status as sent from SF API.
-     *
-     * Consider converting to enum or value object before using in any logic.
-     *
-     * @var 'Active' | 'Expired' | 'Preview' | null
-     *
-     * Default null because campaigns not recently updated in matchbot have not pulled this field from SF.
-     *
-     * @deprecated - there should now be no usages of this. In the next deploy we should be able to remove it from the
-     * DB. Note that {@see self::getStatus } does not use this field.
-     */
-    #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
-    private ?string $status = null; // @phpstan-ignore doctrine.columnType
-
-    /**
      * Has this campaign been published to the public? Currently, corrosponds to a status of any of 'Preview, 'Active', or 'Expired' in SF.
      */
     #[ORM\Column]
@@ -210,7 +195,6 @@ class Campaign extends SalesforceReadProxy
      * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
      * @param bool $isRegularGiving
      * @param ApplicationStatus|null $relatedApplicationStatus,
-     * @param 'Active'|'Expired'|'Preview'|null $status
      * @param CharityResponseToOffer|null $relatedApplicationCharityResponseToOffer
      * */
     public function __construct(
@@ -221,7 +205,6 @@ class Campaign extends SalesforceReadProxy
         \DateTimeImmutable $endDate,
         bool $isMatched,
         bool $ready,
-        ?string $status,
         string $name,
         ?string $summary,
         string $currencyCode,
@@ -243,7 +226,6 @@ class Campaign extends SalesforceReadProxy
 
         $this->updateFromSfPull(
             currencyCode: $currencyCode,
-            status: $status,
             pinPosition: $pinPosition,
             championPagePinPosition: $championPagePinPosition,
             relatedApplicationStatus: $relatedApplicationStatus,
@@ -278,14 +260,13 @@ class Campaign extends SalesforceReadProxy
         $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
             null : new \DateTimeImmutable($regularGivingCollectionEnd);
 
-        $status = $campaignData['status'];
         $ready = $campaignData['ready'] ?? false;
 
         $startDate = $campaignData['startDate'];
         $endDate = $campaignData['endDate'];
         $title = $campaignData['title'];
 
-        if (($status === null || $status === 'Expired') && $fillInDefaultValues) {
+        if (! $ready || is_string($endDate) && (new \DateTimeImmutable($endDate) < new \DateTimeImmutable('now')) && $fillInDefaultValues) {
             // this campaign is not yet ready for public viewing so fill in some placeholder values to make it usable.
             // 1970 is effectively another form of null that's harder to insert by accident that actual null would be
             // if we allowed it  - we convert back to real null when rendering the campaign to an array.
@@ -315,7 +296,6 @@ class Campaign extends SalesforceReadProxy
             endDate: new \DateTimeImmutable($endDate),
             isMatched: $campaignData['isMatched'],
             ready: $ready,
-            status: $status,
             name: $title,
             summary: $campaignData['summary'],
             currencyCode: $currency->isoCode(),
@@ -493,13 +473,11 @@ class Campaign extends SalesforceReadProxy
     /**
      * @param string $summary
      * @param Money $totalFundraisingTarget
-     * @param 'Active'|'Expired'|'Preview'|null $status
      * @param CharityResponseToOffer|null $relatedApplicationCharityResponseToOffer
      * @param array<string,mixed> $sfData
      */
     final public function updateFromSfPull(
         string $currencyCode,
-        ?string $status,
         ?int $pinPosition,
         ?int $championPagePinPosition,
         ?ApplicationStatus $relatedApplicationStatus,
@@ -525,7 +503,6 @@ class Campaign extends SalesforceReadProxy
         );
 
         Assertion::eq($currencyCode, 'GBP', 'Only GBP currency supported at present');
-        Assertion::nullOrRegex($status, "/^[A-Za-z]{2,30}$/");
         Assertion::betweenLength($name, 1, 255);
         Assertion::nullOrMaxLength($thankYouMessage, 500);
         Assertion::nullOrBetweenLength($metaCampaignSlug, 1, 64);
@@ -552,7 +529,7 @@ class Campaign extends SalesforceReadProxy
         $this->metaCampaignSlug = $metaCampaignSlug;
         $this->startDate = $startDate;
         $this->ready = $ready;
-        $this->isPublished = in_array($status, ['Preview', 'Active', 'Expired'], true);
+        $this->isPublished = $ready;
         $this->thankYouMessage = $thankYouMessage;
         $this->isRegularGiving = $isRegularGiving;
         $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
@@ -568,7 +545,7 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
-     * This *does not* use the campaign status in the DB as received from Salesforce, as that may be outated,
+     * This *does not* use the campaign status as received from Salesforce, as that may be outated,
      * instead it works out the current status based on start & end date.
      */
     public function getStatus(\DateTimeImmutable $at): CampaignStatus

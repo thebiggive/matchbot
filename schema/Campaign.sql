@@ -18,7 +18,6 @@ CREATE TABLE `Campaign` (
   `updatedAt` datetime NOT NULL,
   `currencyCode` varchar(3) NOT NULL,
   `ready` tinyint(1) NOT NULL DEFAULT '1',
-  `status` varchar(64) DEFAULT NULL,
   `isRegularGiving` tinyint(1) NOT NULL,
   `regularGivingCollectionEnd` datetime DEFAULT NULL,
   `thankYouMessage` varchar(500) DEFAULT NULL,
