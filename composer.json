@@ -86,7 +86,7 @@
         "psalm/plugin-phpunit": "^0.19.2",
         "roave/security-advisories": "dev-latest",
         "squizlabs/php_codesniffer": "^3.10",
-        "vimeo/psalm": "6.14.3",
+        "vimeo/psalm": "6.16.1",
         "weirdan/doctrine-psalm-plugin": "^2.10",
         "zircote/swagger-php": "^6.0.6"
     },
@@ -167,8 +167,8 @@
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "./vendor/bin/doctrine-migrations migrations:diff"],
         "doctrine:migrate:generate": "./vendor/bin/doctrine-migrations migrations:generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
-        "sa:check": "vendor/bin/phpstan # psalm skipped for now awaiting Psalm 7 with PHP 8.5 support.",
-        "sa:check-with-new-cache": "vendor/bin/psalm --clear-cache; vendor/bin/psalm",
+        "sa:check": "vendor/bin/phpstan && vendor/bin/psalm",
+        "sa:check-with-new-cache": "vendor/bin/phpstan && vendor/bin/psalm --clear-cache; vendor/bin/psalm",
         "lint:check": "phpcs --standard=phpcs.xml -s . --ignore=reports",
         "lint:fix": "phpcbf --standard=phpcs.xml -s . --ignore=reports",
         "matchbot:claim-gift-aid": [
