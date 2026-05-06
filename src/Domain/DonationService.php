@@ -272,10 +272,11 @@ class DonationService
         ?string $confirmationTokenSetupFutureUsage,
         ?string $ryftPaymentSessionId,
     ): ?\Stripe\PaymentIntent {
-        $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
         $psp = $donation->paymentServiceProvider();
         Assertion::notNull($psp, 'Donation must have a payment service provider');
+        $confirmationToken = null;
         if ($psp === PaymentServiceProvider::Stripe) {
+            $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
             Assertion::notNull($tokenId);
 
             /**
@@ -346,6 +347,7 @@ class DonationService
 
         if ($psp === PaymentServiceProvider::Stripe) {
             \assert(isset($paymentMethodPreview));
+            \assert($tokenId !== null);
             $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
 
             // Check if PaymentIntent has a payment_method of a different type
