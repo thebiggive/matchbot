@@ -30,4 +30,16 @@ readonly class StripeConfirmationTokenId
     {
         return new self($stripeID);
     }
+
+    /**
+     * @param string $stripeID - must fit the pattern for a Stripe ID.
+     */
+    public static function maybeOf(?string $stripeID): ?self
+    {
+        if ($stripeID === null) {
+            return null;
+        }
+
+        return new self($stripeID);
+    }
 }

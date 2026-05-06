@@ -79,8 +79,8 @@ class Confirm extends Action
 
         $paymentMethodId = $requestBody['stripePaymentMethodId'] ?? null;
         \assert(is_string($paymentMethodId) || is_null($paymentMethodId));
-        $confirmationTokenId = $requestBody['stripeConfirmationTokenId'] ?? null;
-        \assert(is_string($confirmationTokenId) || is_null($confirmationTokenId));
+        $stripeConfirmationTokenId = $requestBody['stripeConfirmationTokenId'] ?? null;
+        \assert(is_string($stripeConfirmationTokenId) || is_null($stripeConfirmationTokenId));
         /** @var null|'on_session'|'off_session' $confirmationTokenFutureUsage */
         $confirmationTokenFutureUsage = $requestBody['stripeConfirmationTokenFutureUsage'] ?? null;
         Assertion::inArray($confirmationTokenFutureUsage, [
@@ -106,11 +106,11 @@ class Confirm extends Action
             throw new NotFoundException();
         }
 
-        if ((!is_string($confirmationTokenId) || trim($confirmationTokenId) === '') && $psp === PaymentServiceProvider::Stripe) {
+        if ((!is_string($stripeConfirmationTokenId) || trim($stripeConfirmationTokenId) === '') && $psp === PaymentServiceProvider::Stripe) {
             $donationUUID = $donation->getId();
             $this->logger->warning(
                 <<<EOF
-Donation Confirmation attempted with missing confirmation token id "$confirmationTokenId" for Donation $donationUUID
+Donation Confirmation attempted with missing confirmation token id "$stripeConfirmationTokenId" for Donation $donationUUID
 EOF
             );
             throw new HttpBadRequestException($request, "stripeConfirmationTokenId required");
@@ -187,10 +187,10 @@ EOF
 
         try {
             $updatedIntent = $this->donationService->confirmOnSessionDonation(
-                $donation,
-                StripeConfirmationTokenId::of($confirmationTokenId),
-                $confirmationTokenFutureUsage,
-                $ryftPaymentSessionId,
+                donation: $donation,
+                tokenId: StripeConfirmationTokenId::maybeOf($stripeConfirmationTokenId),
+                confirmationTokenSetupFutureUsage: $confirmationTokenFutureUsage,
+                ryftPaymentSessionId: $ryftPaymentSessionId,
             );
         } catch (CardException $exception) {
             $this->entityManager->rollback();
