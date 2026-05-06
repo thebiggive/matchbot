@@ -90,7 +90,6 @@
       <code><![CDATA[$ryftPaymentSessionId]]></code>
     </MixedAssignment>
     <PossiblyNullArgument>
-      <code><![CDATA[$confirmationTokenId]]></code>
       <code><![CDATA[$paymentIntentId]]></code>
       <code><![CDATA[$paymentIntentId]]></code>
       <code><![CDATA[$paymentIntentId]]></code>
