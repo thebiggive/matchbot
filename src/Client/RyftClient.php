@@ -3,6 +3,7 @@
 namespace MatchBot\Client;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Request;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
@@ -128,7 +129,12 @@ class RyftClient
             ),
         );
 
-        $response = $this->client->send($request);
+        try {
+            $response = $this->client->send($request);
+        } catch (GuzzleException $clientException) {
+            $this->log->error('Failed to capture Ryft payment: ' . $clientException->getMessage());
+            throw new \Exception('Could not capture Ryft payment, error logged');
+        }
         $responseContents = $response->getBody()->getContents();
 
         /** @var array{id: string, amount: int, platformFee: int, currency: string} $responseData */
@@ -138,7 +144,7 @@ class RyftClient
 
         $status = $responseData['status']; // @phpstan-ignore-line
         if ($status !== 'Succeeded') {
-            throw new \Exception('Couldn ot capture Ryft payment');
+            throw new \Exception('Could not capture Ryft payment');
         }
 
         return $responseData;

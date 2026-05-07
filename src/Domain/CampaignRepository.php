@@ -514,10 +514,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             throw new DomainCurrencyMustNotChangeException();
         }
 
-        if ($campaignData['status'] === null) {
-            $this->getLogger()->debug("null status from SF for campaign " . $campaignData['id']);
-        }
-
         $regularGivingCollectionEnd = $campaignData['regularGivingCollectionEnd'] ?? null;
         $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
             null : new \DateTimeImmutable($regularGivingCollectionEnd);
@@ -528,7 +524,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $relatedApplicationCharityResponseToOfferString = $campaignData['relatedApplicationCharityResponseToOffer'] ?? null;
         $campaign->updateFromSfPull(
             currencyCode: $currency->isoCode(),
-            status: $campaignData['status'],
             pinPosition: $campaignData['pinPosition'] ?? null,
             championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
             relatedApplicationStatus: is_string($relatedApplicationStatusString) ? ApplicationStatus::from($relatedApplicationStatusString) : null,

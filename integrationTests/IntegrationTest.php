@@ -524,7 +524,6 @@ abstract class IntegrationTest extends TestCase
             endDate: $endDate,
             isMatched: true,
             ready: true,
-            status: $status->value,
             name: $name,
             summary: $summary,
             currencyCode: 'GBP',

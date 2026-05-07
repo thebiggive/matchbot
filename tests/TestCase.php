@@ -68,7 +68,6 @@ class TestCase extends PHPUnitTestCase
         'video' => null,
         'hidden' => false,
         'quotes' => [],
-        'status' => 'Active',
         'target' => 100.0,
         'endDate' => '2095-08-01T00:00:00.000Z',
         'logoUri' => null,
@@ -406,7 +405,6 @@ class TestCase extends PHPUnitTestCase
 
     /**
      * @param ?Salesforce18Id<Campaign> $sfId
-     * @param 'Active'|'Expired'|'Preview' $status
      */
     public static function someCampaign(
         ?string $stripeAccountId = null,
@@ -419,7 +417,6 @@ class TestCase extends PHPUnitTestCase
         bool $isMatched = false,
         ?bool $charityRejected = false,
         ?Money $totalFundraisingTarget = null,
-        string $status = 'Active',
         ?Money $withMatchFundsTotal = null,
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
@@ -433,7 +430,6 @@ class TestCase extends PHPUnitTestCase
             endDate: new \DateTimeImmutable('3000-01-01'),
             isMatched: $isMatched,
             ready: true,
-            status: $status,
             name: 'someCampaign',
             summary: 'Some Campaign Summary',
             currencyCode: 'GBP',
