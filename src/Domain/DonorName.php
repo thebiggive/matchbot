@@ -64,8 +64,8 @@ class DonorName
             return DonorName::of('', $lastName);
         }
 
-        $hasFirstName = !empty($firstName);
-        $hasLastName = !empty($lastName);
+        $hasFirstName = is_string($firstName) && $firstName !== '';
+        $hasLastName = is_string($lastName) && $lastName !== '';
         Assertion::same($hasFirstName, $hasLastName, "First and last names must be supplied together or not at all.");
 
         return ($hasFirstName && $hasLastName) ? DonorName::of($firstName, $lastName) : null;

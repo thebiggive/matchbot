@@ -19,8 +19,9 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
         ['Charity', 'FULLTEXT_NORMALISED_NAME'],
     ];
 
-    private const array GENERATED_COLUMNS = [
+    private const array IGNORED_COLUMNS = [
         ['Campaign', 'normalisedName'],
+        ['MetaCampaign', 'masterCampaignStatus'],
         ['Campaign', 'searchable_text'],
         ['Charity', 'normalisedName'],
         ['Charity', 'searchable_text'],
@@ -51,7 +52,7 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
             static fn($column) => !in_array(
                 needle: [$table, $column->getObjectName()->toString()], // @phpstan.ignore method.internalClass
                 // releasedAt is new, want to wait until its in prod DB before we allow the ORM to rely on it.
-                haystack: self::GENERATED_COLUMNS,
+                haystack: self::IGNORED_COLUMNS,
                 strict: true,
             ),
         );

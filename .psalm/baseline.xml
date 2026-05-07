@@ -190,11 +190,6 @@
       <code><![CDATA[\Doctrine\DBAL\Platforms\MySQL84Platform]]></code>
     </DeprecatedClass>
   </file>
-  <file src="src/Application/Fees/Calculator.php">
-    <MissingClassConstType>
-      <code><![CDATA[JULY_2026 = '2026-07-01T00:00:00 Europe/London']]></code>
-    </MissingClassConstType>
-  </file>
   <file src="src/Application/Messenger/CharityUpdated.php">
     <UnusedClass>
       <code><![CDATA[CharityUpdated]]></code>
@@ -212,9 +207,6 @@
     </PossiblyNullOperand>
   </file>
   <file src="src/Client/RyftClient.php">
-    <InvalidArrayOffset>
-      <code><![CDATA[$responseData['status']]]></code>
-    </InvalidArrayOffset>
     <MixedArrayAccess>
       <code><![CDATA[$responseData['paymentMethod']]]></code>
       <code><![CDATA[$responseData['paymentMethod']]]></code>
@@ -257,9 +249,6 @@
     <PossiblyNullArgument>
       <code><![CDATA[$charityData['ryftAccountId']]]></code>
     </PossiblyNullArgument>
-    <PossiblyUnusedMethod>
-      <code><![CDATA[findUpdatableForCharity]]></code>
-    </PossiblyUnusedMethod>
   </file>
   <file src="src/Domain/DoctrineDonationRepository.php">
     <InvalidArgument>
@@ -293,12 +282,6 @@
       <code><![CDATA[$updatedIntent ?? null]]></code>
       <code><![CDATA[$updatedIntent ?? null]]></code>
     </MixedReturnStatement>
-    <PossiblyNullArgument>
-      <code><![CDATA[$tokenId]]></code>
-    </PossiblyNullArgument>
-    <RedundantCondition>
-      <code><![CDATA[notNull]]></code>
-    </RedundantCondition>
     <RedundantConditionGivenDocblockType>
       <code><![CDATA[$psp === PaymentServiceProvider::Ryft]]></code>
       <code><![CDATA[\assert($psp === PaymentServiceProvider::Ryft, 'Unexpected payment service provider')]]></code>
@@ -309,61 +292,14 @@
   </file>
   <file src="src/Domain/DonorName.php">
     <PossiblyNullArgument>
-      <code><![CDATA[$firstName]]></code>
       <code><![CDATA[$lastName]]></code>
       <code><![CDATA[$lastName]]></code>
     </PossiblyNullArgument>
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[empty($firstName)]]></code>
-      <code><![CDATA[empty($lastName)]]></code>
-    </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Domain/MetaCampaign.php">
     <UnusedProperty>
-      <code><![CDATA[$masterCampaignStatus]]></code>
       <code><![CDATA[$status]]></code>
     </UnusedProperty>
-  </file>
-  <file src="src/Migrations/Version20260318113924.php">
-    <MixedArgumentTypeCoercion>
-      <code><![CDATA[$afi2026Ids]]></code>
-    </MixedArgumentTypeCoercion>
-  </file>
-  <file src="src/Migrations/Version20260319102359.php">
-    <MixedArgumentTypeCoercion>
-      <code><![CDATA[$afi2026Ids]]></code>
-    </MixedArgumentTypeCoercion>
-  </file>
-  <file src="tests/Application/Actions/Donations/UpdateHandlesLockExceptionTest.php">
-    <UnusedPsalmSuppress>
-      <code><![CDATA[InternalMethod]]></code>
-    </UnusedPsalmSuppress>
-  </file>
-  <file src="tests/Application/Actions/StatusTest.php">
-    <DeprecatedClass>
-      <code><![CDATA[new MySQL80Platform()]]></code>
-    </DeprecatedClass>
-  </file>
-  <file src="tests/Application/Fees/CalculatorTest.php">
-    <MissingOverrideAttribute>
-      <code><![CDATA[public function setUp(): void]]></code>
-    </MissingOverrideAttribute>
-  </file>
-  <file src="tests/Application/Fees/WebsiteExamplesCalculatorTest.php">
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[$mandate_activation_date]]></code>
-    </RiskyTruthyFalsyComparison>
-  </file>
-  <file src="tests/Domain/DonationServiceTest.php">
-    <UnusedPsalmSuppress>
-      <code><![CDATA[InternalMethod]]></code>
-    </UnusedPsalmSuppress>
-  </file>
-  <file src="tests/Domain/RegularGivingNotifierTest.php">
-    <UnusedPsalmSuppress>
-      <code><![CDATA[UndefinedMagicPropertyAssignment]]></code>
-      <code><![CDATA[UndefinedMagicPropertyAssignment]]></code>
-    </UnusedPsalmSuppress>
   </file>
   <file src="tests/TestCase.php">
     <InvalidConstantAssignmentValue>

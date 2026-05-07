@@ -113,7 +113,7 @@ class RyftClient
      * see https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionCaptureById
      *
      * @param array{id: string, ...} $paymentSession
-     * @return array{id: string, amount: int, platformFee: int, currency: string}
+     * @return array{id: string, amount: int, platformFee: int, currency: string, status: string, ...}
      */
     public function capturePayment(RyftAccountId $ryftAccountId, array $paymentSession, Money $platformFee): array
     {
@@ -142,12 +142,12 @@ class RyftClient
 
         $responseContents = $response->getBody()->getContents();
 
-        /** @var array{id: string, amount: int, platformFee: int, currency: string} $responseData */
+        /** @var array{id: string, amount: int, platformFee: int, currency: string, status: string} $responseData */
         $responseData = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
 
         $this->log->info('Captured Ryft payment or ' . $responseData['amount'] . ' for payment session ' . $responseData['id']);
 
-        $status = $responseData['status']; // @phpstan-ignore-line
+        $status = $responseData['status'];
         if ($status !== 'Succeeded') {
             throw new \Exception('Could not capture Ryft payment');
         }
