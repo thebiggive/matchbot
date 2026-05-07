@@ -41,7 +41,6 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     isMatched: bool,
  *     ready: bool,
  *     startDate: ?string,
- *     status: 'Active'|'Expired'|'Preview'|null,
  *     pinPosition?: int|null,
  *     championPagePinPosition?: int|null,
  *     relatedApplicationStatus?: value-of<\MatchBot\Domain\ApplicationStatus>|null,
