@@ -336,7 +336,6 @@ class DonationService
         $this->entityManager->flush();
 
         $paymentIntentId = $donation->getTransactionId();
-        Assertion::notNull($paymentIntentId);
 
         Assertion::false(
             $donation->getDonationStatus() === DonationStatus::PreAuthorized,
@@ -347,7 +346,8 @@ class DonationService
 
         if ($psp === PaymentServiceProvider::Stripe) {
             \assert(isset($paymentMethodPreview));
-            \assert($tokenId !== null);
+            \assert(isset($paymentIntentId));
+            \assert(isset($tokenId));
             $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
 
             // Check if PaymentIntent has a payment_method of a different type
