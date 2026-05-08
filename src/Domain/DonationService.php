@@ -270,7 +270,6 @@ class DonationService
         Donation $donation,
         ?StripeConfirmationTokenId $tokenId,
         ?string $confirmationTokenSetupFutureUsage,
-        ?string $ryftPaymentSessionId,
     ): ?\Stripe\PaymentIntent {
         $psp = $donation->paymentServiceProvider();
         Assertion::notNull($psp, 'Donation must have a payment service provider');
@@ -293,13 +292,11 @@ class DonationService
             $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
             $card = null;
         } elseif ($psp === PaymentServiceProvider::Ryft) {
-            Assertion::notNull($ryftPaymentSessionId, 'Ryft payment session ID must be set for Ryft PSP');
-
             $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
             Assertion::notNull($ryftAccountId, 'Ryft account ID must be set for Ryft PSP');
             $paymentSession = $this->ryftClient->fetchPaymentSession(
                 $ryftAccountId,
-                $ryftPaymentSessionId
+                $donation->getRyftPaymentSessionId()
             );
 
             $card = new PaymentCard(

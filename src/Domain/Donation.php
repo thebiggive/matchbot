@@ -2166,4 +2166,13 @@ class Donation extends SalesforceWriteProxy
 
         $this->ryftClientSessionId = $sessionId;
     }
+
+    public function getRyftPaymentSessionId(): string
+    {
+        if ($this->ryftClientSessionId == null) {
+            throw new \Exception('Ryft client session ID not set');
+        };
+
+        return $this->ryftClientSessionId;
+    }
 }

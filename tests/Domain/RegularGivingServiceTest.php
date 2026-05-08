@@ -298,7 +298,6 @@ class RegularGivingServiceTest extends TestCase
             Argument::type(Donation::class),
             $confirmationTokenId,
             ConfirmationToken::SETUP_FUTURE_USAGE_OFF_SESSION,
-            null,
         )
             ->shouldBeCalledOnce()
             ->will(/**

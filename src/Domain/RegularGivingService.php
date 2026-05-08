@@ -206,7 +206,6 @@ readonly class RegularGivingService
                     donation: $firstDonation,
                     tokenId: $confirmationTokenId,
                     confirmationTokenSetupFutureUsage: ConfirmationToken::SETUP_FUTURE_USAGE_OFF_SESSION,
-                    ryftPaymentSessionId: null,
                 );
             } else {
                 \assert($donorsSavedPaymentMethod !== null);

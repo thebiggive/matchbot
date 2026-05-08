@@ -326,7 +326,6 @@ class DonationServiceTest extends TestCase
                 donation: $donation,
                 tokenId: $tokenId,
                 confirmationTokenSetupFutureUsage: 'on_session',
-                ryftPaymentSessionId: null,
             );
         }
     }
@@ -425,7 +424,6 @@ class DonationServiceTest extends TestCase
             $donation,
             $confirmationTokenId,
             ConfirmationToken::SETUP_FUTURE_USAGE_ON_SESSION,
-            null,
         );
 
         $this->assertSame('0.52', $donation->getCharityFeeGross());
@@ -473,7 +471,7 @@ class DonationServiceTest extends TestCase
         )->willReturn($currentPaymentMethod);
         $this->entityManagerProphecy->flush()->shouldBeCalled();
 
-        $this->sut->confirmOnSessionDonation($donation, $stripeConfirmationTokenId, null, null);
+        $this->sut->confirmOnSessionDonation($donation, $stripeConfirmationTokenId, null);
 
         // then the existing payment method at stripe should be set to null before any futher update.
         if ($shouldClearPaymentMethod) {
