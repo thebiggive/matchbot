@@ -208,7 +208,7 @@ class WebsiteExamplesCalculatorTest extends TestCase
             currencyCode:'GBP',
             hasGiftAid: $with_gift_aid,
             donationCreationDate: new \DateTimeImmutable($creation_datetime),
-            mandateActivationDate: $mandate_activation_date ? new \DateTimeImmutable($mandate_activation_date) : null,
+            mandateActivationDate: \is_string($mandate_activation_date) ? new \DateTimeImmutable($mandate_activation_date) : null,
         );
 
         if ($with_gift_aid) {

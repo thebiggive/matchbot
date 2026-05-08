@@ -216,7 +216,6 @@ class DonationServiceTest extends TestCase
     ): DonationService {
         if ($withAlwaysCrashingEntityManager) {
             /**
-             * @psalm-suppress InternalMethod
              * @psalm-suppress InternalClass Hard to simulate `final` exception otherwise
              */
             $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willThrow(

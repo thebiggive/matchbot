@@ -24,6 +24,7 @@ final class Version20260319102359 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
+        /** @var string[] $afi2026Ids */
         $afi2026Ids = $this->connection->fetchFirstColumn(<<<'SQL'
             SELECT CampaignFunding.id from CampaignFunding
             JOIN Campaign_CampaignFunding on Campaign_CampaignFunding.campaignfunding_id = CampaignFunding.id

@@ -276,8 +276,8 @@ class DonationService
         Assertion::notNull($psp, 'Donation must have a payment service provider');
         $confirmationToken = null;
         if ($psp === PaymentServiceProvider::Stripe) {
-            $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
             Assertion::notNull($tokenId);
+            $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
 
             /**
              * phpstan is newly reporting a variable type issue here, hard to see at a glance exactly what the issue

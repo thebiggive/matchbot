@@ -7,7 +7,7 @@ namespace MatchBot\Tests\Application\Actions;
 use DI\Container;
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Platforms\MySQL80Platform;
+use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Doctrine\DBAL\Result;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
@@ -93,7 +93,7 @@ class StatusTest extends TestCase
             ->willReturn(true);
 
         $connectionProphecy->getDatabasePlatform()
-            ->willReturn(new MySQL80Platform());
+            ->willReturn(new MySQLPlatform());
 
         $emProphecy = $this->prophesize(EntityManagerInterface::class);
         $emProphecy->getConfiguration()

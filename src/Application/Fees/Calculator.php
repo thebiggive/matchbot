@@ -27,8 +27,7 @@ class Calculator
 
     private const string FEE_MAIN_PERCENTAGE_STANDARD_PRE_JULY_2026 = '1.5';
     private const string FEE_MAIN_PERCENTAGE_STANDARD_NEW = '1.9';
-
-    private const JULY_2026 = '2026-07-01T00:00:00 Europe/London';
+    private const string JULY_2026 = '2026-07-01T00:00:00 Europe/London';
 
 
     /** @var string[]   Major currency unit (e.g. pounds) fee charged *by us* for Stripe credit/debit
