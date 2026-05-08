@@ -61,6 +61,7 @@ CREATE TABLE `Donation` (
   `paymentCard_country` varchar(255) DEFAULT NULL,
   `expectedMatchAmount_amountInPence` bigint NOT NULL,
   `expectedMatchAmount_currency` varchar(3) NOT NULL,
+  `ryftClientSessionId` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_C893E3F6D17F50A6` (`uuid`),
   UNIQUE KEY `UNIQ_C893E3F6C2F43114` (`transactionId`),

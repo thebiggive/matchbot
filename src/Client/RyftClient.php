@@ -10,6 +10,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\RyftAccountId;
+use MatchBot\Domain\RyftClientSession;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -37,11 +38,9 @@ class RyftClient
 
     /**
      * @param RyftAccountId $ryftAccountId Ryft sub-account ID of the charity that will receive the payment
-     * @return string client secret
-     *
      * See https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionCreate
      */
-    public function createPaymentSession(RyftAccountId $ryftAccountId, Money $amount): string
+    public function createPaymentSession(RyftAccountId $ryftAccountId, Money $amount): RyftClientSession
     {
         $request = new Request(
             method: 'POST',
@@ -63,18 +62,20 @@ class RyftClient
 
         $this->log->info($responseContents);
 
-        /*
-         * 2026-04-01T15:40:22.243849016Z [2026-04-01T15:40:22.243429+00:00] matchbot.INFO: {"id":"ps_01KN4V7VRAGFBGHGRXDZBVTPFM","amount":270,"currency":"GBP","paymentType":"Standard","entryMode":"Online","enabledPaymentMethods":["Card"],"returnUrl":"https://donate.biggive.org","status":"PendingPayment","refundedAmount":0,"clientSecret":"ps_01KN4V7VRAGFBGHGRXDZBVTPFM_secret_0a31276f-1e46-40b0-8bdb-75742249d0b4","statementDescriptor":{"descriptor":"Big Give","city":"Manchester"},"authorizationType":"FinalAuth","captureFlow":"Automatic","createdTimestamp":1775058022,"lastUpdatedTimestamp":1775058022} [] {"commit":"fde1a7d","uid":"9425ebd","memory_peak_usage":"4 MB"}
-
-         */
-
-        $response = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
+            $response = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
         Assertion::isArray($response);
         $clientSecret = $response['clientSecret'];
+        $id = $response['id'];
 
         \assert(\is_string($clientSecret));
+        \assert(\is_string($id));
 
-        return $clientSecret;
+
+        return new RyftClientSession(
+            id: $id,
+            clientSecret: $clientSecret,
+            data: $response
+        );
     }
 
     /**

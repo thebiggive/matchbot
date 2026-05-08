@@ -425,6 +425,9 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(nullable: true, name: 'paymentCard_country')]
     private ?CountryAlpha2 $paymentCardCountry;
 
+    #[ORM\Column(nullable: true)]
+    private ?string $ryftClientSessionId = null;
+
     /**
      * @param string|null $billingPostcode
      * @psalm-param numeric-string $amount
@@ -2153,5 +2156,14 @@ class Donation extends SalesforceWriteProxy
     public function paymentServiceProvider(): ?PaymentServiceProvider
     {
         return PaymentServiceProvider::tryFrom($this->psp);
+    }
+
+    public function setRyftClientSessionId(string $sessionId): void
+    {
+        if ($this->ryftClientSessionId !== null) {
+            throw new \Exception('Ryft client session ID cannot be changed once set');
+        };
+
+        $this->ryftClientSessionId = $sessionId;
     }
 }
