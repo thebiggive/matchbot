@@ -299,6 +299,10 @@ class DonationService
                 $donation->getRyftPaymentSessionId()
             );
 
+            // shows in latest test that status is PendingPayment and paymentMethod key is missing.
+//            var_dump($paymentSession);
+//            die();
+
             $card = new PaymentCard(
                 CardBrand::from(strtolower($paymentSession['paymentMethod']['card']['scheme'])),
                 Country::fromAlpha2($paymentSession['paymentMethod']['card']['binDetails']['issuerCountry'])
