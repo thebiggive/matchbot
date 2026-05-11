@@ -21,7 +21,6 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
 
     private const array IGNORED_COLUMNS = [
         ['Campaign', 'normalisedName'],
-        ['MetaCampaign', 'masterCampaignStatus'],
         ['Campaign', 'searchable_text'],
         ['Charity', 'normalisedName'],
         ['Charity', 'searchable_text'],
