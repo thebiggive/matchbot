@@ -97,8 +97,6 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     amountPledged?: float,
  *     totalMatchedFundsAvailable?: float,
  *     totalFundraisingTarget?: float,
- *     masterCampaignStatus?: string,
- *     campaignStatus?: string,
  *     }
  */
 
