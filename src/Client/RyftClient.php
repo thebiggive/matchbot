@@ -3,6 +3,7 @@
 namespace MatchBot\Client;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Request;
 use MatchBot\Application\Assertion;
@@ -112,7 +113,7 @@ class RyftClient
      * see https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionCaptureById
      *
      * @param array{id: string, ...} $paymentSession
-     * @return array{id: string, amount: int, platformFee: int, currency: string}
+     * @return array{id: string, amount: int, platformFee: int, currency: string, status: string, ...}
      */
     public function capturePayment(RyftAccountId $ryftAccountId, array $paymentSession, Money $platformFee): array
     {
@@ -131,18 +132,22 @@ class RyftClient
 
         try {
             $response = $this->client->send($request);
+        } catch (ClientException $clientException) {
+            $message = $clientException->getResponse()->getBody()->getContents();
+            throw new \Exception('Could not capture Ryft payment' . $message);
         } catch (GuzzleException $clientException) {
-            $this->log->error('Failed to capture Ryft payment: ' . $clientException->getMessage());
-            throw new \Exception('Could not capture Ryft payment, error logged');
+            $message = 'Failed to capture Ryft payment: ' . $clientException->getMessage();
+            throw new \Exception('Could not capture Ryft payment' . $message);
         }
+
         $responseContents = $response->getBody()->getContents();
 
-        /** @var array{id: string, amount: int, platformFee: int, currency: string} $responseData */
+        /** @var array{id: string, amount: int, platformFee: int, currency: string, status: string} $responseData */
         $responseData = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
 
         $this->log->info('Captured Ryft payment or ' . $responseData['amount'] . ' for payment session ' . $responseData['id']);
 
-        $status = $responseData['status']; // @phpstan-ignore-line
+        $status = $responseData['status'];
         if ($status !== 'Succeeded') {
             throw new \Exception('Could not capture Ryft payment');
         }

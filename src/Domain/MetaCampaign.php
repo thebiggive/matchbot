@@ -51,14 +51,6 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Column(nullable: true)]
     private ?string $status = null;
 
-
-    /**
-     * @var string|null Copy of Master_Campaign_Status__c in Salesforce
-     * @deprecated - no longer needed, may delete for next deploy.
-     */
-    #[ORM\Column(nullable: true)]
-    private ?string $masterCampaignStatus = null;
-
     #[ORM\Column()]
     private bool $hidden;
 

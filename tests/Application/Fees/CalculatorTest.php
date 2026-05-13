@@ -13,6 +13,7 @@ class CalculatorTest extends TestCase
 {
     private \DateTimeImmutable $preIncreaseDate;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->preIncreaseDate = new \DateTimeImmutable('2026-06-30T23:59:59 Europe/London');
