@@ -22,7 +22,6 @@ CREATE TABLE `MetaCampaign` (
   `salesforceId` varchar(18) DEFAULT NULL,
   `total_adjustment_amountInPence` bigint NOT NULL,
   `total_adjustment_currency` varchar(3) NOT NULL,
-  `masterCampaignStatus` varchar(255) DEFAULT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   `campaignFamily` varchar(255) DEFAULT NULL,
