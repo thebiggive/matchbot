@@ -23,9 +23,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 #[AsCommand(
     name: 'matchbot:pull-meta-campaign-from-sf',
-    description: 'Pulls a meta campaign (or at least all its related individual campaigns) from Salesforce into the
-     matchbot db. Should improve performance and reduce chance of any db contention particularly if run shortly before 
-     campaign start time'
+    description: 'Pulls already-known children of meta-campaign from Salesforce into the matchbot DB.'
 )]
 class PullMetaCampaignFromSF extends LockingCommand
 {
@@ -48,7 +46,7 @@ class PullMetaCampaignFromSF extends LockingCommand
     public function pullCharityCampaigns(MetaCampaignSlug $metaCampaginSlug, OutputInterface $output): void
     {
         ['newFetchCount' => $newFetchCount, 'updatedCount' => $updatedCount, 'campaigns' => $campaigns] =
-            $this->campaignRepository->fetchAllForMetaCampaign($metaCampaginSlug);
+            $this->campaignRepository->fetchAlreadyKnownChildrenForMetaCampaign($metaCampaginSlug);
 
         $total = $newFetchCount + $updatedCount;
 

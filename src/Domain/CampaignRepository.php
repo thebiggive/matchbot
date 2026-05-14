@@ -121,13 +121,21 @@ class CampaignRepository extends SalesforceReadProxyRepository
  *@throws NotFoundException
      *
      */
-    public function fetchAllForMetaCampaign(MetaCampaignSlug $metaCampaginSlug): array
+    public function fetchAlreadyKnownChildrenForMetaCampaign(MetaCampaignSlug $metaCampaignSlug): array
     {
-        /** @var list<array{id: string}> $campaignList */
-        $campaignList = $this->getClient()->findCampaignsForMetaCampaign($metaCampaginSlug, limit: 10_000);
+        $campaignList = $this->search(
+            sortField: 'amountRaised',
+            sortDirection: 'asc',
+            offset: 0,
+            limit: 10_000,
+            metaCampaignSlug: $metaCampaignSlug->slug,
+            fundSlug: null,
+            jsonMatchInListConditions: [],
+            term: null,
+        );
 
-        $campaignIds = array_map(function (array $campaign) {
-            return Salesforce18Id::ofCampaign($campaign['id']);
+        $campaignIds = array_map(function (Campaign $campaign) {
+            return Salesforce18Id::ofCampaign($campaign->getSalesforceId());
         }, $campaignList);
 
         $newFetchCount = 0;
