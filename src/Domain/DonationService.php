@@ -377,17 +377,6 @@ class DonationService
             );
 
             $this->throwIfUnsuccessful($updatedIntent);
-        } else {
-            // @phpstan-ignore-next-line - (phpstan reasonably wants us to use match to check this statically)
-            \assert($psp === PaymentServiceProvider::Ryft, 'Unexpected payment service provider');
-            \assert(isset($paymentSession));
-            \assert(isset($ryftAccountId));
-
-            $this->ryftClient->capturePayment(
-                $ryftAccountId,
-                $paymentSession,
-                Money::fromPence($donation->getAmountToDeductFractional(), $donation->currency()),
-            );
         }
 
         return $updatedIntent ?? null;
