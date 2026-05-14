@@ -41,8 +41,8 @@ class CampaignRenderCompatibilityChecker
         'totalFundingAllocation',
         'amountPledged',
         'totalMatchedFundsAvailable',
-        'masterCampaignStatus', // sent by SF just to allow matchbot to calculate status of a metacampaign at output time
-        'campaignStatus', // sent by SF just to allow matchbot to calculate status of a metacampaign at output time
+        'masterCampaignStatus', // sent by SF for historical reasons, not used.
+        'campaignStatus', // sent by SF for historical reasons, not used.
         'pinPosition',
         'championPagePinPosition',
         'relatedApplicationStatus', // sent by SF to allow matchbot to count campaigns etc, not needed in FE.
