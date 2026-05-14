@@ -179,49 +179,6 @@ class Campaign extends Common
         return $campaignResponse;
     }
 
-    /**
-     * Returns a list of all campaigns associated with the meta-campagin with the given slug.
-     *
-     * @psalm-suppress MoreSpecificReturnType
-     * @psalm-suppress LessSpecificReturnStatement
-     * @return list<array>
-     */
-    public function findCampaignsForMetaCampaign(MetaCampaignSlug $metaCampaignSlug, int $limit = 100): array
-    {
-        $campaigns = [];
-        $encodedSlug = urlencode($metaCampaignSlug->slug);
-
-        $offset = 0;
-        $pageSize = 100;
-        $foundEmptyPage = false;
-        while ($offset < $limit) {
-            $uri = $this->getUri(
-                "{$this->baseUriCached()}?parentSlug=$encodedSlug&limit=$pageSize&offset=$offset",
-                true
-            );
-            $response = $this->getHttpClient()->get($uri);
-
-            $decoded = json_decode((string)$response->getBody(), true);
-
-            Assertion::isArray($decoded);
-            if ($decoded === []) {
-                $foundEmptyPage = true;
-                break;
-            }
-
-            $campaigns = [...$campaigns, ...$decoded];
-            $offset += $pageSize;
-        }
-
-        if (! $foundEmptyPage) {
-            throw new \Exception(
-                "Did not find empty page in campaign search results, too many campaigns in metacampaign?"
-            );
-        }
-
-        return $campaigns;
-    }
-
     private function baseUri(): string
     {
         return $this->sfApiBaseUrl . '/campaigns/services/apexrest/v1.0/campaigns';
