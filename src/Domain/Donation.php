@@ -1616,7 +1616,6 @@ class Donation extends SalesforceWriteProxy
         $this->totalPaidByDonor = bcdiv((string)$totalPaidFractional, '100', 2);
     }
 
-
     /**
      * @param array<string, mixed> $paymentSession
      */
@@ -1632,7 +1631,8 @@ class Donation extends SalesforceWriteProxy
         // to the gross fee and tip that we asked to deduct.
         $this->totalPaidByDonor = bcadd(
             $netAmount->toNumericString(),
-            (string) ($this->getAmountToDeductFractional() / 100),
+            bcdiv((string) $this->getAmountToDeductFractional(), '100', 2),
+            2,
         );
         $this->setOriginalPspFeeFractional((string) $originalFeeFractional->amountInPence());
     }
