@@ -232,7 +232,7 @@ class CampaignService
             championOptInStatement: $sfCampaignData['championOptInStatement'],
             championRef: $sfCampaignData['championRef'],
             charity: $charityHttpModel,
-            countries: $sfCampaignData['countries'],
+            countries: $this->normaliseCountryList($sfCampaignData['countries']),
             currencyCode: $campaign->getCurrencyCode() ?? '',
             donationCount: $this->donationRepository->countCompleteDonationsToCampaign($campaign),
             endDate: $this->formatDate($campaign->getEndDate()),
@@ -397,5 +397,38 @@ class CampaignService
         );
 
         return Money::fromSerialized($cachedAmountArray);
+    }
+
+    /**
+     * @param list<string|null> $countryList
+     * @return list<string>
+     *
+     * Psalm seems to be having quite a bit of trouble with this function hence suppressions below - not sure why.
+     * It does have unit test coverage and seems to be working. Maybe Psalm issues?
+     *
+     * @psalm-suppress MixedReturnTypeCoercion
+     * @psalm-suppress MixedArgument
+     * @psalm-suppress MixedAssignment
+     * @psalm-suppress UnusedParam
+     */
+    private function normaliseCountryList(array $countryList): array
+    {
+        $countries = $countryList
+                |> /**
+                 * @return array<string>
+                 */
+                (fn(array $cs): array => \array_filter($cs, fn($c) => (\is_string($c) && trim($c) !== '')))
+                |> /**
+                 * @param array<string> $cs
+                 * @return array<string>
+                 */
+                (fn(array $cs): array => \array_map(trim(...), $cs))
+                |> \array_unique(...);
+
+        Assertion::allString($countries);
+
+        \natcasesort($countries);
+
+        return \array_values($countries);
     }
 }

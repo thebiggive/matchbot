@@ -83,11 +83,8 @@ class CampaignServiceTest extends TestCase
         $renderCampaign = $this->SUT->renderCampaign($campaign, null);
 
         $this->assertSame([
+            'Brazil',
             'United Kingdom',
-            null,
-            '',
-            'Brazil',
-            'Brazil',
         ], $renderCampaign['countries']);
     }
 
