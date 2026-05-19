@@ -103,7 +103,7 @@ class CreateFictionalData extends Command
                 'metadata' => [
                     'example-sub-account-metadata' => 42,
                 ],
-            ],  \JSON_THROW_ON_ERROR),
+            ], \JSON_THROW_ON_ERROR),
         );
 
         try {
