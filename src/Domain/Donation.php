@@ -1627,7 +1627,7 @@ class Donation extends SalesforceWriteProxy
     ): void {
         $this->donationStatus = DonationStatus::Collected;
         $this->collectedAt = $at;
-        // We have to add `amount` which is net amount reported by Ryft after their equivalent of application fee,
+        // We have to add `netAmount` which is net amount reported by Ryft after their equivalent of application fee,
         // to the gross fee and tip that we asked to deduct.
         $this->totalPaidByDonor = bcadd(
             $netAmount->toNumericString(),
