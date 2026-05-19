@@ -83,10 +83,8 @@ class CreateFictionalData extends Command
             method: 'POST',
             uri: $ryftURIPrefix . '/accounts',
             headers: $headers,
-            body: json_encode(
-                [
+            body: json_encode([
                 'onboardingFlow' => 'NonHosted',
-                'email' => null,
                 'entityType' => 'Business',
                 'business' => [
                     'name' => 'Test Charity',
@@ -95,19 +93,17 @@ class CreateFictionalData extends Command
                     'registrationNumber' => '1234', // this is required for business accounts, may be a problem since some of our charities are exempt and might not be registered as companies either.
                     'registeredAddress' => [
                         "lineOne" => "123 Test Street",
-                "lineTwo" => null,
-                "city" => "Manchester",
-                "country" => "GB",
-                "postalCode" => "SP4 7DE",
-                "region" => null
+                        "lineTwo" => null,
+                        "city" => "Manchester",
+                        "country" => "GB",
+                        "postalCode" => "SP4 7DE",
+                        "region" => null
                     ],
                 ],
                 'metadata' => [
                     'example-sub-account-metadata' => 42,
                 ],
-                ],
-                \JSON_THROW_ON_ERROR
-            )
+            ],  \JSON_THROW_ON_ERROR),
         );
 
         try {
@@ -115,7 +111,7 @@ class CreateFictionalData extends Command
         } catch (ClientException $e) {
             $io->error($e->getResponse()->getBody()->getContents());
 
-            $id = "ac_b83f2653-06d7-44a9-a548-5825e8186004";
+            $id = "ac_eeeeffff-06d7-44a9-a548-eeeeeeffffff";
             $io->writeln("Could not create ryft account, using placeholder account ID $id");
 
             return $id;
