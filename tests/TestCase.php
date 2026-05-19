@@ -405,6 +405,7 @@ class TestCase extends PHPUnitTestCase
 
     /**
      * @param ?Salesforce18Id<Campaign> $sfId
+     * @param array<string|null> $countries
      */
     public static function someCampaign(
         ?string $stripeAccountId = null,
@@ -418,6 +419,7 @@ class TestCase extends PHPUnitTestCase
         ?bool $charityRejected = false,
         ?Money $totalFundraisingTarget = null,
         ?Money $withMatchFundsTotal = null,
+        array $countries = self::CAMPAIGN_FROM_SALESFORCE['countries'],
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         $sfId ??= Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
@@ -441,7 +443,7 @@ class TestCase extends PHPUnitTestCase
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             totalFundraisingTarget: $totalFundraisingTarget ?? Money::zero(),
             thankYouMessage: $thankYouMessage,
-            rawData: self::CAMPAIGN_FROM_SALESFORCE,
+            rawData: ['countries' => $countries] + self::CAMPAIGN_FROM_SALESFORCE,
             hidden: false,
         );
         $campaign->setTestStatistics(new CampaignStatistics(

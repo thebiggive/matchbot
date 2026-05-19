@@ -76,6 +76,21 @@ class CampaignServiceTest extends TestCase
         ], $renderedCamapign['budgetDetails']);
     }
 
+    public function testItRendersCountryList(): void
+    {
+        $campaign = self::someCampaign(countries: ['United Kingdom', null, '', 'Brazil', 'Brazil']);
+
+        $renderCampaign = $this->SUT->renderCampaign($campaign, null);
+
+        $this->assertSame([
+            'United Kingdom',
+            null,
+            '',
+            'Brazil',
+            'Brazil',
+        ], $renderCampaign['countries']);
+    }
+
     public function testItRendersCampaignWithDetailsOfRelatedMetaCampaignWithNonSharedFunds(): void
     {
         // arrange
