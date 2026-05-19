@@ -1616,19 +1616,24 @@ class Donation extends SalesforceWriteProxy
         $this->totalPaidByDonor = bcdiv((string)$totalPaidFractional, '100', 2);
     }
 
-
     /**
      * @param array<string, mixed> $paymentSession
      */
     public function collectFromRyftPaymentSession(
         array $paymentSession,
-        Money $totalPaidByDonor,
+        Money $netAmount,
         Money $originalFeeFractional,
         \DateTimeImmutable $at,
     ): void {
         $this->donationStatus = DonationStatus::Collected;
         $this->collectedAt = $at;
-        $this->totalPaidByDonor = $totalPaidByDonor->toNumericString();
+        // We have to add `netAmount` which is net amount reported by Ryft after their equivalent of application fee,
+        // to the gross fee and tip that we asked to deduct.
+        $this->totalPaidByDonor = bcadd(
+            $netAmount->toNumericString(),
+            bcdiv((string) $this->getAmountToDeductFractional(), '100', 2),
+            2,
+        );
         $this->setOriginalPspFeeFractional((string) $originalFeeFractional->amountInPence());
     }
 

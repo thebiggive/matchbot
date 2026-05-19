@@ -324,7 +324,7 @@ class DonationService
 
             $donation->collectFromRyftPaymentSession(
                 paymentSession: $paymentSession,
-                totalPaidByDonor: Money::fromPence($capture['amount'], Currency::fromIsoCode($capture['currency'])),
+                netAmount: Money::fromPence($capture['amount'], Currency::fromIsoCode($capture['currency'])),
                 originalFeeFractional: Money::fromPence($capture['platformFee'], Currency::fromIsoCode($capture['currency'])),
                 at: $this->clock->now(),
             );

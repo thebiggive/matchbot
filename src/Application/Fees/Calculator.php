@@ -6,7 +6,6 @@ namespace MatchBot\Application\Fees;
 
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Environment;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\PaymentServiceProvider;
@@ -61,18 +60,6 @@ class Calculator
         \DateTimeImmutable $donationCreationDate,
         ?\DateTimeImmutable $mandateActivationDate,
     ): Fees {
-        if (Environment::current()->isProduction()) {
-            // @todo BG2-3107 - decide what fee levels to charge for Ryft and allow that as an alternative to
-            // see MAT-484
-            // stripe below.
-            Assertion::eq(
-                $psp,
-                PaymentServiceProvider::Stripe->value,
-                'Only Stripe PSP is supported as don\'t know what fees to charge for other PSPs.'
-            );
-        }
-
-        // for now if it's not prod we can assume we'll charge the same for all known PSPs.
         Assertion::inArray($psp, PaymentServiceProvider::VALUES, 'Unknown payment service provider');
 
         $coreFee = self::getCoreFee(

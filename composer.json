@@ -156,7 +156,6 @@
             "@doctrine:migrate",
             "./matchbot matchbot:write-schema-files"
         ],
-        "doctrine:generate-proxies": "./doctrine orm:generate-proxies",
         "doctrine:migrate:live": "doctrine-migrations migrate --no-interaction --allow-no-migration -vv",
         "doctrine:migrate": [
             "@doctrine:migrate:live",
@@ -280,7 +279,6 @@
             "APP_ENV=test ./doctrine orm:clear-cache:query",
             "APP_ENV=test ./doctrine orm:clear-cache:result",
             "APP_ENV=test vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration",
-            "APP_ENV=test ./doctrine orm:generate-proxies",
             "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random --log-junit reports/integration-test.xml"
         ],
         "mutation-test": [
