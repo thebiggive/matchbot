@@ -315,6 +315,7 @@ class DonationService
         if ($psp === PaymentServiceProvider::Ryft) {
             \assert(isset($paymentSession));
             \assert(isset($ryftAccountId));
+            $donationWasPreviouslyCollected = $donation->getDonationStatus() === DonationStatus::Collected;
 
             $capture = $this->ryftClient->capturePayment(
                 $ryftAccountId,
@@ -328,6 +329,8 @@ class DonationService
                 originalFeeFractional: Money::fromPence($capture['platformFee'], Currency::fromIsoCode($capture['currency'])),
                 at: $this->clock->now(),
             );
+
+            $this->notifyDonationSuccesIfRequired($donation, $donationWasPreviouslyCollected);
         }
 
         // We flush now to make sure the actual fees we're charging are recorded. If there's any DB error at this point
@@ -941,17 +944,7 @@ class DonationService
             chargeCreationTimestamp: $charge->created,
         );
 
-        $showAccountExistsForEmail = $this->donorAccountRepository->accountExistsMatchingEmailWithDonation($donation);
-
-        if (!$donation->isRegularGiving() && !$donationWasPreviouslyCollected) {
-            // Regular giving donors get an email confirming the setup of the mandate, but not an email for
-            // each individual donation.
-            $this->donationNotifier->notifyDonorOfDonationSuccess(
-                donation: $donation,
-                sendRegisterUri: $this->shouldInviteRegistration($donation) && ! $showAccountExistsForEmail,
-                showAccountExistsForEmail: $showAccountExistsForEmail,
-            );
-        }
+        $this->notifyDonationSuccesIfRequired($donation, $donationWasPreviouslyCollected);
     }
 
     private function getOriginalFeeFractional(string $balanceTransactionId, string $expectedCurrencyCode): int
@@ -1249,6 +1242,21 @@ class DonationService
             throw new PaymentIntentNotSucceeded(
                 $intent,
                 "Payment Intent not succeded, status is {$intent->status}",
+            );
+        }
+    }
+
+    public function notifyDonationSuccesIfRequired(Donation $donation, bool $donationWasPreviouslyCollected): void
+    {
+        $showAccountExistsForEmail = $this->donorAccountRepository->accountExistsMatchingEmailWithDonation($donation);
+
+        if (!$donation->isRegularGiving() && !$donationWasPreviouslyCollected) {
+            // Regular giving donors get an email confirming the setup of the mandate, but not an email for
+            // each individual donation.
+            $this->donationNotifier->notifyDonorOfDonationSuccess(
+                donation: $donation,
+                sendRegisterUri: $this->shouldInviteRegistration($donation) && !$showAccountExistsForEmail,
+                showAccountExistsForEmail: $showAccountExistsForEmail,
             );
         }
     }
