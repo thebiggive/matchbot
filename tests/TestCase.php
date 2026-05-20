@@ -474,6 +474,7 @@ class TestCase extends PHPUnitTestCase
         bool $collected = false,
         ?string $transferId = null,
         ?int $mandateSequenceNumber = null,
+        ?string $transactionId = null,
     ): Donation {
 
         $donation = new Donation(
@@ -501,6 +502,9 @@ class TestCase extends PHPUnitTestCase
         );
 
         $donation->setUuid($uuid ?? Uuid::uuid4());
+        if (\is_string($transactionId)) {
+            $donation->setTransactionId($transactionId);
+        }
 
         if ($collected) {
             self::collectDonation(

@@ -708,6 +708,7 @@ class Donation extends SalesforceWriteProxy
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
             'transactionId' => $this->getTransactionId(),
+            'referenceCode' => $this->getReferenceCode(),
             'updatedTime' => $this->getUpdatedDate()->format(DateTimeInterface::ATOM),
         ];
 
@@ -995,6 +996,12 @@ class Donation extends SalesforceWriteProxy
     public function getTransactionId(): ?string
     {
         return $this->transactionId;
+    }
+
+    /** Code to be given to donor so they can quote it back to us to identify the donation. */
+    public function getReferenceCode(): string
+    {
+        return $this->transactionId ?? $this->uuid->toString();
     }
 
 

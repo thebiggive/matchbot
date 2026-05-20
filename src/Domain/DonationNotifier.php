@@ -93,7 +93,8 @@ class DonationNotifier
             'totalChargedAmount' => (float) $donation->getTotalPaidByDonor(),
 
             'totalCharityValueAmount' => (float) $donation->totalCharityValueAmount(),
-            'transactionId' => $donation->getTransactionId(),
+            'transactionId' => $donation->getReferenceCode(), // @todo switch mailer to use referenceCode and delete this after line below is in prod
+            'referenceCode' => $donation->getReferenceCode(),
             'charityLogoUri' => $charity->getLogoUri()?->__toString(),
             'charityWebsite' => $charity->getWebsiteUri()?->__toString(),
 
