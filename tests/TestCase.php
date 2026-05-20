@@ -27,6 +27,7 @@ use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RyftAccountId;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\IntegrationTests\IntegrationTest;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
@@ -383,13 +384,14 @@ class TestCase extends PHPUnitTestCase
         string $name = 'Charity Name',
         ?string $phoneNumber = null,
         ?EmailAddress $emailAddress = null,
+        PaymentServiceProvider $psp = PaymentServiceProvider::Stripe,
     ): Charity {
         return new Charity(
             salesforceId: $salesforceId->value ?? ('123CharityId' . self::randomHex(3)),
             charityName: $name,
-            stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
-            ryftAccountId: null,
-            psp: PaymentServiceProvider::Stripe,
+            stripeAccountId: $psp === PaymentServiceProvider::Stripe ? ($stripeAccountId ?? "stripe-account-id-" . self::randomHex()) : null,
+            ryftAccountId: $psp === PaymentServiceProvider::Ryft ? RyftAccountId::of("ac_aaaaaaaa-bbbb-aaaa-bbbb-aaaaaaaaaaaa") : null,
+            psp: $psp,
             hmrcReferenceNumber: 'H' . self::randomHex(3),
             giftAidOnboardingStatus: 'Onboarded',
             regulator: 'CCEW',
@@ -475,6 +477,7 @@ class TestCase extends PHPUnitTestCase
         ?string $transferId = null,
         ?int $mandateSequenceNumber = null,
         ?string $transactionId = null,
+        PaymentServiceProvider $psp = \MatchBot\Domain\PaymentServiceProvider::Stripe,
     ): Donation {
 
         $donation = new Donation(
@@ -485,7 +488,7 @@ class TestCase extends PHPUnitTestCase
             charityComms: null,
             championComms: null,
             pspCustomerId: null,
-            psp: \MatchBot\Domain\PaymentServiceProvider::Stripe,
+            psp: $psp,
             optInTbgEmail: null,
             donorName: $donorName,
             emailAddress: $emailAddress,

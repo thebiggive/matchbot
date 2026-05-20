@@ -15,6 +15,10 @@ readonly class RyftPaymentSessionId
         );
     }
 
+    /**
+     * @param string $id - for instance 'ps_01FCTS1XMKH9FF43CAFA4CXT3P'
+     * @return self
+     */
     public static function of(string $id): self
     {
         return new self($id);
