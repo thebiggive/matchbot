@@ -425,6 +425,10 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(nullable: true, name: 'paymentCard_country')]
     private ?CountryAlpha2 $paymentCardCountry;
 
+    /** @psalm-suppress UnusedProperty - for now just recorded for internal reference */
+    #[ORM\Column(nullable: true)]
+    private ?string $ryftPaymentSessionId = null;
+
     /**
      * @param string|null $billingPostcode
      * @psalm-param numeric-string $amount
@@ -2158,5 +2162,10 @@ class Donation extends SalesforceWriteProxy
     public function paymentServiceProvider(): ?PaymentServiceProvider
     {
         return PaymentServiceProvider::tryFrom($this->psp);
+    }
+
+    public function setRyftPaymentSessionId(RyftPaymentSessionId $id): void
+    {
+        $this->ryftPaymentSessionId = $id->id;
     }
 }
