@@ -425,6 +425,10 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(nullable: true, name: 'paymentCard_country')]
     private ?CountryAlpha2 $paymentCardCountry;
 
+    /** @psalm-suppress UnusedProperty - for now just recorded for internal reference */
+    #[ORM\Column(nullable: true)]
+    private ?string $ryftPaymentSessionId = null;
+
     /**
      * @param string|null $billingPostcode
      * @psalm-param numeric-string $amount
@@ -704,6 +708,7 @@ class Donation extends SalesforceWriteProxy
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
             'transactionId' => $this->getTransactionId(),
+            'referenceCode' => $this->getReferenceCode(),
             'updatedTime' => $this->getUpdatedDate()->format(DateTimeInterface::ATOM),
         ];
 
@@ -991,6 +996,12 @@ class Donation extends SalesforceWriteProxy
     public function getTransactionId(): ?string
     {
         return $this->transactionId;
+    }
+
+    /** Code to be given to donor so they can quote it back to us to identify the donation. */
+    public function getReferenceCode(): string
+    {
+        return $this->transactionId ?? $this->uuid->toString();
     }
 
 
@@ -2158,5 +2169,10 @@ class Donation extends SalesforceWriteProxy
     public function paymentServiceProvider(): ?PaymentServiceProvider
     {
         return PaymentServiceProvider::tryFrom($this->psp);
+    }
+
+    public function setRyftPaymentSessionId(RyftPaymentSessionId $id): void
+    {
+        $this->ryftPaymentSessionId = $id->id;
     }
 }

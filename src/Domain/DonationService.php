@@ -1246,7 +1246,7 @@ class DonationService
         }
     }
 
-    public function notifyDonationSuccesIfRequired(Donation $donation, bool $donationWasPreviouslyCollected): void
+    private function notifyDonationSuccesIfRequired(Donation $donation, bool $donationWasPreviouslyCollected): void
     {
         $showAccountExistsForEmail = $this->donorAccountRepository->accountExistsMatchingEmailWithDonation($donation);
 
