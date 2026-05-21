@@ -74,6 +74,7 @@ class DonationNotifierTest extends TestCase
 
                     'charityPhoneNumber' => '0191 498 0000',
                     'charityEmailAddress' => 'charity@charitiesareus.com',
+                    'referenceCode' => 'some-transaction-id',
                 ]
             ],
             [$emailCommand->templateKey, $emailCommand->emailAddress->email, $emailCommand->params]

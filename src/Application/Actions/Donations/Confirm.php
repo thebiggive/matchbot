@@ -119,12 +119,10 @@ EOF
         if ($psp === PaymentServiceProvider::Ryft) {
             Assertion::integer($paymentAmount);
 
-
             // seams confusing that the amount Ryft tells us is just the amount for the charity
             // (i.e. exclusive of tip & fees) but that's what tests so far show:
             Assertion::same($paymentAmount, $donation->getAmountForCharityFractional());
         }
-
 
         \assert($paymentMethodId !== ""); // required to call updatePaymentMethodBillingDetail
 
