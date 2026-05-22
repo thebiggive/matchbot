@@ -39,7 +39,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     endDate: ?string,
  *     id: string,
  *     isMatched: bool,
- *     ready: bool,
+ *     isPublished: bool,
  *     startDate: ?string,
  *     pinPosition?: int|null,
  *     championPagePinPosition?: int|null,

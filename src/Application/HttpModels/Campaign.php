@@ -256,12 +256,21 @@ readonly class Campaign
             )
         )]
         public array $quotes,
+        /**
+         * @deprecated for reading, use more self-explanatory 'isPublished' instead.
+         */
         #[OA\Property(
             property: "ready",
             description: "Whether the campaign is ready for donations (if not, donation journey is locked)",
             example: true
         )]
         public ?bool $ready,
+        #[OA\Property(
+            property: "isPublished",
+            description: "Whether the campaign is should be listed for public viewing",
+            example: true
+        )]
+        public ?bool $isPublished,
         #[OA\Property(
             property: "solution",
             description: "Description of the solution the campaign provides",

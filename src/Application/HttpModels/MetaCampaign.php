@@ -47,12 +47,6 @@ readonly class MetaCampaign
         )]
         public bool $hidden,
         #[OA\Property(
-            property: "ready",
-            description: "Whether the meta campaign is ready for donations",
-            example: true
-        )]
-        public bool $ready,
-        #[OA\Property(
             property: "summary",
             description: "Summary description of the meta campaign",
             example: "Our annual match funding campaign"
