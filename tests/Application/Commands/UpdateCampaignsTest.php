@@ -12,12 +12,10 @@ use MatchBot\Application\Commands\UpdateCampaigns;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
-use Psr\Clock\ClockInterface;
 use Psr\Log\NullLogger;
-use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
@@ -26,14 +24,6 @@ use Symfony\Component\Lock\LockFactory;
  */
 class UpdateCampaignsTest extends TestCase
 {
-    private ClockInterface $clock;
-
-    #[\Override]
-    public function setUp(): void
-    {
-        $this->clock = new MockClock(new \DateTimeImmutable('2020-01-01T00:00:00z'));
-    }
-
     public function testSingleUpdateSuccess(): void
     {
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('SOMeCAMPaIGNIdXXXX'));
@@ -42,15 +32,14 @@ class UpdateCampaignsTest extends TestCase
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
 
-        $fundRepoProphecy = $this->prophesize(FundRepository::class);
-        $fundRepoProphecy->pullForCampaign($campaign, $this->clock->now())->shouldBeCalledOnce();
+        $campaignServiceProphecy = $this->prophesize(CampaignService::class);
+        $campaignServiceProphecy->pullFundsAndUpdateStats($campaign)->shouldBeCalledOnce();
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
             $this->getContainer()->get(EntityManagerInterface::class),
-            $fundRepoProphecy->reveal(),
+            $campaignServiceProphecy->reveal(),
             new NullLogger(),
-            $this->clock,
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -79,17 +68,16 @@ class UpdateCampaignsTest extends TestCase
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
 
-        $fundRepoProphecy = $this->prophesize(FundRepository::class);
-        $fundRepoProphecy->pullForCampaign($campaign, $this->clock->now())
+        $campaignServiceProphecy = $this->prophesize(CampaignService::class);
+        $campaignServiceProphecy->pullFundsAndUpdateStats($campaign)
             ->willThrow(NotFoundException::class)
             ->shouldBeCalledOnce();
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
             $this->getContainer()->get(EntityManagerInterface::class),
-            $fundRepoProphecy->reveal(),
+            $campaignServiceProphecy->reveal(),
             new NullLogger(),
-            $this->clock
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -108,32 +96,25 @@ class UpdateCampaignsTest extends TestCase
 
     public function testSingleUpdateHitsTransferExceptionTwice(): void
     {
-        // Subclass of Guzzle TransferException
-        $exception = new RequestException(
-            'dummy exc message',
-            new Request('GET', 'https://example.com'),
-        );
-
         $campaign = TestCase::someCampaign(
             sfId: Salesforce18Id::ofCampaign('SOMeCAMPaIGNIdXXXX'),
-        )
-        ;
+        );
+
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findCampaignsWhereFundsNeedToBeUpToDate()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
 
-        $fundRepoProphecy = $this->prophesize(FundRepository::class);
-        $fundRepoProphecy->pullForCampaign($campaign, $this->clock->now())
-            ->willThrow($exception)
+        $campaignServiceProphecy = $this->prophesize(CampaignService::class);
+        $campaignServiceProphecy->pullFundsAndUpdateStats($campaign)
+            ->willThrow(NotFoundException::class)
             ->shouldBeCalledTimes(2);
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
             $this->getContainer()->get(EntityManagerInterface::class),
-            $fundRepoProphecy->reveal(),
+            $campaignServiceProphecy->reveal(),
             new NullLogger(),
-            $this->clock
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -177,12 +158,12 @@ class UpdateCampaignsTest extends TestCase
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
 
-        $fundRepoMockBuilder = $this->getMockBuilder(FundRepository::class);
-        $fundRepoMockBuilder->setConstructorArgs([$entityManagerProphecy->reveal(), new ClassMetadata(Campaign::class)]);
+        $campaignServiceMockBuilder = $this->getMockBuilder(CampaignService::class);
+        $campaignServiceMockBuilder->setConstructorArgs([$entityManagerProphecy->reveal(), new ClassMetadata(Campaign::class)]);
 
-        $fundRepo = $fundRepoMockBuilder->getMock();
-        $fundRepo->expects($this->exactly(2))
-            ->method('pullForCampaign')
+        $campaignService = $campaignServiceMockBuilder->getMock();
+        $campaignService->expects($this->exactly(2))
+            ->method('pullFundsAndUpdateStats')
             ->willReturnOnConsecutiveCalls(
                 $this->throwException($exception),
                 null,
@@ -191,9 +172,8 @@ class UpdateCampaignsTest extends TestCase
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
             $this->getContainer()->get(EntityManagerInterface::class),
-            $fundRepo,
+            $campaignService,
             new NullLogger(),
-            $this->clock
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -223,15 +203,14 @@ class UpdateCampaignsTest extends TestCase
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
 
-        $fundRepoProphecy = $this->prophesize(FundRepository::class);
-        $fundRepoProphecy->pullForCampaign($campaign, $this->clock->now())->shouldBeCalledOnce();
+        $campaignServiceProphecy = $this->prophesize(CampaignService::class);
+        $campaignServiceProphecy->pullFundsAndUpdateStats($campaign)->shouldBeCalledOnce();
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
             $this->getContainer()->get(EntityManagerInterface::class),
-            $fundRepoProphecy->reveal(),
+            $campaignServiceProphecy->reveal(),
             new NullLogger(),
-            $this->clock
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());

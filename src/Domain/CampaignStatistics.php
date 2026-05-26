@@ -167,15 +167,11 @@ class CampaignStatistics
         Money $matchFundsTotal,
         bool $alwaysConsiderChanged,
     ): bool {
-
-        // we know the following is not always true at the moment - looks like there are some temporarily overmatched
-        // funds.
-        //        Assertion::greaterOrEqualThan(
-        //            $matchFundsTotal->toNumericString(),
-        //            $matchFundsUsed->toNumericString(),
-        //            'Match funds total must be greater than or equal to match funds used',
-        //        );
-
+        Assertion::greaterOrEqualThan(
+            $matchFundsTotal->toNumericString(),
+            $matchFundsUsed->toNumericString(),
+            'Match funds total must be greater than or equal to match funds used',
+        );
 
         Assertion::eq(
             $amountRaised->toNumericString(),

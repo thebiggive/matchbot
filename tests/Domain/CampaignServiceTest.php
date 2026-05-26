@@ -6,6 +6,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\MatchFundsService;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\Money;
@@ -15,6 +16,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Cache\Adapter\NullAdapter;
 use Symfony\Component\Clock\MockClock;
+use Doctrine\ORM\EntityManagerInterface;
 
 class CampaignServiceTest extends TestCase
 {
@@ -31,13 +33,15 @@ class CampaignServiceTest extends TestCase
         $this->metaCampaignRepositoryProphecy = $this->prophesize(MetaCampaignRepository::class);
 
         $this->SUT = new CampaignService(
-            campaignRepository: $this->createStub(CampaignRepository::class),
-            metaCampaignRepository: $this->metaCampaignRepositoryProphecy->reveal(),
             cache: new NullAdapter(),
-            donationRepository: $this->createStub(DonationRepository::class),
-            matchFundsService: $this->getMatchFundsService(Money::zero(), Money::zero()),
-            log: $this->createStub(LoggerInterface::class),
+            campaignRepository: $this->createStub(CampaignRepository::class),
             clock: new MockClock(new \DateTimeImmutable('1970-01-01')),
+            donationRepository: $this->createStub(DonationRepository::class),
+            entityManager: $this->createStub(EntityManagerInterface::class),
+            fundRepository: $this->createStub(FundRepository::class),
+            logger: $this->createStub(LoggerInterface::class),
+            matchFundsService: $this->getMatchFundsService(Money::zero(), Money::zero()),
+            metaCampaignRepository: $this->metaCampaignRepositoryProphecy->reveal(),
         );
     }
 
@@ -105,11 +109,13 @@ class CampaignServiceTest extends TestCase
             metaCampaignRepository: $this->metaCampaignRepositoryProphecy->reveal(),
             cache: new NullAdapter(),
             donationRepository: $this->createStub(DonationRepository::class),
+            entityManager: $this->createStub(EntityManagerInterface::class),
+            fundRepository: $this->createStub(FundRepository::class),
             matchFundsService: $this->getMatchFundsService(
                 totalForMetacampaign: $metaCampaignMoney,
                 availableForMetacampaign: $metaCampaignMoney,
             ),
-            log: $this->createStub(LoggerInterface::class),
+            logger: $this->createStub(LoggerInterface::class),
             clock: new MockClock(new \DateTimeImmutable('1970-01-01')),
         );
 

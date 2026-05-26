@@ -25,8 +25,6 @@ use function trim;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
-    private FundRepository $fundRepository; // @phpstan-ignore property.uninitialized
-
     private ClockInterface $clock;  // @phpstan-ignore property.uninitialized
 
     /**
@@ -261,6 +259,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
      *
      * For performance only does a count, doesn't load the campaign from the DB if it already exists.
      *
+     * Does not load fund info. Callers needing that should use {@see CampaignService::pullFundsAndUpdateStats()}.
+     *
      * @param Salesforce18Id<Campaign> $campaignId
      */
     public function pullFromSFIfNotPresent(Salesforce18Id $campaignId): void
@@ -272,14 +272,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $count = $query->getSingleScalarResult();
 
         if ($count === 0) {
-            $campaign = $this->pullNewFromSf($campaignId);
-            $this->fundRepository->pullForCampaign($campaign, $this->clock->now());
+            $this->pullNewFromSf($campaignId);
         }
-    }
-
-    public function setFundRepository(FundRepository $fundRepository): void
-    {
-        $this->fundRepository = $fundRepository;
     }
 
     /**
@@ -774,5 +768,17 @@ class CampaignRepository extends SalesforceReadProxyRepository
         }
 
         $this->logInfo('Done persisting ' . get_class($campaign) . ' ' . $salesforceId);
+    }
+
+    public function isStatsIgnoredCampaign(Campaign $campaign): bool
+    {
+        $excludeJson = getenv('KNOWN_OVERMATCHED_CAMPAIGN_IDS');
+        $excludedCampaignIds = [];
+        if (is_string($excludeJson) && $excludeJson !== '') {
+            /** @var list<int> $excludedCampaignIds */
+            $excludedCampaignIds = json_decode($excludeJson, true, 512, \JSON_THROW_ON_ERROR);
+        }
+
+        return in_array($campaign->getId(), $excludedCampaignIds, true);
     }
 }
