@@ -51,7 +51,6 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     regularGivingCollectionEnd?: ?string,
  *     thankYouMessage: ?string,
  *     aims: list<string>,
- *     target: ?float,
  *     problem: ?string,
  *     solution: ?string,
  *     bannerUri: ?string,
