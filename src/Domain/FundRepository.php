@@ -41,7 +41,6 @@ class FundRepository extends SalesforceReadProxyRepository
      * @return bool Whether any funding changed. Use to decide about e.g. stats regeneration.
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      */
-    #[\NoDiscard("as stats will need to be regenerated iff it returns true")]
     public function pullForCampaign(Campaign $campaign, DateTimeImmutable $at): bool
     {
         $fundsData = $this->getClient()->getForCampaign($campaign->getSalesforceId());

@@ -76,7 +76,7 @@ class FundRepositoryTest extends TestCase
 
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID));
 
-        (void) $repo->pullForCampaign($campaign, $this->now);
+        $repo->pullForCampaign($campaign, $this->now);
 
         $this->assertInstanceOf(CampaignFunding::class, $campaignFunding);
         $this->assertSame('1500', $campaignFunding->getAmount());
@@ -124,7 +124,7 @@ class FundRepositoryTest extends TestCase
 
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID));
 
-        (void) $repo->pullForCampaign($campaign, $this->now);
+        $repo->pullForCampaign($campaign, $this->now);
     }
 
     public function testPullForCampaignAllExistingWithBalanceIncreased(): void
@@ -181,7 +181,7 @@ class FundRepositoryTest extends TestCase
 
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID));
 
-        (void) $repo->pullForCampaign($campaign, $this->now);
+        $repo->pullForCampaign($campaign, $this->now);
     }
 
     public function testPullForFutureCampaignAllExistingWithBalanceDecreased(): void
@@ -243,7 +243,7 @@ class FundRepositoryTest extends TestCase
         // Only strictly future campaigns allow reductions based on the rule this relies upon.
         // $this->now matches our default test campaign's start date exactly so won't work.
         $oneMinuteBeforeCampaignStart = $campaign->getStartDate()->sub(new \DateInterval('PT1M'));
-        (void) $repo->pullForCampaign($campaign, $oneMinuteBeforeCampaignStart);
+        $repo->pullForCampaign($campaign, $oneMinuteBeforeCampaignStart);
     }
 
     /**
@@ -293,7 +293,7 @@ class FundRepositoryTest extends TestCase
 
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID));
 
-        (void) $repo->pullForCampaign($campaign, $this->now);
+        $repo->pullForCampaign($campaign, $this->now);
     }
 
     public function testFundReductionBeforeCampaignIsAllowed(): void
