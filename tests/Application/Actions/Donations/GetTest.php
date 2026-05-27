@@ -12,6 +12,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
+use MatchBot\Tests\Application\MakesDonationClient;
 use MatchBot\Tests\Domain\InMemoryDonationRepository;
 use MatchBot\Tests\TestCase;
 use Slim\Exception\HttpNotFoundException;
@@ -21,6 +22,7 @@ class GetTest extends TestCase
 {
     use DonationTestDataTrait;
     use PublicJWTAuthTrait;
+    use MakesDonationClient;
 
     public const string DONATION_UUID = '2c6f3408-b405-11ef-a2fe-6b6ac08448a0';
     private InMemoryDonationRepository $donationRepository;
@@ -39,6 +41,7 @@ class GetTest extends TestCase
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
         $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
         $container->set(FundRepository::class, $this->createStub(FundRepository::class));
+        $container->set(\Doctrine\ORM\EntityManagerInterface::class, $this->prophesizeEM()->reveal());
     }
 
     public function testMissingId(): void

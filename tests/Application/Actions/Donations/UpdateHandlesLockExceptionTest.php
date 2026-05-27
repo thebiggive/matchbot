@@ -15,6 +15,7 @@ use MatchBot\Application\Settings;
 use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
@@ -22,10 +23,8 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
-use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\RegularGivingNotifier;
-use MatchBot\Domain\RegularGivingService;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -246,7 +245,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
                 donorAccountRepository: $this->createStub(DonorAccountRepository::class),
                 bus: $this->messageBusProphecy->reveal(),
                 donationNotifier: $this->createStub(DonationNotifier::class),
-                fundRepository: $this->createStub(FundRepository::class),
+                campaignService: $this->createStub(CampaignService::class),
                 redis: $this->prophesize(\Redis::class)->reveal(),
                 confirmRateLimitFactory: $stubRateLimiter,
                 regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),

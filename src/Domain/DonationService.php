@@ -104,7 +104,7 @@ class DonationService
         private DonorAccountRepository $donorAccountRepository,
         private RoutableMessageBus $bus,
         private DonationNotifier $donationNotifier,
-        private FundRepository $fundRepository,
+        private CampaignService $campaignService,
         private \Redis $redis,
         private RateLimiterFactory $confirmRateLimitFactory,
         private RegularGivingNotifier $regularGivingNotifier,
@@ -185,7 +185,7 @@ class DonationService
                 $this->logger->warning("Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed");
             }
 
-            $this->fundRepository->pullForCampaign($campaign, $this->clock->now());
+            $this->campaignService->pullFundsAndUpdateStats($campaign);
 
             $this->entityManager->flush();
 

@@ -21,6 +21,7 @@ use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\Auth\IdentityTokenTest;
 use MatchBot\Tests\Application\DonationTestDataTrait;
+use MatchBot\Tests\Application\MakesDonationClient;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
 use Prophecy\Argument;
@@ -33,6 +34,7 @@ use Symfony\Component\Lock\Store\InMemoryStore;
 
 class CancelAllTest extends TestCase
 {
+    use MakesDonationClient;
     use DonationTestDataTrait;
     use PublicJWTAuthTrait;
 
@@ -90,7 +92,7 @@ class CancelAllTest extends TestCase
         $allocatorProphecy->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledTimes(2);
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesizeEM();
 
         /**
          * @psalm-suppress MixedFunctionCall
@@ -165,6 +167,7 @@ class CancelAllTest extends TestCase
             $this->prophesize(DonationRepository::class),
             $this->prophesize(EntityManagerInterface::class)
         );
+        $container->set(EntityManagerInterface::class, $this->prophesizeEM()->reveal());
 
         // assert
         $this->expectException(BadRequestException::class);

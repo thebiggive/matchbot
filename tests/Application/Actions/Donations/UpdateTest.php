@@ -14,6 +14,8 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\MetaCampaign;
+use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Tests\Domain\InMemoryDonationRepository;
 use Override;
 use Psr\Container\ContainerInterface;
@@ -1400,6 +1402,7 @@ class UpdateTest extends TestCase
         $container->set(Stripe::class, $stripeProphecy->reveal());
         $container->set(CampaignRepository::class, $this->prophesize(CampaignRepository::class)->reveal());
         $container->set(DonorAccountRepository::class, $this->prophesize(DonorAccountRepository::class)->reveal());
+        $container->set(MetaCampaignRepository::class, $this->prophesize(MetaCampaignRepository::class)->reveal());
         $container->set(ClockInterface::class, new MockClock());
 
         $container->set(LockFactory::class, new LockFactory(new InMemoryStore()));
@@ -1426,6 +1429,11 @@ class UpdateTest extends TestCase
         // since we're providing an InMemoryStore directly
 
         $entityManagerProphecy->getRepository(CampaignFunding::class)->willReturn($this->createStub(CampaignFundingRepository::class));
+        $entityManagerProphecy->getRepository(\MatchBot\Domain\Campaign::class)->willReturn($this->createStub(CampaignRepository::class));
+        $entityManagerProphecy->getRepository(\MatchBot\Domain\Donation::class)->willReturn($this->createStub(DonationRepository::class));
+        $entityManagerProphecy->getRepository(\MatchBot\Domain\Fund::class)->willReturn($this->createStub(FundRepository::class));
+        $entityManagerProphecy->getRepository(\MatchBot\Domain\DonorAccount::class)->willReturn($this->createStub(DonorAccountRepository::class));
+        $entityManagerProphecy->getRepository(MetaCampaign::class)->willReturn($this->createStub(MetaCampaignRepository::class));
 
         if ($persist) {
             $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();

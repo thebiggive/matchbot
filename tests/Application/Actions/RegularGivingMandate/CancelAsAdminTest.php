@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\RegularGivingMandate;
 
 use DI\Container;
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\SalesforceAuthMiddleware;
 use MatchBot\Application\Matching\Allocator;
@@ -19,6 +20,7 @@ use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Tests\Application\MakesDonationClient;
 use MatchBot\Tests\TestCase;
 use Psr\Container\ContainerInterface;
 use Ramsey\Uuid\Uuid;
@@ -30,6 +32,8 @@ use Slim\Routing\Route;
 
 class CancelAsAdminTest extends TestCase
 {
+    use MakesDonationClient;
+
     public function testSuccess(): void
     {
         $mandate = $this->getTestMandate();
@@ -141,6 +145,7 @@ class CancelAsAdminTest extends TestCase
         $container->set(Allocator::class, $this->createStub(Allocator::class));
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
         $container->set(DonationRepository::class, $this->getMockDonationRepository($mandate));
+        $container->set(EntityManagerInterface::class, $this->prophesizeEM()->reveal());
         $container->set(RegularGivingMandateRepository::class, $this->getMockMandateRepository($mandate));
         $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
         $container->set(FundRepository::class, $this->createStub(FundRepository::class));

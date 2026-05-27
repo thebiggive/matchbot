@@ -2,12 +2,9 @@
 
 namespace MatchBot\Application\Commands;
 
-use Assert\AssertionFailedException;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\MatchFundsService;
-use Psr\Log\LoggerInterface;
+use MatchBot\Domain\CampaignService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -19,10 +16,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 class UpdateCampaignDonationStats extends LockingCommand
 {
     public function __construct(
-        private CampaignRepository $campaignRepository,
+        private readonly CampaignRepository $campaignRepository,
+        private readonly CampaignService $campaignService,
         private EntityManagerInterface $entityManager,
-        private LoggerInterface $logger,
-        private MatchFundsService $matchFundsService,
     ) {
         parent::__construct();
     }
@@ -48,7 +44,7 @@ class UpdateCampaignDonationStats extends LockingCommand
         $numChanged = 0;
 
         foreach ($campaigns as $campaign) {
-            if ($this->handleCampaign($campaign, $output)) {
+            if ($this->campaignService->regenerateStats($campaign)) {
                 $numChanged++;
             }
         }
@@ -71,7 +67,7 @@ class UpdateCampaignDonationStats extends LockingCommand
         $numChanged = 0;
 
         foreach ($campaigns as $campaign) {
-            if ($this->handleCampaign($campaign, $output)) {
+            if ($this->campaignService->regenerateStats($campaign)) {
                 $numChanged++;
             }
         }
@@ -81,61 +77,5 @@ class UpdateCampaignDonationStats extends LockingCommand
             $numChanged,
             count($campaigns),
         ));
-    }
-
-    /**
-     * Creates or finds + updates a {@see CampaignStatistics} record, via eager loading from $campaign.
-     * Doesn't flush, so callers need to when done building stats.
-     *
-     * @return bool whether or not the statistics have changed
-     */
-    private function handleCampaign(Campaign $campaign, OutputInterface $output): bool
-    {
-        if ($this->isIgnoredCampaign($campaign)) {
-            return false;
-        }
-
-        $campaignId = $campaign->getId();
-        \assert($campaignId !== null);
-        $matchFundsUsed = $this->campaignRepository->totalMatchFundsUsed($campaignId);
-        $donationSum = $this->campaignRepository->totalCoreDonations($campaign);
-
-        $statistics = $campaign->getStatistics(); // New & zeroes if not done before.
-
-        try {
-            $changed = $statistics->setTotals(
-                at: new \DateTimeImmutable('now'),
-                donationSum: $donationSum,
-                amountRaised: $donationSum->plus($matchFundsUsed),
-                matchFundsUsed: $matchFundsUsed,
-                matchFundsTotal: $this->matchFundsService->getTotalFunds($campaign),
-                alwaysConsiderChanged: false,
-            );
-        } catch (AssertionFailedException $exception) {
-            $errorMessage = "Error updating statistics for campaign ID {$campaignId} ({$campaign->getSalesforceId()}): {$exception->getMessage()}";
-            $this->logger->error($errorMessage);
-            $output->writeln("<error>$errorMessage</error>");
-            return false; // Not re-throwing for now so that we can get a complete list of campaigns with issues in one go.
-        }
-
-        $this->entityManager->persist($statistics);
-
-        if ($changed) {
-            $output->writeln("Prepared statistics for campaign ID {$campaignId}, SF ID {$campaign->getSalesforceId()}");
-        }
-
-        return $changed;
-    }
-
-    private function isIgnoredCampaign(Campaign $campaign): bool
-    {
-        $excludeJson = getenv('KNOWN_OVERMATCHED_CAMPAIGN_IDS');
-        $excludedCampaignIds = [];
-        if (is_string($excludeJson) && $excludeJson !== '') {
-            /** @var list<int> $excludedCampaignIds */
-            $excludedCampaignIds = json_decode($excludeJson, true, 512, \JSON_THROW_ON_ERROR);
-        }
-
-        return in_array($campaign->getId(), $excludedCampaignIds, true);
     }
 }

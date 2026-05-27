@@ -2,9 +2,12 @@
 
 namespace MatchBot\Domain;
 
+use Assert\AssertionFailedException;
 use Assert\InvalidArgumentException;
 use Assert\LazyAssertionException;
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Commands\UpdateCampaignDonationStats;
 use MatchBot\Application\HttpModels\Campaign as CampaignHttpModel;
 use MatchBot\Application\HttpModels\MetaCampaign as MetaCampaignHttpModel;
 use MatchBot\Client\Campaign as CampaignClient;
@@ -24,14 +27,29 @@ class CampaignService
     private const string METACAMPAIGN_MATCH_FUNDS_TOTAL_PREFIX = 'metacampaign_match_funds_total.';
 
     public function __construct(
-        private CampaignRepository $campaignRepository,
-        private MetaCampaignRepository $metaCampaignRepository,
-        private CacheInterface $cache,
-        private DonationRepository $donationRepository,
-        private MatchFundsService $matchFundsService,
-        private LoggerInterface $log,
-        private ClockInterface $clock,
+        private readonly CacheInterface $cache,
+        private readonly CampaignRepository $campaignRepository,
+        private readonly ClockInterface $clock,
+        private readonly DonationRepository $donationRepository,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly FundRepository $fundRepository,
+        private readonly LoggerInterface $logger,
+        private readonly MatchFundsService $matchFundsService,
+        private readonly MetaCampaignRepository $metaCampaignRepository,
     ) {
+    }
+
+    /**
+     * @param Campaign $campaign
+     * @return void
+     * @throws \Doctrine\ORM\Exception\ORMException
+     * @see UpdateCampaignDonationStats command.
+     */
+    public function pullFundsAndUpdateStats(Campaign $campaign): void
+    {
+        if ($this->fundRepository->pullForCampaign($campaign, $this->clock->now())) {
+            $this->regenerateStats($campaign);
+        }
     }
 
     /**
@@ -165,7 +183,7 @@ class CampaignService
         try {
             $websiteUri = $charity->getWebsiteUri()?->__toString();
         } catch (\Laminas\Diactoros\Exception\InvalidArgumentException) {
-            $this->log->warning("Bad website URI for charity {$charity->getSalesforceId()} for campaign {$campaign->getSalesforceId()}");
+            $this->logger->warning("Bad website URI for charity {$charity->getSalesforceId()} for campaign {$campaign->getSalesforceId()}");
             $websiteUri = null;
         }
 
@@ -374,7 +392,7 @@ class CampaignService
                 $endTime = $this->clock->now();
 
                 $diffSeconds = $startTime->diff($endTime)->f;
-                $this->log->info("getFundsRemainingForMetaCampaign {$metaCampaign->getSalesforceId()} took " . (string) $diffSeconds . "s");
+                $this->logger->info("getFundsRemainingForMetaCampaign {$metaCampaign->getSalesforceId()} took " . (string) $diffSeconds . "s");
 
                 return $returnValue;
             }
@@ -397,5 +415,49 @@ class CampaignService
         );
 
         return Money::fromSerialized($cachedAmountArray);
+    }
+
+    /**
+     * Used by {@see UpdateCampaignDonationStats} (hence public) and as part of fund pull/update from Salesforce
+     * in {@see self::pullFundsAndUpdateStats()}.
+     *
+     * @return bool whether or not the statistics have changed
+     */
+    public function regenerateStats(Campaign $campaign): bool
+    {
+        if ($this->campaignRepository->isStatsIgnoredCampaign($campaign)) {
+            $this->logger->info("Skipping campaign {$campaign->getSalesforceId()} as it is configured to be ignored");
+            return false;
+        }
+
+        $campaignId = $campaign->getId();
+        \assert($campaignId !== null);
+        $matchFundsUsed = $this->campaignRepository->totalMatchFundsUsed($campaignId);
+        $donationSum = $this->campaignRepository->totalCoreDonations($campaign);
+
+        $statistics = $campaign->getStatistics(); // New & zeroes if not done before.
+
+        try {
+            $changed = $statistics->setTotals(
+                at: $this->clock->now(),
+                donationSum: $donationSum,
+                amountRaised: $donationSum->plus($matchFundsUsed),
+                matchFundsUsed: $matchFundsUsed,
+                matchFundsTotal: $this->matchFundsService->getTotalFunds($campaign),
+                alwaysConsiderChanged: false,
+            );
+        } catch (AssertionFailedException $exception) {
+            $errorMessage = "Error updating statistics for campaign ID {$campaignId} ({$campaign->getSalesforceId()}): {$exception->getMessage()}";
+            $this->logger->error($errorMessage);
+            return false; // Not re-throwing for now so that we can get a complete list of campaigns with issues in one go.
+        }
+
+        $this->entityManager->persist($statistics);
+
+        if ($changed) {
+            $this->logger->info("Prepared statistics for campaign ID {$campaignId}, SF ID {$campaign->getSalesforceId()}");
+        }
+
+        return $changed;
     }
 }
