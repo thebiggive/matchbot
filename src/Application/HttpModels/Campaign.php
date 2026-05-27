@@ -259,11 +259,6 @@ readonly class Campaign
         /**
          * @deprecated for reading, use more self-explanatory 'isPublished' instead.
          */
-        #[OA\Property(
-            property: "ready",
-            description: "Whether the campaign is ready for donations (if not, donation journey is locked)",
-            example: true
-        )]
         public ?bool $ready,
         #[OA\Property(
             property: "isPublished",
