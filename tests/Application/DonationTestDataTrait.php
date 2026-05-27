@@ -175,7 +175,7 @@ trait DonationTestDataTrait
             startDate: new \DateTimeImmutable(),
             endDate: new \DateTimeImmutable(),
             isMatched: true,
-            ready: true,
+            isPublished: true,
             name: 'Test campaign',
             summary: 'Test campaign summary',
             currencyCode: 'GBP',

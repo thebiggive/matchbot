@@ -22,6 +22,7 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
     private const array IGNORED_COLUMNS = [
         ['Campaign', 'normalisedName'],
         ['Campaign', 'searchable_text'],
+        ['Campaign', 'ready'], // can be dropped from DB after next deploy
         ['Charity', 'normalisedName'],
         ['Charity', 'searchable_text'],
     ];

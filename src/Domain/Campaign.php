@@ -65,7 +65,7 @@ class Campaign extends SalesforceReadProxy
      * Has this campaign been published to the public? Currently, corrosponds to a status of any of 'Preview, 'Active', or 'Expired' in SF.
      */
     #[ORM\Column]
-    private bool $isPublished;
+    private(set) bool $isPublished;
 
     #[ORM\Column(nullable:true, options: ['default' => null])]
     private ?ApplicationStatus $relatedApplicationStatus;
@@ -126,13 +126,6 @@ class Campaign extends SalesforceReadProxy
      */
     #[ORM\Column(type: 'boolean')]
     protected bool $isMatched;
-
-    /**
-     * Dictates whether campaign is/will be ready to accept donations. Currently calculated in SF Apex code
-     * based on status. A campaign may be ready but not yet open, in which case it will not accept donations right now.
-     */
-    #[ORM\Column(type: 'boolean', options: ['default' => true])]
-    private bool $ready;
 
     /**
      * If true, FE will show a message that donations are currently unavailable for this campaign and searches
@@ -204,7 +197,7 @@ class Campaign extends SalesforceReadProxy
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
         bool $isMatched,
-        bool $ready,
+        bool $isPublished,
         string $name,
         ?string $summary,
         string $currencyCode,
@@ -236,7 +229,7 @@ class Campaign extends SalesforceReadProxy
             summary: $summary,
             metaCampaignSlug: $metaCampaignSlug,
             startDate: $startDate,
-            ready: $ready,
+            isPublished: $isPublished,
             isRegularGiving: $isRegularGiving,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             thankYouMessage: $thankYouMessage,
@@ -260,13 +253,13 @@ class Campaign extends SalesforceReadProxy
         $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
             null : new \DateTimeImmutable($regularGivingCollectionEnd);
 
-        $ready = $campaignData['ready'] ?? false;
+        $isPublished = $campaignData['isPublished'] ?? false;
 
         $startDate = $campaignData['startDate'];
         $endDate = $campaignData['endDate'];
         $title = $campaignData['title'];
 
-        if (! $ready || is_string($endDate) && (new \DateTimeImmutable($endDate) < new \DateTimeImmutable('now')) && $fillInDefaultValues) {
+        if (! $isPublished || is_string($endDate) && (new \DateTimeImmutable($endDate) < new \DateTimeImmutable('now')) && $fillInDefaultValues) {
             // this campaign is not yet ready for public viewing so fill in some placeholder values to make it usable.
             // 1970 is effectively another form of null that's harder to insert by accident that actual null would be
             // if we allowed it  - we convert back to real null when rendering the campaign to an array.
@@ -295,7 +288,7 @@ class Campaign extends SalesforceReadProxy
             startDate: new \DateTimeImmutable($startDate),
             endDate: new \DateTimeImmutable($endDate),
             isMatched: $campaignData['isMatched'],
-            ready: $ready,
+            isPublished: $isPublished,
             name: $title,
             summary: $campaignData['summary'],
             currencyCode: $currency->isoCode(),
@@ -460,11 +453,6 @@ class Campaign extends SalesforceReadProxy
         return $this->endDate;
     }
 
-    public function isReady(): bool
-    {
-        return $this->ready;
-    }
-
     public function isNeverProceedingAppCampaign(): bool
     {
         return $this->relatedApplicationStatus === ApplicationStatus::Rejected || $this->relatedApplicationCharityResponseToOffer === CharityResponseToOffer::Rejected;
@@ -488,7 +476,7 @@ class Campaign extends SalesforceReadProxy
         ?string $summary,
         ?string $metaCampaignSlug,
         \DateTimeImmutable $startDate,
-        bool $ready,
+        bool $isPublished,
         bool $isRegularGiving,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         ?string $thankYouMessage,
@@ -528,8 +516,7 @@ class Campaign extends SalesforceReadProxy
         $this->summary = $summary;
         $this->metaCampaignSlug = $metaCampaignSlug;
         $this->startDate = $startDate;
-        $this->ready = $ready;
-        $this->isPublished = $ready;
+        $this->isPublished = $isPublished;
         $this->thankYouMessage = $thankYouMessage;
         $this->isRegularGiving = $isRegularGiving;
         $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
@@ -615,7 +602,7 @@ class Campaign extends SalesforceReadProxy
 
     private function isOpenWithEffectiveEndDate(\DateTimeImmutable $at, \DateTimeImmutable $effectiveEndDate): bool
     {
-        return $this->ready && $this->startDate <= $at && $effectiveEndDate > $at;
+        return $this->isPublished && $this->startDate <= $at && $effectiveEndDate > $at;
     }
 
     public function getStartDate(): \DateTimeImmutable

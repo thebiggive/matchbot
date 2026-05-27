@@ -515,7 +515,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             summary: $campaignData['summary'],
             metaCampaignSlug: $campaignData['parentRef'],
             startDate: new \DateTimeImmutable($startDateString),
-            ready: $campaignData['ready'],
+            isPublished: $campaignData['isPublished'],
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
             thankYouMessage: $campaignData['thankYouMessage'],

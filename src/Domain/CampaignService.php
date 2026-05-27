@@ -122,7 +122,6 @@ class CampaignService
             currencyCode: $metaCampaign->getCurrency()->isoCode(case: 'upper'),
             status: $metaCampaign->getStatusAt($this->clock->now()),
             hidden: $metaCampaign->isHidden(),
-            ready: true, // @todo-mat-405 - store get a copy of the `ready` value for the metacampaign from SF.
             summary: $metaCampaign->getSummary(),
             bannerUri: $bannerUri?->__toString(),
             amountRaised: $this->getAmountRaisedForMetaCampaign($metaCampaign)->toMajorUnitFloat(),
@@ -248,7 +247,8 @@ class CampaignService
             parentUsesSharedFunds: $metaCampaign && $metaCampaign->usesSharedFunds(),
             problem: $sfCampaignData['problem'],
             quotes: $sfCampaignData['quotes'],
-            ready: $campaign->isReady(),
+            ready: $campaign->isPublished,
+            isPublished: $campaign->isPublished,
             solution: $sfCampaignData['solution'],
             startDate: $this->formatDate($campaign->getStartDate()),
             status: $campaign->getStatus($this->clock->now())->value,

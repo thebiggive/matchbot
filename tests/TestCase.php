@@ -64,7 +64,7 @@ class TestCase extends PHPUnitTestCase
         'id' => 'a05xxxxxxxxxxxxxxx',
         'isMetaCampaign' => false,
         'aims' => [0 => 'First Aim'],
-        'ready' => true,
+        'isPublished' => true,
         'title' => 'Save Matchbot',
         'video' => null,
         'hidden' => false,
@@ -142,11 +142,14 @@ class TestCase extends PHPUnitTestCase
     ];
 
 
-    /** @var SFCampaignApiResponse  */
+    /**
+     * @psalm-suppress InvalidConstantAssignmentValue - can't work out quite what Psalm thinks is wrong here
+     * @var SFCampaignApiResponse
+     */
     public const array META_CAMPAIGN_FROM_SALESFORCE = [
         'id' => 'a05xxxxxxxxxxxxxxx',
         'isMetaCampaign' => true,
-        'ready' => true,
+        'isPublished' => true,
         'title' => 'This is a meta campaign',
         'video' => null,
         'hidden' => false,
@@ -431,7 +434,7 @@ class TestCase extends PHPUnitTestCase
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('3000-01-01'),
             isMatched: $isMatched,
-            ready: true,
+            isPublished: true,
             name: 'someCampaign',
             summary: 'Some Campaign Summary',
             currencyCode: 'GBP',
