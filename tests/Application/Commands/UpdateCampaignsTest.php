@@ -105,9 +105,14 @@ class UpdateCampaignsTest extends TestCase
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
 
+        $exception = new RequestException(
+            'dummy exc message',
+            new Request('GET', 'https://example.com'),
+        );
+
         $campaignServiceProphecy = $this->prophesize(CampaignService::class);
         $campaignServiceProphecy->pullFundsAndUpdateStats($campaign)
-            ->willThrow(NotFoundException::class)
+            ->willThrow($exception)
             ->shouldBeCalledTimes(2);
 
         $command = new UpdateCampaigns(
@@ -147,11 +152,6 @@ class UpdateCampaignsTest extends TestCase
             sfId: Salesforce18Id::ofCampaign('SOMeCAMPaIGNIdXXXX'),
         );
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-
-        $mockBuilder = $this->getMockBuilder(CampaignRepository::class);
-        $mockBuilder->setConstructorArgs([$entityManagerProphecy->reveal(), new ClassMetadata(Campaign::class)]);
-        $mockBuilder->onlyMethods(['findCampaignsWhereFundsNeedToBeUpToDate']);
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findCampaignsWhereFundsNeedToBeUpToDate()
@@ -159,7 +159,7 @@ class UpdateCampaignsTest extends TestCase
             ->shouldBeCalledOnce();
 
         $campaignServiceMockBuilder = $this->getMockBuilder(CampaignService::class);
-        $campaignServiceMockBuilder->setConstructorArgs([$entityManagerProphecy->reveal(), new ClassMetadata(Campaign::class)]);
+        $campaignServiceMockBuilder->disableOriginalConstructor();
 
         $campaignService = $campaignServiceMockBuilder->getMock();
         $campaignService->expects($this->exactly(2))
