@@ -439,7 +439,7 @@ class CampaignService
 
         try {
             $changed = $statistics->setTotals(
-                at: new \DateTimeImmutable('now'),
+                at: $this->clock->now(),
                 donationSum: $donationSum,
                 amountRaised: $donationSum->plus($matchFundsUsed),
                 matchFundsUsed: $matchFundsUsed,
