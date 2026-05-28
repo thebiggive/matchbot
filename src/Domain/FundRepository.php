@@ -131,7 +131,7 @@ class FundRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @param array{currencyCode: ?string, name: ?string, slug: ?string, type: string, id:string, ...<mixed>} $fundData
+     * @param array{currencyCode: ?string, name: ?string, slug: ?string, type: string, id:string, ...} $fundData
      */
     private function setAnyFundData(Fund $fund, array $fundData): Fund
     {
