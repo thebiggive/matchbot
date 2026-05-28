@@ -21,7 +21,7 @@ final class Version20260528112225 extends AbstractMigration
     {
         // Patch all campaigns before the migration that set this unreliably went to Production (and a few more by
         // setting it at a slightly earlier time than the merge of https://github.com/thebiggive/matchbot/pull/1942)
-        $this->addSql('UPDATE Campaign SET isPublished = ready WHERE createdAt > "2026-04-29 12:39:00"');
+        $this->addSql('UPDATE Campaign SET isPublished = ready WHERE createdAt < "2026-04-29 12:39:00"');
     }
 
     public function down(Schema $schema): void
