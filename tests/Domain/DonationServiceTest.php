@@ -13,6 +13,7 @@ use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\MandateNotActive;
@@ -26,7 +27,6 @@ use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
-use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
@@ -206,13 +206,13 @@ class DonationServiceTest extends TestCase
     /**
      * @param bool $withAlwaysCrashingEntityManager Whether to simulate EM always throwing a *retryable* exception
      * @param ObjectProphecy<CampaignRepository>|null $campaignRepoProphecy
-     * @param ObjectProphecy<FundRepository>|null $fundRepoProphecy
+     * @param ObjectProphecy<CampaignService>|null $campaignServiceProphecy
      */
     private function getDonationService(
         bool $withAlwaysCrashingEntityManager = false,
         ?LoggerInterface $logger = null,
         ?ObjectProphecy $campaignRepoProphecy = null,
-        ?ObjectProphecy $fundRepoProphecy = null,
+        ?ObjectProphecy $campaignServiceProphecy = null,
     ): DonationService {
         if ($withAlwaysCrashingEntityManager) {
             /**
@@ -229,7 +229,7 @@ class DonationServiceTest extends TestCase
 
 
         $campaignRepoProphecy ??= $this->prophesize(CampaignRepository::class);
-        $fundRepoProphecy ??= $this->prophesize(FundRepository::class);
+        $campaignServiceProphecy ??= $this->prophesize(CampaignService::class);
 
         $redisProphecy = $this->prophesize(\Redis::class);
         $redisProphecy->exists(Argument::any())->willReturn(1);
@@ -249,7 +249,7 @@ class DonationServiceTest extends TestCase
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),
             donationNotifier: $this->createStub(DonationNotifier::class),
-            fundRepository: $fundRepoProphecy->reveal(),
+            campaignService: $campaignServiceProphecy->reveal(),
             redis: $redisProphecy->reveal(),
             confirmRateLimitFactory: $stubRateLimiter,
             regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
@@ -271,7 +271,7 @@ class DonationServiceTest extends TestCase
         );
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $fundRepoProphecy = $this->prophesize(FundRepository::class);
+        $campaignServiceProphecy = $this->prophesize(CampaignService::class);
 
         $redisProphecy = $this->prophesize(\Redis::class);
         $redisProphecy->exists(Argument::any())->willReturn(0);
@@ -294,7 +294,7 @@ class DonationServiceTest extends TestCase
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),
             donationNotifier: $this->createStub(DonationNotifier::class),
-            fundRepository: $fundRepoProphecy->reveal(),
+            campaignService: $campaignServiceProphecy->reveal(),
             redis: $redisProphecy->reveal(),
             confirmRateLimitFactory: $rateLimiterFactory,
             regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
@@ -521,12 +521,11 @@ class DonationServiceTest extends TestCase
     public function testItPullsCampaignFromSFIfNotInRepo(): void
     {
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $fundRepositoryProphecy = $this->prophesize(FundRepository::class);
+        $campaignServiceProphecy = $this->prophesize(CampaignService::class);
         $this->entityManagerProphecy->flush()->shouldBeCalled();
 
         $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_ID));
         $dummyCampaign->setCurrencyCode('GBP');
-
 
         // No change – campaign still has a charity without a Stripe Account ID.
         $campaignRepoProphecy->findOneBy(['salesforceId' => self::CAMPAIGN_ID])
@@ -534,7 +533,7 @@ class DonationServiceTest extends TestCase
         $campaignRepoProphecy->pullNewFromSf(Salesforce18Id::ofCampaign(self::CAMPAIGN_ID))
             ->willReturn($dummyCampaign);
 
-        $fundRepositoryProphecy->pullForCampaign(Argument::type(Campaign::class), Argument::type(\DateTimeImmutable::class))->shouldBeCalled();
+        $campaignServiceProphecy->pullFundsAndUpdateStats(Argument::type(Campaign::class))->shouldBeCalled();
 
         $createPayload = new DonationCreate(
             currencyCode: 'GBP',
@@ -546,7 +545,7 @@ class DonationServiceTest extends TestCase
 
         $donation = $this->getDonationService(
             campaignRepoProphecy: $campaignRepoProphecy,
-            fundRepoProphecy: $fundRepositoryProphecy
+            campaignServiceProphecy: $campaignServiceProphecy
         )
             ->buildFromAPIRequest(
                 $createPayload,

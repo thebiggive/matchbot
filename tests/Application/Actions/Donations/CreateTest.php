@@ -31,6 +31,7 @@ use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\RyftPaymentSessionId;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Tests\Application\MakesDonationClient;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
 use MatchBot\Tests\TestData\Identity;
@@ -52,6 +53,8 @@ use Symfony\Component\Messenger\RoutableMessageBus;
 
 class CreateTest extends TestCase
 {
+    use MakesDonationClient;
+
     public const string PSPCUSTOMERID = 'cus_aaaaaaaaaaaa11';
     public const string DONATION_UUID = '1822c3b6-b405-11ef-9766-63f04fc63fc3';
 
@@ -138,19 +141,11 @@ class CreateTest extends TestCase
 
         $this->campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
         $testCase = $this;
-        $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CAmPAIGNID12345'])->will(fn() => $testCase->campaign);
+        $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CAmPAIGNID12345'])->will(function () use ($testCase) {
+            return $testCase->campaign;
+        });
 
-        $configurationProphecy = $this->prophesize(\Doctrine\ORM\Configuration::class);
-        $config = $configurationProphecy->reveal();
-        $configurationProphecy->getResultCache()->willReturn($this->createStub(CacheItemPoolInterface::class));
-
-        $emptyUow = $this->prophesize(UnitOfWork::class);
-        $emptyUow->hasPendingInsertions()->willReturn(false);
-        $emptyUow->getIdentityMap()->willReturn([]);
-
-        $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $this->entityManagerProphecy->getConfiguration()->willReturn($config);
-        $this->entityManagerProphecy->getUnitOfWork()->willReturn($emptyUow->reveal());
+        $this->entityManagerProphecy = $this->prophesizeEM();
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
 
         $this->ryftClientProphecy = $this->prophesize(RyftClient::class);
@@ -189,6 +184,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
 
         $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $this->diContainer()->set(EntityManagerInterface::class, $this->prophesizeEM()->reveal());
 
         $data = '{"not-good-json';
 
@@ -966,7 +962,10 @@ class CreateTest extends TestCase
         $app = $this->getAppInstance();
         $allocatorProphecy = $this->prophesize(Allocator::class);
         $donationRepoProphecy = $this->donationRepoProphecy;
-        $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CAmPAIGNID12345'])->willReturn($this->campaign);
+        $testCase = $this;
+        $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CAmPAIGNID12345'])->will(function () use ($testCase) {
+            return $testCase->campaign;
+        });
 
         /**
          * @see \MatchBot\IntegrationTests\DonationRepositoryTest for more granular checks of what's

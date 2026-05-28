@@ -262,7 +262,7 @@ class CreateFictionalData extends Command
             'id' => $sfId,
             'charity' => [],
             'aims' => [0 => 'First Aim'],
-            'ready' => true,
+            'isPublished' => true,
             'title' => $name,
             'video' => null,
             'hidden' => false,

@@ -38,12 +38,14 @@ class FundRepository extends SalesforceReadProxyRepository
     /**
      * @param Campaign  $campaign
      * @param DateTimeImmutable $at
+     * @return bool Whether any funding changed. Use to decide about e.g. stats regeneration.
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      */
-    public function pullForCampaign(Campaign $campaign, DateTimeImmutable $at): void
+    public function pullForCampaign(Campaign $campaign, DateTimeImmutable $at): bool
     {
         $fundsData = $this->getClient()->getForCampaign($campaign->getSalesforceId());
 
+        $anyFundAmountsChanged = false;
         foreach ($fundsData as $fundData) {
             // For each fund linked to the campaign, look it up or create it if unknown
             $fund = $this->findOneBy(['salesforceId' => $fundData['id']]);
@@ -55,7 +57,7 @@ class FundRepository extends SalesforceReadProxyRepository
             try {
                 $this->setAnyFundData($fund, $fundData);
             } catch (DomainCurrencyMustNotChangeException $exception) {
-                return; // No-op w.r.t matching if fund currency changed unexpectedly.
+                return false; // No-op w.r.t matching if fund currency changed unexpectedly.
             }
 
             try {
@@ -89,7 +91,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 : (string) $fundData['amountForCampaign'];
 
             if ($campaignFunding) {
-                $this->applyFundBalanceChange(
+                $statsShouldBeRegenerated = $this->applyFundBalanceChange(
                     amountForCampaign: $amountForCampaign,
                     campaignFunding: $campaignFunding,
                     campaign: $campaign,
@@ -104,6 +106,7 @@ class FundRepository extends SalesforceReadProxyRepository
                     amount: $amountForCampaign,
                     amountAvailable: $amountForCampaign,
                 );
+                $statsShouldBeRegenerated = true;
             }
 
             // Make the CampaignFunding available to the Campaign. This method is immutable and won't add duplicates
@@ -120,7 +123,11 @@ class FundRepository extends SalesforceReadProxyRepository
                     ($campaign->getId() ?? '[unknown]') . ', fund ' . ($fund->getId() ?? -1)
                 );
             }
+
+            $anyFundAmountsChanged = $anyFundAmountsChanged || $statsShouldBeRegenerated;
         }
+
+        return $anyFundAmountsChanged;
     }
 
     /**
@@ -272,8 +279,10 @@ EOT;
      * logged below, as this risks invalidating in-progress donation matches.
      *
      * @param numeric-string $amountForCampaign
+     *
+     * @return bool Whether anything changed substantively. Use to decide about e.g. stats regeneration.
      */
-    private function applyFundBalanceChange(string $amountForCampaign, CampaignFunding $campaignFunding, Campaign $campaign, DateTimeImmutable $at, string $fundId, string $campaignSFId): void
+    private function applyFundBalanceChange(string $amountForCampaign, CampaignFunding $campaignFunding, Campaign $campaign, DateTimeImmutable $at, string $fundId, string $campaignSFId): bool
     {
         $increaseInAmount = bcsub($amountForCampaign, $campaignFunding->getAmount(), 2);
         if ($this->matchingAdapter === null) {
@@ -287,7 +296,7 @@ EOT;
                 "for campaign {$campaignSFId} and fund SF ID {$fundId}"
             );
 
-            return;
+            return false;
         }
 
         // Increase
@@ -307,7 +316,7 @@ EOT;
 
             $campaignFunding->setAmount($amountForCampaign);
 
-            return;
+            return true;
         }
 
         // By process of elimination, we're considering a decrease, so
@@ -320,7 +329,7 @@ EOT;
                 "£{$decreaseInAmount}. Salesforce Fund ID {$fundId} as campaign {$campaignSFId} opened in past"
             );
 
-            return;
+            return false;
         }
 
         // This sets CampaignFunding::$amountAvailable as a side effect.
@@ -337,6 +346,8 @@ EOT;
         );
 
         $campaignFunding->setAmount($amountForCampaign);
+
+        return true;
     }
 
     /**

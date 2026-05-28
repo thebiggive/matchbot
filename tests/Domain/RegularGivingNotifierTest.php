@@ -14,6 +14,7 @@ use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\DayOfMonth;
@@ -27,7 +28,6 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
-use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
@@ -355,7 +355,7 @@ class RegularGivingNotifierTest extends TestCase
             $this->donorAccountRepositoryProphecy->reveal(),
             $this->createStub(RoutableMessageBus::class),
             $this->createStub(DonationNotifier::class),
-            $this->createStub(FundRepository::class),
+            $this->createStub(CampaignService::class),
             $this->createStub(\Redis::class),
             $rateLimiterFactory,
             $this->sut,

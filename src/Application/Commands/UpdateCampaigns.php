@@ -11,9 +11,8 @@ use MatchBot\Application\AssertionFailedException;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
-use MatchBot\Domain\FundRepository;
-use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -30,9 +29,8 @@ class UpdateCampaigns extends LockingCommand
         private CampaignRepository $campaignRepository,
         /** @var EntityManager|EntityManagerInterface $entityManager */
         private EntityManagerInterface $entityManager,
-        private FundRepository $fundRepository,
+        private CampaignService $campaignService,
         private LoggerInterface $logger,
-        private ClockInterface $clock,
     ) {
         parent::__construct();
     }
@@ -118,7 +116,7 @@ class UpdateCampaigns extends LockingCommand
      */
     protected function pull(Campaign $campaign, OutputInterface $output): void
     {
-        $this->fundRepository->pullForCampaign($campaign, $this->clock->now());
+        $this->campaignService->pullFundsAndUpdateStats($campaign);
         $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
     }
 }

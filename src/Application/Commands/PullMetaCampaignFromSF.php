@@ -7,11 +7,10 @@ namespace MatchBot\Application\Commands;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\MetaCampaignSlug;
-use DateTimeImmutable;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
@@ -30,7 +29,7 @@ class PullMetaCampaignFromSF extends LockingCommand
     public function __construct(
         private CampaignRepository $campaignRepository,
         private MetaCampaignRepository $metaCampaignRepository,
-        private FundRepository $fundRepository,
+        private CampaignService $campaignService,
         private EntityManagerInterface $entityManager,
         private CampaignClient $campaignClient,
         private ClockInterface $clock,
@@ -54,7 +53,7 @@ class PullMetaCampaignFromSF extends LockingCommand
         foreach ($campaigns as $campaign) {
             $i++;
             $output->writeln("Pulling funds for ($i of $total) '{$campaign->getCampaignName()}'");
-            $this->fundRepository->pullForCampaign($campaign, $this->clock->now());
+            $this->campaignService->pullFundsAndUpdateStats($campaign);
         }
 
         $output->writeln("Fetched $total campaigns total from Salesforce for '$metaCampaginSlug->slug'");

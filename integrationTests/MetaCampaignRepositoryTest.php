@@ -107,4 +107,21 @@ class MetaCampaignRepositoryTest extends IntegrationTest
         // 57 = 47 + 10
         $this->assertEquals(Money::fromPence(57_00, Currency::GBP), $amountRaised);
     }
+
+    public function testItFindsTotalOfOneDonationWithNoGAPartlyMatchedButMatchingReleased(): void
+    {
+        $donation = TestCase::someDonation(amount: '47.00', giftAid: false, campaign: $this->campaign, collected: true);
+
+        $fundingWithdrawal = new FundingWithdrawal($this->campaignFunding, $donation, '10.00');
+        $fundingWithdrawal->release(new \DateTimeImmutable());
+
+        $this->em->persist($donation);
+        $this->em->persist($fundingWithdrawal);
+        $this->em->flush();
+
+        $amountRaised = $this->sut->totalAmountRaised($this->metaCampaign);
+
+        // 47 = 47 + 0 (10 is released)
+        $this->assertEquals(Money::fromPence(47_00, Currency::GBP), $amountRaised);
+    }
 }

@@ -44,13 +44,13 @@ use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
 use MatchBot\Client\RyftClient;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\EmailVerificationTokenRepository;
-use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
@@ -732,7 +732,7 @@ return function (ContainerBuilder $containerBuilder) {
                     donorAccountRepository: $c->get(DonorAccountRepository::class),
                     bus: $c->get(RoutableMessageBus::class),
                     donationNotifier: $c->get(DonationNotifier::class),
-                    fundRepository: $c->get(FundRepository::class),
+                    campaignService: $c->get(CampaignService::class),
                     redis: $c->get(Redis::class),
                     confirmRateLimitFactory: $confirmRateLimiterFactory,
                     regularGivingNotifier: $c->get(RegularGivingNotifier::class),

@@ -42,7 +42,6 @@ return static function (ContainerBuilder $containerBuilder) {
 
             $repo->setClient($c->get(Client\Campaign::class));
             $repo->setLogger($c->get(LoggerInterface::class));
-            $repo->setFundRepository($c->get(FundRepository::class));
             $repo->setClock($c->get(ClockInterface::class));
 
             return $repo;

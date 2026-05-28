@@ -16,6 +16,7 @@ use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
+use Psr\Log\LogLevel;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -147,13 +148,23 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
 
         $expectedOutput = implode(\PHP_EOL, [
             'matchbot:update-campaign-donation-stats starting!',
-            "Prepared statistics for campaign ID {$this->campaign->getId()}, SF ID campaignid12345678",
             'Updated statistics for 1 of 1 campaigns with recent donations',
             'Updated statistics for 0 of 0 campaigns with no recent stats',
             'matchbot:update-campaign-donation-stats complete!',
             '',
         ]);
+
         $this->assertSame($expectedOutput, $output->fetch());
+        // In practice this is likely in the same logs shortly after the command start output, but it doesn't matter too
+        // much so fine to assert on each bit separately for now.
+        $this->assertContains(
+            [
+                'level' => LogLevel::INFO,
+                'message' => "Prepared statistics for campaign ID {$this->campaign->getId()}, SF ID campaignid12345678",
+                'context' => [],
+            ],
+            $this->logger->messages
+        );
     }
 
     private function buildMinimalApp(LockFactory $lockFactory): Application

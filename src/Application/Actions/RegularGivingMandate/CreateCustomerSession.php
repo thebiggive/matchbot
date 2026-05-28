@@ -7,6 +7,7 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Security\Security;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -21,6 +22,7 @@ class CreateCustomerSession extends Action
         LoggerInterface $logger,
         private Stripe $stripeClient,
         private CampaignRepository $campaignRepository,
+        private CampaignService $campaignService,
         private Security $security,
     ) {
         parent::__construct($logger);
@@ -37,6 +39,10 @@ class CreateCustomerSession extends Action
         if ($campaignId !== null) {
             \assert(is_string($campaignId));
             $this->campaignRepository->pullFromSFIfNotPresent(Salesforce18Id::ofCampaign($campaignId));
+            $campaign = $this->campaignRepository->findOneBySalesforceId(Salesforce18Id::ofCampaign($campaignId));
+            if ($campaign !== null) {
+                $this->campaignService->pullFundsAndUpdateStats($campaign);
+            }
         }
 
         $customerSession = $this->stripeClient->createRegularGivingCustomerSession($donor->stripeCustomerId);
