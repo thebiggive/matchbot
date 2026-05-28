@@ -518,6 +518,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             sfData: $campaignData,
         );
 
+        $campaign->replaceLocations($campaignData['locations']);
+
         $this->getEntityManager()->persist($campaign);
     }
 

@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTimeImmutable;
-use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Environment;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Client\Campaign as CampaignClient;
@@ -54,6 +52,12 @@ class Campaign extends SalesforceReadProxy
 
     #[ORM\OneToOne(mappedBy: 'campaign', targetEntity: CampaignStatistics::class, cascade: ['persist'], fetch: 'EAGER')]
     private ?CampaignStatistics $campaignStatistics = null;
+
+    /**
+     * @var Collection<int, CampaignLocation>
+     */
+    #[ORM\OneToMany(mappedBy: 'campaign', targetEntity: CampaignLocation::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $locations;
 
     /**
      * @var string  ISO 4217 code for the currency in which donations can be accepted and matching's organised.
@@ -215,6 +219,7 @@ class Campaign extends SalesforceReadProxy
         $this->createdNow();
         $this->campaignFundings = new ArrayCollection();
         $this->charity = $charity;
+        $this->locations = new ArrayCollection();
         parent::setSalesforceId($sfId->value);
 
         $this->updateFromSfPull(
@@ -281,7 +286,7 @@ class Campaign extends SalesforceReadProxy
 
         $relatedApplicationStatusString = $campaignData['relatedApplicationStatus'] ?? null;
         $relatedApplicationCharityResponseToOfferString = $campaignData['relatedApplicationCharityResponseToOffer'] ?? null;
-        return new self(
+        $campaign = new self(
             sfId: $salesforceId,
             metaCampaignSlug: $campaignData['parentRef'],
             charity: $charity,
@@ -303,6 +308,10 @@ class Campaign extends SalesforceReadProxy
             rawData: $campaignData,
             hidden: $campaignData['hidden'],
         );
+
+        $campaign->replaceLocations($campaignData['locations']);
+
+        return $campaign;
     }
 
     /**
@@ -668,5 +677,16 @@ class Campaign extends SalesforceReadProxy
     public function getStatistics(): CampaignStatistics
     {
         return $this->campaignStatistics ?? CampaignStatistics::zeroPlaceholder($this, new \DateTimeImmutable('now'));
+    }
+
+    /**
+     * @param list<array{countryName: ?string, regionCode: ?string}> $locationsData
+     */
+    public function replaceLocations(array $locationsData): void
+    {
+        $this->locations->clear();
+        foreach ($locationsData as $locData) {
+            $this->locations->add(new CampaignLocation($this, $locData['countryName'] ?? null, $locData['regionCode'] ?? null));
+        }
     }
 }

@@ -59,6 +59,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     amountRaised: float,
  *     summary: string,
  *     countries: list<string>,
+ *     locations: list<array{countryName: ?string, regionCode: ?string}>,
  *     categories: list<string>,
  *     budgetDetails: list<array{amount: float, description: string}>,
  *     beneficiaries: list<string>,

@@ -53,6 +53,7 @@ class Search extends Action
                     $jsonMatchInListConditions['categories'] = $value;
                     break;
                 case 'country':
+                    // @todo SO-78 switch to filtering on CampaignLocation joined records, once populated.
                     Assertion::string($value);
                     $jsonMatchInListConditions['countries'] = $value;
                     break;

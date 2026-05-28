@@ -31,6 +31,7 @@ readonly class Campaign
      * @param list<array{amount: float, description: string}> $budgetDetails
      * @param list<string> $categories
      * @param list<string> $countries
+     * @param list<array{countryName: string|null, regionCode: string|null}> $locations
      * @param list<array{person: string, quote: string}> $quotes
      * @param list<array{content: string, modifiedDate: string}> $updates
      * @param ?array{provider: string, key: string} $video
@@ -201,6 +202,19 @@ readonly class Campaign
             example: true
         )]
         public bool $isMatched,
+        #[OA\Property(
+            property: "locations",
+            description: "List of countries or regions where the campaign operates",
+            type: "array",
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "countryName", type: "string", example: "Ghana", nullable: true),
+                    new OA\Property(property: "regionCode", type: "string", example: "E12000004", nullable: true)
+                ]
+            )
+        )]
+        public array $locations,
         #[OA\Property(
             property: "logoUri",
             description: "URI for the campaign's logo",
