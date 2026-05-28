@@ -1455,7 +1455,7 @@ class UpdateTest extends TestCase
      */
     private function decodePaylode(string $payload): array
     {
-        $decoded = json_decode($payload, true, \JSON_THROW_ON_ERROR);
+        $decoded = json_decode($payload, associative: true, flags: \JSON_THROW_ON_ERROR);
         \assert(is_array($decoded));
 
         return $decoded;
