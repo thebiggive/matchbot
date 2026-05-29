@@ -257,7 +257,7 @@ class CampaignService
             impactReporting: $sfCampaignData['impactReporting'],
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
-            locations: $sfCampaignData['locations'],
+            locations: $campaign->getLocationsForApi(),
             logoUri: $sfCampaignData['logoUri'],
             matchFundsRemaining: $stats->getMatchFundsRemaining()->toMajorUnitFloat(),
             matchFundsTotal: $stats->getMatchFundsTotal()->toMajorUnitFloat(),

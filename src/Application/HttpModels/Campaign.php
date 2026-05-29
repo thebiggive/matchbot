@@ -31,7 +31,7 @@ readonly class Campaign
      * @param list<array{amount: float, description: string}> $budgetDetails
      * @param list<string> $categories
      * @param list<string> $countries
-     * @param list<array{countryName: string|null, regionCode: string|null}> $locations
+     * @param array<int, array{countryName: ?string, regionCode: ?string}> $locations array is simplest way to match type; ArrayCollection is not covariant.
      * @param list<array{person: string, quote: string}> $quotes
      * @param list<array{content: string, modifiedDate: string}> $updates
      * @param ?array{provider: string, key: string} $video

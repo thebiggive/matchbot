@@ -37,4 +37,15 @@ class CampaignLocation extends Model
         $this->countryName = $countryName;
         $this->regionCode = $regionCode;
     }
+
+    /**
+     * @return array{countryName: string|null, regionCode: string|null}
+     */
+    public function toApi(): array
+    {
+        return [
+            'countryName' => $this->countryName,
+            'regionCode' => $this->regionCode,
+        ];
+    }
 }

@@ -689,4 +689,18 @@ class Campaign extends SalesforceReadProxy
             $this->locations->add(new CampaignLocation($this, $locData['countryName'] ?? null, $locData['regionCode'] ?? null));
         }
     }
+
+    /**
+     * @return array<int, array{countryName: ?string, regionCode: ?string}>
+     */
+    public function getLocationsForApi(): array
+    {
+        // Ensure sequence gaps from clear()ing are removed.
+        return array_values(
+            array_map(
+                static fn (CampaignLocation $location) => $location->toApi(),
+                $this->locations->toArray()
+            )
+        );
+    }
 }
