@@ -115,7 +115,7 @@ class CampaignService
             'categories' => $sfCampaignData['categories'],
             'championName' => $sfCampaignData['championName'],
             'imageUri' => $sfCampaignData['bannerUri'],
-            'target' => $sfCampaignData['target'],
+            'target' => $this->campaignTarget($campaign, $metaCampaign)->toMajorUnitFloat(),
             'parentUsesSharedFunds' => $metaCampaign && $metaCampaign->usesSharedFunds(),
             'parentRef' => $metaCampaign?->getSlug()->slug,
 
