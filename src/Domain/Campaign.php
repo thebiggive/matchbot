@@ -157,8 +157,15 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(nullable: true)]
     protected ?\DateTimeImmutable $regularGivingCollectionEnd;
 
+    /**
+     * Target from Salesforce verbatim. This might be slightly misleading for printing in shared funds cases
+     * (where charity campaigns don't really independently have a target) but is good enough to use for sorting in
+     * all campaign types. It's used for {@see CampaignStatistics} for example.
+     *
+     * See also {@see target()} which may be better for surfacing the most relevant target in a response.
+     */
     #[ORM\Embedded(columnPrefix: 'total_fundraising_target_')]
-    private Money $totalFundraisingTarget;
+    private(set) Money $totalFundraisingTarget;
 
     /**
      * Optional BG-defined default sort override for the metacampaign grid. Works as a rank value when set,
@@ -646,18 +653,6 @@ class Campaign extends SalesforceReadProxy
         }
 
         return MetaCampaignSlug::of($this->metaCampaignSlug);
-    }
-
-    /**
-     * Get the target from Salesforce verbatim. This might be slightly misleading for printing in shared funds cases
-     * (where charity campaigns don't really independently have a target) but is good enough to use for sorting in
-     * all campaign types. It's used for {@see CampaignStatistics} for example.
-     *
-     * See also {@see target()} which may be better for surfacing the most relevant target in a response.
-     */
-    public function getTotalFundraisingTarget(): Money
-    {
-        return $this->totalFundraisingTarget;
     }
 
     public function setTestStatistics(CampaignStatistics $campaignStatistics): void

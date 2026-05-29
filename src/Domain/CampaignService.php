@@ -77,7 +77,7 @@ class CampaignService
         // SF implementation uses `Type__c = 'Regular Campaign'` is the condition. We don't have a copy of
         // `Type__c` but I think the below is equivalent:
         if (!$campaign->isMatched()) {
-            return $campaign->getTotalFundraisingTarget();
+            return $campaign->totalFundraisingTarget;
         }
 
         return $campaign->getStatistics()->getMatchFundsTotal()->times(2);
