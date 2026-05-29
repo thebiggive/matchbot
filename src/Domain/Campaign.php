@@ -162,7 +162,8 @@ class Campaign extends SalesforceReadProxy
      * (where charity campaigns don't really independently have a target) but is good enough to use for sorting in
      * all campaign types. It's used for {@see CampaignStatistics} for example.
      *
-     * See also {@see target()} which may be better for surfacing the most relevant target in a response.
+     * See also {@see CampaignService::campaignTarget} which may be better for surfacing the most relevant
+     * target in a response.
      */
     #[ORM\Embedded(columnPrefix: 'total_fundraising_target_')]
     private(set) Money $totalFundraisingTarget;
