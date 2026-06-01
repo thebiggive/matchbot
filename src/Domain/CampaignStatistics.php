@@ -200,7 +200,8 @@ class CampaignStatistics
             $this->matchFundsRemaining = $matchFundsTotal->minus($matchFundsUsed);
         }
 
-        $target = $this->campaign->getTotalFundraisingTarget();
+        $campaign = $this->campaign;
+        $target = $campaign->totalFundraisingTarget;
         $this->distanceToTarget = $target->lessThan($amountRaised)
             ? Money::zero($this->campaign->getCurrency())
             : $target->minus($amountRaised);
