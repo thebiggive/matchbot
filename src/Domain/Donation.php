@@ -963,8 +963,6 @@ class Donation extends SalesforceWriteProxy
 
             $fundTypeOfThisWithdrawal = $fundingWithdrawal->getCampaignFunding()->getFund()->getFundType();
 
-            // I don't think the match.unhandled error from phpstan here can be right - we handle 12 cases: 3 cases of enum * 2 values of bool * 2 values of bool
-            // @phpstan-ignore match.unhandled
             $key = match ([$fundTypeOfThisWithdrawal, $this->donationStatus->isSuccessful(), $this->donationStatus === DonationStatus::PreAuthorized  ]) {
                 [FundType::ChampionFund, true, true] => throw new \LogicException("impossible status"),
                 [FundType::ChampionFund, true, false] => 'amountMatchedByChampionFunds',
@@ -1870,7 +1868,7 @@ class Donation extends SalesforceWriteProxy
         }
 
         /** @psalm-suppress InvalidReturnStatement - see note in docblock */
-        return $payload;
+        return $payload; // @phpstan-ignore return.type (see note in docblock)
     }
 
     public function isFullyMatched(): bool

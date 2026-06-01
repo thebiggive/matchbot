@@ -590,6 +590,7 @@ return function (ContainerBuilder $containerBuilder) {
 
 
             $connection = DBALDriverManager::getConnection(
+                // @phpstan-ignore argument.type (DBAL docblock doesn't explicitly allow the platform key but it works for now)
                 $c->get(Settings::class)->doctrine['connection'] +
                 [
                     'platform' => new \MatchBot\Application\CustomMysqlPlatform(),
