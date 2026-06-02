@@ -190,6 +190,7 @@ class Campaign extends SalesforceReadProxy
      * @param Money $totalFundraisingTarget
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
      * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
+     * @param list<array{countryName: null|string, regionCode: null|string}> $locations
      * @param bool $isRegularGiving
      * @param ApplicationStatus|null $relatedApplicationStatus,
      * @param CharityResponseToOffer|null $relatedApplicationCharityResponseToOffer
@@ -213,6 +214,7 @@ class Campaign extends SalesforceReadProxy
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         Money $totalFundraisingTarget,
         ?string $thankYouMessage = null,
+        array $locations = [],
         array $rawData = [],
         bool $hidden = false,
     ) {
@@ -240,6 +242,7 @@ class Campaign extends SalesforceReadProxy
             thankYouMessage: $thankYouMessage,
             hidden: $hidden,
             totalFundraisingTarget: $totalFundraisingTarget,
+            locations: $locations,
             sfData: $rawData,
         );
         $this->summary = $summary;
@@ -306,10 +309,9 @@ class Campaign extends SalesforceReadProxy
             totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
             thankYouMessage: $campaignData['thankYouMessage'],
             rawData: $campaignData,
+            locations: $campaignData['locations'],
             hidden: $campaignData['hidden'],
         );
-
-        $campaign->replaceLocations($campaignData['locations']);
 
         return $campaign;
     }
@@ -471,6 +473,7 @@ class Campaign extends SalesforceReadProxy
      * @param string $summary
      * @param Money $totalFundraisingTarget
      * @param CharityResponseToOffer|null $relatedApplicationCharityResponseToOffer
+     * @param list<array{countryName: null|string, regionCode: null|string}> $locations
      * @param array<string,mixed> $sfData
      */
     final public function updateFromSfPull(
@@ -491,6 +494,7 @@ class Campaign extends SalesforceReadProxy
         ?string $thankYouMessage,
         bool $hidden,
         Money $totalFundraisingTarget,
+        array $locations,
         array $sfData,
     ): void {
         Assertion::lessOrEqualThan(
@@ -535,6 +539,8 @@ class Campaign extends SalesforceReadProxy
         $this->championPagePinPosition = $championPagePinPosition;
         $this->relatedApplicationStatus = $relatedApplicationStatus;
         $this->relatedApplicationCharityResponseToOffer = $relatedApplicationCharityResponseToOffer;
+
+        $this->replaceLocations($locations);
 
         unset($sfData['charity']); // charity stores its own data, we don't need to keep a copy here.
         $this->salesforceData = $sfData;
