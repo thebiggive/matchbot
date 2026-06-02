@@ -686,7 +686,11 @@ class Campaign extends SalesforceReadProxy
     {
         $this->locations->clear();
         foreach ($locationsData as $locData) {
-            $this->locations->add(new CampaignLocation($this, $locData['countryName'] ?? null, $locData['regionCode'] ?? null));
+            $this->locations->add(new CampaignLocation(
+                campaign: $this,
+                countryName: $locData['countryName'] ?? null,
+                regionCode: $locData['regionCode'] ?? null
+            ));
         }
     }
 
