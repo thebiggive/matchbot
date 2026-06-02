@@ -33,6 +33,10 @@ class CampaignLocation extends Model
 
     public function __construct(Campaign $campaign, ?string $countryName, ?string $regionCode)
     {
+        if ($countryName === null && $regionCode === null) {
+            throw new \LogicException('At least one of countryName or regionCode must be set');
+        }
+
         $this->campaign = $campaign;
         $this->countryName = $countryName;
         $this->regionCode = $regionCode;
