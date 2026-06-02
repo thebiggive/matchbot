@@ -313,8 +313,8 @@ class DonationService
         $this->updateDonationFeesFromConfirmationTokenOrCard($donation, $confirmationToken, $card);
 
         if ($psp === PaymentServiceProvider::Ryft) {
-            \assert(isset($paymentSession));
-            \assert(isset($ryftAccountId));
+            \assert(isset($paymentSession)); // @phpstan-ignore isset.variable (psalm still needs this)
+            \assert(isset($ryftAccountId)); // @phpstan-ignore isset.variable (psalm still needs this)
             $donationWasPreviouslyCollected = $donation->getDonationStatus() === DonationStatus::Collected;
 
             $capture = $this->ryftClient->capturePayment(

@@ -142,7 +142,6 @@ class TestCase extends PHPUnitTestCase
 
 
     /**
-     * @psalm-suppress InvalidConstantAssignmentValue - can't work out quite what Psalm thinks is wrong here
      * @var SFCampaignApiResponse
      */
     public const array META_CAMPAIGN_FROM_SALESFORCE = [
@@ -153,7 +152,6 @@ class TestCase extends PHPUnitTestCase
         'video' => null,
         'hidden' => false,
         'quotes' => [],
-        'status' => 'Active',
         'endDate' => '2095-08-01T00:00:00.000Z',
         'logoUri' => null,
         'problem' => '',
@@ -198,7 +196,6 @@ class TestCase extends PHPUnitTestCase
         'budgetDetails' => [],
         'beneficiaries' => [],
         'parentTarget' => null,
-        'ryftAccountId' => null,
     ];
 
     /**

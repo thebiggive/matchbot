@@ -85,7 +85,7 @@ class UpdatePaymentMethod extends Action
             /**
              * @psalm-suppress MixedArgumentTypeCoercion - up to the FE to supply the right params in `$newBillingDetails`
              */
-            $this->stripeClient->paymentMethods->update($paymentMethodId, $newBillingDetails);
+            $this->stripeClient->paymentMethods->update($paymentMethodId, $newBillingDetails); // @phpstan-ignore argument.type
         } catch (ApiErrorException $e) {
             // Error message could be e.g. "Your card's security code is incorrect." in which case the donor
             // will not be able to update their card and can choose to delete it and add a new card for their

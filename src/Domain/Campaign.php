@@ -629,7 +629,7 @@ class Campaign extends SalesforceReadProxy
      */
     public function getSalesforceData(): array
     {
-        return $this->salesforceData + ['charity' => $this->charity->getSalesforceData()];
+        return $this->salesforceData + ['charity' => $this->charity->getSalesforceData()]; // @phpstan-ignore return.type
     }
 
     /**

@@ -208,7 +208,7 @@ abstract class IntegrationTest extends TestCase
         };
 
         /** @var ApiClient $client */
-        $client = [
+        $client = [ // @phpstan-ignore varTag.nativeType
             'global' => $global,
             'mailer' => [
                 'baseUri' => 'dummy-mailer-base-uri',
