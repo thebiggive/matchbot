@@ -145,7 +145,7 @@ class RyftClient
         $responseContents = $response->getBody()->getContents();
 
         /** @var array{id: string, amount: int, platformFee: int, currency: string, status: string} $responseData */
-        $responseData = json_decode($responseContents, associative: true, depth: \JSON_THROW_ON_ERROR);
+        $responseData = json_decode($responseContents, associative: true, flags: \JSON_THROW_ON_ERROR);
 
         $this->log->info('Captured Ryft payment or ' . $responseData['amount'] . ' for payment session ' . $responseData['id']);
 
