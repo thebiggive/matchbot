@@ -76,7 +76,8 @@ class TestCase extends PHPUnitTestCase
         'updates' => [],
         'solution' => 'do the saving',
         'bannerUri' => null,
-        'countries' => [0 => 'United Kingdom',],
+        'countries' => [0 => 'United Kingdom'],
+        'locations' => [['countryName' => 'United Kingdom', 'regionCode' => null]],
         'isMatched' => true,
         'parentRef' => null,
         'startDate' => '2015-08-01T00:00:00.000Z',
@@ -159,7 +160,10 @@ class TestCase extends PHPUnitTestCase
         'updates' => [],
         'solution' => 'do the saving',
         'bannerUri' => null,
+        // These properties aren't actually used on MetaCampaign but it's only tests affected and
+        // quicker to continue importing a shared type for now.
         'countries' => [0 => 'United Kingdom',],
+        'locations' => [['countryName' => 'United Kingdom', 'regionCode' => null]],
         'isMatched' => true,
         'parentRef' => null,
         'startDate' => '2015-08-01T00:00:00.000Z',

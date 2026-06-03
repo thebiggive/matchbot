@@ -515,6 +515,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             thankYouMessage: $campaignData['thankYouMessage'],
             hidden: $campaignData['hidden'] ?? false,
             totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
+            locations: $campaignData['locations'],
             sfData: $campaignData,
         );
 
