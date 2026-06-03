@@ -15,6 +15,7 @@ use Symfony\Component\Clock\MockClock;
 
 class DonationMatchingTest extends IntegrationTest
 {
+    // @phpstan-ignore property.onlyWritten (this seems to be untrue, it is read in e.g. testACrashedDonationDoesNOtReduceAvailableMatchFunds )
     private int $campaignFundingId;
     private CampaignFundingRepository $campaignFundingRepository;
     private Adapter $matchingAdapater;

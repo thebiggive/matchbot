@@ -358,6 +358,11 @@ class Charity extends SalesforceReadProxy
         $this->emailAddress = $emailAddress?->email;
     }
 
+    /**
+     * This is now our approximation of the statement descriptor Salesforce sets at account level.
+     * It's only directly used to tell donors what to look out for rather than sent to Stripe
+     * per-donation which didn't work as we wanted pre-BG2-3145.
+     */
     public function getStatementDescriptor(): string
     {
         $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor

@@ -65,7 +65,7 @@ class RyftClient
 
         $responseContents = $response->getBody()->getContents();
 
-        $response = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
+        $response = json_decode($responseContents, associative: true, flags: \JSON_THROW_ON_ERROR);
         Assertion::isArray($response);
         $clientSecret = $response['clientSecret'];
         $id = $response['id'];
@@ -103,7 +103,7 @@ class RyftClient
         $response = $this->client->send($request);
 
         $responseContents = $response->getBody()->getContents();
-        $responseData = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
+        $responseData = json_decode($responseContents, associative: true, flags: \JSON_THROW_ON_ERROR);
         $cardBrand = $responseData['paymentMethod']['card']['scheme']; // @phpstan-ignore-line
         $cardCountryIso2 = $responseData['paymentMethod']['card']['binDetails']['issuerCountry']; // @phpstan-ignore-line
 
@@ -128,7 +128,7 @@ class RyftClient
                 // ammount not set hereto capture full amount
                     'platformFee' => $platformFee->amountInPence(),
                 ],
-                \JSON_THROW_ON_ERROR,
+                flags: \JSON_THROW_ON_ERROR,
             ),
         );
 
@@ -145,7 +145,7 @@ class RyftClient
         $responseContents = $response->getBody()->getContents();
 
         /** @var array{id: string, amount: int, platformFee: int, currency: string, status: string} $responseData */
-        $responseData = json_decode($responseContents, true, \JSON_THROW_ON_ERROR);
+        $responseData = json_decode($responseContents, associative: true, flags: \JSON_THROW_ON_ERROR);
 
         $this->log->info('Captured Ryft payment or ' . $responseData['amount'] . ' for payment session ' . $responseData['id']);
 
