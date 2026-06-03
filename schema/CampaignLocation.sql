@@ -6,7 +6,7 @@
 -- information only.
 
 CREATE TABLE `CampaignLocation` (
-  `countryName` varchar(50) DEFAULT NULL,
+  `countryName` varchar(100) DEFAULT NULL,
   `regionCode` varchar(10) DEFAULT NULL,
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `campaign_id` int unsigned NOT NULL,

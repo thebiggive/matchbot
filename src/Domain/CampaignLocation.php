@@ -22,7 +22,7 @@ class CampaignLocation extends Model
     /**
      * @var string|null Set when the country overall is on the campaign's list.
      */
-    #[ORM\Column(length: 50, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $countryName = null;
 
     /**
