@@ -66,6 +66,8 @@ jobs:
 
       - run: composer run sa:check
 
+      - run: composer run guard
+
       - run: composer run test
 
       - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose

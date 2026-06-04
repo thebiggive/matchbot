@@ -173,6 +173,7 @@
         "lint:fix": "phpcbf --standard=phpcs.xml -s . --ignore=reports",
         "fmt:check": "mago fmt --check",
         "fmt:fix": "mago fmt",
+        "guard": "mago guard",
         "matchbot:claim-gift-aid": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:claim-gift-aid"

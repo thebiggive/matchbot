@@ -58,3 +58,44 @@ no-boolean-literal-comparison = false
 check-missing-type-hints = false
 register-super-globals = true
 baseline = "analysis-baseline.toml"
+
+[[guard.perimeter.rules]]
+namespace = "MatchBot\\Domain\\"
+permit = [
+    "@self",
+    "@native",
+    "Assert\\",
+    "Doctrine\\Common\\",
+    "Doctrine\\DBAL\\",
+    "Doctrine\\ORM\\",
+    "GuzzleHttp\\",
+    "JetBrains\\PhpStorm\\",
+    "Laminas\\Diactoros\\",
+    "Messages\\",
+    "OpenApi\\Attributes\\",
+    "PrinsFrank\\Standards\\Country\\",
+    "Psr\\Clock\\",
+    "Psr\\Http\\Message\\",
+    "Psr\\Log\\",
+    "Ramsey\\Uuid\\",
+    "Stripe\\",
+    "Symfony\\Component\\Clock\\",
+    "Symfony\\Component\\Lock\\",
+    "Symfony\\Component\\Messenger\\",
+    "Symfony\\Component\\Notifier\\",
+    "Symfony\\Component\\RateLimiter\\",
+    "Symfony\\Component\\String\\",
+    "Symfony\\Contracts\\Cache\\",
+    ]
+
+[[guard.perimeter.rules]]
+namespace = "MatchBot\\Application\\"
+permit = ["@all"]
+
+[[guard.perimeter.rules]]
+namespace = "@global"
+permit = ["@all"]
+
+[[guard.perimeter.rules]]
+namespace = "MatchBot"
+permit = ["@all"]
