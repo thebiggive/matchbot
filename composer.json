@@ -167,7 +167,7 @@
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "./vendor/bin/doctrine-migrations migrations:diff"],
         "doctrine:migrate:generate": "./vendor/bin/doctrine-migrations migrations:generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
-        "sa:check": "vendor/bin/mago analyze && vendor/bin/phpstan && vendor/bin/psalm",
+        "sa:check": "bash -c \"time vendor/bin/mago analyze && time vendor/bin/phpstan && time vendor/bin/psalm\"",
         "sa:check-with-new-cache": "vendor/bin/phpstan && vendor/bin/psalm --clear-cache; vendor/bin/psalm",
         "lint:check": "mago lint --semantics; phpcs --standard=phpcs.xml -s . --ignore=reports",
         "lint:fix": "phpcbf --standard=phpcs.xml -s . --ignore=reports",
