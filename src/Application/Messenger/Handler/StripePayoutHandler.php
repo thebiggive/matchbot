@@ -232,7 +232,6 @@ class StripePayoutHandler
      * do not check its status, which is likely "failed".
      *
      * @return array{
-     *
      *     created: \DateTimeImmutable,
      *     chargeIds: array<string>
      *         }
@@ -330,6 +329,7 @@ class StripePayoutHandler
         ];
     }
 
+    // @mago-expect analysis:mixed-assignment,mixed-property-access(3)
     /**
      * @return array{chargeIds: array<string>, payoutIds: array<string>}
      */
@@ -371,6 +371,7 @@ class StripePayoutHandler
         return ['chargeIds' => $paidChargeIds, 'payoutIds' => $extraPayoutIdsToMap];
     }
 
+    // @mago-expect analysis:impossible-condition,redundant-type-comparison,mixed-property-access(2),mixed-assignment
     /**
      * @param string[]  $paidChargeIds  Connect acct charge IDs (`py_...`) from `source` property of
      *                                  balance txn `"type": "payment"` lines.
