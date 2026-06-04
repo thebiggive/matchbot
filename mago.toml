@@ -38,7 +38,7 @@ literal-named-argument = { enabled = false }
 halstead = { effort-threshold = 7000 }
 
 [analyzer]
-plugins = []
+plugins = ["psr-container"]
 find-unused-definitions = true
 find-unused-expressions = false
 analyze-dead-code = false
