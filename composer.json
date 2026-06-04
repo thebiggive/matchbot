@@ -70,6 +70,7 @@
         "thebiggive/messages": "^3.4.0"
     },
     "require-dev": {
+        "carthage-software/mago": "^1.29.0",
         "doctrine/event-manager": "^2.0",
         "infection/infection": "^0.29.10",
         "jangregor/phpstan-prophecy": "^2.1",
@@ -166,7 +167,7 @@
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "./vendor/bin/doctrine-migrations migrations:diff"],
         "doctrine:migrate:generate": "./vendor/bin/doctrine-migrations migrations:generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
-        "sa:check": "vendor/bin/phpstan && vendor/bin/psalm",
+        "sa:check": "vendor/bin/mago analyze && vendor/bin/phpstan && vendor/bin/psalm",
         "sa:check-with-new-cache": "vendor/bin/phpstan && vendor/bin/psalm --clear-cache; vendor/bin/psalm",
         "lint:check": "phpcs --standard=phpcs.xml -s . --ignore=reports",
         "lint:fix": "phpcbf --standard=phpcs.xml -s . --ignore=reports",
