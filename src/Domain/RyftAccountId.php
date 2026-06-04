@@ -3,7 +3,6 @@
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping\Column;
-use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assertion;
 
 /**
@@ -18,7 +17,7 @@ readonly class RyftAccountId
     public string $ryftAccountId;
 
     private function __construct(
-        string $ryftAccountId
+        string $ryftAccountId,
     ) {
         $this->ryftAccountId = $ryftAccountId;
         Assertion::notEmpty($this->ryftAccountId);
@@ -28,7 +27,7 @@ readonly class RyftAccountId
         Assertion::regex(
             $this->ryftAccountId,
             '/^ac_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/',
-            "Given ryft account ID {$ryftAccountId} does not match expected pattern"
+            "Given ryft account ID {$ryftAccountId} does not match expected pattern",
         );
     }
 

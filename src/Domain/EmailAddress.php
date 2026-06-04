@@ -11,13 +11,13 @@ use MatchBot\Application\Assertion;
 readonly class EmailAddress
 {
     #[Column(type: 'string')]
-    public readonly string $email;
+    public string $email;
 
     /**
      * @throws AssertionFailedException
      */
     private function __construct(
-        string $value
+        string $value,
     ) {
         $this->email = $value;
         Assertion::email($this->email);

@@ -33,10 +33,14 @@ class DonorName
 
         // first name may be empty to account for organisation donors who only have a last name
         Assert::lazy()
-            ->that($first, 'first')->betweenLength(0, 255)
-            ->that($last, 'last')->betweenLength(1, 255)
-            ->that($first)->notRegex($sixDigitsRegex)
-            ->that($last)->notRegex($sixDigitsRegex)
+            ->that($first, 'first')
+            ->betweenLength(0, 255)
+            ->that($last, 'last')
+            ->betweenLength(1, 255)
+            ->that($first)
+            ->notRegex($sixDigitsRegex)
+            ->that($last)
+            ->notRegex($sixDigitsRegex)
             ->verifyNow();
 
         $this->first = $first;
@@ -57,8 +61,11 @@ class DonorName
      * @return DonorName|null
      * @throws \Assert\AssertionFailedException
      */
-    public static function maybeFromFirstAndLast(?string $firstName, ?string $lastName, bool $isOrganisation = false): ?self
-    {
+    public static function maybeFromFirstAndLast(
+        ?string $firstName,
+        ?string $lastName,
+        bool $isOrganisation = false,
+    ): ?self {
         if ($isOrganisation) {
             Assertion::notBlank($lastName, 'Last name is required for organisation donors');
             return DonorName::of('', $lastName);
@@ -66,9 +73,9 @@ class DonorName
 
         $hasFirstName = is_string($firstName) && $firstName !== '';
         $hasLastName = is_string($lastName) && $lastName !== '';
-        Assertion::same($hasFirstName, $hasLastName, "First and last names must be supplied together or not at all.");
+        Assertion::same($hasFirstName, $hasLastName, 'First and last names must be supplied together or not at all.');
 
-        return ($hasFirstName && $hasLastName) ? DonorName::of($firstName, $lastName) : null;
+        return $hasFirstName && $hasLastName ? DonorName::of($firstName, $lastName) : null;
     }
 
     public function fullName(): string

@@ -6,7 +6,6 @@ namespace MatchBot\Application\Actions;
 
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Environment;
-use MatchBot\Application\HttpModels\MetaCampaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\MetaCampaignRepository;
 use Psr\Clock\ClockInterface;
@@ -14,8 +13,6 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use SimpleXMLElement;
-use Symfony\Contracts\Cache\CacheInterface;
-use Symfony\Contracts\Cache\ItemInterface;
 
 /**
  * Creates a sitemap for the Big Give public facing site. See spec at https://www.sitemaps.org/protocol.html#prioritydef
@@ -43,13 +40,13 @@ class Sitemap extends Action
 
         $campaigns = $this->campaignRepository->search(
             sortField: 'amountRaised',
-            sortDirection:  'asc',
+            sortDirection: 'asc',
             offset: 0,
             limit: 100_000,
             metaCampaignSlug: null,
             fundSlug: null,
             jsonMatchInListConditions: [],
-            term:null,
+            term: null,
         );
 
         foreach ($campaigns as $campaign) {
@@ -67,14 +64,14 @@ class Sitemap extends Action
                 priority: $endsInFuture ? '0.5' : '0.25',
             );
 
-            if ($campaign->isOpen($this->clock->now()) && ! $campaign->isRegularGiving()) {
+            if ($campaign->isOpen($this->clock->now()) && !$campaign->isRegularGiving()) {
                 // regular giving donate pages are at a different address and in any case behind a login-wall,
                 // so not worth listing in sitemap.
                 $this->addUrl(
                     xml: $xml,
                     url: $this->environment->publicDonateURLPrefix() . 'donate/' . $campaign->getSalesforceId(),
                     changefreq: $changefreq,
-                    priority: '0.5'
+                    priority: '0.5',
                 );
             }
         }
@@ -84,7 +81,7 @@ class Sitemap extends Action
         foreach ($metaCampaigns as $metaCampaign) {
             if ($metaCampaign->isOpen($this->clock->now())) {
                 $changefreq = 'always';
-            } elseif ($metaCampaign->getEndDate() > $this->clock->now()->sub(new \DateInterval("P1D"))) {
+            } elseif ($metaCampaign->getEndDate() > $this->clock->now()->sub(new \DateInterval('P1D'))) {
                 $changefreq = 'hourly';
             } else {
                 $changefreq = 'monthly';
@@ -94,11 +91,13 @@ class Sitemap extends Action
                 xml: $xml,
                 url: $this->environment->publicDonateURLPrefix() . $metaCampaign->getSlug()->slug,
                 changefreq: $changefreq,
-                priority: ($metaCampaign->getEndDate() > $this->clock->now()->add(new \DateInterval("P14D"))) ? '0.75' : '0.5',
+                priority: $metaCampaign->getEndDate() > $this->clock->now()->add(new \DateInterval('P14D'))
+                    ? '0.75'
+                    : '0.5',
             );
         }
 
-        $sitemapXml =  $xml->asXML();
+        $sitemapXml = $xml->asXML();
 
         \assert(\is_string($sitemapXml));
 

@@ -5,7 +5,6 @@ namespace MatchBot\Application\Actions\MetaCampaigns;
 use Assert\AssertionFailedException;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\Environment;
 use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\MetaCampaignSlug;
@@ -19,16 +18,17 @@ class Get extends Action
     public function __construct(
         private CampaignService $campaignService,
         private MetaCampaignRepository $metaCampaignRepository,
-        LoggerInterface $logger
+        LoggerInterface $logger,
     ) {
         parent::__construct($logger);
     }
 
-    #[\Override] protected function action(Request $request, Response $response, array $args): Response
+    #[\Override]
+    protected function action(Request $request, Response $response, array $args): Response
     {
         try {
             $slug = MetaCampaignSlug::of(
-                $args['slug'] ?? throw new HttpNotFoundException($request)
+                $args['slug'] ?? throw new HttpNotFoundException($request),
             );
         } catch (AssertionFailedException) {
             throw new HttpNotFoundException($request);

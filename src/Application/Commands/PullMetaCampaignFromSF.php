@@ -17,12 +17,9 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/**
- *
- */
 #[AsCommand(
     name: 'matchbot:pull-meta-campaign-from-sf',
-    description: 'Pulls already-known children of meta-campaign from Salesforce into the matchbot DB.'
+    description: 'Pulls already-known children of meta-campaign from Salesforce into the matchbot DB.',
 )]
 class PullMetaCampaignFromSF extends LockingCommand
 {
@@ -36,6 +33,7 @@ class PullMetaCampaignFromSF extends LockingCommand
     ) {
         parent::__construct();
     }
+
     #[\Override]
     public function configure(): void
     {
@@ -44,20 +42,23 @@ class PullMetaCampaignFromSF extends LockingCommand
 
     public function pullCharityCampaigns(MetaCampaignSlug $metaCampaginSlug, OutputInterface $output): void
     {
-        ['newFetchCount' => $newFetchCount, 'updatedCount' => $updatedCount, 'campaigns' => $campaigns] =
-            $this->campaignRepository->fetchAlreadyKnownChildrenForMetaCampaign($metaCampaginSlug);
+        [
+            'newFetchCount' => $newFetchCount,
+            'updatedCount' => $updatedCount,
+            'campaigns' => $campaigns,
+        ] = $this->campaignRepository->fetchAlreadyKnownChildrenForMetaCampaign($metaCampaginSlug);
 
         $total = $newFetchCount + $updatedCount;
 
         $i = 0;
         foreach ($campaigns as $campaign) {
             $i++;
-            $output->writeln("Pulling funds for ($i of $total) '{$campaign->getCampaignName()}'");
+            $output->writeln("Pulling funds for ({$i} of {$total}) '{$campaign->getCampaignName()}'");
             $this->campaignService->pullFundsAndUpdateStats($campaign);
         }
 
-        $output->writeln("Fetched $total campaigns total from Salesforce for '$metaCampaginSlug->slug'");
-        $output->writeln("$newFetchCount new campaigns added to DB, $updatedCount campaigns updated");
+        $output->writeln("Fetched {$total} campaigns total from Salesforce for '{$metaCampaginSlug->slug}'");
+        $output->writeln("{$newFetchCount} new campaigns added to DB, {$updatedCount} campaigns updated");
     }
 
     #[\Override]

@@ -37,7 +37,7 @@ abstract class Common
      */
     public function __construct(
         Settings $settings,
-        protected LoggerInterface $logger
+        protected LoggerInterface $logger,
     ) {
         $this->clientSettings = $settings->apiClient;
         $this->sfApiBaseUrl = $this->clientSettings['salesforce']['baseUri'];
@@ -82,15 +82,19 @@ abstract class Common
      * @throws BadRequestException
      * @throws BadResponseException
      */
-    protected function postUpdateToSalesforce(string $uri, array $jsonSnapshot, string $uuid, string $entityType): Salesforce18Id
-    {
+    protected function postUpdateToSalesforce(
+        string $uri,
+        array $jsonSnapshot,
+        string $uuid,
+        string $entityType,
+    ): Salesforce18Id {
         if ((bool) getenv('DISABLE_CLIENT_PUSH')) {
-            $this->logger->info("Client push off: Skipping upsert of $entityType {$uuid}}");
+            $this->logger->info("Client push off: Skipping upsert of {$entityType} {$uuid}}");
             throw new BadRequestException('Client push is off');
         }
 
         // @phpstan-ignore cast.string
-        $messageDate = (string)($jsonSnapshot[DonationUpserted::SNAPSHOT_TAKEN_AT] ?? 'unknown date');
+        $messageDate = (string) ( $jsonSnapshot[DonationUpserted::SNAPSHOT_TAKEN_AT] ?? 'unknown date' );
 
         try {
             $response = $this->getHttpClient()->post(
@@ -98,7 +102,7 @@ abstract class Common
                 [
                     'json' => $jsonSnapshot,
                     'headers' => $this->getVerifyHeaders(json_encode($jsonSnapshot, \JSON_THROW_ON_ERROR)),
-                ]
+                ],
             );
             $contents = $response->getBody()->getContents();
         } catch (RequestException $ex) {
@@ -122,11 +126,10 @@ abstract class Common
                 throw new NotFoundException();
             }
 
-            $sandboxMissingLinkedResource = (
-                $ex->getCode() === 400 &&
-                getenv('APP_ENV') !== 'production' &&
-                str_contains($ex->getMessage(), '"entity is deleted"')
-            );
+            $sandboxMissingLinkedResource =
+                $ex->getCode() === 400
+                && getenv('APP_ENV') !== 'production'
+                && str_contains($ex->getMessage(), '"entity is deleted"');
             $exResponse = $ex->getResponse();
             if ($sandboxMissingLinkedResource) {
                 /**
@@ -161,8 +164,8 @@ abstract class Common
         }
 
         if (!in_array($response->getStatusCode(), [200, 201], true)) {
-            $this->logger->error("$entityType upsert got non-success code " . $response->getStatusCode());
-            throw new BadRequestException("$entityType not upserted, response code " . $response->getStatusCode());
+            $this->logger->error("{$entityType} upsert got non-success code " . $response->getStatusCode());
+            throw new BadRequestException("{$entityType} not upserted, response code " . $response->getStatusCode());
         }
 
         try {
@@ -170,11 +173,13 @@ abstract class Common
              * @var array{'salesforceId': string} $response
              */
             $response = json_decode($contents, associative: true, flags: \JSON_THROW_ON_ERROR);
-            $salesforceId = $response['salesforceId'] ?? throw new BadRequestException("Missing salesforceId for $entityType $uuid");
+            $salesforceId = $response['salesforceId'] ?? throw new BadRequestException(
+                "Missing salesforceId for {$entityType} {$uuid}",
+            );
             return Salesforce18Id::of($salesforceId);
         } catch (\JsonException $e) {
             throw new BadResponseException(
-                "JsonException trying to parse response from to push of $entityType $uuid SF '$contents': {$e->getMessage()}"
+                "JsonException trying to parse response from to push of {$entityType} {$uuid} SF '{$contents}': {$e->getMessage()}",
             );
         }
     }

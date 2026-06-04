@@ -105,7 +105,6 @@ readonly class RegularGivingService
         $this->ensureCampaignIsOpen($campaign);
         $this->cancelAnyPendingMandateForDonorAndCampaign($donor, $campaign);
 
-
         if ($billingCountry) {
             $donor->setBillingCountry($billingCountry);
         }
@@ -127,7 +126,7 @@ readonly class RegularGivingService
             dayOfMonth: $dayOfMonth,
             tbgComms: $tbgComms,
             charityComms: $charityComms,
-            matchDonations: $matchDonations
+            matchDonations: $matchDonations,
         );
 
         $donorPreviousHomeAddress = $donor->getHomeAddressLine1();
@@ -142,7 +141,7 @@ readonly class RegularGivingService
             $donor->setHomeIsOutsideUK($homeIsOutsideUk);
         }
 
-        if ($giftAid && ! $homeAddressSupplied) {
+        if ($giftAid && !$homeAddressSupplied) {
             throw new HomeAddressRequired('Home Address is required when gift aid is selected');
         }
 
@@ -155,7 +154,7 @@ readonly class RegularGivingService
         $donations = [
             $firstDonation = $mandate->createPendingFirstDonation($campaign, $donor),
             $this->createFutureDonationInAdvanceOfActivation($mandate, 2, $donor, $campaign),
-            $this->createFutureDonationInAdvanceOfActivation($mandate, 3, $donor, $campaign)
+            $this->createFutureDonationInAdvanceOfActivation($mandate, 3, $donor, $campaign),
         ];
 
         $this->entityManager->persist($mandate);
@@ -167,7 +166,7 @@ readonly class RegularGivingService
             // Should rarely happen as UI can be designed to stop people getting to this point.
             if (str_contains($e->getMessage(), 'RegularGivingMandate.person_id_if_active')) {
                 throw new MandateAlreadyExists(
-                    'You already have an active or pending regular giving mandate for ' . $campaign->getCampaignName()
+                    'You already have an active or pending regular giving mandate for ' . $campaign->getCampaignName(),
                 );
             }
             throw $e;
@@ -178,11 +177,16 @@ readonly class RegularGivingService
         } catch (\Throwable $e) {
             $donor->setHomeAddressLine1($donorPreviousHomeAddress);
             $donor->setHomePostcode(
-                is_string($donorPreviousHomePostcode) ?
-                    PostCode::of($donorPreviousHomePostcode, true) : null
+                is_string($donorPreviousHomePostcode)
+                    ? PostCode::of($donorPreviousHomePostcode, true)
+                    : null,
             );
 
-            $mandate->cancel($e->getMessage(), new \DateTimeImmutable(), MandateCancellationType::EnrollingDonationFailed);
+            $mandate->cancel(
+                $e->getMessage(),
+                new \DateTimeImmutable(),
+                MandateCancellationType::EnrollingDonationFailed,
+            );
             foreach ($donations as $donation) {
                 $this->donationService->cancel($donation);
             }
@@ -193,9 +197,9 @@ readonly class RegularGivingService
 
         $donorsSavedPaymentMethod = $donor->getRegularGivingPaymentMethod();
         Assertion::true(
-            ($confirmationTokenId && !$donorsSavedPaymentMethod) ||
-            (! $confirmationTokenId && $donorsSavedPaymentMethod),
-            'Confirmation token must be given iff there is no payment method on file'
+            ( $confirmationTokenId && !$donorsSavedPaymentMethod )
+            || ( !$confirmationTokenId && $donorsSavedPaymentMethod ),
+            'Confirmation token must be given iff there is no payment method on file',
         );
 
         try {
@@ -210,7 +214,11 @@ readonly class RegularGivingService
                 );
             } else {
                 \assert($donorsSavedPaymentMethod !== null);
-                $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod, false);
+                $this->donationService->confirmDonationWithSavedPaymentMethod(
+                    $firstDonation,
+                    $donorsSavedPaymentMethod,
+                    false,
+                );
             }
         } catch (PaymentIntentNotSucceeded $e) {
             $this->entityManager->flush();
@@ -223,10 +231,16 @@ readonly class RegularGivingService
         $this->donationService->queryStripeToUpdateDonationStatus($firstDonation);
 
         if (!$firstDonation->getDonationStatus()->isSuccessful()) {
-            $this->cancelNewMandate($mandate, $firstDonation, $donor, $donorPreviousHomeAddress, $donorPreviousHomePostcode);
+            $this->cancelNewMandate(
+                $mandate,
+                $firstDonation,
+                $donor,
+                $donorPreviousHomeAddress,
+                $donorPreviousHomePostcode,
+            );
 
             throw new DonationNotCollected(
-                'First Donation in Regular Giving mandate could not be collected, not activating mandate'
+                'First Donation in Regular Giving mandate could not be collected, not activating mandate',
             );
         }
 
@@ -254,7 +268,7 @@ readonly class RegularGivingService
 
         $lastSequenceNumber = $this->donationRepository->maxSequenceNumberForMandate($mandateId);
         if ($lastSequenceNumber === null) {
-            throw new \Exception("No donations found for mandate $mandateId, cannot generate next donation");
+            throw new \Exception("No donations found for mandate {$mandateId}, cannot generate next donation");
         }
 
         $donor = $this->donorAccountRepository->findByPersonId($mandate->donorId());
@@ -290,8 +304,10 @@ readonly class RegularGivingService
 
         if ($preAuthorizationDate > $this->clock->now()) {
             $this->log->info(
-                "Mandate #{$mandateId}: Not creating donation yet as will only be authorized to pay on " .
-                $preAuthorizationDate->format("Y-m-d") . ' and now is ' . $this->clock->now()->format("Y-m-d")
+                "Mandate #{$mandateId}: Not creating donation yet as will only be authorized to pay on "
+                    . $preAuthorizationDate->format('Y-m-d')
+                    . ' and now is '
+                    . $this->clock->now()->format('Y-m-d'),
             );
 
             // Throw this donation away without persisting, we can create it again when the authorization date is
@@ -311,24 +327,29 @@ readonly class RegularGivingService
     {
         $mandatesWithCharities = $this->regularGivingMandateRepository->allMandatesForDisplayToDonor($donor);
 
-        $currentUKTime = $this->clock->now()->setTimezone(new \DateTimeZone("Europe/London"));
+        $currentUKTime = $this->clock->now()->setTimezone(new \DateTimeZone('Europe/London'));
 
-        return array_map(/**
-         * @param array{0: RegularGivingMandate, 1: Charity} $tuple
-         * @return array
-         */            static fn(array $tuple) => $tuple[0]->toFrontEndApiModel($tuple[1], $currentUKTime),
-            $mandatesWithCharities
+        return array_map(
+            /**
+             * @param array{0: RegularGivingMandate, 1: Charity} $tuple
+             * @return array
+             */            static fn(array $tuple) => $tuple[0]->toFrontEndApiModel($tuple[1], $currentUKTime),
+            $mandatesWithCharities,
         );
     }
 
-    public function createFutureDonationInAdvanceOfActivation(RegularGivingMandate $mandate, int $number, DonorAccount $donor, Campaign $campaign): Donation
-    {
+    public function createFutureDonationInAdvanceOfActivation(
+        RegularGivingMandate $mandate,
+        int $number,
+        DonorAccount $donor,
+        Campaign $campaign,
+    ): Donation {
         return $mandate->createPreAuthorizedDonation(
             DonationSequenceNumber::of($number),
             $donor,
             $campaign,
             requireActiveMandate: false,
-            expectedActivationDate: $this->clock->now()
+            expectedActivationDate: $this->clock->now(),
         );
     }
 
@@ -336,7 +357,7 @@ readonly class RegularGivingService
     {
         if (!$campaign->isRegularGiving()) {
             throw new WrongCampaignType(
-                "Campaign {$campaign->getSalesforceId()} does not accept regular giving"
+                "Campaign {$campaign->getSalesforceId()} does not accept regular giving",
             );
         }
     }
@@ -350,18 +371,24 @@ readonly class RegularGivingService
         $donorBillingCountry = $donor->getBillingCountry();
         if ($billingCountry && $donorBillingCountry && !$billingCountry->equals($donorBillingCountry)) {
             throw new AccountDetailsMismatch(
-                "Mandate billing country {$billingCountry} does not match donor account country {$donorBillingCountry}"
+                "Mandate billing country {$billingCountry} does not match donor account country {$donorBillingCountry}",
             );
         }
     }
 
-    private function ensureBillingPostcodeMatchesDonorBillingPostcode(DonorAccount $donor, ?string $billingPostCode): void
-    {
+    private function ensureBillingPostcodeMatchesDonorBillingPostcode(
+        DonorAccount $donor,
+        ?string $billingPostCode,
+    ): void {
         $donorBillingPostcode = $donor->getBillingPostcode();
 
-        if (!is_null($billingPostCode) && !is_null($donorBillingPostcode) && $billingPostCode !== $donorBillingPostcode) {
+        if (
+            !is_null($billingPostCode)
+            && !is_null($donorBillingPostcode)
+            && $billingPostCode !== $donorBillingPostcode
+        ) {
             throw new AccountDetailsMismatch(
-                "Mandate billing postcode {$billingPostCode} does not match donor account postcode {$donorBillingPostcode}"
+                "Mandate billing postcode {$billingPostCode} does not match donor account postcode {$donorBillingPostcode}",
             );
         }
     }
@@ -387,15 +414,15 @@ readonly class RegularGivingService
                 $maxMatchable = RegularGivingMandate::averageMatched($donations);
 
                 throw new NotFullyMatched(
-                    "Donation could not be fully matched, need to match {$donation->getAmount()}," .
-                    " only matched {$donation->getFundingWithdrawalTotal()}",
-                    $maxMatchable
+                    "Donation could not be fully matched, need to match {$donation->getAmount()},"
+                    . " only matched {$donation->getFundingWithdrawalTotal()}",
+                    $maxMatchable,
                 );
             }
 
             Assertion::same(
                 $donation->getFundingWithdrawalTotal(),
-                $mandate->getMatchedAmount()->toNumericString()
+                $mandate->getMatchedAmount()->toNumericString(),
             );
         }
     }
@@ -419,7 +446,7 @@ readonly class RegularGivingService
         Assertion::maxCount(
             $cancellableDonations,
             3,
-            "Too many donations found to cancel for mandate {$mandate->getUuid()}, should be max 3}"
+            "Too many donations found to cancel for mandate {$mandate->getUuid()}, should be max 3}",
         );
 
         foreach ($cancellableDonations as $donation) {
@@ -437,7 +464,7 @@ readonly class RegularGivingService
         RegularGivingMandate $mandate,
         DonorAccount $donor,
         Campaign $campaign,
-        StripePaymentMethodId $paymentMethodId
+        StripePaymentMethodId $paymentMethodId,
     ): void {
         $donor->setRegularGivingPaymentMethod($paymentMethodId);
         $mandate->activate($this->clock->now());
@@ -448,7 +475,7 @@ readonly class RegularGivingService
             $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
         } catch (ClientException $exception) {
             $this->log->error(
-                "Could not send notification for mandate #{$mandate->getId()}: " . $exception->__toString()
+                "Could not send notification for mandate #{$mandate->getId()}: " . $exception->__toString(),
             );
         }
     }
@@ -458,18 +485,19 @@ readonly class RegularGivingService
         Donation $firstDonation,
         DonorAccount $donor,
         ?string $donorPreviousHomeAddress,
-        ?string $donorPreviousHomePostcode
+        ?string $donorPreviousHomePostcode,
     ): void {
         $mandate->cancel(
             reason: "Donation failed, status is {$firstDonation->getDonationStatus()->name}",
             at: new \DateTimeImmutable(),
-            type: MandateCancellationType::FirstDonationUnsuccessful
+            type: MandateCancellationType::FirstDonationUnsuccessful,
         );
 
         $donor->setHomeAddressLine1($donorPreviousHomeAddress);
         $donor->setHomePostcode(
-            is_string($donorPreviousHomePostcode) ?
-                PostCode::of($donorPreviousHomePostcode, true) : null
+            is_string($donorPreviousHomePostcode)
+                ? PostCode::of($donorPreviousHomePostcode, true)
+                : null,
         );
 
         $this->entityManager->flush();
@@ -481,7 +509,7 @@ readonly class RegularGivingService
      */
     public function updatePossibleMandateFromSuccessfulCharge(
         Donation $donation,
-        StripePaymentMethodId $paymentMethodId
+        StripePaymentMethodId $paymentMethodId,
     ): void {
         \assert($donation->getDonationStatus()->isSuccessful());
 
@@ -506,7 +534,6 @@ readonly class RegularGivingService
         $donor = $this->donorAccountRepository->findByPersonId($mandate->donorId());
         \assert($donor !== null);
 
-
         try {
             $this->activateMandateNotifyDonor(
                 firstDonation: $donation,
@@ -525,7 +552,7 @@ readonly class RegularGivingService
      */
     private function ensureCampaignIsOpen(Campaign $campaign): void
     {
-        if (! $campaign->isOpenForFinalising($this->clock->now())) {
+        if (!$campaign->isOpenForFinalising($this->clock->now())) {
             throw new CampaignNotOpen();
         }
     }
@@ -556,8 +583,10 @@ readonly class RegularGivingService
      * @param StripePaymentMethodId $methodId must be a payment method attached to the given donor's stripe  customer account.
      * @throws InvalidRequestException
      */
-    public function changeDonorRegularGivingPaymentMethod(DonorAccount $donor, StripePaymentMethodId $methodId): PaymentMethod
-    {
+    public function changeDonorRegularGivingPaymentMethod(
+        DonorAccount $donor,
+        StripePaymentMethodId $methodId,
+    ): PaymentMethod {
         $newPaymentMethod = $this->stripe->retrievePaymentMethod($donor->stripeCustomerId, $methodId);
         $previousPaymentMethodId = $donor->getRegularGivingPaymentMethod();
         $donor->setRegularGivingPaymentMethod($methodId);
@@ -605,7 +634,7 @@ readonly class RegularGivingService
                 $message = "You have an active regular giving mandate for {$charity->getName()}. 
                 If you wish to remove your payment method please first cancel this mandate.";
             } else {
-                $message = "You have $count active regular giving mandates. 
+                $message = "You have {$count} active regular giving mandates. 
                 If you wish to remove your payment method please first cancel these mandates";
             }
 

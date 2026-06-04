@@ -36,12 +36,12 @@ class Get extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        if (! $this->environment->isFeatureEnabledRegularGiving()) {
+        if (!$this->environment->isFeatureEnabledRegularGiving()) {
             throw new HttpNotFoundException($request);
         }
 
-        Assertion::keyExists($args, "mandateId");
-        $mandateId = $args["mandateId"];
+        Assertion::keyExists($args, 'mandateId');
+        $mandateId = $args['mandateId'];
         Assertion::string($mandateId);
 
         /** @psalm-suppress RiskyTruthyFalsyComparison -- suppressing issue in old code instead of editing */
@@ -60,7 +60,7 @@ class Get extends Action
         if ($mandate === null) {
             throw new DomainRecordNotFoundException('Mandate not found');
         }
-        if (! $authenticatedUser->id()->equals($mandate->donorId())) {
+        if (!$authenticatedUser->id()->equals($mandate->donorId())) {
             throw new HttpUnauthorizedException($request);
         }
 
@@ -68,7 +68,7 @@ class Get extends Action
         assert($campaign !== null);
         $charity = $campaign->getCharity();
         return new JsonResponse([
-            'mandate' => $mandate->toFrontEndApiModel($charity, $this->clock->now())
+            'mandate' => $mandate->toFrontEndApiModel($charity, $this->clock->now()),
         ]);
     }
 }

@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTimeImmutable;
-use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Environment;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Client\Campaign as CampaignClient;
@@ -67,10 +65,10 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column]
     private(set) bool $isPublished;
 
-    #[ORM\Column(nullable:true, options: ['default' => null])]
+    #[ORM\Column(nullable: true, options: ['default' => null])]
     private ?ApplicationStatus $relatedApplicationStatus;
 
-    #[ORM\Column(nullable:true, options: ['default' => null])]
+    #[ORM\Column(nullable: true, options: ['default' => null])]
     private ?CharityResponseToOffer $relatedApplicationCharityResponseToOffer;
 
     /**
@@ -103,7 +101,7 @@ class Campaign extends SalesforceReadProxy
      * API. Charity data is ommitted here to avoid duplication with {@see Charity::$salesforceData}.
      * @var array<string, mixed>
      */
-    #[ORM\Column(type: "json", nullable: false)]
+    #[ORM\Column(type: 'json', nullable: false)]
     private array $salesforceData = [];
 
     /**
@@ -137,7 +135,7 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(options: ['default' => false])]
     private bool $hidden;
 
-    #[ORM\Column()]
+    #[ORM\Column]
     private bool $isRegularGiving;
 
     /**
@@ -258,11 +256,16 @@ class Campaign extends SalesforceReadProxy
      * @return Campaign
      * @throws \DateMalformedStringException
      */
-    public static function fromSfCampaignData(array $campaignData, Salesforce18Id $salesforceId, Charity $charity, bool $fillInDefaultValues = false): self
-    {
+    public static function fromSfCampaignData(
+        array $campaignData,
+        Salesforce18Id $salesforceId,
+        Charity $charity,
+        bool $fillInDefaultValues = false,
+    ): self {
         $regularGivingCollectionEnd = $campaignData['regularGivingCollectionEnd'] ?? null;
-        $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
-            null : new \DateTimeImmutable($regularGivingCollectionEnd);
+        $regularGivingCollectionObject = $regularGivingCollectionEnd === null
+            ? null
+            : new \DateTimeImmutable($regularGivingCollectionEnd);
 
         $isPublished = $campaignData['isPublished'];
 
@@ -270,7 +273,12 @@ class Campaign extends SalesforceReadProxy
         $endDate = $campaignData['endDate'];
         $title = $campaignData['title'];
 
-        if (! $isPublished || is_string($endDate) && (new \DateTimeImmutable($endDate) < new \DateTimeImmutable('now')) && $fillInDefaultValues) {
+        if (
+            !$isPublished
+            || is_string($endDate)
+            && new \DateTimeImmutable($endDate) < new \DateTimeImmutable('now')
+            && $fillInDefaultValues
+        ) {
             // this campaign is not yet ready for public viewing so fill in some placeholder values to make it usable.
             // 1970 is effectively another form of null that's harder to insert by accident that actual null would be
             // if we allowed it  - we convert back to real null when rendering the campaign to an array.
@@ -285,13 +293,14 @@ class Campaign extends SalesforceReadProxy
 
         Assertion::false(
             $campaignData['isMetaCampaign'] ?? false,
-            'Cannot create Charity Campaign using meta campaign data'
+            'Cannot create Charity Campaign using meta campaign data',
         );
 
         $currency = Currency::fromIsoCode($campaignData['currencyCode']);
 
         $relatedApplicationStatusString = $campaignData['relatedApplicationStatus'] ?? null;
-        $relatedApplicationCharityResponseToOfferString = $campaignData['relatedApplicationCharityResponseToOffer'] ?? null;
+        $relatedApplicationCharityResponseToOfferString =
+            $campaignData['relatedApplicationCharityResponseToOffer'] ?? null;
         return new self(
             sfId: $salesforceId,
             metaCampaignSlug: $campaignData['parentRef'],
@@ -306,10 +315,17 @@ class Campaign extends SalesforceReadProxy
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             pinPosition: $campaignData['pinPosition'] ?? null,
             championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
-            relatedApplicationStatus: is_string($relatedApplicationStatusString) ? ApplicationStatus::from($relatedApplicationStatusString) : null,
-            relatedApplicationCharityResponseToOffer: is_string($relatedApplicationCharityResponseToOfferString) ? CharityResponseToOffer::from($relatedApplicationCharityResponseToOfferString) : null,
+            relatedApplicationStatus: is_string($relatedApplicationStatusString)
+                ? ApplicationStatus::from($relatedApplicationStatusString)
+                : null,
+            relatedApplicationCharityResponseToOffer: is_string($relatedApplicationCharityResponseToOfferString)
+                ? CharityResponseToOffer::from($relatedApplicationCharityResponseToOfferString)
+                : null,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
-            totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
+            totalFundraisingTarget: Money::fromPence(
+                (int) ( 100.0 * ( $campaignData['totalFundraisingTarget'] ?? 0.0 ) ),
+                $currency,
+            ),
             thankYouMessage: $campaignData['thankYouMessage'],
             rawData: $campaignData,
             hidden: $campaignData['hidden'],
@@ -339,7 +355,7 @@ class Campaign extends SalesforceReadProxy
      */
     public function isOneOffGiving(): bool
     {
-        return ! $this->isRegularGiving;
+        return !$this->isRegularGiving;
     }
 
     /**
@@ -365,10 +381,11 @@ class Campaign extends SalesforceReadProxy
             // envrionments
 
             $_charity = $this->charity;
+
             // @mago-expect analysis:avoid-catching-error
         } catch (\Error $e) {
             throw new \Exception(
-                "Error on attempt to persist campaign #{$this->id}, sfID {$this->getSalesforceId()}: \n{$e}"
+                "Error on attempt to persist campaign #{$this->id}, sfID {$this->getSalesforceId()}: \n{$e}",
             );
         }
     }
@@ -428,7 +445,10 @@ class Campaign extends SalesforceReadProxy
      */
     public function isOpen(\DateTimeImmutable $at): bool
     {
-        return $this->isOpenWithEffectiveEndDate(at: $at, effectiveEndDate: \DateTimeImmutable::createFromInterface($this->endDate));
+        return $this->isOpenWithEffectiveEndDate(
+            at: $at,
+            effectiveEndDate: \DateTimeImmutable::createFromInterface($this->endDate),
+        );
     }
 
     /**
@@ -467,7 +487,10 @@ class Campaign extends SalesforceReadProxy
 
     public function isNeverProceedingAppCampaign(): bool
     {
-        return $this->relatedApplicationStatus === ApplicationStatus::Rejected || $this->relatedApplicationCharityResponseToOffer === CharityResponseToOffer::Rejected;
+        return (
+            $this->relatedApplicationStatus === ApplicationStatus::Rejected
+            || $this->relatedApplicationCharityResponseToOffer === CharityResponseToOffer::Rejected
+        );
     }
 
     /**
@@ -499,7 +522,7 @@ class Campaign extends SalesforceReadProxy
         Assertion::lessOrEqualThan(
             $startDate,
             $endDate,
-            "Campaign may not end before it starts {$this->getSalesforceId()}"
+            "Campaign may not end before it starts {$this->getSalesforceId()}",
         );
 
         Assertion::eq($currencyCode, 'GBP', 'Only GBP currency supported at present');
@@ -508,16 +531,18 @@ class Campaign extends SalesforceReadProxy
         Assertion::nullOrBetweenLength($metaCampaignSlug, 1, 64);
         Assertion::nullOrRegex($metaCampaignSlug, '/^[-A-Za-z0-9]+$/');
 
-
         if ($metaCampaignSlug !== null && \str_starts_with($metaCampaignSlug, 'a05')) {
             // needed because SF may send an ID if slug is not filled in - we don't want that in the matchbot DB.
-            throw new \RuntimeException("$metaCampaignSlug appears to be an SF ID, should be a slug, processing campaign sfid: " . $this->getSalesforceId());
+            throw new \RuntimeException(
+                "{$metaCampaignSlug} appears to be an SF ID, should be a slug, processing campaign sfid: "
+                    . $this->getSalesforceId(),
+            );
         }
 
-        if (! $isRegularGiving) {
+        if (!$isRegularGiving) {
             Assertion::null(
                 $regularGivingCollectionEnd,
-                "Can't have a regular giving collection end date for non-regular campaign {$this->getSalesforceId()}"
+                "Can't have a regular giving collection end date for non-regular campaign {$this->getSalesforceId()}",
             );
         }
 
@@ -585,7 +610,7 @@ class Campaign extends SalesforceReadProxy
     public function getCharityId(): Salesforce18Id
     {
         return Salesforce18Id::ofCharity(
-            $this->getCharity()->getSalesforceId()
+            $this->getCharity()->getSalesforceId(),
         );
     }
 
@@ -595,19 +620,19 @@ class Campaign extends SalesforceReadProxy
      */
     public function checkIsReadyToAcceptDonation(Donation $donation, \DateTimeImmutable $at): void
     {
-        if (! $this->isRegularGiving() && !$this->isOpen($at)) {
+        if (!$this->isRegularGiving() && !$this->isOpen($at)) {
             throw new CampaignNotOpen("Campaign {$this->getSalesforceId()} is not open");
         }
 
         if ($donation->getMandate() === null && $this->isRegularGiving()) {
             throw new WrongCampaignType(
-                "Campaign {$this->getSalesforceId()} does not accept one-off giving (regular-giving only)"
+                "Campaign {$this->getSalesforceId()} does not accept one-off giving (regular-giving only)",
             );
         }
 
         if ($donation->getMandate() !== null && $this->isOneOffGiving()) {
             throw new WrongCampaignType(
-                "Campaign {$this->getSalesforceId()} does not accept regular giving (one-off only)"
+                "Campaign {$this->getSalesforceId()} does not accept regular giving (one-off only)",
             );
         }
     }

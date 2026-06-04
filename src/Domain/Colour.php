@@ -9,17 +9,17 @@ use OpenApi\Attributes as OA;
  * Represents a 24 bit colour in the sRGB colour space.
  */
 #[OA\Schema(
-    description: "Represents a 24-bit color in the sRGB color space",
-    type: "string",
-    format: "hex-color",
-    example: "#B30510"
+    description: 'Represents a 24-bit color in the sRGB color space',
+    type: 'string',
+    format: 'hex-color',
+    example: '#B30510',
 )]
 readonly class Colour
 {
     private string $hexCode;
 
     private function __construct(
-        string $hexCode
+        string $hexCode,
     ) {
         $this->hexCode = \strtoupper($hexCode);
         Assertion::regex($this->hexCode, '/^#[A-F0-9]{6}$/', 'Hex color code required');

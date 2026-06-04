@@ -63,7 +63,6 @@ class CancelAll extends Action
                 return $donation;
             });
 
-
             Assertion::isInstanceOf($donation, Donation::class);
 
             $donations[] = $donation;

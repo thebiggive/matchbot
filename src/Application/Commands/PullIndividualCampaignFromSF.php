@@ -20,7 +20,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'matchbot:pull-campaign-from-sf',
     description: 'Pulls an in individual campaigns) from Salesforce into the
      matchbot db. Currently intended for manuual testing on dev machines, e.g. to load a regular giving campaign before
-     creating a mandate'
+     creating a mandate',
 )]
 class PullIndividualCampaignFromSF extends LockingCommand
 {
@@ -41,6 +41,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
             '18 Character Salesforce ID of the campaign, as found in the donate page URI etc',
         );
     }
+
     #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
@@ -58,7 +59,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
             try {
                 $campaign = $this->campaignRepository->pullNewFromSf($campaignId);
             } catch (RequestException $e) {
-                $output->writeln("<error>Request Exception from Salesforce, please check Campaign ID</error>");
+                $output->writeln('<error>Request Exception from Salesforce, please check Campaign ID</error>');
                 $output->writeln("<error>{$e->getMessage()}</error>");
                 return 1;
             }
@@ -67,7 +68,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
         }
 
         $this->campaignService->pullFundsAndUpdateStats($campaign);
-        $output->writeln("Fund data updated for campaign " . $this->campaignFullName($campaign));
+        $output->writeln('Fund data updated for campaign ' . $this->campaignFullName($campaign));
 
         return 0;
     }

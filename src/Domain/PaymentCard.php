@@ -4,7 +4,6 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Embeddable;
-use MatchBot\Application\Assertion;
 
 /**
  * @psalm-immutable
@@ -17,9 +16,9 @@ use MatchBot\Application\Assertion;
 readonly class PaymentCard
 {
     public function __construct(
-        #[Column()]
+        #[Column]
         public CardBrand $brand,
-        #[Column()]
+        #[Column]
         public Country $country,
     ) {
     }

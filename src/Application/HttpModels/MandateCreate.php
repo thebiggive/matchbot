@@ -5,7 +5,6 @@ namespace MatchBot\Application\HttpModels;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Currency;
-use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PostCode;
 use MatchBot\Domain\Salesforce18Id;

@@ -39,11 +39,12 @@ class LiveStripeClient implements Stripe
                 'payment_method_save' => 'enabled',
                 'payment_method_save_usage' => 'on_session',
             ],
-        ]
+        ],
     ];
 
-    public function __construct(private StripeClient $stripeClient)
-    {
+    public function __construct(
+        private StripeClient $stripeClient,
+    ) {
     }
 
     #[\Override]
@@ -98,8 +99,8 @@ class LiveStripeClient implements Stripe
     {
         return $this->stripeClient->setupIntents->create([
             'customer' => $stripeCustomerId->stripeCustomerId,
-                'automatic_payment_methods' => ['enabled' => true],
-            ]);
+            'automatic_payment_methods' => ['enabled' => true],
+        ]);
     }
 
     #[\Override]
@@ -137,7 +138,7 @@ class LiveStripeClient implements Stripe
     {
         return $this->stripeClient->customers->retrievePaymentMethod(
             $customerId->stripeCustomerId,
-            $methodId->stripePaymentMethodId
+            $methodId->stripePaymentMethodId,
         );
     }
 

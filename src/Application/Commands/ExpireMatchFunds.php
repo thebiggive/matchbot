@@ -6,7 +6,6 @@ namespace MatchBot\Application\Commands;
 
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Lock\Exception\LockConflictedException;
@@ -50,7 +49,7 @@ class ExpireMatchFunds extends LockingCommand
         }
 
         $numberExpired = count($toRelease);
-        $output->writeln("Released $numberExpired donations' matching");
+        $output->writeln("Released {$numberExpired} donations' matching");
 
         return 0;
     }

@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions;
 
 use Laminas\Diactoros\Response\JsonResponse;
-use MatchBot\Application\Assertion;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\MailingList;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Slim\Exception\HttpBadRequestException;
 
 class MailingListSignup extends Action
 {
@@ -25,14 +23,15 @@ class MailingListSignup extends Action
     /**
      * @inheritDoc
      */
-    #[\Override] protected function action(Request $request, Response $response, array $args): Response
+    #[\Override]
+    protected function action(Request $request, Response $response, array $args): Response
     {
         $body = (string) $request->getBody();
 
         try {
             $data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            $this->logger->info("Mailing list signup non-serialisable payload was: $body");
+            $this->logger->info("Mailing list signup non-serialisable payload was: {$body}");
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Invalid JSON in request body',
@@ -174,7 +173,7 @@ class MailingListSignup extends Action
                 $lastName,
                 $emailAddress,
                 $jobTitle,
-                $organisationName
+                $organisationName,
             );
 
             if (!$success) {

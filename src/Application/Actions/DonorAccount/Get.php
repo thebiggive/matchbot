@@ -32,12 +32,13 @@ class Get extends Action
         $authedUser = $this->security->requireAuthenticatedDonorAccountWithPassword($request);
         $requestedUserId = PersonId::of((string) $args['personId']);
 
-        if (! $authedUser->id()->equals($requestedUserId)) {
+        if (!$authedUser->id()->equals($requestedUserId)) {
             throw new HttpUnauthorizedException($request);
         }
 
-        $donorAccount = $this->donorAccountRepository->findByPersonId($requestedUserId) ??
-            throw new DomainRecordNotFoundException('Donor Account not found');
+        $donorAccount = $this->donorAccountRepository->findByPersonId(
+            $requestedUserId,
+        ) ?? throw new DomainRecordNotFoundException('Donor Account not found');
 
         return $this->respondWithData($response, $donorAccount->toFrontEndApiModel());
     }

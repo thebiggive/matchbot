@@ -10,5 +10,5 @@ enum ApplicationStatus: string
     case Approved = 'Approved';
     case Rejected = 'Rejected';
     case PendingApproval = 'Pending Approval';
-    case MissedDeadline  = 'Missed Deadline';
+    case MissedDeadline = 'Missed Deadline';
 }

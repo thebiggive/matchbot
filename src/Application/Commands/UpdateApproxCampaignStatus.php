@@ -16,7 +16,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 #[AsCommand(
     name: 'matchbot:update-approx-campaign-status',
-    description: "Updates approximate campaign statuses to support search results ordering.",
+    description: 'Updates approximate campaign statuses to support search results ordering.',
 )]
 class UpdateApproxCampaignStatus extends LockingCommand
 {
@@ -25,6 +25,7 @@ class UpdateApproxCampaignStatus extends LockingCommand
     ) {
         parent::__construct();
     }
+
     #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {

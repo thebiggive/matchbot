@@ -24,7 +24,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 #[AsCommand(
     name: 'matchbot:cancel-stale-donation-fund-tips',
-    description: 'Finds and cancels donation-funds type tips that have been uncollected for 14 days or longer.'
+    description: 'Finds and cancels donation-funds type tips that have been uncollected for 14 days or longer.',
 )]
 class CancelStaleDonationFundTips extends LockingCommand
 {
@@ -47,7 +47,10 @@ class CancelStaleDonationFundTips extends LockingCommand
 
         $cancelationDelay = $this->environment == Environment::Production ? $twoWeeks : $tenMinutes;
 
-        $staleDonationTipsUUIDS = $this->donationRepository->findStaleDonationFundsTips($this->clock->now(), $cancelationDelay);
+        $staleDonationTipsUUIDS = $this->donationRepository->findStaleDonationFundsTips(
+            $this->clock->now(),
+            $cancelationDelay,
+        );
 
         foreach ($staleDonationTipsUUIDS as $tipDonationUUID) {
             $this->entityManager->wrapInTransaction(function () use ($tipDonationUUID): void {

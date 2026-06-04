@@ -5,7 +5,6 @@ namespace MatchBot\Domain;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityRepository;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 
 /**
  * @extends EntityRepository<DonorAccount>

@@ -23,8 +23,8 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 
 #[AsCommand(
     name: 'matchbot:scheduled-out-of-sync-funds-check',
-    description: "For running via a cron job. Checks for out of sync funds but doesn't " .
-        "attempt to fix them. Sends output to Slack"
+    description: "For running via a cron job. Checks for out of sync funds but doesn't "
+    . 'attempt to fix them. Sends output to Slack',
 )]
 class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
 {
@@ -37,7 +37,14 @@ class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
         private ChatterInterface $chatter,
         LoggerInterface $logger,
     ) {
-        parent::__construct($campaignFundingRepository, $entityManager, $fundingWithdrawalRepository, $matchingAdapter, $donationRepository, $logger);
+        parent::__construct(
+            $campaignFundingRepository,
+            $entityManager,
+            $fundingWithdrawalRepository,
+            $matchingAdapter,
+            $donationRepository,
+            $logger,
+        );
     }
 
     #[\Override]
@@ -59,19 +66,19 @@ class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
         parent::doExecute($arrayInput, $bufferedOutput);
 
         $chatMessage = new ChatMessage('Out of sync funds check');
-        $message = 'Out of sync funds check completed' .
-            ($this->outOfSyncFundFound ? " OUT OF SYNC FUNDS DETECTED" : " no out of sync funds detected");
+        $message =
+            'Out of sync funds check completed'
+            . ( $this->outOfSyncFundFound ? ' OUT OF SYNC FUNDS DETECTED' : ' no out of sync funds detected' );
         $output->writeln($message);
         if ($this->outOfSyncFundFound) {
             $env = getenv('APP_ENV');
             \assert(is_string($env));
-            $options = (new SlackOptions())
-                ->block((new SlackHeaderBlock(sprintf(
-                    '[%s] %s',
-                    $env,
-                    $message,
-                ))))
-                ->block((new SlackSectionBlock())->text($bufferedOutput->fetch()));
+            $options = new SlackOptions()->block(new SlackHeaderBlock(sprintf(
+                '[%s] %s',
+                $env,
+                $message,
+            )))
+                ->block(new SlackSectionBlock()->text($bufferedOutput->fetch()));
             $chatMessage->options($options);
 
             $this->chatter->send($chatMessage);

@@ -43,7 +43,11 @@ class CancelAsAdmin extends Action
         }
 
         try {
-            $this->mandateService->cancelMandate($mandate, 'Requested in Salesforce', MandateCancellationType::BigGiveCancelled);
+            $this->mandateService->cancelMandate(
+                $mandate,
+                'Requested in Salesforce',
+                MandateCancellationType::BigGiveCancelled,
+            );
         } catch (NonCancellableStatus $e) {
             return $this->validationError(
                 response: $response,

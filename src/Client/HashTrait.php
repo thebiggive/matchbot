@@ -18,7 +18,7 @@ trait HashTrait
     {
         $secret = getenv('WEBHOOK_DONATION_SECRET');
         if ($secret === false) {
-            throw new \Exception("Missing webhook donation secret");
+            throw new \Exception('Missing webhook donation secret');
         }
 
         return hash_hmac('sha256', trim($body), $secret);

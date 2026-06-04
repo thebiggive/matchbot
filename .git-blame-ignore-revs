@@ -3,3 +3,9 @@
 
 # Style fix, following a Docker-paths phpcs config compatibility fix 29/12/23
 7d1edc2c812b6d05e86299e3d5ab41762f001039
+
+# automatic mago lint fixes
+ea639218eefad47b1273584d89f32efbeb4f25a2
+
+# Project wide mago reformat
+80a02272fb9c41d2c7d86129727902cd966e43f8

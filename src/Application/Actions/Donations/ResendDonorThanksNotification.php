@@ -2,12 +2,10 @@
 
 namespace MatchBot\Application\Actions\Donations;
 
-use Assert\Assertion;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccountRepository;
@@ -15,7 +13,6 @@ use MatchBot\Domain\EmailAddress;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
 
 /**
@@ -43,7 +40,7 @@ class ResendDonorThanksNotification extends Action
                 $request->getBody()->getContents(),
                 true,
                 512,
-                \JSON_THROW_ON_ERROR
+                \JSON_THROW_ON_ERROR,
             );
         } catch (\JsonException) {
             throw new HttpBadRequestException($request, 'Cannot parse request body as JSON');
@@ -52,16 +49,16 @@ class ResendDonorThanksNotification extends Action
 
         $sendToEmailParam = $requestBody['sendToEmailAddress'] ?? null;
         \assert(is_string($sendToEmailParam) || is_null($sendToEmailParam));
-        $toEmailAddress = (is_string($sendToEmailParam) && trim($sendToEmailParam) !== '') ?
-            EmailAddress::of($sendToEmailParam) :
-            null;
+        $toEmailAddress = is_string($sendToEmailParam) && trim($sendToEmailParam) !== ''
+            ? EmailAddress::of($sendToEmailParam)
+            : null;
 
         $donation = $this->donationRepository->findOneByUUID($donationUUID);
         if (!$donation) {
             throw new DomainRecordNotFoundException('Donation not found');
         }
 
-        if (! $donation->getDonationStatus()->isSuccessful()) {
+        if (!$donation->getDonationStatus()->isSuccessful()) {
             throw new BadRequestException('Donation status is not successful');
         }
 

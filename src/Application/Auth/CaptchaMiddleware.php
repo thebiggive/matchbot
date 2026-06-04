@@ -12,7 +12,6 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Slim\Exception\HttpUnauthorizedException;
-use Symfony\Component\Serializer\SerializerInterface;
 
 class CaptchaMiddleware implements MiddlewareInterface
 {

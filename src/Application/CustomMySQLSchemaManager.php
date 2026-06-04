@@ -14,17 +14,17 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
         ['Campaign', 'FULLTEXT_GLOBAL_SEARCH'],
         ['Campaign', 'FULLTEXT_NAME'],
         ['Campaign', 'FULLTEXT_NORMALISED_NAME'],
-        ['Charity', 'FULLTEXT_GLOBAL_SEARCH'],
-        ['Charity', 'FULLTEXT_NAME'],
-        ['Charity', 'FULLTEXT_NORMALISED_NAME'],
+        ['Charity',  'FULLTEXT_GLOBAL_SEARCH'],
+        ['Charity',  'FULLTEXT_NAME'],
+        ['Charity',  'FULLTEXT_NORMALISED_NAME'],
     ];
 
     private const array IGNORED_COLUMNS = [
         ['Campaign', 'normalisedName'],
         ['Campaign', 'searchable_text'],
         ['Campaign', 'ready'], // can be dropped from DB after next deploy
-        ['Charity', 'normalisedName'],
-        ['Charity', 'searchable_text'],
+        ['Charity',  'normalisedName'],
+        ['Charity',  'searchable_text'],
     ];
 
     #[\Override]
@@ -37,7 +37,7 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
             static fn($index) => !in_array(
                 needle: [$tableName, $index->getObjectName()->toString()],
                 haystack: self::GENERATED_INDEXES,
-                strict: true
+                strict: true,
             ),
         );
     }

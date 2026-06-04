@@ -49,7 +49,7 @@ class UpsertMany extends Action
                 $request->getBody()->getContents(),
                 true,
                 512,
-                \JSON_THROW_ON_ERROR
+                \JSON_THROW_ON_ERROR,
             );
         } catch (\JsonException) {
             throw new HttpBadRequestException($request, 'Cannot parse request body as JSON');
@@ -60,7 +60,6 @@ class UpsertMany extends Action
             throw new HttpBadRequestException($request, 'Missing or invalid charity data');
         }
 
-
         try {
             // we don't want to run this section twice at once in two threads because the ORM doens't actually do an
             // upsert - it checks for existence and then does an insert or update accordingly. If two threads
@@ -68,8 +67,8 @@ class UpsertMany extends Action
             $lock = $this->lockFactory->createLock(self::class, autoRelease: true);
             $lock->acquire(blocking: true);
         } catch (LockConflictedException | LockAcquiringException) {
-            $this->logger->error("Could not aquire lock to upsert charities");
-            return new JsonResponse("Could not aquire lock to upsert charities", 400);
+            $this->logger->error('Could not aquire lock to upsert charities');
+            return new JsonResponse('Could not aquire lock to upsert charities', 400);
         }
 
         /** @var SFCharityApiResponse $charityData */
@@ -108,7 +107,7 @@ class UpsertMany extends Action
 
         $charity = $this->charityRepository->findOneBySalesforceId($charitySfId);
 
-        if (! $charity) {
+        if (!$charity) {
             $charity = new Charity(
                 salesforceId: $charitySfId->value,
                 charityName: $name,
@@ -165,7 +164,7 @@ class UpsertMany extends Action
             return null;
         }
 
-        Assertion::nullOrString($data[$key], "$key must be a string or null");
+        Assertion::nullOrString($data[$key], "{$key} must be a string or null");
         return is_string($data[$key]) ? $data[$key] : null;
     }
 }

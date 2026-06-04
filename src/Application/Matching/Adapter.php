@@ -24,6 +24,7 @@ class Adapter
 {
     /** @var int Number of times to immediately try to allocate a smaller amount if the fund's running low */
     private int $maxPartialAllocateTries = 5;
+
     /**
      * @var int How many seconds the authoritative source for real-time match funds should keep data, as a minimum.
      *          Because Redis sets an updated value on each change to the balance, the case where using the database
@@ -34,7 +35,7 @@ class Adapter
 
     public const array REDIS_OPTIONS_FOR_LIMITED_DURATION_STORAGE = [
         'nx', // Only set the key if it doesn't exist already in redis, i.e seen for the first time or record expired.
-        'ex' => self::STORAGE_DURATION_SECONDS // expire after given duration.
+        'ex' => self::STORAGE_DURATION_SECONDS, // expire after given duration.
     ];
 
     /**
@@ -57,8 +58,12 @@ class Adapter
      * @param numeric-string $amount
      * @return numeric-string New fund balance
      */
-    public function addAmount(CampaignFunding $funding, string $amount, ?int $donationId, string $extraComment = ''): string
-    {
+    public function addAmount(
+        CampaignFunding $funding,
+        string $amount,
+        ?int $donationId,
+        string $extraComment = '',
+    ): string {
         $incrementFractional = $this->toCurrencyFractionalUnit($amount);
 
         /**
@@ -66,7 +71,8 @@ class Adapter
          * @psalm-suppress PossiblyFalseReference - we know incrBy will retrun an array in multi mode
          * @psalm-suppress PossiblyInvalidMethodCall
          */
-        [$_initResponse, $fundBalanceFractional] = $this->storage->multi()
+        [$_initResponse, $fundBalanceFractional] = $this->storage
+            ->multi()
             ->set(
                 $this->buildKey($funding),
                 $this->toCurrencyFractionalUnit($funding->getAmountAvailable()),
@@ -75,7 +81,7 @@ class Adapter
             ->incrBy($this->buildKey($funding), $incrementFractional)
             ->exec();
 
-        $fundBalance = $this->toCurrencyWholeUnit((int)$fundBalanceFractional);
+        $fundBalance = $this->toCurrencyWholeUnit((int) $fundBalanceFractional);
         $funding->setAmountAvailable($fundBalance);
 
         $funding->logAdjustmentNoOPForNow(
@@ -83,7 +89,7 @@ class Adapter
             balance: $fundBalance,
             relatedDonationId: $donationId,
             at: $this->clock->now(),
-            comment: $extraComment ? "addAmount - $extraComment" : 'addAmount',
+            comment: $extraComment ? "addAmount - {$extraComment}" : 'addAmount',
         );
 
         return $fundBalance;
@@ -97,8 +103,12 @@ class Adapter
      * @param numeric-string $amount
      * @return numeric-string New fund balance as bcmath-ready string
      */
-    public function subtractAmount(CampaignFunding $funding, string $amount, ?int $donationId, string $extraComment = ''): string
-    {
+    public function subtractAmount(
+        CampaignFunding $funding,
+        string $amount,
+        ?int $donationId,
+        string $extraComment = '',
+    ): string {
         $decrementFractional = $this->toCurrencyFractionalUnit($amount);
 
         /**
@@ -106,16 +116,17 @@ class Adapter
          * @psalm-suppress PossiblyInvalidArrayAccess - in this case we know exec returns array
          * @psalm-suppress PossiblyInvalidMethodCall
          */
-        [$_initResponse, $fundBalanceFractional] = $this->storage->multi()
+        [$_initResponse, $fundBalanceFractional] = $this->storage
+            ->multi()
             ->set(
                 $this->buildKey($funding),
                 $this->toCurrencyFractionalUnit($funding->getAmountAvailable()),
-                self::REDIS_OPTIONS_FOR_LIMITED_DURATION_STORAGE
+                self::REDIS_OPTIONS_FOR_LIMITED_DURATION_STORAGE,
             )
             ->decrBy($this->buildKey($funding), $decrementFractional)
             ->exec();
 
-        $fundBalanceFractional = (int)$fundBalanceFractional;
+        $fundBalanceFractional = (int) $fundBalanceFractional;
         if ($fundBalanceFractional < 0) {
             // We have hit the edge case where not having strict, slow locks falls down. We atomically
             // allocated some match funds based on the amount available when we queried the database, but since our
@@ -135,7 +146,7 @@ class Adapter
                 // Try deallocating just the difference until the fund has exactly zero
                 $overspendFractional = 0 - $fundBalanceFractional;
                 /** @psalm-suppress InvalidCast - not in Redis Multi Mode */
-                $fundBalanceFractional = (int)$this->storage->incrBy($this->buildKey($funding), $overspendFractional);
+                $fundBalanceFractional = (int) $this->storage->incrBy($this->buildKey($funding), $overspendFractional);
                 $amountAllocatedFractional -= $overspendFractional;
             }
 
@@ -143,20 +154,20 @@ class Adapter
                 // We couldn't get the values to work within the maximum number of iterations, so release whatever
                 // we tried to hold back to the match pot and bail out.
                 /** @psalm-suppress InvalidCast not in multi mode * */
-                $fundBalanceFractional = (int)$this->storage->incrBy(
+                $fundBalanceFractional = (int) $this->storage->incrBy(
                     $this->buildKey($funding),
                     $amountAllocatedFractional,
                 );
                 $funding->setAmountAvailable($this->toCurrencyWholeUnit($fundBalanceFractional));
                 throw new TerminalLockException(
-                    "Fund {$funding->getId()} balance sub-zero after $retries attempts. " .
-                    "Releasing final $amountAllocatedFractional 'cents'"
+                    "Fund {$funding->getId()} balance sub-zero after {$retries} attempts. "
+                    . "Releasing final {$amountAllocatedFractional} 'cents'",
                 );
             }
 
             $funding->setAmountAvailable($this->toCurrencyWholeUnit($fundBalanceFractional));
             throw new LessThanRequestedAllocatedException(
-                $this->toCurrencyWholeUnit($amountAllocatedFractional)
+                $this->toCurrencyWholeUnit($amountAllocatedFractional),
             );
         }
 
@@ -170,7 +181,7 @@ class Adapter
             balance: $fundBalance,
             relatedDonationId: $donationId,
             at: $this->clock->now(),
-            comment: $extraComment ? "subtractAmount - $extraComment" : 'subtractAmount',
+            comment: $extraComment ? "subtractAmount - {$extraComment}" : 'subtractAmount',
         );
 
         return $fundBalance;
@@ -189,7 +200,7 @@ class Adapter
     public function getAmountAvailable(CampaignFunding $funding): string
     {
         $redisFundBalanceFractional = $this->storage->get($this->buildKey($funding));
-        \assert(! $redisFundBalanceFractional instanceof RealTimeMatchingStorage); // not in multi mode
+        \assert(!$redisFundBalanceFractional instanceof RealTimeMatchingStorage); // not in multi mode
 
         if ($redisFundBalanceFractional === false) {
             // No value in Redis -> may well have expired after 24 hours. Consult the DB for the
@@ -235,7 +246,7 @@ class Adapter
     private function buildKey(CampaignFunding $funding): string
     {
         $id = $funding->getId();
-        Assertion::notNull($id, "Funding ID must be non-null to build key");
+        Assertion::notNull($id, 'Funding ID must be non-null to build key');
 
         return "fund-{$id}-available-opt";
     }
@@ -250,13 +261,13 @@ class Adapter
             $amount = $fundingAndAmount['amount'];
             $funding = $fundingAndAmount['campaignFunding'];
 
-            $this->logger->warning("Released newly allocated funds of $amount for funding ID {$funding->getId()}");
+            $this->logger->warning("Released newly allocated funds of {$amount} for funding ID {$funding->getId()}");
 
             $this->addAmount(
                 funding: $funding,
                 amount: $amount,
                 donationId: $donationId,
-                extraComment: 'releaseNewlyAllocatedFunds'
+                extraComment: 'releaseNewlyAllocatedFunds',
             );
         }
     }
@@ -271,11 +282,16 @@ class Adapter
             $funding = $fundingWithdrawal->getCampaignFunding();
             $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
 
-            $newTotal = $this->addAmount($funding, $fundingWithDrawalAmount, $donation->getId(), 'releaseAllFundsForDonation');
+            $newTotal = $this->addAmount(
+                $funding,
+                $fundingWithDrawalAmount,
+                $donation->getId(),
+                'releaseAllFundsForDonation',
+            );
             $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithDrawalAmount, 2);
 
             $this->logger->info("Released {$fundingWithDrawalAmount} to funding {$funding->getId()}");
-            $this->logger->info("New fund total for {$funding->getId()}: $newTotal");
+            $this->logger->info("New fund total for {$funding->getId()}: {$newTotal}");
 
             $fundingWithdrawal->release($this->clock->now());
         }

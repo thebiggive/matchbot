@@ -10,7 +10,6 @@ use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Auth\DonationToken;
@@ -27,7 +26,6 @@ use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
@@ -69,10 +67,10 @@ class Create extends Action
         // JWS, this is null.
         $pspCustomerId = $request->getAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME);
         \assert(is_string($pspCustomerId) || is_null($pspCustomerId));
-        if (! (is_string($pspCustomerId) && trim($pspCustomerId) !== '')) {
+        if (!( is_string($pspCustomerId) && trim($pspCustomerId) !== '' )) {
             return $this->validationError(
                 $response,
-                "Customer ID required to create donation",
+                'Customer ID required to create donation',
             );
         }
 
@@ -92,14 +90,14 @@ class Create extends Action
             // updates, as well as the DonationCreate model used here or the tests that sometimes pass strings where
             // numbers are specified or vice versa.
 
-            $this->logger->info("Donation Create non-serialisable payload was: $body");
+            $this->logger->info("Donation Create non-serialisable payload was: {$body}");
 
             $message = 'Donation Create data deserialise error';
             $exceptionType = get_class($exception);
 
             return $this->validationError(
                 $response,
-                "$message: $exceptionType - {$exception->getMessage()}",
+                "{$message}: {$exceptionType} - {$exception->getMessage()}",
                 $message,
                 empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
             );
@@ -112,10 +110,10 @@ class Create extends Action
             $donation = $this->donationService->createDonation(
                 $donationData,
                 $pspCustomerId,
-                $donorId
+                $donorId,
             );
         } catch (RateLimitExceededException $e) {
-            $retryDelaySeconds = ($e->getRetryAfter()->getTimestamp() - time());
+            $retryDelaySeconds = $e->getRetryAfter()->getTimestamp() - time();
             return $this->respond(
                 $response,
                 new ActionPayload(
@@ -123,9 +121,9 @@ class Create extends Action
                     ['retry_in' => $retryDelaySeconds],
                     new ActionError(
                         'DONATION_RATE_LIMIT_EXCEEDED',
-                        'Donation rate limit reached, please try later'
-                    )
-                )
+                        'Donation rate limit reached, please try later',
+                    ),
+                ),
             );
         } catch (StripeAccountIdNotSetForAccount) {
             return $this->respond(
@@ -133,13 +131,13 @@ class Create extends Action
                 new ActionPayload(
                     500,
                     null,
-                    new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (A)')
-                )
+                    new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (A)'),
+                ),
             );
         } catch (\UnexpectedValueException $e) {
             return $this->validationError(
                 $response,
-                $e->getMessage()
+                $e->getMessage(),
             );
         } catch (DonationCreateModelLoadFailure $e) {
             $originalMessage = $e->getPrevious()?->getMessage();
@@ -166,12 +164,12 @@ class Create extends Action
             return $this->respond(
                 $response,
                 new ActionPayload(
-                // HTTP 409 Conflict can cover when requests conflicts w/ server configuration.
+                    // HTTP 409 Conflict can cover when requests conflicts w/ server configuration.
                     409,
                     null,
                     new ActionError(
                         ActionError::VERIFICATION_ERROR,
-                        'Could not make Stripe Payment Intent (C)'
+                        'Could not make Stripe Payment Intent (C)',
                     ),
                 ),
             );
@@ -183,7 +181,7 @@ class Create extends Action
                     null,
                     new ActionError(
                         ActionError::SERVER_ERROR,
-                        'Could not make Stripe Payment Intent (B)'
+                        'Could not make Stripe Payment Intent (B)',
                     ),
                 ),
             );
@@ -196,7 +194,7 @@ class Create extends Action
                     null,
                     new ActionError(
                         ActionError::SERVER_ERROR,
-                        'Could not make Stripe Payment Intent (D)'
+                        'Could not make Stripe Payment Intent (D)',
                     ),
                 ),
             );
@@ -214,17 +212,17 @@ class Create extends Action
         if ($donation->getPsp() === 'ryft') {
             $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
             Assertion::notNull($ryftAccountId, 'Ryft account ID cannot be null for ryft payment method');
-            ['id' => $ryftPaymentSessionID, 'clientSecret' => $ryftClientSecret] = $this->ryftClient->createPaymentSession(
-                $ryftAccountId,
-                Money::fromPence($donation->getAmountForCharityFractional(), $donation->currency()),
-            );
+            ['id' => $ryftPaymentSessionID, 'clientSecret' => $ryftClientSecret] =
+                $this->ryftClient->createPaymentSession(
+                    $ryftAccountId,
+                    Money::fromPence($donation->getAmountForCharityFractional(), $donation->currency()),
+                );
 
             $donation->setRyftPaymentSessionId($ryftPaymentSessionID);
             $this->em->flush();
         } else {
             $ryftClientSecret = null;
         }
-
 
         $data = new DonationCreatedResponse(
             donation: $donation->toFrontEndApiModel($this->enableNoReservationsMode),

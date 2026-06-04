@@ -19,8 +19,7 @@ class CacheableResponseMiddleware implements MiddlewareInterface
     {
         $response = $handler->handle($request);
 
-        return $response
-            ->withHeader('Cache-Control', 'public, max-age=' . self::CACHE_SECONDS)
+        return $response->withHeader('Cache-Control', 'public, max-age=' . self::CACHE_SECONDS)
             ->withHeader('Expires', gmdate('D, d M Y H:i:s', time() + self::CACHE_SECONDS) . ' GMT');
     }
 }

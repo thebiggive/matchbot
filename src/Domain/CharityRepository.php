@@ -22,8 +22,7 @@ class CharityRepository extends EntityRepository
      */
     public function findOneBySalesforceIdOrThrow(Salesforce18Id $sfId): Charity
     {
-        return $this->findOneBySalesforceId($sfId) ??
-            throw new DomainRecordNotFoundException('Charity not found');
+        return $this->findOneBySalesforceId($sfId) ?? throw new DomainRecordNotFoundException('Charity not found');
     }
 
     /**

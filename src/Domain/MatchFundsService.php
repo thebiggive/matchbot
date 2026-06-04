@@ -7,9 +7,11 @@ use MatchBot\Domain\Campaign as CampaignDomainModel;
 
 class MatchFundsService
 {
-    public function __construct(private CampaignFundingRepository $campaignFundingRepository,)
-    {
+    public function __construct(
+        private CampaignFundingRepository $campaignFundingRepository,
+    ) {
     }
+
     /**
      * should match SF Current_Match_Funds_Available__c
      *
@@ -45,7 +47,11 @@ class MatchFundsService
         $runningTotal = '0.00';
         foreach ($funds as $fund) {
             $amount = $fund->getAmountAvailable();
-            Assertion::same($currencyCode, $fund->getCurrencyCode(), 'fund currency code must equal campaign currency code');
+            Assertion::same(
+                $currencyCode,
+                $fund->getCurrencyCode(),
+                'fund currency code must equal campaign currency code',
+            );
             $runningTotal = \bcadd($runningTotal, $amount, 2);
         }
 
@@ -65,7 +71,11 @@ class MatchFundsService
         $runningTotal = '0.00';
         foreach ($fundings as $funding) {
             $amount = $funding->getAmount();
-            Assertion::same($currencyCode, $funding->getCurrencyCode(), 'funding currency code must equal campaign currency code');
+            Assertion::same(
+                $currencyCode,
+                $funding->getCurrencyCode(),
+                'funding currency code must equal campaign currency code',
+            );
             $runningTotal = \bcadd($runningTotal, $amount, 2);
         }
 

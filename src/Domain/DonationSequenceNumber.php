@@ -14,7 +14,7 @@ use MatchBot\Application\Assertion;
 readonly class DonationSequenceNumber
 {
     private function __construct(
-        public int $number
+        public int $number,
     ) {
         // having a mandate last for 100 years is ambitious, putting some upper limit in mostly because its better
         // than no limit, and it could catch a bug.

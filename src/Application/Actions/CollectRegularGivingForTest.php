@@ -37,12 +37,12 @@ class CollectRegularGivingForTest extends Action
             throw new HttpNotFoundException($request);
         }
 
-        $secret = (string)$request->getQueryParams()['secret'];
+        $secret = (string) $request->getQueryParams()['secret'];
         $stream = $response->getBody();
 
         if (!password_verify($secret, '$2y$12$JgCEyBfFQKBrIYHs1PNobef3aMswiWPHvKX/cWHWVePEOfLHRp2Oa')) {
             $stream->write(
-                'Bad or missing secret - this command is only for use by authorized people within BG test/dev environments'
+                'Bad or missing secret - this command is only for use by authorized people within BG test/dev environments',
             );
             return $response;
         }
@@ -63,21 +63,20 @@ class CollectRegularGivingForTest extends Action
 
         $actualNow = new \DateTimeImmutable();
 
-        $response =  $response->withHeader('Content-Type', 'text/plain');
+        $response = $response->withHeader('Content-Type', 'text/plain');
         $stream->write(<<<EOF
             Big Give Matchbot
             ============================================================================================
-            
+
             Actual current date: {$actualNow->format('D, d M Y H:i:s')}
             Running regular giving collection process with simulated timestamp {$date->format('D, d M Y H:i:s')} 
-            
-            
+
+
             This endpoint is only available in test/dev environments, not in production.
-            
+
             --------------
-            
-            EOF
-            );
+
+            EOF);
         $stream->write($commandOutput);
 
         $stream->write("--------------\n");

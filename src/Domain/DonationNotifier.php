@@ -21,9 +21,10 @@ class DonationNotifier
         Donation $donation,
         string $donateBaseUri,
         bool $accountAlreadyExistsForEmail,
-        ?EmailVerificationToken $emailVerificationToken = null
+        #[\SensitiveParameter]
+        ?EmailVerificationToken $emailVerificationToken = null,
     ): EmailMessage {
-        if (! $donation->getDonationStatus()->isSuccessful()) {
+        if (!$donation->getDonationStatus()->isSuccessful()) {
             throw new \RuntimeException("{$donation} is not successful - cannot send success email");
         }
 
@@ -33,17 +34,17 @@ class DonationNotifier
 
         Assertion::notNull(
             $paymentMethodType,
-            "payment method should not be null for successful donation: {$donation}"
+            "payment method should not be null for successful donation: {$donation}",
         );
 
         Assertion::notNull(
             $emailAddress,
-            "email address should not be null for successful donation: {$donation}"
+            "email address should not be null for successful donation: {$donation}",
         );
 
         Assertion::notNull(
             $collectedAt,
-            "collectedAt should not be null for successful donation: {$donation}"
+            "collectedAt should not be null for successful donation: {$donation}",
         );
 
         $campaign = $donation->getCampaign();
@@ -79,11 +80,13 @@ class DonationNotifier
             'accountAlreadyExistsForEmail' => $accountAlreadyExistsForEmail,
             'currencyCode' => $donation->currency()->isoCode(),
 
-            'donationAmount' => (float)$donation->getAmount(),
+            'donationAmount' => (float) $donation->getAmount(),
             'donationDatetime' => $collectedAt->format('c'),
             'donorFirstName' => $donation->getDonorFirstName(),
             'donorLastName' => $donation->getDonorLastName(),
-            'donorGreetingName' => $donation->getDonorFirstName() === '' ? $donation->getDonorLastName() : $donation->getDonorFirstName(), // org name is fallback
+            'donorGreetingName' => $donation->getDonorFirstName() === ''
+                ? $donation->getDonorLastName()
+                : $donation->getDonorFirstName(), // org name is fallback
             'giftAidAmountClaimed' => (float) $donation->getGiftAidValue(),
 
             'matchedAmount' => $donation->matchedAmount()->toMajorUnitFloat(),
@@ -130,7 +133,12 @@ class DonationNotifier
             );
         }
 
-        $emailMessage = self::emailMessageForCollectedDonation($donation, $this->donateBaseUri, $showAccountExistsForEmail, $emailVerificationToken);
+        $emailMessage = self::emailMessageForCollectedDonation(
+            $donation,
+            $this->donateBaseUri,
+            $showAccountExistsForEmail,
+            $emailVerificationToken,
+        );
 
         if ($to !== null) {
             $emailMessage = $emailMessage->withToAddress($to);

@@ -31,7 +31,7 @@ final class DonationToken
         $claims = [
             'iss' => getenv('BASE_URI'),
             'iat' => time(),
-            'exp' => time() + 8 * 60 * 60, // eight hours
+            'exp' => time() + ( 8 * 60 * 60 ), // eight hours
             'sub' => [
                 'donationId' => $donationId,
             ],
@@ -55,7 +55,7 @@ final class DonationToken
             $type = get_class($exception);
             // This is only a notice. We've seen likely crawlers + bots send invalid requests that
             // get decode exceptions. Likely real donors also occasionally get here with expired tokens.
-            $logger->notice("JWT error: decoding for donation ID $donationId: $type - {$exception->getMessage()}");
+            $logger->notice("JWT error: decoding for donation ID {$donationId}: {$type} - {$exception->getMessage()}");
 
             return false;
         }
@@ -72,7 +72,7 @@ final class DonationToken
         if ($donationId !== $sub->donationId) {
             // We've seen this rarely from things like sharing thank you URLs across browsers / devices.
             // We want stats of this on dashboards to monitor frequency, but not error alarms.
-            $logger->warning("JWT error: Not authorised for donation ID $donationId");
+            $logger->warning("JWT error: Not authorised for donation ID {$donationId}");
 
             return false;
         }
@@ -85,8 +85,8 @@ final class DonationToken
     {
         $secret = getenv('JWT_DONATION_SECRET');
 
-        if (! is_string($secret)) {
-            throw new \RuntimeException("JWT_DONATION_SECRET not set in environment");
+        if (!is_string($secret)) {
+            throw new \RuntimeException('JWT_DONATION_SECRET not set in environment');
         }
 
         return $secret;

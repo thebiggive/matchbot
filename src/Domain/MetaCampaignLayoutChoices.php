@@ -31,7 +31,9 @@ class MetaCampaignLayoutChoices
                 imageUri: 'https://picsum.photos/id/88/1700/500',
             ),
             default => new BannerLayout(
-                backgroundColour: \is_null($campaignBannerUriFromSF) ? Colour::fromHex('#2C089B') : Colour::fromHex('#F6F6F6'),
+                backgroundColour: \is_null($campaignBannerUriFromSF)
+                    ? Colour::fromHex('#2C089B')
+                    : Colour::fromHex('#F6F6F6'),
                 textBackgroundColour: match ($metaCampaign->getFamily()) {
                     // colours taken from variables.scss at https://github.com/thebiggive/components/blob/c096dcaa499ece7080a363d4157bc2e1cd1c5c92/src/globals/variables.scss#L17
                     CampaignFamily::christmasChallenge => Colour::fromHex('#B30510'),

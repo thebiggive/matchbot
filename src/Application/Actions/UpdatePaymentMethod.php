@@ -27,7 +27,7 @@ class UpdatePaymentMethod extends Action
     #[Pure]
     public function __construct(
         private StripeClient $stripeClient,
-        LoggerInterface $logger
+        LoggerInterface $logger,
     ) {
         parent::__construct($logger);
     }
@@ -42,29 +42,32 @@ class UpdatePaymentMethod extends Action
         \assert(is_string($paymentMethodId));
 
         /** @var array<array{id: string}> $allPaymentMethodsOfCustomer */
-        $allPaymentMethodsOfCustomer = $this->stripeClient->customers->allPaymentMethods(
-            $customerId,
-        )->toArray()['data'];
+        $allPaymentMethodsOfCustomer = $this->stripeClient
+            ->customers
+            ->allPaymentMethods(
+                $customerId,
+            )
+            ->toArray()['data'];
 
         $allCustomersPaymentMethodIds = array_map(
             static fn(array $pm): string => $pm['id'],
-            $allPaymentMethodsOfCustomer
+            $allPaymentMethodsOfCustomer,
         );
 
         if (!in_array($paymentMethodId, $allCustomersPaymentMethodIds, true)) {
             $this->logger->warning(
-                "Refusing to update stripe payment method as not found for customer",
-                compact('customerId', 'paymentMethodId')
+                'Refusing to update stripe payment method as not found for customer',
+                compact('customerId', 'paymentMethodId'),
             );
 
             return $this->respondWithData(
                 $response,
                 ['error' => 'Payment method not found'],
-                StatusCodeInterface::STATUS_BAD_REQUEST
+                StatusCodeInterface::STATUS_BAD_REQUEST,
             );
         }
 
-        $body = (string)$request->getBody();
+        $body = (string) $request->getBody();
 
         // We don't need to know the details inside the billing details - we are just a thin layer between the front end
         // and Stripe here.
@@ -74,7 +77,7 @@ class UpdatePaymentMethod extends Action
             return $this->respondWithData(
                 $response,
                 ['error' => 'Invalid JSON in request body'],
-                StatusCodeInterface::STATUS_BAD_REQUEST
+                StatusCodeInterface::STATUS_BAD_REQUEST,
             );
         }
 
@@ -95,13 +98,13 @@ class UpdatePaymentMethod extends Action
 
             $isExpectedExceptionMessage = \array_any(
                 self::EXPECTED_STRIPE_NEW_CARD_MESSAGES,
-                fn(string $expectedMessage) => \str_contains($e->getMessage(), $expectedMessage)
+                static fn(string $expectedMessage) => \str_contains($e->getMessage(), $expectedMessage),
             );
 
             $this->logger->log(
                 level: $isExpectedExceptionMessage ? LogLevel::INFO : LogLevel::ERROR,
-                message: "Failed to update payment method, $exceptionClass: " . $e->getMessage(),
-                context: compact('customerId', 'paymentMethodId')
+                message: "Failed to update payment method, {$exceptionClass}: " . $e->getMessage(),
+                context: compact('customerId', 'paymentMethodId'),
             );
             return $this->respondWithData($response, ['error' => $e->getMessage()], 400);
         }

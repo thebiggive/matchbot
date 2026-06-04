@@ -5,7 +5,6 @@ namespace MatchBot\Domain;
 use Assert\Assert;
 use Assert\LazyAssertion;
 use Assert\LazyAssertionException;
-use MatchBot\Application\Environment;
 
 /**
  * Checks that a campaign as rendered to an array by new matchbot code is compatible with how it was
@@ -16,19 +15,19 @@ class CampaignRenderCompatibilityChecker
     private const array KEYS_TO_SKIP = [
         'isMetaCampaign',
         'isEmergencyIMF', // not used by FE,
-        'amountRaised',  // don't need to check amount raised as it is being handled by matchbot and Salesforce data
-                         // might not be identical
-        'donationCount',  // may differ from SF - on dev env will be completly unrelated, in other envs donations
-                         // will appear in matchbot count before SF knows them.
+        'amountRaised', // don't need to check amount raised as it is being handled by matchbot and Salesforce data
+        // might not be identical
+        'donationCount', // may differ from SF - on dev env will be completly unrelated, in other envs donations
+        // will appear in matchbot count before SF knows them.
 
         'matchFundsRemaining', // Calculated from updated data in matchbot, not expected match exactly what salesforce
-                               // shows at any moment although should be the same when both systems have had a few
-                               // minutes to update after the last donation.
+        // shows at any moment although should be the same when both systems have had a few
+        // minutes to update after the last donation.
         'slug', // new in SF API not needed by FE
         'campaignFamily', // new in SF API not needed by FE
 
         'parentUsesSharedFunds', // parent stuff all requires fetching metacampaign separately, we don't yet have
-        'parentTarget',         // metacampaigns populated in matchbot db.
+        'parentTarget', // metacampaigns populated in matchbot db.
         'target', // matchbot calculated target relies on data that we haven't yet pulled from SF, so will show zero for now.
         'parentAmountRaised',
         'parentDonationCount',
@@ -57,14 +56,14 @@ class CampaignRenderCompatibilityChecker
      */
     public static function checkCampaignHttpModelMatchesModelFromSF(
         array $actual,
-        array $expected
+        array $expected,
     ): void {
         $lazyAsert = Assert::lazy();
 
         self::recursiveCompare(
             $actual,
             $expected,
-            $lazyAsert
+            $lazyAsert,
         );
 
         $lazyAsert->verifyNow();
@@ -84,14 +83,14 @@ class CampaignRenderCompatibilityChecker
         /** @var mixed $expectedValue */
         foreach ($expected as $key => $expectedValue) {
             /** @var mixed $value */
-            $value = \array_key_exists($key, $actual) ?
-                $actual[$key] : '<UNDEFINED>';
-
+            $value = \array_key_exists($key, $actual)
+                ? $actual[$key]
+                : '<UNDEFINED>';
 
             if (
-                \is_null($expectedValue) &&
-                is_string($value) &&
-                \str_starts_with(haystack: $value, needle: '1970-01-01')
+                \is_null($expectedValue)
+                && is_string($value)
+                && \str_starts_with(haystack: $value, needle: '1970-01-01')
             ) {
                 // in some cases (e.g. early campaign previews) SF sends null values for date time. The Matchbot
                 // domain model doesn't allow easily replicating that, so we send 1970 which is what FE would treat
@@ -103,10 +102,10 @@ class CampaignRenderCompatibilityChecker
                 // postalAddress is not required by FE, so not output by matchbot.
                 // We can't output a postalAddress that would match what SF sends in all cases as MB does nullifies
                 // address if first line is missing.
-                $expectedValue = "<UNDEFINED>";
+                $expectedValue = '<UNDEFINED>';
             }
 
-            if ($key === 'title' && $expectedValue === null && $value === "Untitled campaign") {
+            if ($key === 'title' && $expectedValue === null && $value === 'Untitled campaign') {
                 continue;
             }
 

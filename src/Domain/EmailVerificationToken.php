@@ -15,15 +15,16 @@ class EmailVerificationToken
     private ?int $id = null;
 
     /** @psalm-suppress PossiblyUnusedProperty - used in DQL query */
-    #[Column()]
+    #[Column]
     public readonly \DateTimeImmutable $createdAt;
 
     /** @psalm-suppress PossiblyUnusedProperty - used in DQL query */
-    #[Column()]
+    #[Column]
     public readonly string $emailAddress;
-    #[Column()] public readonly string $randomCode;
+    #[Column]
+    public readonly string $randomCode;
 
-    public function __construct(string $randomCode, string $emailAddress, \DateTimeImmutable $createdAt,)
+    public function __construct(string $randomCode, string $emailAddress, \DateTimeImmutable $createdAt)
     {
         $this->randomCode = $randomCode;
         $this->emailAddress = $emailAddress;

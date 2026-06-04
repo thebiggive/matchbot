@@ -35,13 +35,12 @@ return function (App $app) {
         // Provides real IP for e.g. rate limiter
         $ipMiddleware = getenv('APP_ENV') === 'local'
             ? new ClientIp()
-            : (new ClientIp())->proxy([], ['X-Forwarded-For']);
+            : new ClientIp()->proxy([], ['X-Forwarded-For']);
 
         $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
             ->add(PersonManagementAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
-
 
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
             $group->get('', Donations\Get::class);
@@ -56,19 +55,17 @@ return function (App $app) {
 
         $versionGroup->post(
             '/donations/{donationId:[a-z0-9-]{36}}/send-donor-thanks-email',
-            Donations\ResendDonorThanksNotification::class
+            Donations\ResendDonorThanksNotification::class,
         )->add(SalesforceAuthMiddleware::class);
-
 
         $versionGroup->post(
             '/donations/{donationId:[a-z0-9-]{36}}/remove-gift-aid-declaration',
-            Donations\RemoveGiftAidDeclaration::class
+            Donations\RemoveGiftAidDeclaration::class,
         )->add(SalesforceAuthMiddleware::class);
-
 
         $versionGroup->get(
             '/campaigns/{salesforceId:[a-zA-Z0-9]{18}}',
-            \MatchBot\Application\Actions\Campaigns\Get::class
+            \MatchBot\Application\Actions\Campaigns\Get::class,
         )->add(CacheableResponseMiddleware::class);
 
         // preview of a campaign intended for use only by the person at the charity who is in the process of
@@ -76,7 +73,7 @@ return function (App $app) {
         // currently restricted.
         $versionGroup->get(
             '/campaigns/early-preview/{salesforceId:[a-zA-Z0-9]{18}}',
-            \MatchBot\Application\Actions\Campaigns\GetEarlyPreview::class
+            \MatchBot\Application\Actions\Campaigns\GetEarlyPreview::class,
         );
 
         $versionGroup->get(
@@ -86,23 +83,22 @@ return function (App $app) {
 
         $versionGroup->put(
             '/charities/{salesforceId:[a-zA-Z0-9]{18}}',
-            \MatchBot\Application\Actions\Charities\Put::class
+            \MatchBot\Application\Actions\Charities\Put::class,
         )->add(SalesforceAuthMiddleware::class);
 
         $versionGroup->post(
             '/campaigns/upsert-many',
-            \MatchBot\Application\Actions\Campaigns\UpsertMany::class
+            \MatchBot\Application\Actions\Campaigns\UpsertMany::class,
         )->add(SalesforceAuthMiddleware::class);
-
 
         $versionGroup->post(
             '/charities/upsert-many',
-            \MatchBot\Application\Actions\Charities\UpsertMany::class
+            \MatchBot\Application\Actions\Charities\UpsertMany::class,
         )->add(SalesforceAuthMiddleware::class);
 
         $versionGroup->get(
             '/charities/{charitySalesforceId:[a-zA-Z0-9]{18}}/campaigns',
-            \MatchBot\Application\Actions\Campaigns\GetSummariesForCharity::class
+            \MatchBot\Application\Actions\Campaigns\GetSummariesForCharity::class,
         )->add(CacheableResponseMiddleware::class);
 
         $versionGroup->get('/campaigns', \MatchBot\Application\Actions\Campaigns\Search::class)
@@ -136,7 +132,10 @@ return function (App $app) {
                 $paymentMethodUriSuffixPattern = '/{payment_method_id:[a-zA-Z0-9_]{10,50}}';
                 $paymentMethodsGroup->get('', GetPaymentMethods::class);
                 $paymentMethodsGroup->delete($paymentMethodUriSuffixPattern, DeletePaymentMethod::class);
-                $paymentMethodsGroup->put("$paymentMethodUriSuffixPattern/billing_details", UpdatePaymentMethod::class);
+                $paymentMethodsGroup->put(
+                    "{$paymentMethodUriSuffixPattern}/billing_details",
+                    UpdatePaymentMethod::class,
+                );
             });
         })
             ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
@@ -149,21 +148,30 @@ return function (App $app) {
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
-        $versionGroup->get('/regular-giving/my-donation-mandates/{mandateId:[a-z0-9-]{36}}', RegularGivingMandate\Get::class)
+        $versionGroup->get(
+            '/regular-giving/my-donation-mandates/{mandateId:[a-z0-9-]{36}}',
+            RegularGivingMandate\Get::class,
+        )
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
-        $versionGroup->post('/regular-giving/my-donation-mandates/{mandateId:[a-z0-9-]{36}}/cancel', RegularGivingMandate\Cancel::class)
+        $versionGroup->post(
+            '/regular-giving/my-donation-mandates/{mandateId:[a-z0-9-]{36}}/cancel',
+            RegularGivingMandate\Cancel::class,
+        )
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
         $versionGroup->get(
             '/test-donation-collection-for-date/{date}',
-            \MatchBot\Application\Actions\CollectRegularGivingForTest::class
+            \MatchBot\Application\Actions\CollectRegularGivingForTest::class,
         );
 
-        $versionGroup->post('/regular-giving/mandate/{mandateId:[a-z0-9-]{36}}/cancel', RegularGivingMandate\CancelAsAdmin::class)
+        $versionGroup->post(
+            '/regular-giving/mandate/{mandateId:[a-z0-9-]{36}}/cancel',
+            RegularGivingMandate\CancelAsAdmin::class,
+        )
             ->add(SalesforceAuthMiddleware::class);
     });
     // Authenticated through Stripe's SDK signature verification
@@ -172,12 +180,12 @@ return function (App $app) {
 
     $app->options(
         '/{routes:.+}',
-        fn (RequestInterface $_req, ResponseInterface $resp, array $_args): ResponseInterface => $resp
+        fn(RequestInterface $_req, ResponseInterface $resp, array $_args): ResponseInterface => $resp,
     );
 
     $app->map(
         ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
         '/{routes:.+}',
-        fn (ServerRequestInterface $req, ResponseInterface $_resp) => throw new HttpNotFoundException($req)
+        fn(ServerRequestInterface $req, ResponseInterface $_resp) => throw new HttpNotFoundException($req),
     );
 };

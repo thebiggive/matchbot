@@ -6,7 +6,6 @@ namespace MatchBot\Application\Auth;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use JetBrains\PhpStorm\Pure;
 use MatchBot\Domain\PersonId;
 use Psr\Log\LoggerInterface;
 
@@ -21,7 +20,8 @@ final class IdentityTokenService
      */
     public function __construct(
         private string $baseUri,
-        #[\SensitiveParameter] private readonly array $secrets
+        #[\SensitiveParameter]
+        private readonly array $secrets,
     ) {
     }
 
@@ -41,9 +41,7 @@ final class IdentityTokenService
         foreach ($this->secrets as $secret) {
             try {
                 /** @var IdentityJWT $decodedJwtBody */
-                $decodedJwtBody = JWT::decode($jws, new Key($secret, static::$algorithm));
-
-                return $decodedJwtBody;
+                return JWT::decode($jws, new Key($secret, static::$algorithm));
             } catch (\Exception $exception) {
                 $caughtExcpetion = $exception;
                 continue;
@@ -75,7 +73,7 @@ final class IdentityTokenService
             // requests. In the event that we find they are sending partial JWTs (rather than
             // none) and so getting here we might consider further reducing this log to `info()`
             // level so we can spot more serious issues.
-            $logger->warning("JWT error: decoding for person ID $personId: $type - {$exception->getMessage()}");
+            $logger->warning("JWT error: decoding for person ID {$personId}: {$type} - {$exception->getMessage()}");
 
             return false;
         }
@@ -86,8 +84,8 @@ final class IdentityTokenService
             return false;
         }
 
-        if (($personId !== null) && $personId !== $decodedJwtBody->sub->person_id) {
-            $logger->warning("JWT error: Not authorised for person ID $personId");
+        if ($personId !== null && $personId !== $decodedJwtBody->sub->person_id) {
+            $logger->warning("JWT error: Not authorised for person ID {$personId}");
 
             return false;
         }

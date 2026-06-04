@@ -74,7 +74,6 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo->setLogger($c->get(LoggerInterface::class));
             $repo->setMatchingAdapter($c->get(Matching\Adapter::class));
 
-
             return $repo;
         },
 
@@ -94,11 +93,12 @@ return static function (ContainerBuilder $containerBuilder) {
 
         RegularGivingMandateRepository::class =>
             static fn(ContainerInterface $c): RegularGivingMandateRepository => new RegularGivingMandateRepository(
-                $c->get(EntityManagerInterface::class)
+                $c->get(EntityManagerInterface::class),
             ),
 
-        MetaCampaignRepository::class => static fn(ContainerInterface $c): MetaCampaignRepository => new MetaCampaignRepository(
-            $c->get(EntityManagerInterface::class)
-        ),
+        MetaCampaignRepository::class =>
+            static fn(ContainerInterface $c): MetaCampaignRepository => new MetaCampaignRepository(
+                $c->get(EntityManagerInterface::class),
+            ),
     ]);
 };

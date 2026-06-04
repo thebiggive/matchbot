@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Handlers;
 
-use Exception;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -20,7 +19,6 @@ use Slim\Exception\HttpNotImplementedException;
 use Slim\Exception\HttpUnauthorizedException;
 use Slim\Handlers\ErrorHandler as SlimErrorHandler;
 use Slim\Interfaces\CallableResolverInterface;
-use Throwable;
 
 /**
  * @psalm-suppress PropertyNotSetInConstructor - not possible to set following properties in constructor as they
@@ -50,7 +48,7 @@ class HttpErrorHandler extends SlimErrorHandler
         $statusCode = 500;
         $error = new ActionError(
             ActionError::SERVER_ERROR,
-            'An internal error has occurred while processing your request.'
+            'An internal error has occurred while processing your request.',
         );
 
         if ($exception instanceof HttpException) {
@@ -73,7 +71,7 @@ class HttpErrorHandler extends SlimErrorHandler
         }
 
         if (
-            !($exception instanceof HttpException)
+            !$exception instanceof HttpException
             && $this->displayErrorDetails
         ) {
             $error->setDescription($exception->getMessage());
@@ -82,8 +80,8 @@ class HttpErrorHandler extends SlimErrorHandler
                 /** @psalm-suppress PossiblyUndefinedArrayOffset
                  * Offsets defined at https://www.php.net/manual/en/exception.gettrace.php
                  */
-                fn(array $frame) => "{$frame['class']}::{$frame['function']} {$frame['file']}:{$frame['line']}",
-                $exception->getTrace()
+                static fn(array $frame) => "{$frame['class']}::{$frame['function']} {$frame['file']}:{$frame['line']}",
+                $exception->getTrace(),
             );
 
             $data = ['error' => $error, 'trace' => $trace];
@@ -105,12 +103,12 @@ class HttpErrorHandler extends SlimErrorHandler
         $response = $this->responseFactory->createResponse($statusCode);
         $response->getBody()->write($encodedPayload);
 
-        if (!($this->exception instanceof HttpException)) {
+        if (!$this->exception instanceof HttpException) {
             $this->logError(sprintf(
                 "%s: %s \n#\n %s \n %s",
                 get_class($this->exception),
                 $this->exception->getMessage(),
-                $this->exception->getFile() . ":" . $this->exception->getLine(),
+                $this->exception->getFile() . ':' . $this->exception->getLine(),
                 $this->exception->getTraceAsString(),
             ));
         }

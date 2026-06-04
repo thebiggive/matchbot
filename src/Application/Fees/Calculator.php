@@ -28,7 +28,6 @@ class Calculator
     private const string FEE_MAIN_PERCENTAGE_STANDARD_NEW = '1.9';
     private const string JULY_2026 = '2026-07-01T00:00:00 Europe/London';
 
-
     /** @var string[]   Major currency unit (e.g. pounds) fee charged *by us* for Stripe credit/debit
      *                  card donations. These values were chosen based on a Stripe support email about
      *                  their own core fees in mid 2021 BUT they don't necessarily reflect what Stripe
@@ -75,7 +74,7 @@ class Calculator
 
         $feeVat = self::getFeeVat(
             coreFee: $coreFee,
-            currencyCode: $currencyCode
+            currencyCode: $currencyCode,
         );
 
         return new Fees(
@@ -109,20 +108,21 @@ class Calculator
         Assertion::keyExists(self::FEES_FIXED_PRE_JULY_2026, $currencyCode);
         $useNewFees = $effectiveDate >= new \DateTimeImmutable(self::JULY_2026);
 
-        $feeAmountFixed = $useNewFees ?
-            self::FEES_FIXED_NEW[$currencyCode] : self::FEES_FIXED_PRE_JULY_2026[$currencyCode];
+        $feeAmountFixed = $useNewFees
+            ? self::FEES_FIXED_NEW[$currencyCode]
+            : self::FEES_FIXED_PRE_JULY_2026[$currencyCode];
 
         $feeRatio = bcdiv(
             $useNewFees ? self::FEE_MAIN_PERCENTAGE_STANDARD_NEW : self::FEE_MAIN_PERCENTAGE_STANDARD_PRE_JULY_2026,
             '100',
-            3
+            3,
         );
 
         if ($cardBrand?->isAmex() || !self::isEU($cardCountry)) {
             $feeRatio = bcdiv(
                 self::FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU, // same pre and post july 2026
                 '100',
-                3
+                3,
             );
         }
 
@@ -139,13 +139,13 @@ class Calculator
         // in the normal mathematical way we need to start with 3 d.p. scale and round with a
         // workaround.
         $feeAmountFromPercentageComponent = self::roundAmount(
-            bcmul($amount, $feeRatio, 3)
+            bcmul($amount, $feeRatio, 3),
         );
 
         // Charity fee calculated as:
         // Fixed fee amount + proportion of base donation amount + Gift Aid fee (for Stripe this is £0.00)
         return self::roundAmount(
-            bcadd(bcadd($feeAmountFixed, $feeAmountFromPercentageComponent, 3), $giftAidFee, 3)
+            bcadd(bcadd($feeAmountFixed, $feeAmountFromPercentageComponent, 3), $giftAidFee, 3),
         );
     }
 
@@ -184,7 +184,8 @@ class Calculator
      *                          fixed scale and only positive inputs.
      * @return numeric-string
      */
-    #[Pure] private static function roundAmount(string $amount): string
+    #[Pure]
+    private static function roundAmount(string $amount): string
     {
         $e = '1000'; // Base 10 ^ 3
 
@@ -216,8 +217,8 @@ class Calculator
             Assertion::same(
                 'GBP',
                 $currencyCode,
-                "$currencyCode not supported, only GBP supported for fee calculations. Other currency fees would "
-                . "need to be documented at https://biggive.org/our-fees/"
+                "{$currencyCode} not supported, only GBP supported for fee calculations. Other currency fees would "
+                . 'need to be documented at https://biggive.org/our-fees/',
             );
         }
     }

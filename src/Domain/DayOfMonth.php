@@ -14,8 +14,8 @@ use MatchBot\Application\Assertion;
 readonly class DayOfMonth
 {
     private function __construct(
-        #[Column(name: "dayOfMonth", type: 'smallint')]
-        public int $value
+        #[Column(name: 'dayOfMonth', type: 'smallint')]
+        public int $value,
     ) {
         Assertion::between($value, 1, 28);
     }
@@ -28,7 +28,7 @@ readonly class DayOfMonth
     public static function forMandateStartingAt(\DateTimeImmutable $date): self
     {
         $dateInUK = $date->setTimezone(new \DateTimeZone('Europe/London'));
-        $originalDayOfMonth = (int)$dateInUK->format('j');
+        $originalDayOfMonth = (int) $dateInUK->format('j');
 
         // for simplicity, we don't take payments on the 29th, 30th or 31st of the month since not all months have them.
 

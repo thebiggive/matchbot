@@ -28,6 +28,7 @@ preserve-breaking-attribute-list = true
 preserve-breaking-conditional-expression = true
 preserve-breaking-condition-expression = true
 preserve-redundant-logical-binary-expression-parentheses = true
+space-around-assignment-in-declare = false
 trailing-comma = true
 
 [linter]

@@ -32,7 +32,7 @@ class RyftClient
         $this->apiPrefix = match ($environment) {
             Environment::Production => 'https://api.ryftpay.com/v1/',
             Environment::Staging, Environment::Local, Environment::Regression => 'https://sandbox-api.ryftpay.com/v1/',
-            Environment::Test => 'https://placeholder-for-ryft-api-in-test.biggive.org/v1/'
+            Environment::Test => 'https://placeholder-for-ryft-api-in-test.biggive.org/v1/',
         };
     }
 
@@ -53,12 +53,12 @@ class RyftClient
             headers: $this->headers($ryftAccountId),
             body: json_encode(
                 [
-                'amount' => $amount->amountInPence(),
-                'currency' => $amount->currency->isoCode(),
-                'captureFlow' => 'Manual', // should allow setting platform fee when we capture from matchbot code later.
+                    'amount' => $amount->amountInPence(),
+                    'currency' => $amount->currency->isoCode(),
+                    'captureFlow' => 'Manual', // should allow setting platform fee when we capture from matchbot code later.
                 ],
-                \JSON_THROW_ON_ERROR
-            )
+                \JSON_THROW_ON_ERROR,
+            ),
         );
 
         $response = $this->client->send($request);
@@ -75,7 +75,7 @@ class RyftClient
 
         return [
             'id' => RyftPaymentSessionId::of($id),
-            'clientSecret' => $clientSecret
+            'clientSecret' => $clientSecret,
         ];
     }
 
@@ -110,7 +110,6 @@ class RyftClient
         return $responseData;
     }
 
-
     /**
      * see https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionCaptureById
      *
@@ -125,7 +124,7 @@ class RyftClient
             headers: $this->headers($ryftAccountId),
             body: json_encode(
                 [
-                // ammount not set hereto capture full amount
+                    // ammount not set hereto capture full amount
                     'platformFee' => $platformFee->amountInPence(),
                 ],
                 flags: \JSON_THROW_ON_ERROR,
@@ -147,7 +146,9 @@ class RyftClient
         /** @var array{id: string, amount: int, platformFee: int, currency: string, status: string} $responseData */
         $responseData = json_decode($responseContents, associative: true, flags: \JSON_THROW_ON_ERROR);
 
-        $this->log->info('Captured Ryft payment or ' . $responseData['amount'] . ' for payment session ' . $responseData['id']);
+        $this->log->info(
+            'Captured Ryft payment or ' . $responseData['amount'] . ' for payment session ' . $responseData['id'],
+        );
 
         $status = $responseData['status'];
         if ($status !== 'Succeeded') {

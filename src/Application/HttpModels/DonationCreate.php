@@ -19,9 +19,9 @@ use MatchBot\Domain\Salesforce18Id;
 readonly class DonationCreate
 {
     /** @var Salesforce18Id<Campaign>  */
-    public readonly Salesforce18Id $projectId;
-    public readonly ?DonorName $donorName;
-    public readonly ?EmailAddress $emailAddress;
+    public Salesforce18Id $projectId;
+    public ?DonorName $donorName;
+    public ?EmailAddress $emailAddress;
 
     /**
      * @param string $donationAmount In full currency unit, e.g. whole pounds GBP, whole dollars USD
@@ -50,9 +50,9 @@ readonly class DonationCreate
         public ?string $homeAddress = null,
         public ?string $homePostcode = null,
     ) {
-        $this->emailAddress = (! is_null($emailAddress) && ! ($emailAddress === '')) ?
-            EmailAddress::of($emailAddress) :
-            null;
+        $this->emailAddress = !is_null($emailAddress) && !( $emailAddress === '' )
+            ? EmailAddress::of($emailAddress)
+            : null;
 
         $this->donorName = DonorName::maybeFromFirstAndLast($firstName, $lastName, $isOrganisationDonor);
 
@@ -62,14 +62,14 @@ readonly class DonationCreate
         Assertion::regex(
             $this->donationAmount,
             '/^[0-9]+(\.00?)?$/',
-            "Donation amount should be a whole number"
+            'Donation amount should be a whole number',
         ); // must be an integer, with optional .00 or .0 suffix
 
         Assertion::nullOrBetweenLength($this->tipAmount, 1, 9);
         Assertion::nullOrRegex(
             $this->tipAmount,
             '/^[0-9]+(\.\d\d?)?$/',
-            "Tip amount should be number with up to two decimals"
+            'Tip amount should be number with up to two decimals',
         );
     }
 }

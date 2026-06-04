@@ -6,7 +6,6 @@ namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\TransferException;
-use MatchBot\Application\Assertion;
 use MatchBot\Domain\MetaCampaignSlug;
 
 /**
@@ -14,24 +13,24 @@ use MatchBot\Domain\MetaCampaignSlug;
  * // may also separately be nullable.
  *
  * @psalm-type SFCharityApiResponse = array{
-     * id: string,
-     * name: string,
-     * logoUri: ?string,
-     * phoneNumber: ?string,
-     * emailAddress: ?string,
-     * twitter: ?string,
-     * website: ?string,
-     * facebook: ?string,
-     * linkedin: ?string,
-     * instagram: ?string,
-     * optInStatement: ?string,
-     * stripeAccountId: string,
-     * ryftAccountId: ?string,
-     * psp?: string,
-     * hmrcReferenceNumber: string|null,
-     * giftAidOnboardingStatus: string,
-     * regulatorRegion: string,
-     * regulatorNumber: string|null,
+ * id: string,
+ * name: string,
+ * logoUri: ?string,
+ * phoneNumber: ?string,
+ * emailAddress: ?string,
+ * twitter: ?string,
+ * website: ?string,
+ * facebook: ?string,
+ * linkedin: ?string,
+ * instagram: ?string,
+ * optInStatement: ?string,
+ * stripeAccountId: string,
+ * ryftAccountId: ?string,
+ * psp?: string,
+ * hmrcReferenceNumber: string|null,
+ * giftAidOnboardingStatus: string,
+ * regulatorRegion: string,
+ * regulatorNumber: string|null,
  * }
  *
  * @psalm-type SFCampaignApiResponse = array{
@@ -46,7 +45,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     relatedApplicationStatus?: value-of<\MatchBot\Domain\ApplicationStatus>|null,
  *     relatedApplicationCharityResponseToOffer?: value-of<\MatchBot\Domain\CharityResponseToOffer>|null,
  *     title: ?string,
-*      currencyCode: string,
+ *      currencyCode: string,
  *     isRegularGiving?: boolean,
  *     regularGivingCollectionEnd?: ?string,
  *     thankYouMessage: ?string,
@@ -110,7 +109,7 @@ class Campaign extends Common
     public function getById(string $id, bool $withCache): array
     {
         $baseUri = $withCache ? $this->baseUriCached() : $this->baseUri();
-        $uri = $this->getUri("$baseUri/$id", $withCache);
+        $uri = $this->getUri("{$baseUri}/{$id}", $withCache);
 
         $maxRetries = 1;
         for ($retries = 0; $retries <= $maxRetries; $retries++) {
@@ -120,9 +119,7 @@ class Campaign extends Common
                 /**
                  * @var SFCampaignApiResponse $campaignResponse
                  */
-                $campaignResponse = json_decode((string)$response->getBody(), true, flags: \JSON_THROW_ON_ERROR);
-
-                return $campaignResponse;
+                return json_decode((string) $response->getBody(), true, flags: \JSON_THROW_ON_ERROR);
             } catch (TransferException $exception) {
                 if ($exception instanceof RequestException && $exception->getResponse()?->getStatusCode() === 404) {
                     // may be safely caught in sandboxes
@@ -133,11 +130,11 @@ class Campaign extends Common
                     'Campaign get for ID %s failed with %s: %s',
                     $id,
                     get_class($exception),
-                    $exception->getMessage()
+                    $exception->getMessage(),
                 );
 
                 if ($retries < $maxRetries) {
-                    $this->logger->info($logMessage . ". Retrying...");
+                    $this->logger->info($logMessage . '. Retrying...');
                     continue;
                 }
 
@@ -173,9 +170,7 @@ class Campaign extends Common
         /**
          * @var SFCampaignApiResponse $campaignResponse
          */
-        $campaignResponse = json_decode((string)$response->getBody(), true, flags: \JSON_THROW_ON_ERROR);
-
-        return $campaignResponse;
+        return json_decode((string) $response->getBody(), true, flags: \JSON_THROW_ON_ERROR);
     }
 
     private function baseUri(): string

@@ -23,8 +23,9 @@ abstract class Action
     /**
      * @param LoggerInterface $logger
      */
-    public function __construct(protected readonly LoggerInterface $logger)
-    {
+    public function __construct(
+        protected readonly LoggerInterface $logger,
+    ) {
     }
 
     /**
@@ -57,14 +58,13 @@ abstract class Action
     {
         return new ChatMessage(
             subject: $heading,
-            options: (new SlackOptions())
-                ->block((new SlackHeaderBlock(sprintf(
-                    '[%s] %s',
-                    (string)getenv('APP_ENV'),
-                    $heading,
-                ))))
-                ->block((new SlackSectionBlock())->text($body))
-                ->iconEmoji(':o')
+            options: new SlackOptions()->block(new SlackHeaderBlock(sprintf(
+                '[%s] %s',
+                (string) getenv('APP_ENV'),
+                $heading,
+            )))
+                ->block(new SlackSectionBlock()->text($body))
+                ->iconEmoji(':o'),
         );
     }
 
@@ -77,7 +77,7 @@ abstract class Action
         $donationUUID = $args[$argName];
         Assertion::string($donationUUID);
         if ($donationUUID === '') {
-            throw new DomainRecordNotFoundException("Missing $argName");
+            throw new DomainRecordNotFoundException("Missing {$argName}");
         }
 
         return Uuid::fromString($donationUUID);
@@ -144,8 +144,7 @@ abstract class Action
         $json = json_encode($payload, \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR);
         $response->getBody()->write($json);
 
-        return $response
-            ->withStatus($payload->getStatusCode())
+        return $response->withStatus($payload->getStatusCode())
             ->withHeader('Content-Type', 'application/json');
     }
 }

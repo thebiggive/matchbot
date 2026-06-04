@@ -10,13 +10,15 @@ class DonationFundsService
      * @psalm-suppress PossiblyUnusedMethod - used by DI container
      */
     public function __construct(
-        private readonly Stripe $stripe
+        private readonly Stripe $stripe,
     ) {
     }
 
     public function refundFullBalanceToCustomer(DonorAccount $donorAccount): void
     {
-        $stripeCustomer = $this->stripe->retrieveCustomer($donorAccount->stripeCustomerId, ['expand' => ['cash_balance']]);
+        $stripeCustomer = $this->stripe->retrieveCustomer($donorAccount->stripeCustomerId, ['expand' => [
+            'cash_balance',
+        ]]);
         if ($stripeCustomer->cash_balance === null || $stripeCustomer->cash_balance->available === null) {
             return;
         }

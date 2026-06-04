@@ -6,19 +6,19 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
-use Doctrine\ORM\NoResultException;
 use MatchBot\Application\Assertion;
 
 /**
  * @psalm-suppress UnusedProperty - likely to be used soon
-*/
+ */
 class MetaCampaignRepository
 {
     /** @var EntityRepository<MetaCampaign>  */
     private EntityRepository $doctrineRepository;
 
-    public function __construct(private EntityManagerInterface $em)
-    {
+    public function __construct(
+        private EntityManagerInterface $em,
+    ) {
         $this->doctrineRepository = $em->getRepository(MetaCampaign::class);
     }
 
@@ -30,18 +30,17 @@ class MetaCampaignRepository
     public function countCompleteDonationsToMetaCampaign(MetaCampaign $metaCampaign): int
     {
         $query = $this->em->createQuery(<<<'DQL'
-            SELECT COUNT(d.id)
-            FROM MatchBot\Domain\Donation d JOIN d.campaign c
-            WHERE c.metaCampaignSlug = :slug
-            AND d.donationStatus IN (:collectedStatuses)
-        DQL
-        );
+                SELECT COUNT(d.id)
+                FROM MatchBot\Domain\Donation d JOIN d.campaign c
+                WHERE c.metaCampaignSlug = :slug
+                AND d.donationStatus IN (:collectedStatuses)
+            DQL);
 
         $query->setParameter('slug', $metaCampaign->getSlug()->slug);
 
         $query->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES);
 
-        $count = (int)$query->getSingleScalarResult();
+        $count = (int) $query->getSingleScalarResult();
 
         \assert($count >= 0);
 
@@ -58,15 +57,15 @@ class MetaCampaignRepository
     {
         $donationQuery = $this->em->createQuery(
             <<<'DQL'
-            SELECT donation.currencyCode, COALESCE(SUM(
-            donation.amount + 
-            (CASE WHEN donation.giftAid = 1 THEN donation.amount * :giftAidPercent / 100 ELSE 0 END)))
-             as sum
-            FROM MatchBot\Domain\Donation donation JOIN donation.campaign c
-            WHERE c.metaCampaignSlug = :slug 
-            AND donation.donationStatus IN (:succcessStatus)
-            GROUP BY donation.currencyCode
-        DQL
+                    SELECT donation.currencyCode, COALESCE(SUM(
+                    donation.amount + 
+                    (CASE WHEN donation.giftAid = 1 THEN donation.amount * :giftAidPercent / 100 ELSE 0 END)))
+                     as sum
+                    FROM MatchBot\Domain\Donation donation JOIN donation.campaign c
+                    WHERE c.metaCampaignSlug = :slug 
+                    AND donation.donationStatus IN (:succcessStatus)
+                    GROUP BY donation.currencyCode
+                DQL,
         );
 
         $donationQuery->setParameters([
@@ -76,12 +75,12 @@ class MetaCampaignRepository
         ]);
 
         /** @var list<array{currencyCode: string, sum: numeric}> $donationResult */
-        $donationResult =  $donationQuery->getResult();
+        $donationResult = $donationQuery->getResult();
 
         Assertion::maxCount(
             $donationResult,
             1,
-            "multiple currency donations found for same campaign, can't calculate sum"
+            "multiple currency donations found for same campaign, can't calculate sum",
         );
 
         if ($donationResult === []) {
@@ -94,13 +93,13 @@ class MetaCampaignRepository
 
         $matchedFundQuery = $this->em->createQuery(
             <<<'DQL'
-            SELECT COALESCE(SUM(fw.amount), 0) as sum
-            FROM MatchBot\Domain\FundingWithdrawal fw
-            JOIN fw.donation donation JOIN donation.campaign c
-            WHERE c.metaCampaignSlug = :slug
-            AND fw.releasedAt is null
-            AND donation.donationStatus IN (:succcessStatus)
-        DQL
+                    SELECT COALESCE(SUM(fw.amount), 0) as sum
+                    FROM MatchBot\Domain\FundingWithdrawal fw
+                    JOIN fw.donation donation JOIN donation.campaign c
+                    WHERE c.metaCampaignSlug = :slug
+                    AND fw.releasedAt is null
+                    AND donation.donationStatus IN (:succcessStatus)
+                DQL,
         );
 
         $matchedFundQuery->setParameters([
@@ -108,18 +107,16 @@ class MetaCampaignRepository
             'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
         ]);
 
-        $matchedFundResult =  $matchedFundQuery->getSingleScalarResult();
+        $matchedFundResult = $matchedFundQuery->getSingleScalarResult();
         Assertion::numeric($matchedFundResult);
 
         $currency = Currency::fromIsoCode($donationResult[0]['currencyCode'] ?? 'GBP');
 
-        $total = Money::sum(
+        return Money::sum(
             Money::fromNumericString((string) $donationSum, $currency),
             Money::fromNumericString((string) $matchedFundResult, $currency),
             $metaCampaign->getTotalAdjustment(),
         );
-
-        return $total;
     }
 
     /** @param Salesforce18Id<MetaCampaign> $sfId */
@@ -137,17 +134,16 @@ class MetaCampaignRepository
     public function allToIncludeInSitemap(\DateTimeImmutable $at): array
     {
         $query = $this->em->createQuery(<<<'DQL'
-            SELECT mc FROM MatchBot\Domain\MetaCampaign mc
-            WHERE mc.hidden = false
-            AND mc.startDate > :indexOldFrom -- old campaigns have innacurate data
-            AND mc.startDate < :indexNewFrom -- new campaigns that don't open soon may not yet have complete copy or anything of interest on their pages
-        DQL);
+                SELECT mc FROM MatchBot\Domain\MetaCampaign mc
+                WHERE mc.hidden = false
+                AND mc.startDate > :indexOldFrom -- old campaigns have innacurate data
+                AND mc.startDate < :indexNewFrom -- new campaigns that don't open soon may not yet have complete copy or anything of interest on their pages
+            DQL);
 
         $query->setParameter('indexOldFrom', new \DateTimeImmutable(MetaCampaign::INDEX_FROM));
         $query->setParameter('indexNewFrom', $at->add(new \DateInterval(MetaCampaign::INDEX_NEW_INTERVAL)));
 
         /** @var list<MetaCampaign> */
-        $result = $query->getResult();
-        return $result;
+        return $query->getResult();
     }
 }

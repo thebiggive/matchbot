@@ -20,7 +20,7 @@ readonly class EmailVerificationTokenHandler
         $this->entityManager->persist(new EmailVerificationToken(
             randomCode: $message->randomCode,
             emailAddress: $message->emailAddress,
-            createdAt: $message->createdAt
+            createdAt: $message->createdAt,
         ));
 
         $this->entityManager->flush();

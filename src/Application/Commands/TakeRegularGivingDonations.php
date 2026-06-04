@@ -32,7 +32,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'matchbot:collect-regular-giving',
-    description: "Takes money from donors that they have given us advance permission to take.",
+    description: 'Takes money from donors that they have given us advance permission to take.',
 )]
 class TakeRegularGivingDonations extends LockingCommand
 {
@@ -54,7 +54,7 @@ class TakeRegularGivingDonations extends LockingCommand
             'simulated-date',
             shortcut: 'simulated-date',
             mode: InputOption::VALUE_REQUIRED,
-            description: '(imperfectly) Simulated datetime - see comments in ' .  basename(__file__) . ' for details',
+            description: '(imperfectly) Simulated datetime - see comments in ' . basename(__file__) . ' for details',
         );
     }
 
@@ -85,9 +85,9 @@ class TakeRegularGivingDonations extends LockingCommand
                 $this->setSimulatedNow($simulateDateInput, $output);
                 break;
             case $this->environment === Environment::Production && is_string($simulateDateInput):
-                throw new \Exception("Cannot simulate date in production");
+                throw new \Exception('Cannot simulate date in production');
             default:
-                //no-op
+            //no-op
         }
     }
 
@@ -115,14 +115,14 @@ class TakeRegularGivingDonations extends LockingCommand
         $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, self::MAXBATCHSIZE);
 
         $mandateUUIDs = array_map(
-            fn(array $mandate_charity) => $mandate_charity[0]->getUuid()->toString(),
-            $mandates
+            static fn(array $mandate_charity) => $mandate_charity[0]->getUuid()->toString(),
+            $mandates,
         );
 
         $io->block(sprintf(
-            "%s mandates may have donations to create at this time: %s",
+            '%s mandates may have donations to create at this time: %s',
             count($mandates),
-            implode(', ', $mandateUUIDs)
+            implode(', ', $mandateUUIDs),
         ));
 
         foreach ($mandates as [$mandate]) {
@@ -143,10 +143,10 @@ class TakeRegularGivingDonations extends LockingCommand
      */
     private function createPaymentIntentWhenReachedPaymentDate(
         \DateTimeImmutable $now,
-        SymfonyStyle $io
+        SymfonyStyle $io,
     ): void {
         $donations = $this->donationRepository->findDonationsToSetPaymentIntent($now, self::MAXBATCHSIZE);
-        $io->block(count($donations) . " donations are due to have Payment Intent set at this time");
+        $io->block(count($donations) . ' donations are due to have Payment Intent set at this time');
 
         foreach ($donations as $donation) {
             try {
@@ -173,27 +173,27 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(
         \DateTimeImmutable $now,
-        SymfonyStyle $io
+        SymfonyStyle $io,
     ): void {
         $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($now, self::MAXBATCHSIZE);
 
-        $io->block(count($donations) . " donations are due to be confirmed at this time");
+        $io->block(count($donations) . ' donations are due to be confirmed at this time');
 
         foreach ($donations as $donation) {
             $preAuthDate = $donation->getPreAuthorizationDate();
             \assert($preAuthDate instanceof \DateTimeImmutable);
             $io->writeln("Processing donation ID {$donation->getId()}");
             $io->writeln(
-                "Donation {$donation->getUuid()} is pre-authorized to pay on" .
-                " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>
-                "
+                "Donation {$donation->getUuid()} is pre-authorized to pay on"
+                . " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>
+                ",
             );
 
             try {
                 try {
                     if ($this->donationService->confirmPreAuthorized($donation)) {
                         $io->writeln(
-                            "Donation {$donation->getUuid()} is expected to become Collected when Stripe calls back"
+                            "Donation {$donation->getUuid()} is expected to become Collected when Stripe calls back",
                         );
                     } // else there are already detailed logs about the failure
                 } catch (MandateNotActive $exception) {
@@ -226,7 +226,14 @@ class TakeRegularGivingDonations extends LockingCommand
                     );
                 }
             } catch (\Exception $exception) {
-                $this->logger->warning('Exception, skipping RG confirmation of donation: ' . $donation->getUuid()->toString() . ", " . \get_class($exception) . ": " . $exception->getMessage());
+                $this->logger->warning(
+                    'Exception, skipping RG confirmation of donation: '
+                        . $donation->getUuid()->toString()
+                        . ', '
+                        . \get_class($exception)
+                        . ': '
+                        . $exception->getMessage(),
+                );
                 continue;
             }
         }

@@ -3,7 +3,6 @@
 namespace MatchBot\Application\Messenger;
 
 use MatchBot\Application\Assertion;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\RegularGivingMandate;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;
@@ -13,8 +12,10 @@ class MandateUpserted implements MessageGroupAwareInterface
     /**
      * @param array<string, mixed> $jsonSnapshot
      */
-    protected function __construct(public string $uuid, public array $jsonSnapshot)
-    {
+    protected function __construct(
+        public string $uuid,
+        public array $jsonSnapshot,
+    ) {
         Assertion::uuid($this->uuid);
     }
 

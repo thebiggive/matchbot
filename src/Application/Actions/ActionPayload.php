@@ -15,8 +15,8 @@ class ActionPayload implements JsonSerializable
     #[Pure]
     public function __construct(
         private int $statusCode = 200,
-        private array | object | null $data = null,
-        private ?ActionError $error = null
+        private array|object|null $data = null,
+        private ?ActionError $error = null,
     ) {
     }
 
@@ -33,7 +33,7 @@ class ActionPayload implements JsonSerializable
      * @return array<array-key,mixed>|null|object
      */
     #[Pure]
-    public function getData(): object | array | null
+    public function getData(): object|array|null
     {
         return $this->data;
     }
@@ -51,7 +51,7 @@ class ActionPayload implements JsonSerializable
      * @return object | array<mixed> | null
      */
     #[\Override]
-    public function jsonSerialize(): object | array | null
+    public function jsonSerialize(): object|array|null
     {
         $payload = null;
 

@@ -2,8 +2,6 @@
 
 namespace MatchBot\Domain;
 
-use function Symfony\Component\String\s;
-
 /**
  * Brand of payment card. Cases include all currently supported brands for Stripe, as well as the special
  * 'unknown' value for cards of other or unknown brands.

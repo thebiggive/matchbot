@@ -4,7 +4,6 @@ namespace MatchBot\Application\Commands;
 
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -43,13 +42,13 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  *
  * ./matchbot matchbot:setup-test-mandate --campaign Emergency --gift-aid
  *      --donor-uuid 72f1e368-65f3-11ef-878f-fb0a039f0650 --donor-stripeid cus_xyxzaxasfdef
-*       --donor-pmid pm_1xyzxzyxzyxzyxzyxzyxzyxz 500 20
+ *       --donor-pmid pm_1xyzxzyxzyxzyxzyxzyxzyxz 500 20
  *
  * This doesn't create the intitial donation, but it does pre-authorise the 2nd and 3rd donations.
  */
 #[AsCommand(
     name: 'matchbot:setup-test-mandate',
-    description: "For use in non-prod only. Sets up a new regular giving mandate in the DB so we can test processing",
+    description: 'For use in non-prod only. Sets up a new regular giving mandate in the DB so we can test processing',
 )]
 class SetupTestMandate extends LockingCommand
 {
@@ -76,7 +75,7 @@ class SetupTestMandate extends LockingCommand
             'donor-pmid',
             'dp',
             InputOption::VALUE_REQUIRED,
-            'id of payment method in stripe'
+            'id of payment method in stripe',
         );
 
         $this->addOption('campaign-id', 'c', InputOption::VALUE_REQUIRED);
@@ -89,7 +88,7 @@ class SetupTestMandate extends LockingCommand
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         if ($this->environment == Environment::Production) {
-            throw new \Exception("Not for use in production");
+            throw new \Exception('Not for use in production');
         }
 
         $io = new SymfonyStyle($input, $output);
@@ -109,9 +108,9 @@ class SetupTestMandate extends LockingCommand
 
         $donorId = PersonId::of($personId);
 
-        $amount = (int)($amountString ?? '1');
+        $amount = (int) ( $amountString ?? '1' );
 
-        $criteria = (new Criteria())->where(Criteria::expr()->contains('salesforceId', $campaignId));
+        $criteria = new Criteria()->where(Criteria::expr()->contains('salesforceId', $campaignId));
         $campaign = $this->campaignRepository->matching($criteria)->first();
 
         if (!$campaign) {
@@ -122,15 +121,15 @@ class SetupTestMandate extends LockingCommand
 
         $charity = $campaign->getCharity();
 
-        $dayOfMonth = DayOfMonth::of((int)($dayOfMonthArg ?? '1'));
+        $dayOfMonth = DayOfMonth::of((int) ( $dayOfMonthArg ?? '1' ));
 
         $mandate = new RegularGivingMandate(
             $donorId,
             Money::fromPoundsGBP($amount),
             Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
             Salesforce18Id::ofCharity($charity->getSalesforceId()),
-            (bool)$input->getOption('gift-aid'),
-            $dayOfMonth
+            (bool) $input->getOption('gift-aid'),
+            $dayOfMonth,
         );
         $mandate->activate($this->now);
         $this->em->persist($mandate);
@@ -154,16 +153,15 @@ class SetupTestMandate extends LockingCommand
 
         $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of($donorpmID));
 
-
         $this->makePreAuthedDonations($mandate, $campaign, $donor);
 
         $this->em->persist($mandate);
         $this->em->flush();
 
         $io->writeln(
-            "<fg=black;bg=green>" .
-            "Created new regular giving mandate: #{$mandate->getId()} for {$campaignId} by {$charity->getName()}" .
-            "</>"
+            '<fg=black;bg=green>'
+            . "Created new regular giving mandate: #{$mandate->getId()} for {$campaignId} by {$charity->getName()}"
+            . '</>',
         );
 
         return 0;
@@ -182,7 +180,7 @@ class SetupTestMandate extends LockingCommand
             $campaign,
             $donor,
             $paymentDay2ndDonation,
-            DonationSequenceNumber::of(2)
+            DonationSequenceNumber::of(2),
         );
 
         $this->preAuthorizeNewDonation(
@@ -190,20 +188,19 @@ class SetupTestMandate extends LockingCommand
             $campaign,
             $donor,
             $paymentDay3rdDonation,
-            DonationSequenceNumber::of(3)
+            DonationSequenceNumber::of(3),
         );
     }
-
 
     private function preAuthorizeNewDonation(
         RegularGivingMandate $mandate,
         Campaign $campaign,
         DonorAccount $donor,
         \DateTimeImmutable $paymentDay,
-        DonationSequenceNumber $number
+        DonationSequenceNumber $number,
     ): void {
         $donation = new Donation(
-            amount: (string)($mandate->getDonationAmount()->amountInPence() / 100),
+            amount: (string) ( $mandate->getDonationAmount()->amountInPence() / 100 ),
             currencyCode: 'GBP',
             paymentMethodType: PaymentMethodType::Card,
             campaign: $campaign,
@@ -231,7 +228,7 @@ class SetupTestMandate extends LockingCommand
             giftAid: $mandate->hasGiftAid(),
             donorHomeAddressLine1: 'donor home address',
             donorEmailAddress: $donor->emailAddress,
-            donorBillingPostcode: 'SW1 1AA'
+            donorBillingPostcode: 'SW1 1AA',
         );
 
         $donation->preAuthorize($paymentDay);

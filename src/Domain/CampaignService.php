@@ -118,7 +118,6 @@ class CampaignService
             'target' => $this->campaignTarget($campaign, $metaCampaign)->toMajorUnitFloat(),
             'parentUsesSharedFunds' => $metaCampaign && $metaCampaign->usesSharedFunds(),
             'parentRef' => $metaCampaign?->getSlug()->slug,
-
             // FE model also currently has a key-optional 'percentRaised' field, but SF never sends it and nothing in FE
             // runtime touches it - SF is currently doing its own division to calculate percent raised in
             // percentRaisedOfIndividualCampaign. We don't need to send it here but could start sending it in future.
@@ -151,7 +150,7 @@ class CampaignService
             campaignCount: $this->campaignRepository->countCampaignsInMetaCampaign($metaCampaign),
             usesSharedFunds: $metaCampaign->usesSharedFunds(),
             shouldBeIndexed: $metaCampaign->shouldBeIndexed($this->clock->now()),
-            useDon1120Banner: ! \is_null($bannerLayout),
+            useDon1120Banner: !\is_null($bannerLayout),
             bannerLayout: $bannerLayout,
         );
     }
@@ -183,7 +182,9 @@ class CampaignService
         try {
             $websiteUri = $charity->getWebsiteUri()?->__toString();
         } catch (\Laminas\Diactoros\Exception\InvalidArgumentException) {
-            $this->logger->warning("Bad website URI for charity {$charity->getSalesforceId()} for campaign {$campaign->getSalesforceId()}");
+            $this->logger->warning(
+                "Bad website URI for charity {$charity->getSalesforceId()} for campaign {$campaign->getSalesforceId()}",
+            );
             $websiteUri = null;
         }
 
@@ -209,7 +210,8 @@ class CampaignService
         );
 
         if ($metaCampaign && $metaCampaign->usesSharedFunds()) {
-            $parentMatchFundsRemaining = $this->cachedMetaCampaignMatchFundsRemaining($metaCampaign)->toMajorUnitFloat();
+            $parentMatchFundsRemaining =
+                $this->cachedMetaCampaignMatchFundsRemaining($metaCampaign)->toMajorUnitFloat();
         } else {
             $parentMatchFundsRemaining = null;
         }
@@ -220,7 +222,8 @@ class CampaignService
         $banner = $sfCampaignData['banner'] ?? null;
         if ($banner === null && \is_string($bannerUri)) {
             $banner = [
-                'uri' => $bannerUri, 'alt_text' => null
+                'uri' => $bannerUri,
+                'alt_text' => null,
             ];
         }
 
@@ -287,18 +290,24 @@ class CampaignService
             json: \json_encode($campaignHttpModel, \JSON_THROW_ON_ERROR),
             associative: true,
             depth: 512,
-            flags: JSON_THROW_ON_ERROR
+            flags: JSON_THROW_ON_ERROR,
         );
 
         // In SF a few expired campaigns have null start and end date. Matchbot data model doesn't allow that
         // so using 1970 as placeholder for null, and then switching it back to null for display.
         // FE will display e.g. "Closed null" but that's existing behaviour that we don't need to fix right now.
 
-        if (is_string($campaignHttpModelArray['startDate']) && \str_starts_with($campaignHttpModelArray['startDate'], '1970-01-01')) {
+        if (
+            is_string($campaignHttpModelArray['startDate'])
+            && \str_starts_with($campaignHttpModelArray['startDate'], '1970-01-01')
+        ) {
             $campaignHttpModelArray['startDate'] = null;
         }
 
-        if (is_string($campaignHttpModelArray['endDate']) && \str_starts_with($campaignHttpModelArray['endDate'], '1970-01-01')) {
+        if (
+            is_string($campaignHttpModelArray['endDate'])
+            && \str_starts_with($campaignHttpModelArray['endDate'], '1970-01-01')
+        ) {
             $campaignHttpModelArray['endDate'] = null;
         }
 
@@ -308,11 +317,14 @@ class CampaignService
         // the mathbot<->frontend interface without needing to change SF.
 
         try {
-            CampaignRenderCompatibilityChecker::checkCampaignHttpModelMatchesModelFromSF($campaignHttpModelArray, $sfCampaignData);
+            CampaignRenderCompatibilityChecker::checkCampaignHttpModelMatchesModelFromSF(
+                $campaignHttpModelArray,
+                $sfCampaignData,
+            );
         } catch (LazyAssertionException $exception) {
             $errorMessages = \array_map(
-                fn(InvalidArgumentException $e) => "{$e->getPropertyPath()}: {$e->getMessage()}",
-                $exception->getErrorExceptions()
+                static fn(InvalidArgumentException $e) => "{$e->getPropertyPath()}: {$e->getMessage()}",
+                $exception->getErrorExceptions(),
             );
 
             \ksort($errorMessages);
@@ -366,11 +378,11 @@ class CampaignService
         }
 
         $cachedAmountArray = $this->cache->get(
-            key: self::METACAMPAIGN_MATCH_FUNDS_TOTAL_PREFIX . (string)$id,
+            key: self::METACAMPAIGN_MATCH_FUNDS_TOTAL_PREFIX . (string) $id,
             callback: function (ItemInterface $item) use ($metaCampaign): array {
                 $item->expiresAfter(120); // two minutes
                 return $this->matchFundsService->getFundsTotalForMetaCampaign($metaCampaign)->jsonSerialize();
-            }
+            },
         );
 
         return Money::fromSerialized($cachedAmountArray);
@@ -384,18 +396,24 @@ class CampaignService
         }
 
         $cachedAmountArray = $this->cache->get(
-            key: self::METACAMPAIGN_MATCH_AMOUNT_REMAINING_PREFIX . (string)$id,
+            key: self::METACAMPAIGN_MATCH_AMOUNT_REMAINING_PREFIX . (string) $id,
             callback: function (ItemInterface $item) use ($metaCampaign): array {
                 $item->expiresAfter(120); // two minutes
                 $startTime = $this->clock->now();
-                $returnValue = $this->matchFundsService->getFundsRemainingForMetaCampaign($metaCampaign)->jsonSerialize();
+                $returnValue = $this->matchFundsService
+                    ->getFundsRemainingForMetaCampaign($metaCampaign)
+                    ->jsonSerialize();
                 $endTime = $this->clock->now();
 
                 $diffSeconds = $startTime->diff($endTime)->f;
-                $this->logger->info("getFundsRemainingForMetaCampaign {$metaCampaign->getSalesforceId()} took " . (string) $diffSeconds . "s");
+                $this->logger->info(
+                    "getFundsRemainingForMetaCampaign {$metaCampaign->getSalesforceId()} took "
+                    . (string) $diffSeconds
+                    . 's',
+                );
 
                 return $returnValue;
-            }
+            },
         );
 
         return Money::fromSerialized($cachedAmountArray);
@@ -407,11 +425,11 @@ class CampaignService
         Assertion::notNull($id);
 
         $cachedAmountArray = $this->cache->get(
-            key: self::METACAMPAIGN_MATCH_AMOUNT_RAISED_PREFIX . (string)$id,
+            key: self::METACAMPAIGN_MATCH_AMOUNT_RAISED_PREFIX . (string) $id,
             callback: function (ItemInterface $item) use ($metaCampaign): array {
                 $item->expiresAfter(120); // two minutes
                 return $this->metaCampaignRepository->totalAmountRaised($metaCampaign)->jsonSerialize();
-            }
+            },
         );
 
         return Money::fromSerialized($cachedAmountArray);
@@ -455,7 +473,9 @@ class CampaignService
         $this->entityManager->persist($statistics);
 
         if ($changed) {
-            $this->logger->info("Prepared statistics for campaign ID {$campaignId}, SF ID {$campaign->getSalesforceId()}");
+            $this->logger->info(
+                "Prepared statistics for campaign ID {$campaignId}, SF ID {$campaign->getSalesforceId()}",
+            );
         }
 
         return $changed;

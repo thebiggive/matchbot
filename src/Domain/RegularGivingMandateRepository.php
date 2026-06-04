@@ -4,7 +4,6 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
-use MatchBot\Application\Assertion;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -21,8 +20,9 @@ class RegularGivingMandateRepository
     /** @var EntityRepository<RegularGivingMandate>  */
     private EntityRepository $doctrineRepository;
 
-    public function __construct(private EntityManagerInterface $em)
-    {
+    public function __construct(
+        private EntityManagerInterface $em,
+    ) {
         $this->doctrineRepository = $em->getRepository(RegularGivingMandate::class);
     }
 
@@ -45,7 +45,7 @@ class RegularGivingMandateRepository
                 'donorId.id' => $donorId->id,
                 'campaignId' => $campaignSalesforceId,
                 'status' => 'pending',
-            ]
+            ],
         );
     }
 
@@ -58,14 +58,13 @@ class RegularGivingMandateRepository
     {
         $active = MandateStatus::Active->value;
 
-        $query = $this->em->createQuery(<<<"DQL"
-            SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r
-            LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
-            WHERE r.status = '{$active}'
-            AND r.donorId.id = :donorId
-            ORDER BY r.activeFrom desc
-        DQL
-        );
+        $query = $this->em->createQuery(<<<DQL
+                SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r
+                LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
+                WHERE r.status = '{$active}'
+                AND r.donorId.id = :donorId
+                ORDER BY r.activeFrom desc
+            DQL);
 
         $query->setParameter('donorId', $donor->id);
 
@@ -92,18 +91,17 @@ class RegularGivingMandateRepository
         // We want to include active mandates, and mandates that *were* active for any amount of time then manually
         // cancelled. Not mandates auto cancelled on creation which may as well never have existed.
 
-        $query = $this->em->createQuery(<<<"DQL"
-            SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r
-            LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
-            WHERE (
-                r.status = '{$active}' OR
-                r.status = '{$campaignEnded}' OR
-                (r.status = '{$cancelled}' AND r.cancellationType IN ('$bgCancelled', '$donorCancelled'))
-                )
-            AND r.donorId.id = :donorId
-            ORDER BY r.activeFrom desc
-        DQL
-        );
+        $query = $this->em->createQuery(<<<DQL
+                SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r
+                LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
+                WHERE (
+                    r.status = '{$active}' OR
+                    r.status = '{$campaignEnded}' OR
+                    (r.status = '{$cancelled}' AND r.cancellationType IN ('{$bgCancelled}', '{$donorCancelled}'))
+                    )
+                AND r.donorId.id = :donorId
+                ORDER BY r.activeFrom desc
+            DQL);
 
         $query->setParameter('donorId', $donor->id);
 
@@ -122,14 +120,13 @@ class RegularGivingMandateRepository
     {
         $active = MandateStatus::Active->value;
         // r.donationsCreatedUpTo is only set after a cron creation i.e. usually 3ish months after mandate setup.
-        $query = $this->em->createQuery(<<<"DQL"
-            SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r 
-            LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
-            WHERE r.status = '{$active}'
-            AND (r.donationsCreatedUpTo IS NULL OR r.donationsCreatedUpTo <= :now)
-            ORDER BY r.createdAt ASC
-        DQL
-        );
+        $query = $this->em->createQuery(<<<DQL
+                SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r 
+                LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
+                WHERE r.status = '{$active}'
+                AND (r.donationsCreatedUpTo IS NULL OR r.donationsCreatedUpTo <= :now)
+                ORDER BY r.createdAt ASC
+            DQL);
 
         $query->setParameter('now', $now);
         $query->setMaxResults($limit);
@@ -148,24 +145,27 @@ class RegularGivingMandateRepository
         /** @var list<RegularGivingMandate|Charity> $x */
         $x = $query->getResult();
 
-        $mandates = array_filter($x, fn($x) => $x instanceof RegularGivingMandate);
+        $mandates = array_filter($x, static fn($x) => $x instanceof RegularGivingMandate);
 
         /** @var Charity[] $charities */
         $charities = [];
         foreach ($x as $entity) {
-            if ($entity instanceof Charity) {
-                $charities[$entity->getSalesforceId()] = $entity;
+            if (!$entity instanceof Charity) {
+                continue;
             }
+
+            $charities[$entity->getSalesforceId()] = $entity;
         }
 
-        return array_values(array_map(function (RegularGivingMandate $mandate) use ($charities) {
+        return array_values(array_map(static function (RegularGivingMandate $mandate) use ($charities) {
             $charityId = $mandate->getCharityId();
             return [
                 $mandate,
-                $charities[$charityId] ?? throw new \Exception("Missing charity for mandate " . $mandate->getUuid()->toString())
+                $charities[$charityId] ?? throw new \Exception(
+                    'Missing charity for mandate ' . $mandate->getUuid()->toString(),
+                ),
             ];
-        },
-            $mandates));
+        }, $mandates));
     }
 
     /**
@@ -179,13 +179,11 @@ class RegularGivingMandateRepository
                 SELECT r FROM MatchBot\Domain\RegularGivingMandate r 
                 WHERE r.status = '{$pending}'
                 AND r.createdAt <= :latestCreationDate
-            DQL
-        );
+            DQL);
         $query->setParameter('latestCreationDate', $latestCreationDate);
         $query->setMaxResults(20);
 
         /** @var list<RegularGivingMandate> $mandates */
-        $mandates = $query->getResult();
-        return $mandates;
+        return $query->getResult();
     }
 }

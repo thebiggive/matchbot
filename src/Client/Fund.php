@@ -41,8 +41,7 @@ class Fund extends Common
         }
 
         /** @var fundArray $fund */
-        $fund = json_decode((string)$response->getBody(), true);
-        return $fund;
+        return json_decode((string) $response->getBody(), true);
     }
 
     /**
@@ -52,7 +51,7 @@ class Fund extends Common
      */
     public function getForCampaign(string $campaignId): array
     {
-        $uri = $this->campaignsBaseURI() . "$campaignId/funds";
+        $uri = $this->campaignsBaseURI() . "{$campaignId}/funds";
 
         $response = $this->getHttpClient()->get($uri);
 
@@ -61,9 +60,7 @@ class Fund extends Common
         }
 
         /** @var array<fundArray> $funds */
-        $funds = json_decode((string)$response->getBody(), true);
-
-        return $funds;
+        return json_decode((string) $response->getBody(), true);
     }
 
     public function pushAmountAvailable(FundTotalUpdated $fundMessage): void
@@ -104,7 +101,7 @@ class Fund extends Common
             return;
         }
 
-        $this->logger->info("Pushed amount available for fund: {$fundMessage->salesforceId}: Snapshot: $encodedJson");
+        $this->logger->info("Pushed amount available for fund: {$fundMessage->salesforceId}: Snapshot: {$encodedJson}");
     }
 
     public function fundBaseUri(): string

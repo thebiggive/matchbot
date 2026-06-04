@@ -16,7 +16,7 @@ readonly class DonationUpsertedHandler
 {
     public function __construct(
         private DonationRepository $donationRepository,
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -29,15 +29,15 @@ readonly class DonationUpsertedHandler
         $jsonSnapshot = $message->jsonSnapshot;
 
         // @phpstan-ignore cast.string
-        $messageDate = (string)($jsonSnapshot[DonationUpserted::SNAPSHOT_TAKEN_AT] ?? 'unknown date');
+        $messageDate = (string) ( $jsonSnapshot[DonationUpserted::SNAPSHOT_TAKEN_AT] ?? 'unknown date' );
 
-        $this->logger->info("DUH invoked for UUID: $donationUUID, handling message from $messageDate");
+        $this->logger->info("DUH invoked for UUID: {$donationUUID}, handling message from {$messageDate}");
 
         try {
             $this->donationRepository->push($message);
         } catch (\Throwable $exception) {
             $this->logger->error(sprintf(
-                "DUH: Exception %s on attempt to push donation %s: %s with message from %s. Trace: %s",
+                'DUH: Exception %s on attempt to push donation %s: %s with message from %s. Trace: %s',
                 get_class($exception),
                 $donationUUID,
                 $exception->getMessage(),
@@ -46,6 +46,6 @@ readonly class DonationUpsertedHandler
             ));
         }
 
-        $this->logger->info("DUH: Donation (maybe) pushed for UUID: " . $donationUUID);
+        $this->logger->info('DUH: Donation (maybe) pushed for UUID: ' . $donationUUID);
     }
 }

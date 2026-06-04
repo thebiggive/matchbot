@@ -124,14 +124,13 @@ class MatchFundsRedistributor
         $env = getenv('APP_ENV');
         Assertion::string($env);
 
-        $summary = "Checked $numberChecked donations and redistributed matching for $donationsAmended";
-        $options = (new SlackOptions())
-            ->block((new SlackHeaderBlock(sprintf(
-                '[%s] %s',
-                $env,
-                'Funds redistributed',
-            ))))
-            ->block((new SlackSectionBlock())->text($summary));
+        $summary = "Checked {$numberChecked} donations and redistributed matching for {$donationsAmended}";
+        $options = new SlackOptions()->block(new SlackHeaderBlock(sprintf(
+            '[%s] %s',
+            $env,
+            'Funds redistributed',
+        )))
+            ->block(new SlackSectionBlock()->text($summary));
         $chatMessage = new ChatMessage('Funds redistribution');
         $chatMessage->options($options);
 

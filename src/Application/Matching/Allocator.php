@@ -7,7 +7,6 @@ namespace MatchBot\Application\Matching;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Donations\Confirm;
-use MatchBot\Application\Assertion;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\Donation;
@@ -49,7 +48,10 @@ class Allocator
         $allocateStartTime = 0; // dummy value, should always be overwritten before usage.
         try {
             /** @var list<CampaignFunding> $likelyAvailableFunds */
-            $likelyAvailableFunds = $this->campaignFundingRepository->getAvailableFundings($donation->getCampaign(), $forceNotBigGive);
+            $likelyAvailableFunds = $this->campaignFundingRepository->getAvailableFundings(
+                $donation->getCampaign(),
+                $forceNotBigGive,
+            );
 
             foreach ($likelyAvailableFunds as $funding) {
                 if ($funding->getCurrencyCode() !== $donation->currency()->isoCode()) {
@@ -58,13 +60,18 @@ class Allocator
             }
 
             $allocateStartTime = microtime(true);
-            $newWithdrawals = $this->allocateFundsAndPrepareDBChanges($donation, $likelyAvailableFunds, $amountMatchedAtStart);
+            $newWithdrawals = $this->allocateFundsAndPrepareDBChanges(
+                $donation,
+                $likelyAvailableFunds,
+                $amountMatchedAtStart,
+            );
             $allocateEndTime = microtime(true);
         } catch (TerminalLockException $exception) {
-            $waitTime = round(microtime(true) - (float)$allocateStartTime, 6);
+            $waitTime = round(microtime(true) - (float) $allocateStartTime, 6);
             $this->logError(
-                "Match allocate error: ID {$donation->getUuid()} got " . get_class($exception) .
-                " after {$waitTime}s: {$exception->getMessage()}"
+                "Match allocate error: ID {$donation->getUuid()} got "
+                . get_class($exception)
+                . " after {$waitTime}s: {$exception->getMessage()}",
             );
             throw $exception; // Re-throw exception after logging the details if not recoverable
         }
@@ -88,12 +95,16 @@ class Allocator
             // Ensure nothing later tries to persist the pending Donation or CampaignFunding changes.
             $this->entityManager->close();
             throw new DbErrorPreventedMatch(
-                'Failed to flush DB for new withdrawals so donation UUID ' . $donation->getUuid()->toString() .
-                ' did not get matching: ' . $exception->getMessage(),
+                'Failed to flush DB for new withdrawals so donation UUID '
+                    . $donation->getUuid()->toString()
+                    . ' did not get matching: '
+                    . $exception->getMessage(),
             );
         }
 
-        $this->logInfo('ID ' . $donation->getUuid()->toString() . ' allocated new match funds totalling ' . $amountNewlyMatched);
+        $this->logInfo(
+            'ID ' . $donation->getUuid()->toString() . ' allocated new match funds totalling ' . $amountNewlyMatched,
+        );
         $this->logInfo('Allocation took ' . (string) round($allocateEndTime - $allocateStartTime, 6) . ' seconds');
 
         return $amountNewlyMatched;
@@ -128,8 +139,11 @@ class Allocator
         } catch (TerminalLockException $exception) {
             $waitTime = round(microtime(true) - $startTime, 6);
             $this->logError(
-                'Match release error: ID ' . $donation->getUuid()->toString() . ' got ' . get_class($exception) .
-                " after {$waitTime}s: {$exception->getMessage()}"
+                'Match release error: ID '
+                . $donation->getUuid()->toString()
+                . ' got '
+                . get_class($exception)
+                . " after {$waitTime}s: {$exception->getMessage()}",
             );
             throw $exception; // Re-throw exception after logging the details if not recoverable
         } catch (LockConflictedException $conflictedException) {
@@ -137,7 +151,9 @@ class Allocator
             // to release its match funds. Lets do nothing and let them confirm. Although this shouldn't happen as the
             // FE should have predicted that the lock would expire.
             $this->logError(
-                'Match release error: UUID ' . $donation->getUuid()->toString() . ' attempting to release funds while confirmation in progress'
+                'Match release error: UUID '
+                . $donation->getUuid()->toString()
+                . ' attempting to release funds while confirmation in progress',
             );
             throw $conflictedException;
         }
@@ -148,7 +164,12 @@ class Allocator
         try {
             $lock->release();
         } catch (\Exception $e) {
-            $this->logger->error("Error releasing lock for funds allocation on donation: " . $donation->getUuid()->toString() . " caused by " . ($e->getPrevious()?->__toString() ?? 'null'));
+            $this->logger->error(
+                'Error releasing lock for funds allocation on donation: '
+                . $donation->getUuid()->toString()
+                . ' caused by '
+                . ( $e->getPrevious()?->__toString() ?? 'null' ),
+            );
             throw $e;
         }
     }
@@ -168,8 +189,11 @@ class Allocator
      *                                              started.
      * @return FundingWithdrawal[]
      */
-    private function allocateFundsAndPrepareDBChanges(Donation $donation, array $fundings, string $amountMatchedAtStart): array
-    {
+    private function allocateFundsAndPrepareDBChanges(
+        Donation $donation,
+        array $fundings,
+        string $amountMatchedAtStart,
+    ): array {
         $amountLeftToMatch = bcsub($donation->getAmount(), $amountMatchedAtStart, 2);
         $currentFundingIndex = 0;
         /** @var FundingWithdrawal[] $newWithdrawals Track these to persist to DB after the main allocation */
@@ -198,8 +222,8 @@ class Allocator
             } catch (LessThanRequestedAllocatedException $exception) {
                 $amountAllocated = $exception->getAmountAllocated();
                 $this->logInfo(
-                    "Amount available from funding ID {$funding->getId()} changed: - got $amountAllocated " .
-                    "of requested $amountToAllocateNow"
+                    "Amount available from funding ID {$funding->getId()} changed: - got {$amountAllocated} "
+                    . "of requested {$amountToAllocateNow}",
                 );
             }
 
@@ -208,8 +232,10 @@ class Allocator
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
                 $withdrawal = new FundingWithdrawal($funding, $donation, $amountAllocated);
                 $newWithdrawals[] = $withdrawal;
-                $this->logInfo("Successfully withdrew $amountAllocated from funding ID {$funding->getId()} for UUID {$donation->getUuid()}");
-                $this->logInfo("New fund total for {$funding->getId()}: $newTotal");
+                $this->logInfo(
+                    "Successfully withdrew {$amountAllocated} from funding ID {$funding->getId()} for UUID {$donation->getUuid()}",
+                );
+                $this->logInfo("New fund total for {$funding->getId()}: {$newTotal}");
             }
 
             $currentFundingIndex++;

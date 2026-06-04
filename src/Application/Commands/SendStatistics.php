@@ -21,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 #[AsCommand(
     name: 'matchbot:send-statistics',
-    description: 'Sends CloudWatch headline figures on donation initiation and collection'
+    description: 'Sends CloudWatch headline figures on donation initiation and collection',
 )]
 class SendStatistics extends LockingCommand
 {
@@ -38,7 +38,7 @@ class SendStatistics extends LockingCommand
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $time = $this->clock->now()->getTimestamp();
-        $startOfThisMinute = new \DateTimeImmutable('@' . ($time - ($time % 60)));
+        $startOfThisMinute = new \DateTimeImmutable('@' . ( $time - ( $time % 60 ) ));
         $completionRate = $this->makeMetric(
             'CompletionRate',
             $this->donationRepository->getRecentHighVolumeCompletionRatio($startOfThisMinute),
@@ -60,7 +60,7 @@ class SendStatistics extends LockingCommand
         }
 
         if ($this->environment === Environment::Local) {
-            $output->writeln("Skipping stats send to cloudwatch from local dev env");
+            $output->writeln('Skipping stats send to cloudwatch from local dev env');
         } else {
             $this->cloudWatchClient->putMetricData([
                 'Namespace' => 'TbgMatchBot',
@@ -69,7 +69,7 @@ class SendStatistics extends LockingCommand
         }
 
         $count = count($notNullMetrics);
-        $output->writeln("Sent $count metrics to CloudWatch");
+        $output->writeln("Sent {$count} metrics to CloudWatch");
 
         return 0;
     }
@@ -80,10 +80,10 @@ class SendStatistics extends LockingCommand
      *
      * @return array{MetricName: string, Value: float | int | null, Timestamp: \DateTimeImmutable}
      */
-    private function makeMetric(string $name, float | int | null $value, \DateTimeImmutable $timestamp): array
+    private function makeMetric(string $name, float|int|null $value, \DateTimeImmutable $timestamp): array
     {
         return [
-            'MetricName' => "tbg-{$this->environment->toLower()}-$name",
+            'MetricName' => "tbg-{$this->environment->toLower()}-{$name}",
             'Value' => $value,
             'Timestamp' => $timestamp,
         ];

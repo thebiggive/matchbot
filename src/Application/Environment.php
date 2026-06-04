@@ -16,6 +16,7 @@ enum Environment
         if ($env === false) {
             // should be safest to default to acting like production.
             $env = 'production';
+
             // throw new \RuntimeException('APP_ENV environment variable required');
         }
 
@@ -30,7 +31,7 @@ enum Environment
             'regression' => self::Regression,
             'local' => self::Local,
             'test' => self::Test,
-            default => throw new \Exception("Unknown environment \"$name\""),
+            default => throw new \Exception("Unknown environment \"{$name}\""),
         };
     }
 

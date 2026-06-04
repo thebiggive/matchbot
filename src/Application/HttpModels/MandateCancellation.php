@@ -4,14 +4,6 @@ namespace MatchBot\Application\HttpModels;
 
 use Assert\AssertionFailedException;
 use MatchBot\Application\Assertion;
-use MatchBot\Domain\Campaign;
-use MatchBot\Domain\Country;
-use MatchBot\Domain\Currency;
-use MatchBot\Domain\DayOfMonth;
-use MatchBot\Domain\Money;
-use MatchBot\Domain\PostCode;
-use MatchBot\Domain\Salesforce18Id;
-use MatchBot\Domain\StripeConfirmationTokenId;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 

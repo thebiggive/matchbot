@@ -49,7 +49,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 #[AsCommand(
     name: 'matchbot:create-fictional-data',
-    description: "Creates fictional data (e.g. campaigns) for use in manual testing",
+    description: 'Creates fictional data (e.g. campaigns) for use in manual testing',
 )]
 class CreateFictionalData extends Command
 {
@@ -72,7 +72,7 @@ class CreateFictionalData extends Command
 
     public function createRyftAccount(SymfonyStyle $io): string
     {
-        $ryftURIPrefix = "https://sandbox-api.ryftpay.com/v1";
+        $ryftURIPrefix = 'https://sandbox-api.ryftpay.com/v1';
 
         $secretKey = $this->settings->ryft['secretKey'];
         Assertion::notEmpty($secretKey);
@@ -83,27 +83,30 @@ class CreateFictionalData extends Command
             method: 'POST',
             uri: $ryftURIPrefix . '/accounts',
             headers: $headers,
-            body: json_encode([
-                'onboardingFlow' => 'NonHosted',
-                'entityType' => 'Business',
-                'business' => [
-                    'name' => 'Test Charity',
-                    'type' => 'Charity',
-                    'contactEmail' => 'test-' . TestCase::randomString() . '@biggive.org', // must be unique.
-                    'registrationNumber' => '1234', // this is required for business accounts, may be a problem since some of our charities are exempt and might not be registered as companies either.
-                    'registeredAddress' => [
-                        "lineOne" => "123 Test Street",
-                        "lineTwo" => null,
-                        "city" => "Manchester",
-                        "country" => "GB",
-                        "postalCode" => "SP4 7DE",
-                        "region" => null
+            body: json_encode(
+                [
+                    'onboardingFlow' => 'NonHosted',
+                    'entityType' => 'Business',
+                    'business' => [
+                        'name' => 'Test Charity',
+                        'type' => 'Charity',
+                        'contactEmail' => 'test-' . TestCase::randomString() . '@biggive.org', // must be unique.
+                        'registrationNumber' => '1234', // this is required for business accounts, may be a problem since some of our charities are exempt and might not be registered as companies either.
+                        'registeredAddress' => [
+                            'lineOne' => '123 Test Street',
+                            'lineTwo' => null,
+                            'city' => 'Manchester',
+                            'country' => 'GB',
+                            'postalCode' => 'SP4 7DE',
+                            'region' => null,
+                        ],
+                    ],
+                    'metadata' => [
+                        'example-sub-account-metadata' => 42,
                     ],
                 ],
-                'metadata' => [
-                    'example-sub-account-metadata' => 42,
-                ],
-            ], \JSON_THROW_ON_ERROR),
+                \JSON_THROW_ON_ERROR,
+            ),
         );
 
         try {
@@ -111,15 +114,14 @@ class CreateFictionalData extends Command
         } catch (ClientException $e) {
             $io->error($e->getResponse()->getBody()->getContents());
 
-            $id = "ac_eeeeffff-06d7-44a9-a548-eeeeeeffffff";
-            $io->writeln("Could not create ryft account, using placeholder account ID $id");
+            $id = 'ac_eeeeffff-06d7-44a9-a548-eeeeeeffffff';
+            $io->writeln("Could not create ryft account, using placeholder account ID {$id}");
 
             return $id;
         }
         $contents = $response->getBody()->getContents();
         $io->writeln($contents);
         $ryftData = json_decode($contents, true, 512, \JSON_THROW_ON_ERROR);
-
 
         return $ryftData['id']; // @phpstan-ignore offsetAccess.nonOffsetAccessible
     }
@@ -132,11 +134,13 @@ class CreateFictionalData extends Command
     public function getOrCreateMetaCampaign(string $slug, CampaignFamily $family): MetaCampaign
     {
         $metaCampaignSlug = MetaCampaignSlug::of($slug);
-        $metaCampaign = $this->metaCampaignRepository->getBySlug($metaCampaignSlug) ?? $this->createMetaCampaign($metaCampaignSlug, $family);
+        $metaCampaign = $this->metaCampaignRepository->getBySlug($metaCampaignSlug) ?? $this->createMetaCampaign(
+            $metaCampaignSlug,
+            $family,
+        );
         $this->em->persist($metaCampaign);
         return $metaCampaign;
     }
-
 
     #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -144,13 +148,18 @@ class CreateFictionalData extends Command
         Assertion::false(Environment::current()->isProduction());
 
         $io = new SymfonyStyle($input, $output);
-        $io->writeln("Creating fictional data for local developer testing");
+        $io->writeln('Creating fictional data for local developer testing');
 
         $charityOnStripe = $this->charityRepository->findOneBy(['salesforceId' => self::SF_ID_ZERO]);
         $charityOnRyft = $this->charityRepository->findOneBy(['salesforceId' => self::SF_ID_ONE]);
 
-        $fund = $this->fundRepository->findOneBy(['salesforceId' => '000000000000000001']) ??
-            new Fund('GBP', 'test fund', null, Salesforce18Id::ofFund('000000000000000001'), FundType::Pledge);
+        $fund = $this->fundRepository->findOneBy(['salesforceId' => '000000000000000001']) ?? new Fund(
+            'GBP',
+            'test fund',
+            null,
+            Salesforce18Id::ofFund('000000000000000001'),
+            FundType::Pledge,
+        );
 
         $campaignFunding = new CampaignFunding($fund, '50.0', '50.0');
         $this->em->persist($fund);
@@ -165,25 +174,31 @@ class CreateFictionalData extends Command
         if (!$charityOnStripe) {
             /** @psalm-suppress ArgumentTypeCoercion */
             $charityOnStripe = $this->campaignRepository->newCharityFromCampaignData(
-                ['charity' => $this->getFictionalCharityData($io, PaymentServiceProvider::Stripe)] // @phpstan-ignore argument.type
+                ['charity' => $this->getFictionalCharityData($io, PaymentServiceProvider::Stripe)], // @phpstan-ignore argument.type
             );
 
-            $io->writeln("Created fictional charity {$charityOnStripe->getName()}, {$charityOnStripe->getSalesforceId()}");
+            $io->writeln(
+                "Created fictional charity {$charityOnStripe->getName()}, {$charityOnStripe->getSalesforceId()}",
+            );
             $this->em->persist($charityOnStripe);
         } else {
-            $io->writeln("Found existing fictional charity {$charityOnStripe->getName()}, {$charityOnStripe->getSalesforceId()}");
+            $io->writeln(
+                "Found existing fictional charity {$charityOnStripe->getName()}, {$charityOnStripe->getSalesforceId()}",
+            );
         }
 
         if (!$charityOnRyft) {
             /** @psalm-suppress ArgumentTypeCoercion */
             $charityOnRyft = $this->campaignRepository->newCharityFromCampaignData(
-                ['charity' => $this->getFictionalCharityData($io, PaymentServiceProvider::Ryft)] // @phpstan-ignore argument.type
+                ['charity' => $this->getFictionalCharityData($io, PaymentServiceProvider::Ryft)], // @phpstan-ignore argument.type
             );
 
             $io->writeln("Created fictional charity {$charityOnRyft->getName()}, {$charityOnRyft->getSalesforceId()}");
             $this->em->persist($charityOnRyft);
         } else {
-            $io->writeln("Found existing fictional charity {$charityOnRyft->getName()}, {$charityOnRyft->getSalesforceId()}");
+            $io->writeln(
+                "Found existing fictional charity {$charityOnRyft->getName()}, {$charityOnRyft->getSalesforceId()}",
+            );
         }
 
         $i = 0;
@@ -195,22 +210,25 @@ class CreateFictionalData extends Command
                 $campaign = Campaign::fromSfCampaignData(
                     $fictionalCampaign,
                     $campaignId,
-                    $i % 2 === 0 ? $charityOnStripe : $charityOnRyft
+                    ( $i % 2 ) === 0 ? $charityOnStripe : $charityOnRyft,
                 );
 
                 $campaign->setSalesforceLastPull(new \DateTime());
                 $stats = CampaignStatistics::zeroPlaceholder($campaign, new \DateTimeImmutable('now'));
 
-                $io->writeln("Created fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
+                $io->writeln(
+                    "Created fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}",
+                );
                 $this->em->persist($campaign);
                 $this->em->persist($stats);
                 $campaignFunding->addCampaign($campaign);
             } else {
-                $io->writeln("Found existing fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
+                $io->writeln(
+                    "Found existing fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}",
+                );
             }
 
             $io->writeln("Donate at http://localhost:4200/donate/{$campaign->getSalesforceId()}");
-
 
             $this->em->flush();
 
@@ -220,7 +238,7 @@ class CreateFictionalData extends Command
             \assert(\is_array($errors));
 
             if ($errors !== []) {
-                $io->error("Campaign has errors - may not match expectations of frontend:");
+                $io->error('Campaign has errors - may not match expectations of frontend:');
                 $io->listing($errors);
                 return 1;
             }
@@ -228,7 +246,6 @@ class CreateFictionalData extends Command
 
         return 0;
     }
-
 
     /**
      * @return list<SFCampaignApiResponse>
@@ -240,10 +257,34 @@ class CreateFictionalData extends Command
             $this->getFictionalCampaignData('000000000000000002', 'Save Donate Frontend', true, false, $metaCampaign),
             $this->getFictionalCampaignData('000000000000000003', 'Save Salesforce', false, true, $metaCampaign),
             $this->getFictionalCampaignData('000000000000000004', 'Save Identity', false, false, $metaCampaign),
-            $this->getFictionalCampaignData('000000000000000005', 'Save Barney\'s Keyboard', false, true, $metaCampaign),
-            $this->getFictionalCampaignData('000000000000000006', 'Replace Barney\'s Keyboard with a silent one', false, false, $metaCampaign),
-            $this->getFictionalCampaignData('000000000000000007', 'Implement generics in PHP', false, true, $metaCampaign),
-            $this->getFictionalCampaignData('000000000000000008', 'Implement open source Apex compiler', false, false, $metaCampaign),
+            $this->getFictionalCampaignData(
+                '000000000000000005',
+                'Save Barney\'s Keyboard',
+                false,
+                true,
+                $metaCampaign,
+            ),
+            $this->getFictionalCampaignData(
+                '000000000000000006',
+                'Replace Barney\'s Keyboard with a silent one',
+                false,
+                false,
+                $metaCampaign,
+            ),
+            $this->getFictionalCampaignData(
+                '000000000000000007',
+                'Implement generics in PHP',
+                false,
+                true,
+                $metaCampaign,
+            ),
+            $this->getFictionalCampaignData(
+                '000000000000000008',
+                'Implement open source Apex compiler',
+                false,
+                false,
+                $metaCampaign,
+            ),
             $this->getFictionalCampaignData('000000000000000009', 'Save Regtest', false, true, $metaCampaign),
         ];
     }
@@ -254,8 +295,13 @@ class CreateFictionalData extends Command
      * @psalm-suppress InvalidReturnType
      * @psalm-suppress InvalidReturnStatement
      */
-    private function getFictionalCampaignData(string $sfId, string $name, bool $isRegularGiving, bool $isMatched, ?MetaCampaign $metaCampaign): array
-    {
+    private function getFictionalCampaignData(
+        string $sfId,
+        string $name,
+        bool $isRegularGiving,
+        bool $isMatched,
+        ?MetaCampaign $metaCampaign,
+    ): array {
         $randomSeed = \random_int(1, 100);
 
         return [ // @phpstan-ignore return.type
@@ -272,12 +318,12 @@ class CreateFictionalData extends Command
             'endDate' => '2095-08-01T00:00:00.000Z',
             'logoUri' => null,
             'problem' => 'Matchbot is threatened!',
-            'summary' => "We can $name",
+            'summary' => "We can {$name}",
             'updates' => [],
             'solution' => 'do the saving',
             // in prod bannerUri is available in multiple sizes with a `width` param added by FE. Picsum will always send the image at 1700px wide.
-            'bannerUri' => "https://picsum.photos/seed/$randomSeed/1700/500",
-            'countries' => [0 => 'United Kingdom',],
+            'bannerUri' => "https://picsum.photos/seed/{$randomSeed}/1700/500",
+            'countries' => [0 => 'United Kingdom'],
             'isMatched' => $isMatched,
             'parentRef' => $metaCampaign?->getSlug()?->slug,
             'startDate' => '2015-08-01T00:00:00.000Z',
@@ -308,7 +354,7 @@ class CreateFictionalData extends Command
                     'uri' => 'https://picsum.photos/seed/' . \random_int(1, 100) . ' /1700/500',
                     'rank' => 1,
                     'altText' => 'This is the image alt-text',
-                ]
+                ],
             ],
             'matchFundsRemaining' => 50.0,
             'parentDonationCount' => null,
@@ -348,7 +394,7 @@ class CreateFictionalData extends Command
         return [
             'id' => $id,
             'name' => 'Society for the advancement of bots and matches',
-            'logoUri' =>  "https://picsum.photos/seed/$randomSeed/200/200",
+            'logoUri' => "https://picsum.photos/seed/{$randomSeed}/200/200",
             'twitter' => null,
             'website' => 'https://society-for-the-advancement-of-bots-and-matches.localhost',
             'facebook' => 'https://www.facebook.com/botsAndMatches',
@@ -371,24 +417,24 @@ class CreateFictionalData extends Command
     {
         try {
             $account = $this->stripeClient->accounts->create([
-                    'country' => 'GB',
-                    'email' => 'dev-test-stripe-account@biggive.org',
-                    'capabilities' => [
-                        'card_payments' => ['requested' => true],
-                        'pay_by_bank_payments' => ['requested' => true],
-                        'transfers' => ['requested' => true],
-                    ],
-                ]);
+                'country' => 'GB',
+                'email' => 'dev-test-stripe-account@biggive.org',
+                'capabilities' => [
+                    'card_payments' => ['requested' => true],
+                    'pay_by_bank_payments' => ['requested' => true],
+                    'transfers' => ['requested' => true],
+                ],
+            ]);
 
             $id = $account->id;
 
-            $io->writeln("Created test stripe account: $id");
+            $io->writeln("Created test stripe account: {$id}");
 
             return $id;
         } catch (\Exception) {
-            $id = "acct_0000000000" . (new Randomizer())->getBytesFromString('0123456789', 6);
+            $id = 'acct_0000000000' . new Randomizer()->getBytesFromString('0123456789', 6);
 
-            $io->writeln("Could not create stripe account, using placeholder account ID $id");
+            $io->writeln("Could not create stripe account, using placeholder account ID {$id}");
 
             return $id;
         }
@@ -396,7 +442,7 @@ class CreateFictionalData extends Command
 
     private function createMetaCampaign(MetaCampaignSlug $slug, CampaignFamily $family): MetaCampaign
     {
-        $bannerURI = "https://picsum.photos/id/88/1700/500";
+        $bannerURI = 'https://picsum.photos/id/88/1700/500';
         // Fixed image, so we can set a focal position/region to ensure is always visible -  this is an overhead shot
         // of a road, we can say the traffic light on the RHS is the focal point at position 71%, 48%. For now this
         // is hard-coded in Front End.
@@ -404,7 +450,7 @@ class CreateFictionalData extends Command
         return new MetaCampaign(
             $slug,
             salesforceId: Salesforce18Id::ofMetaCampaign(TestCase::randomString()),
-            title: "Local test MetaCampaign", // feel free to replace if you have a more creative idea
+            title: 'Local test MetaCampaign', // feel free to replace if you have a more creative idea
             currency: Currency::GBP,
             hidden: false,
             summary: 'These campaigns exist in the local Matchbot Database, they are not real and not currently expected to exist in any Salesforce org',

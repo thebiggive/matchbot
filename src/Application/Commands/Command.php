@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
-use Psr\Http\Message\StreamInterface;
 use Symfony\Component\Console\Command\Command as SymfonyCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -33,7 +30,7 @@ abstract class Command extends SymfonyCommand
             return;
         }
 
-        $output->writeln(($this->getName() ?? self::class) . ' starting!');
+        $output->writeln(( $this->getName() ?? self::class ) . ' starting!');
     }
 
     protected function finish(InputInterface $input, OutputInterface $output): void
@@ -42,7 +39,7 @@ abstract class Command extends SymfonyCommand
             return;
         }
 
-        $output->writeln(($this->getName() ?? self::class) . ' complete!');
+        $output->writeln(( $this->getName() ?? self::class ) . ' complete!');
     }
 
     private function noLog(InputInterface $input): bool

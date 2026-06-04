@@ -13,9 +13,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Clock\Clock;
-use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Notifier\Chatter;
 use Symfony\Component\Notifier\ChatterInterface;
 
 class RemoveGiftAidDeclaration extends Action
@@ -50,7 +48,7 @@ class RemoveGiftAidDeclaration extends Action
 
             $this->chatter->send($this->prepareSlackMessage(
                 heading: 'Could not remove GA from donation',
-                body: $exception->getMessage()
+                body: $exception->getMessage(),
             ));
 
             return $this->validationError(

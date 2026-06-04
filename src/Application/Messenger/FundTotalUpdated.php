@@ -11,8 +11,10 @@ readonly class FundTotalUpdated implements MessageGroupAwareInterface
     /**
      * @param array<string, mixed> $jsonSnapshot
      */
-    protected function __construct(public string $salesforceId, public array $jsonSnapshot)
-    {
+    protected function __construct(
+        public string $salesforceId,
+        public array $jsonSnapshot,
+    ) {
     }
 
     public static function fromFund(Fund $fund): self

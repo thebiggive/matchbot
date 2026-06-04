@@ -27,8 +27,9 @@ class RegularGivingMandateEventSubscriber implements EventSubscriber
      * Accepts whole container to lazy-load properties on first use, and allow for a circular dependency - this depends
      * on a repository which depends on the EntityManager which depends on this.
      */
-    public function __construct(private ContainerInterface $container)
-    {
+    public function __construct(
+        private ContainerInterface $container,
+    ) {
     }
 
     #[\Override]

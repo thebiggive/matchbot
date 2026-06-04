@@ -13,8 +13,6 @@ use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpNotFoundException;
 use Symfony\Component\Clock\Clock;
 
-use const true;
-
 /**
  * Returns a list of 'campaign summary' records for all the charity campaigns that we should show for
  * any given charity
@@ -31,10 +29,11 @@ class GetSummariesForCharity extends Action
         parent::__construct($logger);
     }
 
-    #[\Override] protected function action(Request $request, Response $response, array $args): Response
+    #[\Override]
+    protected function action(Request $request, Response $response, array $args): Response
     {
         $sfId = Salesforce18Id::ofCharity(
-            $args['charitySalesforceId'] ?? throw new HttpNotFoundException($request)
+            $args['charitySalesforceId'] ?? throw new HttpNotFoundException($request),
         );
 
         $charity = $this->charityRepository->findOneBySalesforceIdOrThrow($sfId);

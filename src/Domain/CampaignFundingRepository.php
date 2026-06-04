@@ -31,20 +31,20 @@ class CampaignFundingRepository extends EntityRepository
     {
         // Temporary option to allow for fixing wrong BG allocations.
         // Salesforce Champion Funding a09WS00000BDhATYA1 has Fund.id 31740.
-        $extraCondition = $forceNotBigGive ? " AND cf.fund != 31740 " : '';
+        $extraCondition = $forceNotBigGive ? ' AND cf.fund != 31740 ' : '';
 
         $query = $this->getEntityManager()->createQuery('
             SELECT cf FROM MatchBot\Domain\CampaignFunding cf JOIN cf.fund fund
-            WHERE :campaign MEMBER OF cf.campaigns ' . $extraCondition . '
+            WHERE :campaign MEMBER OF cf.campaigns '
+        . $extraCondition
+        . '
             AND cf.amountAvailable > 0
             ORDER BY fund.allocationOrder, cf.id
         ');
         $query->setParameter('campaign', $campaign->getId());
 
         /** @var CampaignFunding[] $result */
-        $result = $query->getResult();
-
-        return $result;
+        return $query->getResult();
     }
 
     /**
@@ -65,9 +65,7 @@ class CampaignFundingRepository extends EntityRepository
         $query->setParameter('campaign', $campaign->getId());
 
         /** @var CampaignFunding[] $result */
-        $result = $query->getResult();
-
-        return $result;
+        return $query->getResult();
     }
 
     /**
@@ -80,13 +78,12 @@ class CampaignFundingRepository extends EntityRepository
     {
         // First, get all unique CampaignFunding IDs for the meta-campaign – campaigns we expect to go ahead only
         $idQuery = $this->getEntityManager()->createQuery(dql: <<<'DQL'
-            SELECT DISTINCT cf.id FROM MatchBot\Domain\CampaignFunding cf
-            LEFT JOIN cf.campaigns campaign
-            WHERE campaign.metaCampaignSlug = :slug
-            AND campaign.relatedApplicationStatus = :appApproved
-            AND campaign.relatedApplicationCharityResponseToOffer = :appOfferAccepted
-        DQL
-        );
+                SELECT DISTINCT cf.id FROM MatchBot\Domain\CampaignFunding cf
+                LEFT JOIN cf.campaigns campaign
+                WHERE campaign.metaCampaignSlug = :slug
+                AND campaign.relatedApplicationStatus = :appApproved
+                AND campaign.relatedApplicationCharityResponseToOffer = :appOfferAccepted
+            DQL);
         $idQuery->setParameter('slug', $metaCampaign->getSlug()->slug);
         $idQuery->setParameter('appApproved', ApplicationStatus::Approved->value);
         $idQuery->setParameter('appOfferAccepted', CharityResponseToOffer::Accepted->value);
@@ -99,19 +96,18 @@ class CampaignFundingRepository extends EntityRepository
         }
 
         // Extract just the IDs into a flat array
-        $fundingIds = array_map(fn($row) => $row['id'], $ids);
+        $fundingIds = array_map(static fn($row) => $row['id'], $ids);
 
         // Then, sum the amounts for these unique IDs
         $sumQuery = $this->getEntityManager()->createQuery(dql: <<<'DQL'
-            SELECT
-                COALESCE(SUM(cf.amount), 0) as totalAmount,
-                COALESCE(SUM(cf.amountAvailable), 0) as totalAmountAvailable,
-                cf.currencyCode 
-            FROM MatchBot\Domain\CampaignFunding cf
-            WHERE cf.id IN (:ids)
-            GROUP BY cf.currencyCode
-        DQL
-        );
+                SELECT
+                    COALESCE(SUM(cf.amount), 0) as totalAmount,
+                    COALESCE(SUM(cf.amountAvailable), 0) as totalAmountAvailable,
+                    cf.currencyCode 
+                FROM MatchBot\Domain\CampaignFunding cf
+                WHERE cf.id IN (:ids)
+                GROUP BY cf.currencyCode
+            DQL);
         $sumQuery->setParameter('ids', $fundingIds);
 
         /** @var list<array{totalAmount: numeric-string, totalAmountAvailable: numeric-string, currencyCode: string}> $result */
@@ -141,9 +137,7 @@ class CampaignFundingRepository extends EntityRepository
         $query->execute();
 
         /** @var ?CampaignFunding $result */
-        $result = $query->getOneOrNullResult();
-
-        return $result;
+        return $query->getOneOrNullResult();
     }
 
     public function getFundingForCampaign(Campaign $campaign, Fund $fund): ?CampaignFunding
@@ -158,9 +152,7 @@ class CampaignFundingRepository extends EntityRepository
         $query->execute();
 
         /** @var ?CampaignFunding $result */
-        $result = $query->getOneOrNullResult();
-
-        return $result;
+        return $query->getOneOrNullResult();
     }
 
     /**

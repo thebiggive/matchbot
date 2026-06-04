@@ -78,7 +78,7 @@ class Update extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        if (empty($args['donationId']) || ! is_string($args['donationId'])) {
+        if (empty($args['donationId']) || !is_string($args['donationId'])) {
             // When MatchBot made a donation, this is now a UUID
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
@@ -91,23 +91,19 @@ class Update extends Action
             $donationData = $this->serializer->deserialize(
                 $body,
                 HttpModels\Donation::class,
-                'json'
+                'json',
             );
         } catch (
-            UnexpectedValueException | // the Serializer one, not the global one
-            AssertionFailedException |
-            MissingConstructorArgumentsException |
-            LazyAssertionException |
-            TypeError $exception
+            UnexpectedValueException | AssertionFailedException | MissingConstructorArgumentsException | LazyAssertionException | TypeError $exception // the Serializer one, not the global one
         ) {
-            $this->logger->info("Donation Update non-serialisable payload was: $body");
+            $this->logger->info("Donation Update non-serialisable payload was: {$body}");
 
-            $message = "Donation Update data deserialise error for donation $donationUUID";
+            $message = "Donation Update data deserialise error for donation {$donationUUID}";
             $exceptionType = get_class($exception);
 
             return $this->validationError(
                 response: $response,
-                logMessage: "$message: $exceptionType - {$exception->getMessage()}",
+                logMessage: "{$message}: {$exceptionType} - {$exception->getMessage()}",
                 publicMessage: $message,
                 reduceSeverity: empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
             );
@@ -117,7 +113,7 @@ class Update extends Action
             return $this->validationError(
                 $response,
                 "Donation ID {$donationUUID} could not be updated with missing status",
-                'New status is required'
+                'New status is required',
             );
         }
 
@@ -139,17 +135,17 @@ class Update extends Action
                     throw new DomainRecordNotFoundException('Donation not found');
                 }
 
-                if (! $donation->getCampaign()->isOpenForFinalising($this->clock->now())) {
+                if (!$donation->getCampaign()->isOpenForFinalising($this->clock->now())) {
                     return $this->validationError(
                         $response,
                         "Donation ID {$donationUUID} could not be update because campaign is closed",
-                        'Sorry, this campaign is now closed'
+                        'Sorry, this campaign is now closed',
                     );
                 }
 
                 if (
-                    $donationData->status !== DonationStatus::Cancelled->value &&
-                    $donationData->status !== $donation->getDonationStatus()->value
+                    $donationData->status !== DonationStatus::Cancelled->value
+                    && $donationData->status !== $donation->getDonationStatus()->value
                 ) {
                     $this->entityManager->rollback();
 
@@ -164,21 +160,21 @@ class Update extends Action
                 }
 
                 if (
-                    $donationData->autoConfirmFromCashBalance &&
-                    $donation->getPaymentMethodType() !== PaymentMethodType::CustomerBalance
+                    $donationData->autoConfirmFromCashBalance
+                    && $donation->getPaymentMethodType() !== PaymentMethodType::CustomerBalance
                 ) {
                     $this->entityManager->rollback();
 
                     // Log a warning to more easily spot occurrences in dashboards.
                     $methodSummary = $donation->getPaymentMethodType()->value ?? '[null]';
                     $this->logger->warning(
-                        "Donation ID {$donationUUID} auto-confirm attempted with '$methodSummary' payment method",
+                        "Donation ID {$donationUUID} auto-confirm attempted with '{$methodSummary}' payment method",
                     );
 
                     return $this->validationError(
                         $response,
                         "Donation ID {$donationUUID} could not be auto-confirmed",
-                        'Processing incomplete. Please refresh and check your donation funds balance'
+                        'Processing incomplete. Please refresh and check your donation funds balance',
                     );
                 }
 
@@ -192,7 +188,7 @@ class Update extends Action
                         return $this->validationError(
                             $response,
                             $e->getMessage(),
-                            'Donation already finalised'
+                            'Donation already finalised',
                         );
                     } catch (CouldNotCancelStripePaymentIntent) {
                         $error = new ActionError(ActionError::SERVER_ERROR, 'Could not cancel Stripe Payment Intent');
@@ -200,14 +196,17 @@ class Update extends Action
                         return $this->respond($response, new ActionPayload(500, null, $error));
                     }
                     $this->entityManager->commit();
-                    return $this->respondWithData($response, $donation->toFrontEndApiModel($this->enableNoReservationsMode));
+                    return $this->respondWithData(
+                        $response,
+                        $donation->toFrontEndApiModel($this->enableNoReservationsMode),
+                    );
                 }
 
                 return $this->addData($donation, $donationData, $args, $response, $request);
             } catch (\UnexpectedValueException $e) {
                 return $this->validationError(
                     $response,
-                    $e->getMessage()
+                    $e->getMessage(),
                 );
             } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
                 $this->logger->warning(sprintf(
@@ -217,7 +216,7 @@ class Update extends Action
                 ));
 
                 // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
-                $seconds = (0.1 * (2.0 ** (float)$retryCount));
+                $seconds = 0.1 * ( 2.0 ** ( (float) $retryCount ) );
                 $this->clock->sleep($seconds);
                 $retryCount++;
 
@@ -232,12 +231,12 @@ class Update extends Action
                     // @phpstan-ignore function.alreadyNarrowedType
                     \assert(
                         isset($donation), //@phpstan-ignore isset.variable
-                        "If we've got as far as Stripe throwing an exception we must have a Donation"
+                        "If we've got as far as Stripe throwing an exception we must have a Donation",
                     );
 
                     $this->logger->warning(sprintf(
-                        'Stripe rejected payment intent update as PI was cancelled, presumably by stripe' .
-                        ' itself very recently. Donation UUID %s',
+                        'Stripe rejected payment intent update as PI was cancelled, presumably by stripe'
+                        . ' itself very recently. Donation UUID %s',
                         $donation->getUuid(),
                     ));
                     $this->entityManager->rollback();
@@ -245,7 +244,7 @@ class Update extends Action
                     return $this->validationError(
                         $response,
                         "Donation ID {$donationUUID} could not be updated",
-                        'This donation payment intent has been cancelled. You may wish to start a fresh donation.'
+                        'This donation payment intent has been cancelled. You may wish to start a fresh donation.',
                     );
                 }
 
@@ -254,7 +253,7 @@ class Update extends Action
         }
 
         throw new \Exception(
-            "Retry count exceeded trying to update donation {$donationUUID} , retried $retryCount times",
+            "Retry count exceeded trying to update donation {$donationUUID} , retried {$retryCount} times",
         );
     }
 
@@ -272,7 +271,7 @@ class Update extends Action
         HttpModels\Donation $donationData,
         array $args,
         Response $response,
-        Request $request
+        Request $request,
     ): Response {
         // If the app tries to PUT with a different amount, something has gone very wrong and we should
         // explicitly fail instead of ignoring that field.
@@ -282,7 +281,7 @@ class Update extends Action
             return $this->validationError(
                 $response,
                 "Donation ID {$args['donationId']} amount did not match",
-                'Amount updates are not supported'
+                'Amount updates are not supported',
             );
         }
 
@@ -292,7 +291,7 @@ class Update extends Action
                 $response,
                 "Required boolean field 'optInCharityEmail' not set",
                 null,
-                true
+                true,
             );
         }
 
@@ -302,11 +301,15 @@ class Update extends Action
                 $response,
                 "Required boolean field 'optInTbgEmail' not set",
                 null,
-                true
+                true,
             );
         }
 
-        if ($donationData->currencyCode === 'GBP' && !isset($donationData->giftAid) && ! $donationData->isOrganisationDonor) {
+        if (
+            $donationData->currencyCode === 'GBP'
+            && !isset($donationData->giftAid)
+            && !$donationData->isOrganisationDonor
+        ) {
             $this->entityManager->rollback();
 
             return $this->validationError($response, "Required boolean field 'giftAid' not set", null, true);
@@ -325,7 +328,7 @@ class Update extends Action
 
             $this->entityManager->rollback();
 
-            return $this->validationError($response, "Can not update cancelled donation", null, true);
+            return $this->validationError($response, 'Can not update cancelled donation', null, true);
         }
 
         // These 3 fields are currently set up early in the journey, but are harmless and more flexible
@@ -399,13 +402,13 @@ class Update extends Action
                     }
 
                     $isDonationToBGRequiringBankTransfer =
-                        $confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION &&
-                        $nextActionType === 'display_bank_transfer_instructions' &&
-                        $donation->getCampaign()->getCampaignName() === 'Big Give General Donations';
+                        $confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION
+                        && $nextActionType === 'display_bank_transfer_instructions'
+                        && $donation->getCampaign()->getCampaignName() === 'Big Give General Donations';
 
                     $statusIsNeitherSuccessNorTipWithCreditsNextAction =
-                        $confirmedIntent->status !== PaymentIntent::STATUS_SUCCEEDED &&
-                        !$isDonationToBGRequiringBankTransfer;
+                        $confirmedIntent->status !== PaymentIntent::STATUS_SUCCEEDED
+                        && !$isDonationToBGRequiringBankTransfer;
 
                     if ($statusIsNeitherSuccessNorTipWithCreditsNextAction) {
                         // As this is autoConfirmFromCashBalance and we only expect people to make such donations if
@@ -414,7 +417,7 @@ class Update extends Action
                         $this->cancelDonationAndPaymentIntent($donation, $confirmedIntent);
                         throw new HttpBadRequestException(
                             $request,
-                            "Status was {$confirmedIntent->status}, expected " . PaymentIntent::STATUS_SUCCEEDED
+                            "Status was {$confirmedIntent->status}, expected " . PaymentIntent::STATUS_SUCCEEDED,
                         );
                     }
                 } catch (InvalidRequestException $exception) {
@@ -429,12 +432,12 @@ class Update extends Action
                     if (
                         str_starts_with(
                             $exception->getMessage(),
-                            "You cannot confirm this PaymentIntent because it's missing a payment method"
+                            "You cannot confirm this PaymentIntent because it's missing a payment method",
                         )
                     ) {
                         $this->logger->error(sprintf(
-                            'Stripe Payment Intent for donation ID %s was missing a payment method, so we ' .
-                                'could not confirm it',
+                            'Stripe Payment Intent for donation ID %s was missing a payment method, so we '
+                            . 'could not confirm it',
                             $donation->getUuid(),
                         ));
                         $error = new ActionError(ActionError::SERVER_ERROR, 'Could not confirm Stripe Payment Intent');
@@ -456,7 +459,7 @@ class Update extends Action
                         return new JsonResponse([
                             'error' => [
                                 'message' => $exception->getMessage(),
-                                'code' => $exception->getStripeCode()
+                                'code' => $exception->getStripeCode(),
                             ],
                         ], 402);
                     }
@@ -469,10 +472,8 @@ class Update extends Action
         $this->donationService->save($donation);
         $this->entityManager->commit();
 
-
         return $this->respondWithData($response, $donation->toFrontEndApiModel($this->enableNoReservationsMode));
     }
-
 
     /**
      * @throws RateLimitException if e.g. Stripe had locked the PI while processing.
@@ -518,21 +519,22 @@ class Update extends Action
     private function handleGeneralStripeError(
         ApiErrorException $exception,
         Donation $donation,
-        Response $response
+        Response $response,
     ): ?Response {
-        $alreadyCapturedMsg = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
-            'after a capture has already been made.';
+        $alreadyCapturedMsg =
+            'The parameter application_fee_amount cannot be updated on a PaymentIntent '
+            . 'after a capture has already been made.';
         if (
-            $exception instanceof InvalidRequestException &&
-            str_starts_with($exception->getMessage(), $alreadyCapturedMsg)
+            $exception instanceof InvalidRequestException
+            && str_starts_with($exception->getMessage(), $alreadyCapturedMsg)
         ) {
             $paymentIntentId = $donation->getTransactionId();
             Assertion::notNull($paymentIntentId);
 
             $latestPI = $this->stripe->retrievePaymentIntent($paymentIntentId);
             if ($latestPI->application_fee_amount === $donation->getAmountToDeductFractional()) {
-                $noFeeChangeMessage = 'Stripe Payment Intent update ignored after capture; no fee ' .
-                    'change on %s, %s [%s]: %s';
+                $noFeeChangeMessage =
+                    'Stripe Payment Intent update ignored after capture; no fee change on %s, %s [%s]: %s';
                 $this->logger->info(sprintf(
                     $noFeeChangeMessage,
                     $donation->getUuid(),
@@ -540,11 +542,12 @@ class Update extends Action
                     $exception->getStripeCode() ?? 'null',
                     $exception->getMessage(),
                 ));
+
                 // Fall through to normal save and success response.
             } else {
                 $this->logger->error(sprintf(
-                    'Stripe Payment Intent update after capture; fee change from %d to %d ' .
-                    'not possible on %s, %s [%s]: %s',
+                    'Stripe Payment Intent update after capture; fee change from %d to %d '
+                    . 'not possible on %s, %s [%s]: %s',
                     (int) $latestPI->application_fee_amount,
                     $donation->getAmountToDeductFractional(),
                     $donation->getUuid(),
@@ -587,8 +590,8 @@ class Update extends Action
         $this->entityManager->flush();
 
         $this->logger->warning(
-            "Cancelled funded donation ID {$donation->getId()} due to non-success on confirmation attempt status " .
-            "{$confirmedPaymentIntent->status}. May be insufficent funds in donor account."
+            "Cancelled funded donation ID {$donation->getId()} due to non-success on confirmation attempt status "
+            . "{$confirmedPaymentIntent->status}. May be insufficent funds in donor account.",
         );
     }
 }

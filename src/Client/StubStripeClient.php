@@ -115,37 +115,39 @@ class StubStripeClient implements Stripe
     #[\Override]
     public function retrieveCharge(string $chargeId): Charge
     {
-        throw new \Exception("Retrieve Charge not implemented in stub- not currently used in load tests");
+        throw new \Exception('Retrieve Charge not implemented in stub- not currently used in load tests');
     }
 
     #[\Override]
     public function retrieveBalanceTransaction(string $id): BalanceTransaction
     {
-        throw new \Exception("Retrieve Balance Transaction not implemented in stub- not currently used in load tests");
+        throw new \Exception('Retrieve Balance Transaction not implemented in stub- not currently used in load tests');
     }
 
     #[\Override]
     public function createSetupIntent(StripeCustomerId $stripeCustomerId): SetupIntent
     {
-        throw new \Exception("Create setup intent not implemented in stub - not currently used in load tests");
+        throw new \Exception('Create setup intent not implemented in stub - not currently used in load tests');
     }
 
     #[\Override]
     public function retrievePaymentMethod(StripeCustomerId $customerId, StripePaymentMethodId $methodId): PaymentMethod
     {
-        throw new \Exception("Retrieve Payment Method not implemented in stub - not currently used in load tests");
+        throw new \Exception('Retrieve Payment Method not implemented in stub - not currently used in load tests');
     }
 
     #[\Override]
     public function retrievePendingPaymentMethod(StripePaymentMethodId $methodId): PaymentMethod
     {
-        throw new \Exception("Retrieve Pending Payment Method not implemented in stub - not currently used in load tests");
+        throw new \Exception(
+            'Retrieve Pending Payment Method not implemented in stub - not currently used in load tests',
+        );
     }
 
     #[\Override]
     public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void
     {
-        throw new \Exception("Detatch Payment Method not implemented in stub - not currently used in load tests");
+        throw new \Exception('Detatch Payment Method not implemented in stub - not currently used in load tests');
     }
 
     #[\Override]
@@ -157,7 +159,7 @@ class StubStripeClient implements Stripe
     #[\Override]
     public function retrieveCustomer(StripeCustomerId $stripeCustomerId, array $params): Customer
     {
-        throw new \Exception("Retrieve Customer not implemented in stub - not currently used in load tests");
+        throw new \Exception('Retrieve Customer not implemented in stub - not currently used in load tests');
     }
 
     #[\Override]

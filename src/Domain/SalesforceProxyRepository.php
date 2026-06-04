@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
-use Doctrine\ORM\Mapping\ClassMetadata;
 use MatchBot\Client;
 use Psr\Log\LoggerInterface;
 

@@ -20,7 +20,7 @@ class DonationUpserted implements MessageGroupAwareInterface
      */
     protected function __construct(
         public string $uuid,
-        public array|null $jsonSnapshot
+        public ?array $jsonSnapshot,
     ) {
         Assertion::uuid($this->uuid);
     }
@@ -30,7 +30,7 @@ class DonationUpserted implements MessageGroupAwareInterface
         $jsonSnapshot = $donation->toSFApiModel();
 
         if ($jsonSnapshot !== null) {
-            $jsonSnapshot[self::SNAPSHOT_TAKEN_AT] = (new \DateTimeImmutable())->format('c');
+            $jsonSnapshot[self::SNAPSHOT_TAKEN_AT] = new \DateTimeImmutable()->format('c');
         }
 
         return new self(

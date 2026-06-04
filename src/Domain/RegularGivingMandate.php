@@ -15,7 +15,7 @@ use UnexpectedValueException;
 #[ORM\Index(name: 'uuid', columns: ['uuid'])]
 #[ORM\Index(name: 'donationsCreatedUpTo', columns: ['donationsCreatedUpTo'])]
 #[ORM\Entity(
-    repositoryClass: null // we construct our own repository
+    repositoryClass: null, // we construct our own repository
 )]
 #[ORM\HasLifecycleCallbacks]
 class RegularGivingMandate extends SalesforceWriteProxy
@@ -47,16 +47,16 @@ class RegularGivingMandate extends SalesforceWriteProxy
     /**
      * @var string 18 digit salesforce ID of campaign
      */
-    #[ORM\Column()]
+    #[ORM\Column]
     private readonly string $campaignId;
 
     /**
      * @var string 18 digit salesforce ID of charity
      */
-    #[ORM\Column()]
+    #[ORM\Column]
     private readonly string $charityId;
 
-    #[ORM\Column()]
+    #[ORM\Column]
     private readonly bool $giftAid;
 
     /**
@@ -76,14 +76,14 @@ class RegularGivingMandate extends SalesforceWriteProxy
      * @var bool When the mandate was created, did the donor give or refuse permission for Big Give to send marketing
      * emails. Similar to @see Donation::$tbgComms
      */
-    #[ORM\Column()]
+    #[ORM\Column]
     private readonly bool $tbgComms;
 
     /**
      * @var bool When the mandate was created, did the donor give or refuse permission for the charity they're donating to
      * to send marketing emails. Similar to @see Donation::$charityComms
      */
-    #[ORM\Column()]
+    #[ORM\Column]
     private readonly bool $charityComms;
 
     #[ORM\Embedded(columnPrefix: false)]
@@ -112,7 +112,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
      * to create an unmatched mandate. If false then donations may still end up incidentally matched e.g. via match
      * funds redistribution at campaign end.
      */
-    #[ORM\Column()]
+    #[ORM\Column]
     private bool $isMatched;
 
     #[ORM\Column(length: 500, nullable: true)]
@@ -143,7 +143,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $maxAmount = Money::fromPence(self::MAX_AMOUNT_PENCE, Currency::GBP);
         if ($donationAmount->lessThan($minAmount) || $donationAmount->moreThan($maxAmount)) {
             throw new UnexpectedValueException(
-                "Amount {$donationAmount} is out of allowed range {$minAmount}-{$maxAmount}"
+                "Amount {$donationAmount} is out of allowed range {$minAmount}-{$maxAmount}",
             );
         }
 
@@ -171,7 +171,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
      */
     public static function averageMatched(array $donations): Money
     {
-        $totals = array_map(fn(Donation $donation) => $donation->getFundingWithdrawalTotalAsObject(), $donations);
+        $totals = array_map(
+            static fn(Donation $donation) => $donation->getFundingWithdrawalTotalAsObject(),
+            $donations,
+        );
         $grandTotal = Money::sum(...$totals);
 
         $averagePence = intdiv($grandTotal->amountInPence(), count($donations));
@@ -179,12 +182,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
         // We know currency is same for all donations as otherwise `sum` would have thrown.
         $currency = $donations[0]->currency();
 
-        $averageMoneyRoundedDownToMajorUnit = Money::fromPence(
+        return Money::fromPence(
             intdiv($averagePence, 100) * 100,
-            $currency
+            $currency,
         );
-
-        return $averageMoneyRoundedDownToMajorUnit;
     }
 
     /**
@@ -223,17 +224,22 @@ class RegularGivingMandate extends SalesforceWriteProxy
                 'type' => 'monthly',
                 'dayOfMonth' => $this->dayOfMonth->value,
                 'activeFrom' => $this->activeFrom?->format(\DateTimeInterface::ATOM),
-                'expectedNextPaymentDate' => in_array($this->status, [MandateStatus::Pending, MandateStatus::Active], true) ?
-                    $this->firstPaymentDayAfter($now)->format(\DateTimeInterface::ATOM) :
-                    null,
+                'expectedNextPaymentDate' => in_array(
+                    $this->status,
+                    [MandateStatus::Pending, MandateStatus::Active],
+                    true,
+                )
+                    ? $this->firstPaymentDayAfter($now)->format(\DateTimeInterface::ATOM)
+                    : null,
             ],
             'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
             'status' => $this->status->apiName(),
-            ...($this->cancelledAt ?
-                ['cancellationDate' => $this->cancelledAt->format(\DateTimeInterface::ATOM)] :
-                []
-            )
+            ...(
+                $this->cancelledAt
+                    ? ['cancellationDate' => $this->cancelledAt->format(\DateTimeInterface::ATOM)]
+                    : []
+            ),
         ];
     }
 
@@ -242,7 +248,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
     {
         return "Regular Giving Mandate # {$this->uuid->toString()}";
     }
-
 
     /**
      * @return array<string, mixed>
@@ -272,16 +277,16 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $londonDateTime = $currentDateTime->setTimezone($londonTimezone);
 
         // Now perform all date calculations using London time
-        $nextPaymentDayIsNextMonth = (int)$londonDateTime->format('d') >= $this->dayOfMonth->value;
+        $nextPaymentDayIsNextMonth = (int) $londonDateTime->format('d') >= $this->dayOfMonth->value;
 
-        $todayOrNextMonth = $nextPaymentDayIsNextMonth ?
-            $londonDateTime->add(new \DateInterval("P1M")) :
-            $londonDateTime;
+        $todayOrNextMonth = $nextPaymentDayIsNextMonth
+            ? $londonDateTime->add(new \DateInterval('P1M'))
+            : $londonDateTime;
 
         // Create the result in London timezone, then return it
         return new \DateTimeImmutable(
             $todayOrNextMonth->format('Y-m-' . $this->dayOfMonth->value . 'T06:00:00'),
-            $londonTimezone
+            $londonTimezone,
         );
     }
 
@@ -341,9 +346,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
         );
 
         Assertion::true(
-            ($requireActiveMandate && is_null($expectedActivationDate)) ||
-            (!$requireActiveMandate && !is_null($expectedActivationDate)),
-            'When creating donations for an already active mandate require the mandate to be active, otherwise pass the activation date'
+            ( $requireActiveMandate && is_null($expectedActivationDate) )
+            || ( !$requireActiveMandate && !is_null($expectedActivationDate) ),
+            'When creating donations for an already active mandate require the mandate to be active, otherwise pass the activation date',
         );
 
         $donation->update(
@@ -377,16 +382,16 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
         $offset = $sequenceNumber->number - 2 + $this->paymentDateOffsetMonths;
 
-        $preAuthorizationDate = $secondDonationDate->modify("+$offset months");
+        $preAuthorizationDate = $secondDonationDate->modify("+{$offset} months");
 
         if ($campaign->regularGivingCollectionIsEndedAt($preAuthorizationDate)) {
             $collectionEnd = $campaign->getRegularGivingCollectionEnd();
             Assertion::notNull($collectionEnd);
 
             throw new RegularGivingCollectionEndPassed(
-                "Cannot pre-authorize a donation for {$preAuthorizationDate->format('Y-m-d')}, " .
-                "regular giving collections for campaign {$campaign->getSalesforceId()} end " .
-                "at {$collectionEnd->format('Y-m-d')}"
+                "Cannot pre-authorize a donation for {$preAuthorizationDate->format('Y-m-d')}, "
+                . "regular giving collections for campaign {$campaign->getSalesforceId()} end "
+                . "at {$collectionEnd->format('Y-m-d')}",
             );
         }
 
@@ -459,12 +464,14 @@ class RegularGivingMandate extends SalesforceWriteProxy
      */
     public function getGiftAidAmount(): Money
     {
-        if (! $this->giftAid) {
+        if (!$this->giftAid) {
             return Money::fromPoundsGBP(0);
         }
 
         return $this->donationAmount->withPence(
-            (int) (100.0 * (float)Donation::donationAmountToGiftAidValue(amount: $this->donationAmount->toNumericString()))
+            (int) (
+                100.0 * (float) Donation::donationAmountToGiftAidValue(amount: $this->donationAmount->toNumericString())
+            ),
         );
     }
 
@@ -472,7 +479,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
     {
         return $this->donationAmount->plus($this->getGiftAidAmount());
     }
-
 
     /**
      * @return Money The total amount that we expect the charity to receive per each of the donors initial, matched
@@ -486,7 +492,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     public function getMatchedAmount(): Money
     {
-        return $this->isMatched ?  $this->donationAmount : Money::zero($this->donationAmount->currency);
+        return $this->isMatched ? $this->donationAmount : Money::zero($this->donationAmount->currency);
     }
 
     public function createPendingFirstDonation(Campaign $campaign, DonorAccount $donor): Donation

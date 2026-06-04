@@ -15,7 +15,7 @@ use Psr\Http\Message\UriInterface;
  *
  */
 #[ORM\Entity(
-    repositoryClass: null // we construct our own repository
+    repositoryClass: null, // we construct our own repository
 )]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Index(name: 'slug', columns: ['slug'])]
@@ -37,10 +37,10 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Column(length: 64, unique: true, nullable: false)]
     private string $slug;
 
-    #[ORM\Column()]
+    #[ORM\Column]
     private string $title;
 
-    #[ORM\Column()]
+    #[ORM\Column]
     private Currency $currency;
 
     /**
@@ -51,7 +51,7 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Column(nullable: true)]
     private ?string $status = null;
 
-    #[ORM\Column()]
+    #[ORM\Column]
     private bool $hidden;
 
     #[ORM\Column(length: 1_000, nullable: true)]
@@ -86,7 +86,7 @@ class MetaCampaign extends SalesforceReadProxy
      * {@see self::$isEmergencyIMF}
      *
      */
-    #[ORM\Column()]
+    #[ORM\Column]
     private bool $isRegularGiving;
 
     /**
@@ -100,9 +100,8 @@ class MetaCampaign extends SalesforceReadProxy
      * {@see self::$isRegularGiving}
      *
      */
-    #[ORM\Column()]
+    #[ORM\Column]
     private bool $isEmergencyIMF;
-
 
     /**
      * Ientifies the metacampaign as part of a series or type of campaigns, often with one member per year, e.g.
@@ -182,7 +181,6 @@ class MetaCampaign extends SalesforceReadProxy
         return $metaCampaign;
     }
 
-
     /**
      * @param SFCampaignApiResponse $data
      */
@@ -204,14 +202,14 @@ class MetaCampaign extends SalesforceReadProxy
 
         $currency = Currency::fromIsoCode($data['currencyCode']);
 
-        $totalAdjustment = (string)($data['totalAdjustment'] ?? '0.00');
+        $totalAdjustment = (string) ( $data['totalAdjustment'] ?? '0.00' );
         /** @psalm-suppress TypeDoesNotContainType */
         if ($totalAdjustment === '') {
             $totalAdjustment = '0.0';
         }
         Assertion::numeric($totalAdjustment);
 
-        $this->bannerURI = \is_string($bannerUri) ? (new Uri($bannerUri))->__toString() : null;
+        $this->bannerURI = \is_string($bannerUri) ? new Uri($bannerUri)->__toString() : null;
         $this->isRegularGiving = $isRegularGiving;
         $this->title = $title;
         $this->currency = $currency;
@@ -318,7 +316,9 @@ class MetaCampaign extends SalesforceReadProxy
             return false;
         }
 
-        return $this->startDate > new \DateTimeImmutable(self::INDEX_FROM) &&
-            $this->startDate < $at->add(new \DateInterval(self::INDEX_NEW_INTERVAL));
+        return (
+            $this->startDate > new \DateTimeImmutable(self::INDEX_FROM)
+            && $this->startDate < $at->add(new \DateInterval(self::INDEX_NEW_INTERVAL))
+        );
     }
 }

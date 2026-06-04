@@ -8,8 +8,6 @@ use Assert\Assertion;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
-use MatchBot\Domain\Donation;
-use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -33,7 +31,7 @@ class Get extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        Assertion::keyExists($args, "donationId");  // shoould always exist as is defined in routes.php
+        Assertion::keyExists($args, 'donationId'); // shoould always exist as is defined in routes.php
         $donationUUID = $args['donationId'];
         Assertion::string($donationUUID);
         if ($donationUUID === '') {

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions;
 
 use JetBrains\PhpStorm\Pure;
-use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Security\Security;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -19,7 +18,7 @@ class GetPaymentMethods extends Action
     public function __construct(
         private StripeClient $stripeClient,
         private Security $securityService,
-        LoggerInterface $logger
+        LoggerInterface $logger,
     ) {
         parent::__construct($logger);
     }
@@ -51,15 +50,15 @@ class GetPaymentMethods extends Action
                 }
 
                 return true;
-            }
+            },
         ));
 
         return $this->respondWithData(
             $response,
             [
                 'data' => $nonRegularGivingMethods,
-                'regularGivingPaymentMethod' => $regularGivingPaymentMethod
-            ]
+                'regularGivingPaymentMethod' => $regularGivingPaymentMethod,
+            ],
         );
     }
 }

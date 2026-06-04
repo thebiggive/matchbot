@@ -16,7 +16,7 @@ use MatchBot\Application\Assertion;
  * @psalm-suppress PossiblyUnusedProperty
  */
 #[ORM\Entity(
-    repositoryClass: null // we construct our own repository
+    repositoryClass: null, // we construct our own repository
 )]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Index(columns: ['amount_raised_amountInPence'], name: 'amount_raised_amountInPence')]
@@ -206,15 +206,14 @@ class CampaignStatistics
             ? Money::zero($this->campaign->getCurrency())
             : $target->minus($amountRaised);
 
-        $didRealUpdate = (
+        $didRealUpdate =
             $alwaysConsiderChanged
             || $previousStats?->getAmountRaised() != $amountRaised
             || $previousStats?->getDonationSum() != $donationSum
             || $previousStats?->getMatchFundsUsed() != $matchFundsUsed
             || $previousStats?->getMatchFundsTotal() != $matchFundsTotal
             || $previousStats?->getMatchFundsRemaining() != $this->matchFundsRemaining
-            || $previousStats?->getDistanceToTarget() != $this->distanceToTarget
-        );
+            || $previousStats?->getDistanceToTarget() != $this->distanceToTarget;
 
         $this->lastCheck = $at;
         if (!$didRealUpdate) {
@@ -227,7 +226,7 @@ class CampaignStatistics
     }
 
     /**
-      * Returns a status based on a very rough approximation of the time, with a bias towards making the campaign
+     * Returns a status based on a very rough approximation of the time, with a bias towards making the campaign
      *  appear open for longer than it really is not shorter, to make sure it's easy to find before and after opening.
      */
     private function approximateStatus(Campaign $campaign, \DateTimeImmutable $at): CampaignStatus

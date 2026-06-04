@@ -13,8 +13,9 @@ use Symfony\Component\Messenger\Middleware\StackInterface;
 
 readonly class AddOrLogMessageId implements MiddlewareInterface
 {
-    public function __construct(private LoggerInterface $logger)
-    {
+    public function __construct(
+        private LoggerInterface $logger,
+    ) {
     }
 
     /** @psalm-suppress PossiblyUnusedReturnValue Messenger uses value; our test doesn't */

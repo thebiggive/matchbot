@@ -7,18 +7,14 @@ namespace MatchBot\Application\Actions\Donations;
 use Doctrine\ORM\EntityManagerInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Settings;
 use MatchBot\Client\NotFoundException;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Money;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Records that the donor no longer expects any match funds to be used for their donation.
@@ -61,8 +57,8 @@ class RemoveMatchingExpecation extends Action
             $this->logger->info(
                 sprintf(
                     'Removed matching expectation for donation %s',
-                    $donation->getUuid()->toString()
-                )
+                    $donation->getUuid()->toString(),
+                ),
             );
         });
 

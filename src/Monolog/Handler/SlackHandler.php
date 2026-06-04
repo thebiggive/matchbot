@@ -23,8 +23,10 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  */
 class SlackHandler implements HandlerInterface
 {
-    public function __construct(private ChatterInterface $slackConnction, private LoggerInterface $logger)
-    {
+    public function __construct(
+        private ChatterInterface $slackConnction,
+        private LoggerInterface $logger,
+    ) {
     }
 
     #[\Override]
@@ -55,22 +57,23 @@ class SlackHandler implements HandlerInterface
         $messageFirstLine = $lines[0];
         $messageFirstSeveralLines = implode(\PHP_EOL, array_slice($lines, 0, 9)) . \PHP_EOL;
 
-        $heading = "Matchbot $levelName: $messageFirstLine";
+        $heading = "Matchbot {$levelName}: {$messageFirstLine}";
 
         $chatMessage = new ChatMessage($heading);
-        $options = (new SlackOptions())
-            // For now, do a simple truncate at the max, 150 chars, since most messages are shorter and the next line
-            // usually has the full text anyway.
-            ->block((new SlackHeaderBlock(substr($heading, 0, 150))))
+        $options = new SlackOptions()// For now, do a simple truncate at the max, 150 chars, since most messages are shorter and the next line
+        // usually has the full text anyway.
+        ->block(new SlackHeaderBlock(substr($heading, 0, 150)))
             // Text block is also limited to 3000 characters, so must truncate to not crash.
-            ->block((new SlackSectionBlock())->text(substr($messageFirstSeveralLines, 0, 3000)));
+            ->block(new SlackSectionBlock()->text(substr($messageFirstSeveralLines, 0, 3000)));
         $chatMessage->options($options);
 
         try {
             $this->slackConnction->send($chatMessage);
         } catch (TransportException $exception) {
             // logging as warning not error to avoid endless loop. This handler is only used for errors.
-            $this->logger->warning("Failed to send error to slack:" . $exception->getMessage() . " for message: " . $message);
+            $this->logger->warning(
+                'Failed to send error to slack:' . $exception->getMessage() . ' for message: ' . $message,
+            );
         }
 
         return false; // record will go to other handlers in addition to being sent to slack.

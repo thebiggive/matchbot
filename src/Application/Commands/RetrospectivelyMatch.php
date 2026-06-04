@@ -31,7 +31,7 @@ use Symfony\Component\Messenger\RoutableMessageBus;
 #[AsCommand(
     name: 'matchbot:retrospectively-match',
     description: 'Allocates matching for just-closed campaigns\' donations, or the last N days\' donations, if
-    missed due to pending reservations, refunds etc.'
+    missed due to pending reservations, refunds etc.',
 )]
 class RetrospectivelyMatch extends LockingCommand
 {
@@ -48,7 +48,7 @@ class RetrospectivelyMatch extends LockingCommand
         $this->addArgument(
             'days-back',
             InputArgument::OPTIONAL,
-            'Number of days back to look for donations that could be matched.'
+            'Number of days back to look for donations that could be matched.',
         );
     }
 
@@ -57,7 +57,7 @@ class RetrospectivelyMatch extends LockingCommand
     {
         $recentlyClosedMode = !is_numeric($input->getArgument('days-back'));
         // Default is 1 hour before exec started.
-        $sinceDate = (new \DateTimeImmutable('now')->sub(new \DateInterval('PT1H')));
+        $sinceDate = new \DateTimeImmutable('now')->sub(new \DateInterval('PT1H'));
 
         if ($recentlyClosedMode) {
             // Default mode is now to auto match for campaigns that *just* closed.
@@ -67,21 +67,21 @@ class RetrospectivelyMatch extends LockingCommand
         } else {
             // Allow + round non-whole day count.
             $daysBack = round((float) $input->getArgument('days-back')); // @phpstan-ignore cast.double
-            $output->writeln("Looking at past $daysBack days' donations");
-            $sinceDate = (new \DateTimeImmutable('now')->sub(new \DateInterval("P{$daysBack}D")));
+            $output->writeln("Looking at past {$daysBack} days' donations");
+            $sinceDate = new \DateTimeImmutable('now')->sub(new \DateInterval("P{$daysBack}D"));
             $toCheckForMatching = $this->donationRepository
                 ->findRecentNotFullyMatchedToMatchCampaigns($sinceDate);
         }
 
         $jobId = Uuid::uuid4();
-        $uuidsToCheck = array_map(fn (Donation $d) => $d->getUuid()->toString(), $toCheckForMatching);
+        $uuidsToCheck = array_map(static fn(Donation $d) => $d->getUuid()->toString(), $toCheckForMatching);
         $uuidChunks = array_chunk($uuidsToCheck, 10);
         foreach ($uuidChunks as $chunkIndex => $uuids) {
             $this->bus->dispatch(new Envelope(new DonationMatchingShouldBeChecked(
                 donationUuids: $uuids,
                 retroMatchJobUuid: $jobId->toString(),
                 includesCampaignsClosedSince: $sinceDate,
-                areFinalDonations: $chunkIndex === count($uuidChunks) - 1,
+                areFinalDonations: $chunkIndex === ( count($uuidChunks) - 1 ),
             )));
         }
 

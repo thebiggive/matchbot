@@ -10,10 +10,10 @@ use MatchBot\Application\Assertion;
 readonly class StripeConfirmationTokenId
 {
     #[Column(type: 'string')]
-    public readonly string $stripeConfirmationTokenId;
+    public string $stripeConfirmationTokenId;
 
     private function __construct(
-        string $stripeConfirmationTokenId
+        string $stripeConfirmationTokenId,
     ) {
         $this->stripeConfirmationTokenId = $stripeConfirmationTokenId;
         Assertion::notEmpty($this->stripeConfirmationTokenId);

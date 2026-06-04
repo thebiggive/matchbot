@@ -37,6 +37,7 @@ abstract class Stripe extends Action
      */
     protected function prepareEvent(
         ServerRequestInterface $request,
+        #[\SensitiveParameter]
         string $webhookSecret,
         bool $connect,
         Response $response,
@@ -46,7 +47,7 @@ abstract class Stripe extends Action
             $this->event = \Stripe\Webhook::constructEvent(
                 $request->getBody()->getContents(),
                 $headerLine,
-                $webhookSecret
+                $webhookSecret,
             );
         } catch (\UnexpectedValueException $e) {
             return $this->validationError($response, "Invalid Payload: {$e->getMessage()}", 'Invalid Payload');
@@ -55,7 +56,7 @@ abstract class Stripe extends Action
             return $this->validationError($response, 'Invalid Signature');
         }
 
-        if (!($this->event instanceof Event)) {
+        if (!$this->event instanceof Event) {
             return $this->validationError($response, 'Invalid event');
         }
 
@@ -71,7 +72,6 @@ abstract class Stripe extends Action
             } else {
                 $this->logger->warning($logMessage);
             }
-
 
             return $this->respond($response, new ActionPayload(204));
         }

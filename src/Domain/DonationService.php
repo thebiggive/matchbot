@@ -82,7 +82,6 @@ class DonationService
 
     public const string STRIPE_DESTINATION_ACCOUNT_NEEDS_CAPABILITIES_MESSAGE = 'Your destination account needs to have at least one of the following capabilities enabled';
 
-
     /**
      * Previously donations were genereated from API requests in a separate class. That code has now been
      * consolidated into this class, but this closure is retained to allow donations to be set for test scenarios.
@@ -140,11 +139,10 @@ class DonationService
             /**
              * See notes on {@see self::enrollNewDonation} for EM side effect details.
              */
-            $this->logger->warning("Error creating donation, will retry: " . $exception->getMessage());
+            $this->logger->warning('Error creating donation, will retry: ' . $exception->getMessage());
             return $this->doCreateDonation($pspCustomerId, $donationData, $donorId);
         }
     }
-
 
     /**
      * @param DonationCreate $donationData
@@ -162,7 +160,13 @@ class DonationService
             return $this->fakeDonationProviderForTestUseOnly->__invoke();
         }
 
-        if (!in_array($donationData->psp, \array_map(fn($psp) => $psp->value, PaymentServiceProvider::cases()), true)) {
+        if (
+            !in_array(
+                $donationData->psp,
+                \array_map(static fn($psp) => $psp->value, PaymentServiceProvider::cases()),
+                true,
+            )
+        ) {
             throw new \UnexpectedValueException(sprintf(
                 'PSP %s is invalid',
                 $donationData->psp,
@@ -177,12 +181,16 @@ class DonationService
             try {
                 $campaign = $this->campaignRepository->pullNewFromSf($donationData->projectId);
             } catch (ClientException $exception) {
-                $this->logger->error("Pull error for campaign ID {$donationData->projectId}: {$exception->getMessage()}");
+                $this->logger->error(
+                    "Pull error for campaign ID {$donationData->projectId}: {$exception->getMessage()}",
+                );
                 throw new \UnexpectedValueException('Campaign does not exist');
             }
 
-            if ($this->clock->now() > new \DateTimeImmutable("Wed Apr 16 10:00:00 AM BST 2025")) {
-                $this->logger->warning("Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed");
+            if ($this->clock->now() > new \DateTimeImmutable('Wed Apr 16 10:00:00 AM BST 2025')) {
+                $this->logger->warning(
+                    "Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed",
+                );
             }
 
             $this->campaignService->pullFundsAndUpdateStats($campaign);
@@ -213,7 +221,7 @@ class DonationService
      */
     private function runWithPossibleRetry(
         \Closure $retryable,
-        string $actionName
+        string $actionName,
     ): void {
         $retryCount = 0;
         while ($retryCount < self::MAX_RETRY_COUNT) {
@@ -221,8 +229,8 @@ class DonationService
                 $retryable();
                 if ($retryCount > 0) {
                     $this->logger->error(
-                        "$actionName SUCCEEDED after $retryCount retry - retry process is not useless. " .
-                        "See MAT-388. See info logs for original exception"
+                        "{$actionName} SUCCEEDED after {$retryCount} retry - retry process is not useless. "
+                        . 'See MAT-388. See info logs for original exception',
                     );
                 }
                 return;
@@ -234,10 +242,10 @@ class DonationService
                         $exception->getMessage(),
                         $retryCount,
                         self::MAX_RETRY_COUNT,
-                    )
+                    ),
                 );
 
-                $seconds = (new Randomizer())->getFloat(0.1, 1.1);
+                $seconds = new Randomizer()->getFloat(0.1, 1.1);
                 $this->clock->sleep($seconds);
 
                 if ($retryCount === self::MAX_RETRY_COUNT) {
@@ -246,7 +254,7 @@ class DonationService
                             $actionName . ' error: %s. Giving up after %d retries.',
                             $exception->getMessage(),
                             self::MAX_RETRY_COUNT,
-                        )
+                        ),
                     );
 
                     throw $exception;
@@ -299,12 +307,12 @@ class DonationService
             Assertion::notNull($ryftAccountId, 'Ryft account ID must be set for Ryft PSP');
             $paymentSession = $this->ryftClient->fetchPaymentSession(
                 $ryftAccountId,
-                $ryftPaymentSessionId
+                $ryftPaymentSessionId,
             );
 
             $card = new PaymentCard(
                 CardBrand::from(strtolower($paymentSession['paymentMethod']['card']['scheme'])),
-                Country::fromAlpha2($paymentSession['paymentMethod']['card']['binDetails']['issuerCountry'])
+                Country::fromAlpha2($paymentSession['paymentMethod']['card']['binDetails']['issuerCountry']),
             );
         } else {
             throw new \InvalidArgumentException('Unsupported payment service provider: ' . $psp->name);
@@ -326,7 +334,10 @@ class DonationService
             $donation->collectFromRyftPaymentSession(
                 paymentSession: $paymentSession,
                 netAmount: Money::fromPence($capture['amount'], Currency::fromIsoCode($capture['currency'])),
-                originalFeeFractional: Money::fromPence($capture['platformFee'], Currency::fromIsoCode($capture['currency'])),
+                originalFeeFractional: Money::fromPence(
+                    $capture['platformFee'],
+                    Currency::fromIsoCode($capture['currency']),
+                ),
                 at: $this->clock->now(),
             );
 
@@ -342,7 +353,7 @@ class DonationService
 
         Assertion::false(
             $donation->getDonationStatus() === DonationStatus::PreAuthorized,
-            'A pre-authed donation would not be on-session'
+            'A pre-authed donation would not be on-session',
         );
         // following line has no mutation coverage but I think its fine to delete anyway given new assertion above.
         $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
@@ -363,7 +374,7 @@ class DonationService
                     paymentMethodId: $paymentMethodId,
                     paymentMethodPreview: $paymentMethodPreview,
                     paymentIntentId: $paymentIntentId,
-                    paymentIntent: $paymentIntent
+                    paymentIntent: $paymentIntent,
                 );
             }
 
@@ -376,7 +387,7 @@ class DonationService
                 [
                     'confirmation_token' => $tokenId->stripeConfirmationTokenId,
                     'return_url' => $donation->getReturnUrl(),
-                ]
+                ],
             );
 
             $this->throwIfUnsuccessful($updatedIntent);
@@ -403,7 +414,7 @@ class DonationService
         $donorAccount = $this->donorAccountRepository->findByStripeIdOrNull($stripeAccountId);
 
         if ($donorAccount === null) {
-            throw new NoDonorAccountException("Donor account not found for donation $donation");
+            throw new NoDonorAccountException("Donor account not found for donation {$donation}");
         }
 
         $mandate = $donation->getMandate();
@@ -411,7 +422,7 @@ class DonationService
         $currentMandateStatus = $mandate->getStatus();
         if ($currentMandateStatus !== MandateStatus::Active) {
             throw new MandateNotActive(
-                "Not confirming donation as mandate is '{$currentMandateStatus->name}', not Active"
+                "Not confirming donation as mandate is '{$currentMandateStatus->name}', not Active",
             );
         }
 
@@ -426,9 +437,9 @@ class DonationService
             $mandate->campaignEnded();
 
             throw new RegularGivingCollectionEndPassed(
-                "Cannot confirm a donation now, " .
-                "regular giving collections for campaign {$campaign->getSalesforceId()} ended " .
-                "at {$collectionEnd->format('Y-m-d')}"
+                'Cannot confirm a donation now, '
+                . "regular giving collections for campaign {$campaign->getSalesforceId()} ended "
+                . "at {$collectionEnd->format('Y-m-d')}",
             );
         }
 
@@ -436,18 +447,25 @@ class DonationService
 
         if ($paymentMethod === null) {
             throw new \MatchBot\Domain\NoRegularGivingPaymentMethod(
-                "Cannot confirm donation {$donation->getUuid()} for " .
-                "{$donorAccount->stripeCustomerId->stripeCustomerId}, no payment method"
+                "Cannot confirm donation {$donation->getUuid()} for "
+                . "{$donorAccount->stripeCustomerId->stripeCustomerId}, no payment method",
             );
         }
 
         try {
-            $this->confirmDonationWithSavedPaymentMethod(donation: $donation, paymentMethodId: $paymentMethod, offSession: true);
+            $this->confirmDonationWithSavedPaymentMethod(
+                donation: $donation,
+                paymentMethodId: $paymentMethod,
+                offSession: true,
+            );
         } catch (PaymentIntentNotSucceeded $exception) {
             $this->regularGivingNotifier->notifyCollectionFailed($donation, $this->clock->now());
-            $this->logger->warning('PaymentIntentNotSucceeded for donation ' . $donation->getUuid()->toString() . ', will notify donor: ' . $exception->getMessage());
+            $this->logger->warning(
+                'PaymentIntentNotSucceeded for donation ' . $donation->getUuid()->toString() . ', will notify donor: '
+                    . $exception->getMessage(),
+            );
 
-            if ($donation->getPreAuthorizationDate() < $this->clock->now()->modify("-1 week")) {
+            if ($donation->getPreAuthorizationDate() < $this->clock->now()->modify('-1 week')) {
                 throw new MandateCollectionRepeatedlyFailed();
             }
 
@@ -477,8 +495,11 @@ class DonationService
      * @throws WrongCampaignType
      * @throws NotFoundException
      */
-    public function enrollNewDonation(Donation $donation, bool $attemptMatching, bool $dispatchUpdateMessage = true): void
-    {
+    public function enrollNewDonation(
+        Donation $donation,
+        bool $attemptMatching,
+        bool $dispatchUpdateMessage = true,
+    ): void {
         $campaign = $donation->getCampaign();
 
         $campaign->checkIsReadyToAcceptDonation($donation, $this->clock->now());
@@ -508,7 +529,10 @@ class DonationService
         $this->entityManager->commit();
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
-        if ($donation->getPsp() === PaymentServiceProvider::Stripe->value && $donation->getDonationStatus() === DonationStatus::Pending) {
+        if (
+            $donation->getPsp() === PaymentServiceProvider::Stripe->value
+            && $donation->getDonationStatus() === DonationStatus::Pending
+        ) {
             $this->loadCampaignsStripeId($campaign);
             $this->createAndAssociatePaymentIntent($donation);
         }
@@ -544,6 +568,7 @@ class DonationService
 
     private function updateDonationFeesFromConfirmationTokenOrCard(
         Donation $donation,
+        #[\SensitiveParameter]
         ?ConfirmationToken $confirmationToken,
         ?PaymentCard $paymentCard,
     ): void {
@@ -560,8 +585,12 @@ class DonationService
         if ($paymentCard !== null) {
             $card = $paymentCard;
         } elseif ($paymentMethodPreview->card !== null) {
-            $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception('Missing card brand');
-            $cardCountry = Country::fromAlpha2OrNull($paymentMethodPreview->card->country) ?? throw new \Exception('Missing card country');
+            $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception(
+                'Missing card brand',
+            );
+            $cardCountry = Country::fromAlpha2OrNull($paymentMethodPreview->card->country) ?? throw new \Exception(
+                'Missing card country',
+            );
 
             $this->logger->info(sprintf(
                 'Donation UUID %s has card brand %s and country %s',
@@ -603,7 +632,7 @@ class DonationService
 
             $accountLacksCapabilities = str_contains(
                 $message,
-                self::STRIPE_DESTINATION_ACCOUNT_NEEDS_CAPABILITIES_MESSAGE
+                self::STRIPE_DESTINATION_ACCOUNT_NEEDS_CAPABILITIES_MESSAGE,
             );
 
             $failureMessage = sprintf(
@@ -643,7 +672,7 @@ class DonationService
                 $this->entityManager->persist($donation);
                 $this->entityManager->flush();
             },
-            'Donation Create persist after stripe work'
+            'Donation Create persist after stripe work',
         );
     }
 
@@ -669,7 +698,7 @@ class DonationService
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
 
             throw new DonationAlreadyFinalised(
-                "Donation ID {$donation->getUuid()} could not be cancelled as {$donation->getDonationStatus()->value}"
+                "Donation ID {$donation->getUuid()} could not be cancelled as {$donation->getDonationStatus()->value}",
             );
         }
 
@@ -707,8 +736,7 @@ class DonationService
                 // that it's unlikely to be a serious issue.
                 $this->logger->log(
                     $stripeErrorLogLevel,
-                    'Stripe Payment Intent cancel error: ' .
-                    get_class($exception) . ': ' . $exception->getMessage()
+                    'Stripe Payment Intent cancel error: ' . get_class($exception) . ': ' . $exception->getMessage(),
                 );
 
                 if ($returnError) {
@@ -804,7 +832,7 @@ class DonationService
     {
         $donations = $this->donationRepository->findAllCompleteForCustomer($stripeCustomerId);
 
-        return array_map(fn(Donation $donation) => $donation->toFrontEndApiModel(), $donations);
+        return array_map(static fn(Donation $donation) => $donation->toFrontEndApiModel(), $donations);
     }
 
     /**
@@ -832,12 +860,14 @@ class DonationService
                     'payment_method' => $paymentMethodId->stripePaymentMethodId,
                     'return_url' => $donation->getReturnUrl(),
                     'off_session' => $offSession,
-                ]
+                ],
             );
         } catch (CardException $exception) {
-            $this->logger->info('CardException during confirmDonationWithSavedPaymentMethod: ' . $exception->getMessage());
+            $this->logger->info(
+                'CardException during confirmDonationWithSavedPaymentMethod: ' . $exception->getMessage(),
+            );
             $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
-            throw new PaymentIntentNotSucceeded($paymentIntent, "CardException: " . $exception->getMessage());
+            throw new PaymentIntentNotSucceeded($paymentIntent, 'CardException: ' . $exception->getMessage());
         }
 
         $this->logger->info("PaymentIntent: {$paymentIntent->toJSON()}");
@@ -890,7 +920,11 @@ class DonationService
     {
         $startingOriginalPspFee = $donation->getOriginalPspFee();
         $uuid = $donation->getUuid()->toString();
-        $this->logger->info(sprintf('Updating donation %s with starting original fee %s', $uuid, $startingOriginalPspFee));
+        $this->logger->info(sprintf(
+            'Updating donation %s with starting original fee %s',
+            $uuid,
+            $startingOriginalPspFee,
+        ));
         $this->logger->info('updating donation from charge: ' . $charge->toJSON());
 
         $donationWasPreviouslyCollected = $donation->getDonationStatus() === DonationStatus::Collected;
@@ -902,7 +936,7 @@ class DonationService
         $card = $charge->payment_method_details?->toArray()['card'] ?? null;
         if (is_array($card)) {
             /** @var Card $card */
-            $card = (object)$card; // @phpstan-ignore varTag.nativeType
+            $card = (object) $card; // @phpstan-ignore varTag.nativeType
         }
 
         $cardBrand = CardBrand::fromNameOrNull($card?->brand);
@@ -931,7 +965,9 @@ class DonationService
             // Before MAT-468 we (incorrectly) tried to pass `collectFromStripeCharge()` the earlier Original
             // PSP Fee which is in pounds. Rather than convert twice and add more scope for bugs, we now leave it
             // null if unknown and skip setting nulls.
-            $this->logger->info("Donation $uuid: Keeping starting/placeholder original PSP fee as no balance transaction ID yet");
+            $this->logger->info(
+                "Donation {$uuid}: Keeping starting/placeholder original PSP fee as no balance transaction ID yet",
+            );
         }
 
         $donation->collectFromStripeCharge(
@@ -988,7 +1024,10 @@ class DonationService
         try {
             $this->allocator->allocateMatchFunds($donation);
         } catch (\Throwable $throwable) {
-            $this->logger->info(sprintf('Releasing allocated funds after match error for UUID %s', $donation->getUuid()));
+            $this->logger->info(sprintf(
+                'Releasing allocated funds after match error for UUID %s',
+                $donation->getUuid(),
+            ));
             $this->matchingAdapter->releaseNewlyAllocatedFunds($donation->getId());
             throw $throwable;
         }
@@ -1078,7 +1117,7 @@ class DonationService
             throw new \UnexpectedValueException(sprintf(
                 'Route customer ID %s did not match %s in donation body',
                 $pspCustomerId,
-                $donation->getPspCustomerId()->stripeCustomerId ?? 'null'
+                $donation->getPspCustomerId()->stripeCustomerId ?? 'null',
             ));
         }
 
@@ -1097,8 +1136,10 @@ class DonationService
      *
      * @throws CouldNotRetrievePaymentMethod if e.g. the method ID doesn't meet the condition above.
      */
-    private function updateDonationFeesFromPaymentMethodId(Donation $donation, StripePaymentMethodId $paymentMethodId): void
-    {
+    private function updateDonationFeesFromPaymentMethodId(
+        Donation $donation,
+        StripePaymentMethodId $paymentMethodId,
+    ): void {
         $customerId = $donation->getPspCustomerId();
         Assertion::notNull($customerId);
 
@@ -1152,7 +1193,7 @@ class DonationService
                 $this->redis->set(
                     key: 'card-fingerprint-' . $card->fingerprint,
                     value: 'value-not-used',
-                    options: ['EX' => 60 * 60 * 2] // keep card fingerprint for two hours - attempting to use it again after that will count towards limit.
+                    options: ['EX' => 60 * 60 * 2], // keep card fingerprint for two hours - attempting to use it again after that will count towards limit.
                 );
             }
         }
@@ -1194,8 +1235,13 @@ class DonationService
      * } $paymentMethodPreview $paymentMethodPreview
      * /
      */
-    public function updatePaymentMethodFromStripe(Donation $donation, string $paymentMethodId, StripeObject $paymentMethodPreview, string $paymentIntentId, PaymentIntent $paymentIntent): PaymentIntent
-    {
+    public function updatePaymentMethodFromStripe(
+        Donation $donation,
+        string $paymentMethodId,
+        StripeObject $paymentMethodPreview,
+        string $paymentIntentId,
+        PaymentIntent $paymentIntent,
+    ): PaymentIntent {
         // Based on new confirmation token
         $newPaymentMethodType = $paymentMethodPreview->card !== null ? 'card' : 'pay_by_bank';
 
@@ -1209,7 +1255,7 @@ class DonationService
                 'Donation UUID %s: Could not retrieve payment method %s: %s',
                 $donation->getUuid(),
                 $paymentMethodId,
-                $exception->getMessage()
+                $exception->getMessage(),
             ));
         }
 
@@ -1221,7 +1267,7 @@ class DonationService
                 $donation->getUuid(),
                 $paymentIntentId,
                 $currentPaymentMethodType,
-                $newPaymentMethodType
+                $newPaymentMethodType,
             ));
 
             // Unset the payment_method to allow confirming with a different type. We used the new preview for

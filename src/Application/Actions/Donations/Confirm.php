@@ -70,7 +70,7 @@ class Confirm extends Action
                 $request->getBody()->getContents(),
                 true,
                 512,
-                \JSON_THROW_ON_ERROR
+                \JSON_THROW_ON_ERROR,
             );
         } catch (\JsonException) {
             throw new HttpBadRequestException($request, 'Cannot parse request body as JSON');
@@ -102,18 +102,22 @@ class Confirm extends Action
 
         Assertion::string($args['donationId']);
         $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($args['donationId']));
-        if (! $donation) {
+        if (!$donation) {
             throw new NotFoundException();
         }
 
-        if ((!is_string($stripeConfirmationTokenId) || trim($stripeConfirmationTokenId) === '') && $psp === PaymentServiceProvider::Stripe) {
+        if (
+            ( !is_string($stripeConfirmationTokenId)
+            || trim($stripeConfirmationTokenId) === '' )
+            && $psp === PaymentServiceProvider::Stripe
+        ) {
             $donationUUID = $donation->getId();
             $this->logger->warning(
                 <<<EOF
-Donation Confirmation attempted with missing confirmation token id "$stripeConfirmationTokenId" for Donation $donationUUID
-EOF
+                    Donation Confirmation attempted with missing confirmation token id "{$stripeConfirmationTokenId}" for Donation {$donationUUID}
+                    EOF,
             );
-            throw new HttpBadRequestException($request, "stripeConfirmationTokenId required");
+            throw new HttpBadRequestException($request, 'stripeConfirmationTokenId required');
         }
 
         if ($psp === PaymentServiceProvider::Ryft) {
@@ -124,7 +128,7 @@ EOF
             Assertion::same($paymentAmount, $donation->getAmountForCharityFractional());
         }
 
-        \assert($paymentMethodId !== ""); // required to call updatePaymentMethodBillingDetail
+        \assert($paymentMethodId !== ''); // required to call updatePaymentMethodBillingDetail
 
         if (!$donation->hasExpectedMatchingReserved()) {
             if ($this->enableNoReservationsMode) {
@@ -169,7 +173,8 @@ EOF
             $message = $exception->getMessage();
 
             // `matchedAmount` is £0 if donation was cancelled, which can happen not uncommonly on Stripe auto-cancels.
-            $level = \str_contains(haystack: $message, needle: 'matchedAmount') && $donation->getDonationStatus() !== DonationStatus::Cancelled
+            $level = \str_contains(haystack: $message, needle: 'matchedAmount')
+            && $donation->getDonationStatus() !== DonationStatus::Cancelled
                 ? LogLevel::ERROR
                 : LogLevel::WARNING;
 
@@ -204,7 +209,7 @@ EOF
                 throw new InvalidRequestException(
                     'Donation UUID: ' . $donation->getUuid()->toString() . ', ' . $exception->getMessage(),
                     $exception->getCode(),
-                    $exception
+                    $exception,
                 );
             }
 
@@ -222,7 +227,7 @@ EOF
             return new JsonResponse([
                 'error' => [
                     'message' => $exception->getMessage(),
-                    'code' => $exception->getStripeCode()
+                    'code' => $exception->getStripeCode(),
                 ],
             ], 402);
         } catch (RateLimitExceededException $exception) {
@@ -236,7 +241,7 @@ EOF
             return new JsonResponse([
                 'error' => [
                     'message' => 'Too many payment cards used',
-                    'code' => 429
+                    'code' => 429,
                 ],
             ], 402);
         } catch (ApiErrorException $exception) {
@@ -275,7 +280,12 @@ EOF
         try {
             $lock->release();
         } catch (\Exception $e) {
-            $this->logger->error("Error releasing lock for donation confirmation: " . $donation->getUuid()->toString() . " caused by " . ($e->getPrevious()?->__toString()  ?? 'null'));
+            $this->logger->error(
+                'Error releasing lock for donation confirmation: '
+                . $donation->getUuid()->toString()
+                . ' caused by '
+                . ( $e->getPrevious()?->__toString() ?? 'null' ),
+            );
             throw $e;
         }
 
@@ -283,7 +293,7 @@ EOF
             'paymentIntent' => [
                 'status' => $updatedIntent?->status,
                 'client_secret' => $updatedIntent?->status === 'requires_action'
-                    ?  $updatedIntent->client_secret
+                    ? $updatedIntent->client_secret
                     : null,
             ],
         ]);

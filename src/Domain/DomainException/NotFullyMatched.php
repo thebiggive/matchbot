@@ -13,8 +13,10 @@ class NotFullyMatched extends DomainException
      * @param Money $maxMatchable The maximum amount that we would be able to match per donation, given match funds
      * available
      */
-    public function __construct(string $message, public readonly Money $maxMatchable)
-    {
+    public function __construct(
+        string $message,
+        public readonly Money $maxMatchable,
+    ) {
         parent::__construct($message);
     }
 }

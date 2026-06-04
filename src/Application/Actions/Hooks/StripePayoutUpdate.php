@@ -68,7 +68,7 @@ class StripePayoutUpdate extends Stripe
             return $validationErrorResponse;
         }
 
-        $event = $this->event ?? throw new \RuntimeException("Stripe event not set");
+        $event = $this->event ?? throw new \RuntimeException('Stripe event not set');
 
         $connectedAccountId = $event->account;
         Assertion::notNull($connectedAccountId, 'Connected Account ID should not be null');
@@ -78,7 +78,6 @@ class StripePayoutUpdate extends Stripe
             $event->type,
             $connectedAccountId,
         ));
-
 
         switch ($event->type) {
             case Event::PAYOUT_PAID:
@@ -114,7 +113,7 @@ class StripePayoutUpdate extends Stripe
 
         $stamps = [
             new BusNameStamp(Event::PAYOUT_PAID),
-            new TransportMessageIdStamp("payout.paid.$payoutId"),
+            new TransportMessageIdStamp("payout.paid.{$payoutId}"),
         ];
 
         try {
@@ -177,7 +176,7 @@ class StripePayoutUpdate extends Stripe
                 $payoutId,
                 $connectedAccountId,
                 $charityName,
-                $donationCount
+                $donationCount,
             );
         }
 

@@ -17,7 +17,7 @@ class MailingList extends Common
 
     public function __construct(
         Settings $settings,
-        LoggerInterface $logger
+        LoggerInterface $logger,
     ) {
         parent::__construct($settings, $logger);
     }
@@ -42,7 +42,7 @@ class MailingList extends Common
         string $lastName,
         string $emailAddress,
         ?string $jobTitle = null,
-        ?string $organisationName = null
+        ?string $organisationName = null,
     ): bool {
         $uri = $this->sfApiBaseUrl . '/donations/services/apexrest/v2.0/mailing-list-signup/';
 
@@ -67,7 +67,7 @@ class MailingList extends Common
                 [
                     'json' => $payload,
                     'headers' => $this->getVerifyHeaders(json_encode($payload, \JSON_THROW_ON_ERROR)),
-                ]
+                ],
             );
 
             return $response->getStatusCode() === 200;
@@ -75,7 +75,7 @@ class MailingList extends Common
             $this->logger->error(sprintf(
                 'Mailing list signup exception: %s: %s',
                 get_class($ex),
-                $ex->getMessage()
+                $ex->getMessage(),
             ));
 
             throw $ex;

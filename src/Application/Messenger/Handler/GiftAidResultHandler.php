@@ -40,7 +40,10 @@ class GiftAidResultHandler
                 $donation->setTbgGiftAidRequestConfirmedCompleteAt(new \DateTime());
             }
 
-            if ($donationMessage->submission_correlation_id !== null && $donationMessage->submission_correlation_id !== '') {
+            if (
+                $donationMessage->submission_correlation_id !== null
+                && $donationMessage->submission_correlation_id !== ''
+            ) {
                 $donation->setTbgGiftAidRequestCorrelationId($donationMessage->submission_correlation_id);
             }
 

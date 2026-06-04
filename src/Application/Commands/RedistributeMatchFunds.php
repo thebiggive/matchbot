@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'matchbot:redistribute-match-funds',
-    description: 'Moves match funding allocations from lower to higher priority funds where possible'
+    description: 'Moves match funding allocations from lower to higher priority funds where possible',
 )]
 class RedistributeMatchFunds extends LockingCommand
 {
@@ -25,7 +25,7 @@ class RedistributeMatchFunds extends LockingCommand
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
-        $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
+        $output->writeln("Checked {$numberChecked} donations and redistributed matching for {$donationsAmended}");
 
         return 0;
     }

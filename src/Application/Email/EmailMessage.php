@@ -50,7 +50,7 @@ readonly class EmailMessage
         return new self(
             templateKey: $this->templateKey,
             emailAddress: $to,
-            params: $this->params
+            params: $this->params,
         );
     }
 }

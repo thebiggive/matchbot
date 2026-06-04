@@ -11,8 +11,10 @@ class Fees
      * @param numeric-string $feeVat
      * @throws \Assert\AssertionFailedException
      */
-    public function __construct(public readonly string $coreFee, public readonly string $feeVat)
-    {
+    public function __construct(
+        public readonly string $coreFee,
+        public readonly string $feeVat,
+    ) {
         Assertion::numeric($this->coreFee);
         Assertion::numeric($this->feeVat);
 

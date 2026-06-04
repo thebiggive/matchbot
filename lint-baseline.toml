@@ -14,12 +14,6 @@ count = 1
 
 [[issues]]
 file = "app/dependencies.php"
-code = "inline-variable-return"
-message = "Variable assignment can be inlined into the return statement."
-count = 1
-
-[[issues]]
-file = "app/dependencies.php"
 code = "no-isset"
 message = "Use of the `isset` construct."
 count = 1
@@ -44,20 +38,8 @@ count = 1
 
 [[issues]]
 file = "app/routes.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "app/routes.php"
 code = "tagged-todo"
 message = "TODO should be tagged with (@username) or (#issue)."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Action.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
 count = 1
 
 [[issues]]
@@ -85,18 +67,6 @@ message = "Use of the `isset` construct."
 count = 1
 
 [[issues]]
-file = "src/Application/Actions/Action.php"
-code = "no-redundant-parentheses"
-message = "Redundant parentheses around expression."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/ActionError.php"
-code = "no-redundant-use"
-message = "Unused import: `ArrayShape`."
-count = 1
-
-[[issues]]
 file = "src/Application/Actions/ActionPayload.php"
 code = "no-else-clause"
 message = "Avoid `elseif` clauses."
@@ -109,51 +79,9 @@ message = "Avoid `else` clauses."
 count = 1
 
 [[issues]]
-file = "src/Application/Actions/Campaigns/Get.php"
-code = "no-redundant-use"
-message = "Unused import: `Environment`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Campaigns/Get.php"
-code = "no-redundant-use"
-message = "Unused import: `NotFoundException`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Campaigns/Get.php"
-code = "no-redundant-use"
-message = "Unused import: `SfCampaignClient`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Campaigns/Get.php"
-code = "no-redundant-use"
-message = "Unused import: `TransferException`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Campaigns/GetEarlyPreview.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Campaigns/GetSummariesForCharity.php"
-code = "no-redundant-use"
-message = "Unused import: `true`."
-count = 1
-
-[[issues]]
 file = "src/Application/Actions/Campaigns/GetSummariesForCharity.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Campaigns/Search.php"
-code = "prefer-static-closure"
-message = "This arrow function does not use `$this` and should be declared static."
 count = 1
 
 [[issues]]
@@ -181,33 +109,9 @@ message = "Avoid `else` clauses."
 count = 3
 
 [[issues]]
-file = "src/Application/Actions/Campaigns/UpsertMany.php"
-code = "no-redundant-use"
-message = "Unused import: `CampaignHTTPModel`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Campaigns/UpsertMany.php"
-code = "no-redundant-use"
-message = "Unused import: `Environment`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Campaigns/UpsertMany.php"
-code = "no-redundant-use"
-message = "Unused import: `HttpNotFoundException`."
-count = 1
-
-[[issues]]
 file = "src/Application/Actions/Charities/Put.php"
 code = "assert-description"
 message = "Missing description in assert function."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Charities/Put.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
 count = 1
 
 [[issues]]
@@ -232,12 +136,6 @@ count = 2
 file = "src/Application/Actions/Charities/UpsertMany.php"
 code = "assert-description"
 message = "Missing description in assert function."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Charities/UpsertMany.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
 count = 1
 
 [[issues]]
@@ -278,12 +176,6 @@ count = 4
 
 [[issues]]
 file = "src/Application/Actions/Donations/Confirm.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/Confirm.php"
 code = "cyclomatic-complexity"
 message = "Class has high complexity."
 count = 1
@@ -320,12 +212,6 @@ count = 3
 
 [[issues]]
 file = "src/Application/Actions/Donations/Create.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 2
-
-[[issues]]
-file = "src/Application/Actions/Donations/Create.php"
 code = "excessive-parameter-list"
 message = "Parameter list is too long."
 count = 1
@@ -349,51 +235,9 @@ message = "Use of the `empty` construct."
 count = 1
 
 [[issues]]
-file = "src/Application/Actions/Donations/Create.php"
-code = "no-redundant-use"
-message = "Unused import: `Assert`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/Create.php"
-code = "no-redundant-use"
-message = "Unused import: `Donation`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/Explain.php"
-code = "no-redundant-use"
-message = "Unused import: `DonationService`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/Explain.php"
-code = "no-redundant-use"
-message = "Unused import: `Environment`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/Explain.php"
-code = "no-redundant-use"
-message = "Unused import: `HttpNotFoundException`."
-count = 1
-
-[[issues]]
 file = "src/Application/Actions/Donations/Explain.php"
 code = "no-sprintf-concat"
 message = "String concatenation with `sprintf` can be simplified."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/Explain.php"
-code = "prefer-static-closure"
-message = "This arrow function does not use `$this` and should be declared static."
-count = 6
-
-[[issues]]
-file = "src/Application/Actions/Donations/Explain.php"
-code = "prefer-static-closure"
-message = "This closure does not use `$this` and should be declared static."
 count = 1
 
 [[issues]]
@@ -403,57 +247,9 @@ message = "Missing `declare(strict_types=1);` statement at the beginning of the 
 count = 1
 
 [[issues]]
-file = "src/Application/Actions/Donations/Get.php"
-code = "no-redundant-use"
-message = "Unused import: `DonationRepository`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/Get.php"
-code = "no-redundant-use"
-message = "Unused import: `Donation`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/GetAllForUser.php"
-code = "no-redundant-use"
-message = "Unused import: `DonationRepository`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/GetAllForUser.php"
-code = "no-redundant-use"
-message = "Unused import: `Donation`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/GetAllForUser.php"
-code = "no-redundant-use"
-message = "Unused import: `Environment`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/GetAllForUser.php"
-code = "no-redundant-use"
-message = "Unused import: `HttpNotFoundException`."
-count = 1
-
-[[issues]]
 file = "src/Application/Actions/Donations/RemoveGiftAidDeclaration.php"
 code = "excessive-parameter-list"
 message = "Parameter list is too long."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/RemoveGiftAidDeclaration.php"
-code = "no-redundant-use"
-message = "Unused import: `Chatter`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/RemoveGiftAidDeclaration.php"
-code = "no-redundant-use"
-message = "Unused import: `Envelope`."
 count = 1
 
 [[issues]]
@@ -475,30 +271,6 @@ message = "Use of the `isset` construct."
 count = 1
 
 [[issues]]
-file = "src/Application/Actions/Donations/RemoveMatchingExpecation.php"
-code = "no-redundant-use"
-message = "Unused import: `DonationUpserted`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/RemoveMatchingExpecation.php"
-code = "no-redundant-use"
-message = "Unused import: `Donation`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/RemoveMatchingExpecation.php"
-code = "no-redundant-use"
-message = "Unused import: `Envelope`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/RemoveMatchingExpecation.php"
-code = "no-redundant-use"
-message = "Unused import: `MessageBusInterface`."
-count = 1
-
-[[issues]]
 file = "src/Application/Actions/Donations/ResendDonorThanksNotification.php"
 code = "assert-description"
 message = "Missing description in assert function."
@@ -506,33 +278,9 @@ count = 2
 
 [[issues]]
 file = "src/Application/Actions/Donations/ResendDonorThanksNotification.php"
-code = "no-redundant-use"
-message = "Unused import: `Assertion`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/ResendDonorThanksNotification.php"
-code = "no-redundant-use"
-message = "Unused import: `Donation`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/ResendDonorThanksNotification.php"
-code = "no-redundant-use"
-message = "Unused import: `Uuid`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/ResendDonorThanksNotification.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
-
-[[issues]]
-file = "src/Application/Actions/Donations/Update.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 5
 
 [[issues]]
 file = "src/Application/Actions/Donations/Update.php"
@@ -583,72 +331,6 @@ message = "Use of the `isset` construct."
 count = 7
 
 [[issues]]
-file = "src/Application/Actions/DonorAccount/Create.php"
-code = "no-redundant-use"
-message = "Unused import: `AssertionFailedException`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/DonorAccount/Create.php"
-code = "no-redundant-use"
-message = "Unused import: `DonorAccountRepository`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/DonorAccount/Create.php"
-code = "no-redundant-use"
-message = "Unused import: `DonorAccount`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/DonorAccount/Create.php"
-code = "no-redundant-use"
-message = "Unused import: `DonorName`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/DonorAccount/Create.php"
-code = "no-redundant-use"
-message = "Unused import: `EmailAddress`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/DonorAccount/Create.php"
-code = "no-redundant-use"
-message = "Unused import: `HttpBadRequestException`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/DonorAccount/Create.php"
-code = "no-redundant-use"
-message = "Unused import: `LazyAssertionException`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/DonorAccount/Create.php"
-code = "no-redundant-use"
-message = "Unused import: `PersonManagementAuthMiddleware`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/DonorAccount/Create.php"
-code = "no-redundant-use"
-message = "Unused import: `StripeCustomerId`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/DonorAccount/Create.php"
-code = "no-redundant-use"
-message = "Unused import: `UniqueConstraintViolationException`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/DonorAccount/ReturnAllDonationFunds.php"
-code = "no-redundant-use"
-message = "Unused import: `Donation`."
-count = 1
-
-[[issues]]
 file = "src/Application/Actions/DonorAccount/ReturnAllDonationFunds.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
@@ -658,12 +340,6 @@ count = 1
 file = "src/Application/Actions/GetPaymentMethods.php"
 code = "assert-description"
 message = "Missing description in assert function."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/GetPaymentMethods.php"
-code = "no-redundant-use"
-message = "Unused import: `PersonManagementAuthMiddleware`."
 count = 1
 
 [[issues]]
@@ -679,22 +355,10 @@ message = "Avoid `else` clauses."
 count = 1
 
 [[issues]]
-file = "src/Application/Actions/Hooks/Stripe.php"
-code = "sensitive-parameter"
-message = "Parameters that may contain sensitive information should be marked with the `#[SensitiveParameter]` attribute."
-count = 1
-
-[[issues]]
 file = "src/Application/Actions/Hooks/StripePaymentsUpdate.php"
 code = "assert-description"
 message = "Missing description in assert function."
 count = 9
-
-[[issues]]
-file = "src/Application/Actions/Hooks/StripePaymentsUpdate.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
 
 [[issues]]
 file = "src/Application/Actions/Hooks/StripePaymentsUpdate.php"
@@ -746,20 +410,8 @@ count = 1
 
 [[issues]]
 file = "src/Application/Actions/Hooks/StripePayoutUpdate.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Hooks/StripePayoutUpdate.php"
 code = "no-else-clause"
 message = "Avoid `else` clauses."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/MailingListSignup.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
 count = 1
 
 [[issues]]
@@ -793,33 +445,9 @@ message = "Use of the `isset` construct."
 count = 7
 
 [[issues]]
-file = "src/Application/Actions/MailingListSignup.php"
-code = "no-redundant-use"
-message = "Unused import: `Assertion`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/MailingListSignup.php"
-code = "no-redundant-use"
-message = "Unused import: `HttpBadRequestException`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/MetaCampaigns/Get.php"
-code = "no-redundant-use"
-message = "Unused import: `Environment`."
-count = 1
-
-[[issues]]
 file = "src/Application/Actions/MetaCampaigns/Get.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/RegularGivingMandate/Cancel.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
 count = 1
 
 [[issues]]
@@ -839,12 +467,6 @@ file = "src/Application/Actions/RegularGivingMandate/Create.php"
 code = "assert-description"
 message = "Missing description in assert function."
 count = 1
-
-[[issues]]
-file = "src/Application/Actions/RegularGivingMandate/Create.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 2
 
 [[issues]]
 file = "src/Application/Actions/RegularGivingMandate/Create.php"
@@ -902,48 +524,6 @@ count = 1
 
 [[issues]]
 file = "src/Application/Actions/RegularGivingMandate/GetAllForUser.php"
-code = "no-redundant-use"
-message = "Unused import: `DateTimeInterface`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/RegularGivingMandate/GetAllForUser.php"
-code = "no-redundant-use"
-message = "Unused import: `Money`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/RegularGivingMandate/GetAllForUser.php"
-code = "no-redundant-use"
-message = "Unused import: `PersonId`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/RegularGivingMandate/GetAllForUser.php"
-code = "no-redundant-use"
-message = "Unused import: `PersonWithPasswordAuthMiddleware`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/RegularGivingMandate/GetAllForUser.php"
-code = "no-redundant-use"
-message = "Unused import: `RegularGivingMandateRepository`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/RegularGivingMandate/GetAllForUser.php"
-code = "no-redundant-use"
-message = "Unused import: `RegularGivingMandate`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/RegularGivingMandate/GetAllForUser.php"
-code = "no-redundant-use"
-message = "Unused import: `Salesforce18Id`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/RegularGivingMandate/GetAllForUser.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -952,18 +532,6 @@ count = 1
 file = "src/Application/Actions/RegularGivingMandate/MandateCollectionRepeatedlyFailed.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/RegularGivingMandate/RemovePaymentMethod.php"
-code = "no-redundant-use"
-message = "Unused import: `BadRequestException`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/RegularGivingMandate/RemovePaymentMethod.php"
-code = "no-redundant-use"
-message = "Unused import: `Environment`."
 count = 1
 
 [[issues]]
@@ -1003,82 +571,10 @@ message = "Avoid `elseif` clauses."
 count = 1
 
 [[issues]]
-file = "src/Application/Actions/Sitemap.php"
-code = "no-redundant-use"
-message = "Unused import: `CacheInterface`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Sitemap.php"
-code = "no-redundant-use"
-message = "Unused import: `ItemInterface`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Sitemap.php"
-code = "no-redundant-use"
-message = "Unused import: `MetaCampaign`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Status.php"
-code = "no-redundant-use"
-message = "Unused import: `Assertion`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Status.php"
-code = "no-redundant-use"
-message = "Unused import: `CampaignFunding`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Status.php"
-code = "no-redundant-use"
-message = "Unused import: `Campaign`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Status.php"
-code = "no-redundant-use"
-message = "Unused import: `Charity`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Status.php"
-code = "no-redundant-use"
-message = "Unused import: `Donation`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Status.php"
-code = "no-redundant-use"
-message = "Unused import: `FundingWithdrawal`."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/Status.php"
-code = "no-redundant-use"
-message = "Unused import: `ProxyGenerator`."
-count = 1
-
-[[issues]]
 file = "src/Application/Actions/UpdatePaymentMethod.php"
 code = "assert-description"
 message = "Missing description in assert function."
 count = 3
-
-[[issues]]
-file = "src/Application/Actions/UpdatePaymentMethod.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Application/Actions/UpdatePaymentMethod.php"
-code = "prefer-static-closure"
-message = "This arrow function does not use `$this` and should be declared static."
-count = 1
 
 [[issues]]
 file = "src/Application/Actions/UpdatePaymentMethod.php"
@@ -1117,22 +613,10 @@ message = "Avoid `else` clauses."
 count = 1
 
 [[issues]]
-file = "src/Application/Auth/CaptchaMiddleware.php"
-code = "no-redundant-use"
-message = "Unused import: `SerializerInterface`."
-count = 1
-
-[[issues]]
 file = "src/Application/Auth/DonationPublicAuthMiddleware.php"
 code = "no-empty"
 message = "Use of the `empty` construct."
 count = 1
-
-[[issues]]
-file = "src/Application/Auth/DonationToken.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 2
 
 [[issues]]
 file = "src/Application/Auth/ErrorTrait.php"
@@ -1154,18 +638,6 @@ count = 1
 
 [[issues]]
 file = "src/Application/Auth/FriendlyCaptchaVerifier.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 2
-
-[[issues]]
-file = "src/Application/Auth/FriendlyCaptchaVerifier.php"
-code = "sensitive-parameter"
-message = "Parameters that may contain sensitive information should be marked with the `#[SensitiveParameter]` attribute."
-count = 1
-
-[[issues]]
-file = "src/Application/Auth/FriendlyCaptchaVerifier.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -1177,33 +649,9 @@ message = "Missing description in assert function."
 count = 1
 
 [[issues]]
-file = "src/Application/Auth/IdentityTokenService.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 2
-
-[[issues]]
-file = "src/Application/Auth/IdentityTokenService.php"
-code = "inline-variable-return"
-message = "Variable assignment can be inlined into the return statement."
-count = 1
-
-[[issues]]
-file = "src/Application/Auth/IdentityTokenService.php"
-code = "no-redundant-use"
-message = "Unused import: `Pure`."
-count = 1
-
-[[issues]]
 file = "src/Application/Auth/PersonManagementAuthMiddleware.php"
 code = "no-empty"
 message = "Use of the `empty` construct."
-count = 1
-
-[[issues]]
-file = "src/Application/Auth/PersonManagementAuthMiddleware.php"
-code = "sensitive-parameter"
-message = "Parameters that may contain sensitive information should be marked with the `#[SensitiveParameter]` attribute."
 count = 1
 
 [[issues]]
@@ -1225,21 +673,9 @@ message = "Missing description in assert function."
 count = 2
 
 [[issues]]
-file = "src/Application/Commands/CallFrequentTasks.php"
-code = "prefer-static-closure"
-message = "This closure does not use `$this` and should be declared static."
-count = 1
-
-[[issues]]
 file = "src/Application/Commands/CancelStaleDonationFundTips.php"
 code = "identity-comparison"
 message = "Use identity comparison `===` instead of equality comparison `==`."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/ClaimGiftAid.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
 count = 1
 
 [[issues]]
@@ -1249,40 +685,10 @@ message = "Use of the `empty` construct."
 count = 1
 
 [[issues]]
-file = "src/Application/Commands/ClaimGiftAid.php"
-code = "no-redundant-use"
-message = "Unused import: `Donation`."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/Command.php"
-code = "no-redundant-use"
-message = "Unused import: `Logger`."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/Command.php"
-code = "no-redundant-use"
-message = "Unused import: `StreamHandler`."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/Command.php"
-code = "no-redundant-use"
-message = "Unused import: `StreamInterface`."
-count = 1
-
-[[issues]]
 file = "src/Application/Commands/CreateFictionalData.php"
 code = "assert-description"
 message = "Missing description in assert function."
 count = 1
-
-[[issues]]
-file = "src/Application/Commands/CreateFictionalData.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 6
 
 [[issues]]
 file = "src/Application/Commands/CreateFictionalData.php"
@@ -1316,51 +722,9 @@ count = 1
 
 [[issues]]
 file = "src/Application/Commands/ExpireMatchFunds.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/ExpireMatchFunds.php"
 code = "no-empty-catch-clause"
 message = "Do not use empty `catch` blocks."
 count = 1
-
-[[issues]]
-file = "src/Application/Commands/ExpireMatchFunds.php"
-code = "no-redundant-use"
-message = "Unused import: `Uuid`."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/ExpirePendingMandates.php"
-code = "no-noop"
-message = "Redundant noop statement."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/ExpirePendingMandates.php"
-code = "no-redundant-use"
-message = "Unused import: `DonationRepository`."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/ExpirePendingMandates.php"
-code = "no-redundant-use"
-message = "Unused import: `DonationService`."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/ExpirePendingMandates.php"
-code = "no-redundant-use"
-message = "Unused import: `Uuid`."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/HandleOutOfSyncFunds.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 6
 
 [[issues]]
 file = "src/Application/Commands/HandleOutOfSyncFunds.php"
@@ -1378,12 +742,6 @@ count = 1
 file = "src/Application/Commands/MergeOpenApiDocs.php"
 code = "cyclomatic-complexity"
 message = "Class has high complexity."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/MergeOpenApiDocs.php"
-code = "explicit-octal"
-message = "Use explicit octal numeral notation."
 count = 1
 
 [[issues]]
@@ -1418,18 +776,6 @@ count = 15
 
 [[issues]]
 file = "src/Application/Commands/MergeOpenApiDocs.php"
-code = "no-redundant-use"
-message = "Unused import: `OpenApi`."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/MergeOpenApiDocs.php"
-code = "prefer-early-continue"
-message = "Consider using early continue pattern to reduce nesting."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/MergeOpenApiDocs.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -1448,12 +794,6 @@ count = 1
 
 [[issues]]
 file = "src/Application/Commands/PullMetaCampaignFromSF.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 3
-
-[[issues]]
-file = "src/Application/Commands/PullMetaCampaignFromSF.php"
 code = "excessive-parameter-list"
 message = "Parameter list is too long."
 count = 1
@@ -1465,51 +805,15 @@ message = "Avoid `else` clauses."
 count = 1
 
 [[issues]]
-file = "src/Application/Commands/PullMetaCampaignFromSF.php"
-code = "no-empty-comment"
-message = "Empty comments are not allowed."
-count = 1
-
-[[issues]]
 file = "src/Application/Commands/PushDailyFundTotals.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
 
 [[issues]]
-file = "src/Application/Commands/PushDonations.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 2
-
-[[issues]]
-file = "src/Application/Commands/RedistributeMatchFunds.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/RetrospectivelyMatch.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
 file = "src/Application/Commands/RetrospectivelyMatch.php"
 code = "no-else-clause"
 message = "Avoid `else` clauses."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/RetrospectivelyMatch.php"
-code = "no-redundant-parentheses"
-message = "Redundant parentheses around expression."
-count = 2
-
-[[issues]]
-file = "src/Application/Commands/RetrospectivelyMatch.php"
-code = "prefer-static-closure"
-message = "This arrow function does not use `$this` and should be declared static."
 count = 1
 
 [[issues]]
@@ -1526,21 +830,9 @@ count = 1
 
 [[issues]]
 file = "src/Application/Commands/ScheduledOutOfSyncFundsCheck.php"
-code = "no-redundant-parentheses"
-message = "Redundant parentheses around expression."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/ScheduledOutOfSyncFundsCheck.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
-
-[[issues]]
-file = "src/Application/Commands/SendStatistics.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 2
 
 [[issues]]
 file = "src/Application/Commands/SendStatistics.php"
@@ -1564,12 +856,6 @@ count = 1
 file = "src/Application/Commands/SetupTestMandate.php"
 code = "identity-comparison"
 message = "Use identity comparison `===` instead of equality comparison `==`."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/SetupTestMandate.php"
-code = "no-redundant-use"
-message = "Unused import: `Assertion`."
 count = 1
 
 [[issues]]
@@ -1603,22 +889,10 @@ message = "Avoid `else` clauses."
 count = 1
 
 [[issues]]
-file = "src/Application/Commands/TakeRegularGivingDonations.php"
-code = "prefer-static-closure"
-message = "This arrow function does not use `$this` and should be declared static."
-count = 1
-
-[[issues]]
 file = "src/Application/Commands/UpdateApproxCampaignStatus.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
-
-[[issues]]
-file = "src/Application/Commands/UpdateCampaignDonationStats.php"
-code = "prefer-early-continue"
-message = "Consider using early continue pattern to reduce nesting."
-count = 2
 
 [[issues]]
 file = "src/Application/Commands/UpdateCampaignDonationStats.php"
@@ -1646,20 +920,8 @@ count = 3
 
 [[issues]]
 file = "src/Application/Commands/WriteSchemaFile.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 7
-
-[[issues]]
-file = "src/Application/Commands/WriteSchemaFile.php"
 code = "no-else-clause"
 message = "Avoid `else` clauses."
-count = 1
-
-[[issues]]
-file = "src/Application/Commands/WriteSchemaFile.php"
-code = "prefer-static-closure"
-message = "This arrow function does not use `$this` and should be declared static."
 count = 1
 
 [[issues]]
@@ -1688,20 +950,8 @@ count = 1
 
 [[issues]]
 file = "src/Application/Environment.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Application/Environment.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
-count = 1
-
-[[issues]]
-file = "src/Application/Fees/Calculator.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
 count = 1
 
 [[issues]]
@@ -1735,24 +985,6 @@ message = "Avoid `elseif` clauses."
 count = 5
 
 [[issues]]
-file = "src/Application/Handlers/HttpErrorHandler.php"
-code = "no-redundant-use"
-message = "Unused import: `Exception`."
-count = 1
-
-[[issues]]
-file = "src/Application/Handlers/HttpErrorHandler.php"
-code = "no-redundant-use"
-message = "Unused import: `Throwable`."
-count = 1
-
-[[issues]]
-file = "src/Application/Handlers/HttpErrorHandler.php"
-code = "prefer-static-closure"
-message = "This arrow function does not use `$this` and should be declared static."
-count = 1
-
-[[issues]]
 file = "src/Application/HttpModels/Campaign.php"
 code = "excessive-parameter-list"
 message = "Parameter list is too long."
@@ -1763,12 +995,6 @@ file = "src/Application/HttpModels/Campaign.php"
 code = "halstead"
 message = "Method has a high halstead volume"
 count = 1
-
-[[issues]]
-file = "src/Application/HttpModels/Campaign.php"
-code = "readable-literal"
-message = "Numeric literal could use underscore separators for readability."
-count = 5
 
 [[issues]]
 file = "src/Application/HttpModels/Campaign.php"
@@ -1801,66 +1027,6 @@ message = "Parameter list is too long."
 count = 1
 
 [[issues]]
-file = "src/Application/HttpModels/DonationCreate.php"
-code = "no-redundant-readonly"
-message = "The `readonly` modifier is redundant as the class is already readonly."
-count = 3
-
-[[issues]]
-file = "src/Application/HttpModels/DonationCreatedResponse.php"
-code = "sensitive-parameter"
-message = "Parameters that may contain sensitive information should be marked with the `#[SensitiveParameter]` attribute."
-count = 2
-
-[[issues]]
-file = "src/Application/HttpModels/MandateCancellation.php"
-code = "no-redundant-use"
-message = "Unused import: `Campaign`."
-count = 1
-
-[[issues]]
-file = "src/Application/HttpModels/MandateCancellation.php"
-code = "no-redundant-use"
-message = "Unused import: `Country`."
-count = 1
-
-[[issues]]
-file = "src/Application/HttpModels/MandateCancellation.php"
-code = "no-redundant-use"
-message = "Unused import: `Currency`."
-count = 1
-
-[[issues]]
-file = "src/Application/HttpModels/MandateCancellation.php"
-code = "no-redundant-use"
-message = "Unused import: `DayOfMonth`."
-count = 1
-
-[[issues]]
-file = "src/Application/HttpModels/MandateCancellation.php"
-code = "no-redundant-use"
-message = "Unused import: `Money`."
-count = 1
-
-[[issues]]
-file = "src/Application/HttpModels/MandateCancellation.php"
-code = "no-redundant-use"
-message = "Unused import: `PostCode`."
-count = 1
-
-[[issues]]
-file = "src/Application/HttpModels/MandateCancellation.php"
-code = "no-redundant-use"
-message = "Unused import: `Salesforce18Id`."
-count = 1
-
-[[issues]]
-file = "src/Application/HttpModels/MandateCancellation.php"
-code = "no-redundant-use"
-message = "Unused import: `StripeConfirmationTokenId`."
-count = 1
-
-[[issues]]
 file = "src/Application/HttpModels/MandateCancellation.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
@@ -1880,12 +1046,6 @@ count = 2
 
 [[issues]]
 file = "src/Application/HttpModels/MandateCreate.php"
-code = "no-redundant-use"
-message = "Unused import: `DayOfMonth`."
-count = 1
-
-[[issues]]
-file = "src/Application/HttpModels/MandateCreate.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -1895,12 +1055,6 @@ file = "src/Application/HttpModels/MetaCampaign.php"
 code = "excessive-parameter-list"
 message = "Parameter list is too long."
 count = 1
-
-[[issues]]
-file = "src/Application/HttpModels/MetaCampaign.php"
-code = "readable-literal"
-message = "Numeric literal could use underscore separators for readability."
-count = 3
 
 [[issues]]
 file = "src/Application/HttpModels/MetaCampaign.php"
@@ -1922,12 +1076,6 @@ count = 1
 
 [[issues]]
 file = "src/Application/Matching/Adapter.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 6
-
-[[issues]]
-file = "src/Application/Matching/Adapter.php"
 code = "halstead"
 message = "Method has a high halstead difficulty"
 count = 1
@@ -1937,12 +1085,6 @@ file = "src/Application/Matching/Adapter.php"
 code = "no-redundant-math"
 message = "Redundant subtraction of `0`: subtracting 0 does not change the value."
 count = 1
-
-[[issues]]
-file = "src/Application/Matching/Allocator.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 4
 
 [[issues]]
 file = "src/Application/Matching/Allocator.php"
@@ -1969,27 +1111,9 @@ message = "Avoid `else` clauses."
 count = 1
 
 [[issues]]
-file = "src/Application/Matching/Allocator.php"
-code = "no-redundant-use"
-message = "Unused import: `Assertion`."
-count = 1
-
-[[issues]]
-file = "src/Application/Matching/MatchFundsRedistributor.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
 file = "src/Application/Matching/MatchFundsRedistributor.php"
 code = "excessive-parameter-list"
 message = "Parameter list is too long."
-count = 1
-
-[[issues]]
-file = "src/Application/Matching/MatchFundsRedistributor.php"
-code = "no-redundant-parentheses"
-message = "Redundant parentheses around expression."
 count = 1
 
 [[issues]]
@@ -2030,12 +1154,6 @@ count = 4
 
 [[issues]]
 file = "src/Application/Messenger/Handler/DonationMatchCheckHandler.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 3
-
-[[issues]]
-file = "src/Application/Messenger/Handler/DonationMatchCheckHandler.php"
 code = "excessive-parameter-list"
 message = "Parameter list is too long."
 count = 1
@@ -2050,12 +1168,6 @@ count = 1
 file = "src/Application/Messenger/Handler/DonationMatchCheckHandler.php"
 code = "tagged-todo"
 message = "TODO should be tagged with (@username) or (#issue)."
-count = 1
-
-[[issues]]
-file = "src/Application/Messenger/Handler/DonationUpsertedHandler.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
 count = 1
 
 [[issues]]
@@ -2081,12 +1193,6 @@ file = "src/Application/Messenger/Handler/GiftAidResultHandler.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
-
-[[issues]]
-file = "src/Application/Messenger/Handler/MandateUpsertedHandler.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 3
 
 [[issues]]
 file = "src/Application/Messenger/Handler/MandateUpsertedHandler.php"
@@ -2120,24 +1226,6 @@ count = 2
 
 [[issues]]
 file = "src/Application/Messenger/Handler/PersonHandler.php"
-code = "no-redundant-use"
-message = "Unused import: `Currency`."
-count = 1
-
-[[issues]]
-file = "src/Application/Messenger/Handler/PersonHandler.php"
-code = "no-redundant-use"
-message = "Unused import: `Money`."
-count = 1
-
-[[issues]]
-file = "src/Application/Messenger/Handler/PersonHandler.php"
-code = "no-redundant-use"
-message = "Unused import: `RegularGivingMandate`."
-count = 1
-
-[[issues]]
-file = "src/Application/Messenger/Handler/PersonHandler.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -2156,20 +1244,8 @@ count = 1
 
 [[issues]]
 file = "src/Application/Messenger/Handler/StripePayoutHandler.php"
-code = "prefer-early-continue"
-message = "Consider using early continue pattern to reduce nesting."
-count = 2
-
-[[issues]]
-file = "src/Application/Messenger/Handler/StripePayoutHandler.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
-count = 1
-
-[[issues]]
-file = "src/Application/Messenger/MandateUpserted.php"
-code = "no-redundant-use"
-message = "Unused import: `Donation`."
 count = 1
 
 [[issues]]
@@ -2252,12 +1328,6 @@ count = 1
 
 [[issues]]
 file = "src/Application/Settings.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 3
-
-[[issues]]
-file = "src/Application/Settings.php"
 code = "halstead"
 message = "Method has a high halstead volume and effort"
 count = 1
@@ -2272,12 +1342,6 @@ count = 2
 file = "src/Application/Settings.php"
 code = "no-else-clause"
 message = "Avoid `else` clauses."
-count = 1
-
-[[issues]]
-file = "src/Application/Settings.php"
-code = "no-redundant-parentheses"
-message = "Redundant parentheses around expression."
 count = 1
 
 [[issues]]
@@ -2306,33 +1370,9 @@ count = 1
 
 [[issues]]
 file = "src/Client/Campaign.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Client/Campaign.php"
-code = "inline-variable-return"
-message = "Variable assignment can be inlined into the return statement."
-count = 2
-
-[[issues]]
-file = "src/Client/Campaign.php"
 code = "no-boolean-flag-parameter"
 message = "Avoid boolean flag parameters."
 count = 1
-
-[[issues]]
-file = "src/Client/Campaign.php"
-code = "no-redundant-use"
-message = "Unused import: `Assertion`."
-count = 1
-
-[[issues]]
-file = "src/Client/Common.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 5
 
 [[issues]]
 file = "src/Client/Common.php"
@@ -2345,18 +1385,6 @@ file = "src/Client/Common.php"
 code = "no-boolean-flag-parameter"
 message = "Avoid boolean flag parameters."
 count = 1
-
-[[issues]]
-file = "src/Client/Fund.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 2
-
-[[issues]]
-file = "src/Client/Fund.php"
-code = "inline-variable-return"
-message = "Variable assignment can be inlined into the return statement."
-count = 2
 
 [[issues]]
 file = "src/Client/Fund.php"
@@ -2408,24 +1436,6 @@ count = 1
 
 [[issues]]
 file = "src/Client/Stripe.php"
-code = "no-redundant-use"
-message = "Unused import: `Collection`."
-count = 1
-
-[[issues]]
-file = "src/Client/Stripe.php"
-code = "no-redundant-use"
-message = "Unused import: `Donation`."
-count = 1
-
-[[issues]]
-file = "src/Client/Stripe.php"
-code = "no-redundant-use"
-message = "Unused import: `SearchResult`."
-count = 1
-
-[[issues]]
-file = "src/Client/Stripe.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -2468,12 +1478,6 @@ count = 1
 
 [[issues]]
 file = "src/Domain/Campaign.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Domain/Campaign.php"
 code = "cyclomatic-complexity"
 message = "Class has high complexity."
 count = 1
@@ -2504,18 +1508,6 @@ count = 1
 
 [[issues]]
 file = "src/Domain/Campaign.php"
-code = "no-redundant-use"
-message = "Unused import: `DateTimeInterface`."
-count = 1
-
-[[issues]]
-file = "src/Domain/Campaign.php"
-code = "no-redundant-use"
-message = "Unused import: `Environment`."
-count = 1
-
-[[issues]]
-file = "src/Domain/Campaign.php"
 code = "too-many-methods"
 message = "Class has too many methods."
 count = 1
@@ -2533,18 +1525,6 @@ message = "Missing `declare(strict_types=1);` statement at the beginning of the 
 count = 1
 
 [[issues]]
-file = "src/Domain/CampaignFunding.php"
-code = "no-redundant-use"
-message = "Unused import: `Number`."
-count = 1
-
-[[issues]]
-file = "src/Domain/CampaignFundingRepository.php"
-code = "inline-variable-return"
-message = "Variable assignment can be inlined into the return statement."
-count = 4
-
-[[issues]]
 file = "src/Domain/CampaignFundingRepository.php"
 code = "no-boolean-flag-parameter"
 message = "Avoid boolean flag parameters."
@@ -2554,12 +1534,6 @@ count = 1
 file = "src/Domain/CampaignFundingRepository.php"
 code = "no-empty"
 message = "Use of the `empty` construct."
-count = 1
-
-[[issues]]
-file = "src/Domain/CampaignFundingRepository.php"
-code = "prefer-static-closure"
-message = "This arrow function does not use `$this` and should be declared static."
 count = 1
 
 [[issues]]
@@ -2576,12 +1550,6 @@ count = 1
 
 [[issues]]
 file = "src/Domain/CampaignRenderCompatibilityChecker.php"
-code = "no-redundant-use"
-message = "Unused import: `Environment`."
-count = 1
-
-[[issues]]
-file = "src/Domain/CampaignRenderCompatibilityChecker.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -2594,12 +1562,6 @@ count = 1
 
 [[issues]]
 file = "src/Domain/CampaignRepository.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 4
-
-[[issues]]
-file = "src/Domain/CampaignRepository.php"
 code = "cyclomatic-complexity"
 message = "Class has high complexity."
 count = 1
@@ -2609,12 +1571,6 @@ file = "src/Domain/CampaignRepository.php"
 code = "excessive-parameter-list"
 message = "Parameter list is too long."
 count = 2
-
-[[issues]]
-file = "src/Domain/CampaignRepository.php"
-code = "inline-variable-return"
-message = "Variable assignment can be inlined into the return statement."
-count = 5
 
 [[issues]]
 file = "src/Domain/CampaignRepository.php"
@@ -2638,12 +1594,6 @@ count = 5
 file = "src/Domain/CampaignRepository.php"
 code = "prefer-arrow-function"
 message = "This closure can be simplified to a more concise arrow function."
-count = 1
-
-[[issues]]
-file = "src/Domain/CampaignRepository.php"
-code = "prefer-static-closure"
-message = "This closure does not use `$this` and should be declared static."
 count = 1
 
 [[issues]]
@@ -2680,12 +1630,6 @@ count = 1
 file = "src/Domain/CampaignService.php"
 code = "no-else-clause"
 message = "Avoid `else` clauses."
-count = 1
-
-[[issues]]
-file = "src/Domain/CampaignService.php"
-code = "prefer-static-closure"
-message = "This arrow function does not use `$this` and should be declared static."
 count = 1
 
 [[issues]]
@@ -2744,12 +1688,6 @@ count = 1
 
 [[issues]]
 file = "src/Domain/CampaignStatisticsRepository.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 4
-
-[[issues]]
-file = "src/Domain/CampaignStatisticsRepository.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -2758,12 +1696,6 @@ count = 1
 file = "src/Domain/CampaignStatus.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
-count = 1
-
-[[issues]]
-file = "src/Domain/CardBrand.php"
-code = "no-redundant-use"
-message = "Unused import: `s`."
 count = 1
 
 [[issues]]
@@ -2834,18 +1766,6 @@ count = 1
 
 [[issues]]
 file = "src/Domain/Country.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Domain/Country.php"
-code = "no-redundant-readonly"
-message = "The `readonly` modifier is redundant as the class is already readonly."
-count = 1
-
-[[issues]]
-file = "src/Domain/Country.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -2870,21 +1790,9 @@ count = 2
 
 [[issues]]
 file = "src/Domain/DoctrineDonationRepository.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 8
-
-[[issues]]
-file = "src/Domain/DoctrineDonationRepository.php"
 code = "cyclomatic-complexity"
 message = "Class has high complexity."
 count = 1
-
-[[issues]]
-file = "src/Domain/DoctrineDonationRepository.php"
-code = "inline-variable-return"
-message = "Variable assignment can be inlined into the return statement."
-count = 13
 
 [[issues]]
 file = "src/Domain/DoctrineDonationRepository.php"
@@ -2902,30 +1810,6 @@ count = 1
 file = "src/Domain/DoctrineDonationRepository.php"
 code = "no-else-clause"
 message = "Avoid `else` clauses."
-count = 1
-
-[[issues]]
-file = "src/Domain/DoctrineDonationRepository.php"
-code = "no-redundant-parentheses"
-message = "Redundant parentheses around expression."
-count = 1
-
-[[issues]]
-file = "src/Domain/DoctrineDonationRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `Assertion`."
-count = 1
-
-[[issues]]
-file = "src/Domain/DoctrineDonationRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `DonationServiceTest`."
-count = 1
-
-[[issues]]
-file = "src/Domain/DoctrineDonationRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `Matching`."
 count = 1
 
 [[issues]]
@@ -3020,12 +1904,6 @@ count = 1
 
 [[issues]]
 file = "src/Domain/Donation.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 5
-
-[[issues]]
-file = "src/Domain/Donation.php"
 code = "cyclomatic-complexity"
 message = "Class has high complexity."
 count = 1
@@ -3068,24 +1946,6 @@ count = 1
 
 [[issues]]
 file = "src/Domain/Donation.php"
-code = "no-noop"
-message = "Redundant noop statement."
-count = 1
-
-[[issues]]
-file = "src/Domain/Donation.php"
-code = "no-redundant-parentheses"
-message = "Redundant parentheses around expression."
-count = 1
-
-[[issues]]
-file = "src/Domain/Donation.php"
-code = "readable-literal"
-message = "Numeric literal could use underscore separators for readability."
-count = 1
-
-[[issues]]
-file = "src/Domain/Donation.php"
 code = "tagged-todo"
 message = "TODO should be tagged with (@username) or (#issue)."
 count = 1
@@ -3100,12 +1960,6 @@ count = 1
 file = "src/Domain/Donation.php"
 code = "too-many-properties"
 message = "Class has too many properties."
-count = 1
-
-[[issues]]
-file = "src/Domain/DonationFundsNotifier.php"
-code = "no-redundant-use"
-message = "Unused import: `Assertion`."
 count = 1
 
 [[issues]]
@@ -3128,12 +1982,6 @@ count = 3
 
 [[issues]]
 file = "src/Domain/DonationNotifier.php"
-code = "sensitive-parameter"
-message = "Parameters that may contain sensitive information should be marked with the `#[SensitiveParameter]` attribute."
-count = 1
-
-[[issues]]
-file = "src/Domain/DonationNotifier.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -3142,18 +1990,6 @@ count = 1
 file = "src/Domain/DonationRepository.php"
 code = "no-boolean-flag-parameter"
 message = "Avoid boolean flag parameters."
-count = 1
-
-[[issues]]
-file = "src/Domain/DonationRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `DateTime`."
-count = 1
-
-[[issues]]
-file = "src/Domain/DonationRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `Matching`."
 count = 1
 
 [[issues]]
@@ -3179,12 +2015,6 @@ file = "src/Domain/DonationService.php"
 code = "assert-description"
 message = "Missing description in assert function."
 count = 11
-
-[[issues]]
-file = "src/Domain/DonationService.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 3
 
 [[issues]]
 file = "src/Domain/DonationService.php"
@@ -3230,18 +2060,6 @@ count = 5
 
 [[issues]]
 file = "src/Domain/DonationService.php"
-code = "prefer-static-closure"
-message = "This arrow function does not use `$this` and should be declared static."
-count = 2
-
-[[issues]]
-file = "src/Domain/DonationService.php"
-code = "sensitive-parameter"
-message = "Parameters that may contain sensitive information should be marked with the `#[SensitiveParameter]` attribute."
-count = 1
-
-[[issues]]
-file = "src/Domain/DonationService.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -3278,12 +2096,6 @@ count = 3
 
 [[issues]]
 file = "src/Domain/DonorAccount.php"
-code = "no-redundant-use"
-message = "Unused import: `Uuid`."
-count = 1
-
-[[issues]]
-file = "src/Domain/DonorAccount.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -3308,12 +2120,6 @@ count = 1
 
 [[issues]]
 file = "src/Domain/DonorAccountRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `NullLogger`."
-count = 1
-
-[[issues]]
-file = "src/Domain/DonorAccountRepository.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -3328,12 +2134,6 @@ count = 1
 file = "src/Domain/DonorName.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
-count = 1
-
-[[issues]]
-file = "src/Domain/EmailAddress.php"
-code = "no-redundant-readonly"
-message = "The `readonly` modifier is redundant as the class is already readonly."
 count = 1
 
 [[issues]]
@@ -3389,12 +2189,6 @@ file = "src/Domain/FundRepository.php"
 code = "halstead"
 message = "Method has a high halstead difficulty and effort"
 count = 1
-
-[[issues]]
-file = "src/Domain/FundRepository.php"
-code = "inline-variable-return"
-message = "Variable assignment can be inlined into the return statement."
-count = 4
 
 [[issues]]
 file = "src/Domain/FundRepository.php"
@@ -3470,20 +2264,8 @@ count = 1
 
 [[issues]]
 file = "src/Domain/MetaCampaignRepository.php"
-code = "inline-variable-return"
-message = "Variable assignment can be inlined into the return statement."
-count = 2
-
-[[issues]]
-file = "src/Domain/MetaCampaignRepository.php"
 code = "no-else-clause"
 message = "Avoid `else` clauses."
-count = 1
-
-[[issues]]
-file = "src/Domain/MetaCampaignRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `NoResultException`."
 count = 1
 
 [[issues]]
@@ -3512,32 +2294,14 @@ count = 1
 
 [[issues]]
 file = "src/Domain/PaymentCard.php"
-code = "no-redundant-use"
-message = "Unused import: `Assertion`."
-count = 1
-
-[[issues]]
-file = "src/Domain/PaymentCard.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
-count = 1
-
-[[issues]]
-file = "src/Domain/PaymentMethodType.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
 count = 1
 
 [[issues]]
 file = "src/Domain/PaymentServiceProvider.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
-count = 1
-
-[[issues]]
-file = "src/Domain/PersonId.php"
-code = "no-redundant-readonly"
-message = "The `readonly` modifier is redundant as the class is already readonly."
 count = 1
 
 [[issues]]
@@ -3560,24 +2324,6 @@ count = 1
 
 [[issues]]
 file = "src/Domain/PostCode.php"
-code = "no-redundant-use"
-message = "Unused import: `Assert`."
-count = 1
-
-[[issues]]
-file = "src/Domain/PostCode.php"
-code = "no-redundant-use"
-message = "Unused import: `AssertionFailedException`."
-count = 1
-
-[[issues]]
-file = "src/Domain/PostCode.php"
-code = "no-redundant-use"
-message = "Unused import: `Embeddable`."
-count = 1
-
-[[issues]]
-file = "src/Domain/PostCode.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -3587,12 +2333,6 @@ file = "src/Domain/RegularGivingMandate.php"
 code = "assert-description"
 message = "Missing description in assert function."
 count = 4
-
-[[issues]]
-file = "src/Domain/RegularGivingMandate.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
 
 [[issues]]
 file = "src/Domain/RegularGivingMandate.php"
@@ -3608,20 +2348,8 @@ count = 1
 
 [[issues]]
 file = "src/Domain/RegularGivingMandate.php"
-code = "inline-variable-return"
-message = "Variable assignment can be inlined into the return statement."
-count = 1
-
-[[issues]]
-file = "src/Domain/RegularGivingMandate.php"
 code = "no-boolean-flag-parameter"
 message = "Avoid boolean flag parameters."
-count = 1
-
-[[issues]]
-file = "src/Domain/RegularGivingMandate.php"
-code = "prefer-static-closure"
-message = "This arrow function does not use `$this` and should be declared static."
 count = 1
 
 [[issues]]
@@ -3644,50 +2372,8 @@ count = 1
 
 [[issues]]
 file = "src/Domain/RegularGivingMandateRepository.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Domain/RegularGivingMandateRepository.php"
-code = "inline-variable-return"
-message = "Variable assignment can be inlined into the return statement."
-count = 1
-
-[[issues]]
-file = "src/Domain/RegularGivingMandateRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `Assertion`."
-count = 1
-
-[[issues]]
-file = "src/Domain/RegularGivingMandateRepository.php"
-code = "prefer-early-continue"
-message = "Consider using early continue pattern to reduce nesting."
-count = 1
-
-[[issues]]
-file = "src/Domain/RegularGivingMandateRepository.php"
-code = "prefer-static-closure"
-message = "This arrow function does not use `$this` and should be declared static."
-count = 1
-
-[[issues]]
-file = "src/Domain/RegularGivingMandateRepository.php"
-code = "prefer-static-closure"
-message = "This closure does not use `$this` and should be declared static."
-count = 1
-
-[[issues]]
-file = "src/Domain/RegularGivingMandateRepository.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
-count = 1
-
-[[issues]]
-file = "src/Domain/RegularGivingNotifier.php"
-code = "no-redundant-use"
-message = "Unused import: `Environment`."
 count = 1
 
 [[issues]]
@@ -3701,12 +2387,6 @@ file = "src/Domain/RegularGivingService.php"
 code = "assert-description"
 message = "Missing description in assert function."
 count = 6
-
-[[issues]]
-file = "src/Domain/RegularGivingService.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 2
 
 [[issues]]
 file = "src/Domain/RegularGivingService.php"
@@ -3758,12 +2438,6 @@ count = 1
 
 [[issues]]
 file = "src/Domain/RyftAccountId.php"
-code = "no-redundant-use"
-message = "Unused import: `Embeddable`."
-count = 1
-
-[[issues]]
-file = "src/Domain/RyftAccountId.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
 count = 1
@@ -3787,42 +2461,6 @@ message = "Missing `declare(strict_types=1);` statement at the beginning of the 
 count = 1
 
 [[issues]]
-file = "src/Domain/SalesforceProxyRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `ClassMetadata`."
-count = 1
-
-[[issues]]
-file = "src/Domain/SalesforceProxyRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `EntityManagerInterface`."
-count = 1
-
-[[issues]]
-file = "src/Domain/SalesforceReadProxyRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `Assertion`."
-count = 1
-
-[[issues]]
-file = "src/Domain/SalesforceReadProxyRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `DateTime`."
-count = 1
-
-[[issues]]
-file = "src/Domain/SalesforceReadProxyRepository.php"
-code = "no-redundant-use"
-message = "Unused import: `UniqueConstraintViolationException`."
-count = 1
-
-[[issues]]
-file = "src/Domain/StripeConfirmationTokenId.php"
-code = "no-redundant-readonly"
-message = "The `readonly` modifier is redundant as the class is already readonly."
-count = 1
-
-[[issues]]
 file = "src/Domain/StripeConfirmationTokenId.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
@@ -3836,254 +2474,8 @@ count = 1
 
 [[issues]]
 file = "src/Domain/StripePaymentMethodId.php"
-code = "no-redundant-readonly"
-message = "The `readonly` modifier is redundant as the class is already readonly."
-count = 1
-
-[[issues]]
-file = "src/Domain/StripePaymentMethodId.php"
 code = "strict-types"
 message = "Missing `declare(strict_types=1);` statement at the beginning of the file."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20220404153900.php"
-code = "no-redundant-use"
-message = "Unused import: `Connection`."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20220404165640.php"
-code = "no-redundant-use"
-message = "Unused import: `Connection`."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20220531094925.php"
-code = "no-redundant-use"
-message = "Unused import: `Connection`."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20220623122551.php"
-code = "no-redundant-use"
-message = "Unused import: `Connection`."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20220819094649.php"
-code = "no-redundant-use"
-message = "Unused import: `Connection`."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20221004134449.php"
-code = "no-redundant-use"
-message = "Unused import: `Connection`."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20221101143104.php"
-code = "no-redundant-use"
-message = "Unused import: `Connection`."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20221203151735.php"
-code = "no-redundant-use"
-message = "Unused import: `Connection`."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20230117173337.php"
-code = "no-redundant-use"
-message = "Unused import: `Connection`."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20230124121155.php"
-code = "no-redundant-use"
-message = "Unused import: `Connection`."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20230907114841.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20240102160835.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20240206145629.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20240313113938.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20240410102808.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20240521155414.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20240717173149.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20240717173149.php"
-code = "readable-literal"
-message = "Numeric literal could use underscore separators for readability."
-count = 2
-
-[[issues]]
-file = "src/Migrations/Version20241126163843.php"
-code = "readable-literal"
-message = "Numeric literal could use underscore separators for readability."
-count = 28
-
-[[issues]]
-file = "src/Migrations/Version20241128165753.php"
-code = "readable-literal"
-message = "Numeric literal could use underscore separators for readability."
-count = 6
-
-[[issues]]
-file = "src/Migrations/Version20250325070709.php"
-code = "readable-literal"
-message = "Numeric literal could use underscore separators for readability."
-count = 2
-
-[[issues]]
-file = "src/Migrations/Version20250424095340.php"
-code = "assert-description"
-message = "Missing description in assert function."
-count = 3
-
-[[issues]]
-file = "src/Migrations/Version20250424095340.php"
-code = "no-multi-assignments"
-message = "Avoid multiple assignments in a single statement."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20250515172831.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 4
-
-[[issues]]
-file = "src/Migrations/Version20250515172831.php"
-code = "readable-literal"
-message = "Numeric literal could use underscore separators for readability."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20250521091607.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 4
-
-[[issues]]
-file = "src/Migrations/Version20250521091607.php"
-code = "readable-literal"
-message = "Numeric literal could use underscore separators for readability."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20250522120626.php"
-code = "no-empty-catch-clause"
-message = "Do not use empty `catch` blocks."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20250603143120.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 2
-
-[[issues]]
-file = "src/Migrations/Version20250603143120.php"
-code = "readable-literal"
-message = "Numeric literal could use underscore separators for readability."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20250605113222.php"
-code = "no-redundant-block"
-message = "Redundant block around statements."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20250826142210.php"
-code = "readable-literal"
-message = "Numeric literal could use underscore separators for readability."
-count = 27
-
-[[issues]]
-file = "src/Migrations/Version20250826145606.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20251007120331.php"
-code = "readable-literal"
-message = "Numeric literal could use underscore separators for readability."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20251009103221.php"
-code = "no-redundant-use"
-message = "Unused import: `Environment`."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20251211162039.php"
-code = "no-redundant-use"
-message = "Unused import: `Environment`."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20260318113924.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Migrations/Version20260319102359.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Monolog/Handler/SlackHandler.php"
-code = "braced-string-interpolation"
-message = "Unbraced variable in string interpolation."
-count = 1
-
-[[issues]]
-file = "src/Monolog/Handler/SlackHandler.php"
-code = "no-redundant-parentheses"
-message = "Redundant parentheses around expression."
 count = 1
 
 [[issues]]

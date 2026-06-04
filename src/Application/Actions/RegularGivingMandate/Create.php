@@ -50,7 +50,7 @@ class Create extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        if (! $this->environment->isFeatureEnabledRegularGiving()) {
+        if (!$this->environment->isFeatureEnabledRegularGiving()) {
             throw new HttpNotFoundException($request);
         }
 
@@ -70,14 +70,14 @@ class Create extends Action
             );
         } catch (\TypeError | UnexpectedValueException $exception) {
             /** similar catch with commentary in @see \MatchBot\Application\Actions\Donations\Create */
-            $this->logger->info("Mandate Create non-serialisable payload was: $body");
+            $this->logger->info("Mandate Create non-serialisable payload was: {$body}");
 
             $message = 'Mandate create data deserialise error';
             $exceptionType = get_class($exception);
 
             return $this->validationError(
                 response: $response,
-                logMessage: "$message: $exceptionType - {$exception->getMessage()}",
+                logMessage: "{$message}: {$exceptionType} - {$exception->getMessage()}",
                 publicMessage: $message,
             );
         }
@@ -122,11 +122,11 @@ class Create extends Action
             return $this->validationError(
                 $response,
                 logMessage: $e->getMessage(),
-                publicMessage: $maxMatchable->isZero() ?
-                        // Strictly speaking there may be *some* match funds available, but less than £3.00 so it's not
-                        // possible to make three matched donations and these funds are effectively unusable for now.
-                    "Sorry, we could not take your regular donation as there are no match funds available." :
-                    "Sorry, we could not take your regular donation as there are not enough match funds available.",
+                publicMessage: $maxMatchable->isZero()
+                    ? // Strictly speaking there may be *some* match funds available, but less than £3.00 so it's not
+                    // possible to make three matched donations and these funds are effectively unusable for now.
+                    'Sorry, we could not take your regular donation as there are no match funds available.'
+                    : 'Sorry, we could not take your regular donation as there are not enough match funds available.',
                 reduceSeverity: false,
                 errorType: ActionError::INSUFFICIENT_MATCH_FUNDS,
                 errorData: ['maxMatchable' => $maxMatchable],
@@ -142,9 +142,9 @@ class Create extends Action
             return $this->validationError(
                 $response,
                 logMessage: $e->getMessage(),
-                publicMessage: 'Sorry, we were not able to collect the payment for your first donation. ' .
-                'No regular giving agreement has been created.' .
-                'Consider using another payment method or contacting your card issuer.',
+                publicMessage: 'Sorry, we were not able to collect the payment for your first donation. '
+                . 'No regular giving agreement has been created.'
+                . 'Consider using another payment method or contacting your card issuer.',
                 reduceSeverity: false,
             );
         } catch (MandateAlreadyExists | CouldNotCancelStripePaymentIntent $exception) {
@@ -175,7 +175,7 @@ class Create extends Action
                 'mandate' => $exception->mandate?->toFrontEndApiModel($charity, $this->clock->now()),
                 'paymentIntent' => [
                     'status' => $intent->status,
-                    'client_secret' =>  $intent->client_secret
+                    'client_secret' => $intent->client_secret,
                 ],
             ]);
         } catch (AccountDetailsMismatch $e) {
@@ -183,14 +183,14 @@ class Create extends Action
             return $this->validationError(
                 $response,
                 logMessage: $e->getMessage(),
-                publicMessage: "Your account information may have changed after you loaded this page. Please refresh and try again.",
+                publicMessage: 'Your account information may have changed after you loaded this page. Please refresh and try again.',
             );
         } catch (CouldNotRetrievePaymentMethod $e) {
             $this->logger->warning("CouldNotRetrievePaymentMethod: {$e->getMessage()}");
             return $this->validationError(
                 $response,
                 logMessage: $e->getMessage(),
-                publicMessage: "Your saved payment method could not be retrieved. Please refresh and try using a different payment method.",
+                publicMessage: 'Your saved payment method could not be retrieved. Please refresh and try using a different payment method.',
             );
         }
 

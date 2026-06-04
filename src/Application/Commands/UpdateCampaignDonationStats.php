@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'matchbot:update-campaign-donation-stats',
-    description: 'Updates CampaignStatistics for every campaign with recent donations'
+    description: 'Updates CampaignStatistics for every campaign with recent donations',
 )]
 class UpdateCampaignDonationStats extends LockingCommand
 {
@@ -44,9 +44,11 @@ class UpdateCampaignDonationStats extends LockingCommand
         $numChanged = 0;
 
         foreach ($campaigns as $campaign) {
-            if ($this->campaignService->regenerateStats($campaign)) {
-                $numChanged++;
+            if (!$this->campaignService->regenerateStats($campaign)) {
+                continue;
             }
+
+            $numChanged++;
         }
 
         $output->writeln(sprintf(
@@ -67,9 +69,11 @@ class UpdateCampaignDonationStats extends LockingCommand
         $numChanged = 0;
 
         foreach ($campaigns as $campaign) {
-            if ($this->campaignService->regenerateStats($campaign)) {
-                $numChanged++;
+            if (!$this->campaignService->regenerateStats($campaign)) {
+                continue;
             }
+
+            $numChanged++;
         }
 
         $output->writeln(sprintf(

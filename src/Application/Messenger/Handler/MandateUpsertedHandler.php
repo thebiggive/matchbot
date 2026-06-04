@@ -45,7 +45,7 @@ readonly class MandateUpsertedHandler
         Assertion::eq([], $this->entityManager->getUnitOfWork()->getIdentityMap());
 
         $uuid = $message->uuid;
-        $this->logger->info("MUH invoked for UUID: $uuid");
+        $this->logger->info("MUH invoked for UUID: {$uuid}");
 
         try {
             $sfId = $this->client->createOrUpdate($message);
@@ -57,14 +57,20 @@ readonly class MandateUpsertedHandler
             // if the mandate did not have an SF ID.
 
             foreach ($donations as $donationInMandate) {
-                Assertion::notNull($donationInMandate->getMandate()?->getSalesforceId(), 'Expected mandate to have SF ID after push');
+                Assertion::notNull(
+                    $donationInMandate->getMandate()?->getSalesforceId(),
+                    'Expected mandate to have SF ID after push',
+                );
                 $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donationInMandate));
             }
         } catch (NotFoundException $_exception) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push mandate to a removed campaign.
-            Assertion::notEq(\MatchBot\Application\Environment::Production, \MatchBot\Application\Environment::current());
+            Assertion::notEq(
+                \MatchBot\Application\Environment::Production,
+                \MatchBot\Application\Environment::current(),
+            );
             $this->logger->info(
-                "Marking 404 campaign Salesforce mandate {$message->uuid} as complete; won't push again."
+                "Marking 404 campaign Salesforce mandate {$message->uuid} as complete; won't push again.",
             );
             $this->setSalesforceFieldsWithRetry($message, null);
 
@@ -72,14 +78,14 @@ readonly class MandateUpsertedHandler
         } catch (BadRequestException | BadResponseException $exception) {
             // no trace needed for these exception types.
             $this->logger->error(sprintf(
-                "MUH: %s on attempt to push mandate %s: %s",
+                'MUH: %s on attempt to push mandate %s: %s',
                 get_class($exception),
                 $uuid,
                 $exception->getMessage(),
             ));
         } catch (\Throwable $exception) {
             $this->logger->error(sprintf(
-                "MUH: Exception %s on attempt to push mandate %s: %s. Trace: %s",
+                'MUH: Exception %s on attempt to push mandate %s: %s. Trace: %s',
                 get_class($exception),
                 $uuid,
                 $exception->getMessage(),
@@ -97,7 +103,7 @@ readonly class MandateUpsertedHandler
      */
     private function setSalesforceFieldsWithRetry(
         MandateUpserted $changeMessage,
-        ?Salesforce18Id $salesforceId
+        ?Salesforce18Id $salesforceId,
     ): void {
         $tries = 0;
         $uuid = $changeMessage->uuid;
@@ -106,7 +112,7 @@ readonly class MandateUpsertedHandler
             try {
                 if ($tries > 0) {
                     /** @psalm-suppress InvalidCast There's a bug analysing do/while w.r.t. $tries, https://github.com/vimeo/psalm/issues/7306 */
-                    $this->logger->info("Retrying setting Salesforce fields for mandate $uuid after $tries tries");
+                    $this->logger->info("Retrying setting Salesforce fields for mandate {$uuid} after {$tries} tries");
                 }
                 $this->setSalesforceFields($uuid, $salesforceId);
                 return;
@@ -133,7 +139,7 @@ readonly class MandateUpsertedHandler
         } while ($tries < self::MAX_SALEFORCE_FIELD_UPDATE_TRIES);
 
         $this->logger->error(
-            "Failed to set Salesforce fields for mandate $uuid after $tries tries"
+            "Failed to set Salesforce fields for mandate {$uuid} after {$tries} tries",
         );
     }
 
@@ -147,13 +153,13 @@ readonly class MandateUpsertedHandler
     {
         $query = $this->entityManager->createQuery(
             <<<'DQL'
-            UPDATE Matchbot\Domain\RegularGivingMandate mandate
-            SET
-                mandate.salesforceId = :salesforceId,
-                mandate.salesforcePushStatus = 'complete',
-                mandate.salesforceLastPush = :now
-            WHERE mandate.uuid = :uuid
-            DQL
+                UPDATE Matchbot\Domain\RegularGivingMandate mandate
+                SET
+                    mandate.salesforceId = :salesforceId,
+                    mandate.salesforcePushStatus = 'complete',
+                    mandate.salesforceLastPush = :now
+                WHERE mandate.uuid = :uuid
+                DQL,
         );
 
         $query->setParameter('now', $this->clock->now());

@@ -4,20 +4,10 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\DonorAccount;
 
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\AssertionFailedException;
-use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
-use MatchBot\Application\LazyAssertionException;
-use MatchBot\Domain\DonorAccount;
-use MatchBot\Domain\DonorAccountRepository;
-use MatchBot\Domain\DonorName;
-use MatchBot\Domain\EmailAddress;
-use MatchBot\Domain\StripeCustomerId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Slim\Exception\HttpBadRequestException;
 
 /**
  * Creates a record that a donor has (or intends to have) an account to transfer funds by bank transfer

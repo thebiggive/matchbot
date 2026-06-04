@@ -4,9 +4,7 @@ namespace MatchBot\Application\Actions\RegularGivingMandate;
 
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\Environment;
 use MatchBot\Application\Security\Security;
-use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\DomainException\BadCommandException;
 use MatchBot\Domain\RegularGivingService;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -22,6 +20,7 @@ class RemovePaymentMethod extends Action
     ) {
         parent::__construct($logger);
     }
+
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {

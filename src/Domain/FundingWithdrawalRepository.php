@@ -17,7 +17,8 @@ class FundingWithdrawalRepository extends EntityRepository
      */
     public function getWithdrawalsTotal(CampaignFunding $campaignFunding): string
     {
-        $qb = $this->getEntityManager()->createQueryBuilder()
+        $qb = $this->getEntityManager()
+            ->createQueryBuilder()
             ->select('SUM(fw.amount)')
             ->from(FundingWithdrawal::class, 'fw')
             ->where('fw.campaignFunding = :campaignFunding')

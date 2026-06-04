@@ -4,14 +4,11 @@ namespace MatchBot\Application\Messenger\Handler;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
-use MatchBot\Domain\Currency;
 use MatchBot\Domain\DonationFundsService;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\MandateCancellationType;
-use MatchBot\Domain\Money;
-use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Domain\StripeCustomerId;
 use Messages\Person;
@@ -58,10 +55,10 @@ readonly class PersonHandler
             StripeCustomerId::of($personMessage->stripe_customer_id),
         );
 
-        if ($donorAccount !== null && ! $personMessage->deleted) {
+        if ($donorAccount !== null && !$personMessage->deleted) {
             $this->logger->info(sprintf('Updating existing Person ID %s', $personMessage->id));
             $donorAccount->updateFromPersonMessage($personMessage);
-        } elseif ($donorAccount === null && ! $personMessage->deleted) {
+        } elseif ($donorAccount === null && !$personMessage->deleted) {
             $this->logger->info(sprintf('Creating new Person ID %s', $personMessage->id));
             $donorAccount = DonorAccount::fromPersonMessage($personMessage);
         } elseif ($donorAccount !== null && $personMessage->deleted) {
@@ -85,7 +82,12 @@ readonly class PersonHandler
             }
             $donorAccountRepo->delete($donorAccount);
 
-            foreach ($regularGivingMandateRepository->allActiveMandatesForDonor($donorAccount->id()) as [$mandate, $_charity]) {
+            foreach (
+                $regularGivingMandateRepository->allActiveMandatesForDonor($donorAccount->id()) as [
+                $mandate,
+                $_charity,
+                ]
+            ) {
                 $mandate->cancel('Donor account deleted', $clock->now(), MandateCancellationType::DonorAccountDeleted);
             }
 

@@ -61,14 +61,14 @@ class UpdateCampaigns extends LockingCommand
                     if ($campaign->getEndDate() < new \DateTime()) {
                         $this->logger->info(sprintf(
                             'Skipping unknown PRODUCTION campaign %s whose end date had passed – charity inactive?',
-                            $salesforceId
+                            $salesforceId,
                         ));
                     } else {
                         // TODO perhaps make this a warning, so it shows on dashboards but not alarm channels, and
                         // also inactivate the Campaign? While we are leaving the data as-is, warning is too noisy.
                         $this->logger->info(sprintf(
                             'Skipping unknown PRODUCTION campaign %s – charity inactive or rejected offer?',
-                            $salesforceId
+                            $salesforceId,
                         ));
                     }
                 } else {
@@ -78,7 +78,9 @@ class UpdateCampaigns extends LockingCommand
             } catch (DomainCurrencyMustNotChangeException $exception) {
                 $output->writeln('Skipping invalid currency change campaign ' . $salesforceId);
             } catch (AssertionFailedException $exception) {
-                $output->writeln('Skipping campaign due to exception:  '  . $exception->getMessage() . ", " .  $salesforceId);
+                $output->writeln(
+                    'Skipping campaign due to exception:  ' . $exception->getMessage() . ', ' . $salesforceId,
+                );
             } catch (TransferException $exception) {
                 $this->logger->info(sprintf(
                     'Retrying campaign %s due to transfer error "%s"',

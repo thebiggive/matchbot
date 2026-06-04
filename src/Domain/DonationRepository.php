@@ -1,11 +1,9 @@
 <?php
 
- namespace MatchBot\Domain;
+namespace MatchBot\Domain;
 
-use DateTime;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use MatchBot\Application\Commands\ExpirePendingMandates;
-use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -33,7 +31,10 @@ interface DonationRepository
      *                      swapped; typically we will choose to swap earlier-collected donations first, and it may
      *                      be that priority funds are used up before we get to the end of the list.
      */
-    public function findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(\DateTimeImmutable $campaignsClosedBefore, \DateTimeImmutable $donationsCollectedAfter,): array;
+    public function findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
+        \DateTimeImmutable $campaignsClosedBefore,
+        \DateTimeImmutable $donationsCollectedAfter,
+    ): array;
 
     /**
      * @return Donation[]
@@ -148,7 +149,11 @@ interface DonationRepository
      * @param Salesforce18Id<Campaign> $campaignId
      * @return list<UuidInterface>
      */
-    public function findPendingByDonorCampaignAndMethod(string $donorStripeId, Salesforce18Id $campaignId, PaymentMethodType $paymentMethodType,): array;
+    public function findPendingByDonorCampaignAndMethod(
+        string $donorStripeId,
+        Salesforce18Id $campaignId,
+        PaymentMethodType $paymentMethodType,
+    ): array;
 
     public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation;
 

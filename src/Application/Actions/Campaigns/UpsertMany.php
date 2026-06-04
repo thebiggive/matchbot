@@ -9,8 +9,6 @@ use JetBrains\PhpStorm\Pure;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Environment;
-use MatchBot\Application\HttpModels\Campaign as CampaignHTTPModel;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CharityRepository;
@@ -22,7 +20,6 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
-use Slim\Exception\HttpNotFoundException;
 use MatchBot\Client;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\Exception\LockConflictedException;
@@ -56,7 +53,7 @@ class UpsertMany extends Action
                 $request->getBody()->getContents(),
                 true,
                 512,
-                \JSON_THROW_ON_ERROR
+                \JSON_THROW_ON_ERROR,
             );
         } catch (\JsonException) {
             throw new HttpBadRequestException($request, 'Cannot parse request body as JSON');
@@ -73,14 +70,14 @@ class UpsertMany extends Action
             $lock = $this->lockFactory->createLock(self::class, autoRelease: true);
             $lock->acquire(blocking: true);
         } catch (LockConflictedException | LockAcquiringException) {
-            $this->logger->error("Could not aquire lock to upsert campaigns");
-            return new JsonResponse("Could not aquire lock to upsert campaigns", 400);
+            $this->logger->error('Could not aquire lock to upsert campaigns');
+            return new JsonResponse('Could not aquire lock to upsert campaigns', 400);
         }
 
         foreach ($multiCampaignData as $campaignData) {
             /** @var Salesforce18Id<Campaign|MetaCampaign> $campaignSfId */
             $campaignSfId = Salesforce18Id::of(
-                $campaignData['id'] ?? throw new HttpBadRequestException($request)
+                $campaignData['id'] ?? throw new HttpBadRequestException($request),
             );
 
             $isMetaCampaign = $campaignData['isMetaCampaign'];
@@ -120,7 +117,9 @@ class UpsertMany extends Action
         $charity = $this->charityRepository->findOneBySalesforceId($charitySfId);
 
         if (!$charity) {
-            $this->logger->warning("Does not have a Charity record with the details: {$charityData['name']} {$charityData['id']} Campaign Details: {$campaignData['title']} {$campaignData['id']}");
+            $this->logger->warning(
+                "Does not have a Charity record with the details: {$charityData['name']} {$charityData['id']} Campaign Details: {$campaignData['title']} {$campaignData['id']}",
+            );
             return;
         }
         // else we DO NOT update the charity here - for efficiency and clarity a separate action should be used to send
@@ -135,10 +134,11 @@ class UpsertMany extends Action
         } else {
             // don't update the charity, won't work if we are updating many at once in parallel and the charity gets updated separatley.
             $this->campaignRepository->updateCampaignFromSFData($campaign, $campaignData, alsoUpdateCharity: false);
-            $this->logger->info("updating campaign {$campaign->getId()} from SF: {$charity->getName()} {$charity->getSalesforceId()}");
+            $this->logger->info(
+                "updating campaign {$campaign->getId()} from SF: {$charity->getName()} {$charity->getSalesforceId()}",
+            );
         }
     }
-
 
     /**
      * @param SFCampaignApiResponse $campaignData
@@ -148,22 +148,30 @@ class UpsertMany extends Action
     {
         $metaCampaign = $this->metaCampaignRepository->findOneBySalesforceId($campaignSfId);
         $slug = MetaCampaignSlug::of(
-            $campaignData['slug'] ?? throw new HttpBadRequestException($request, 'slug required')
+            $campaignData['slug'] ?? throw new HttpBadRequestException($request, 'slug required'),
         );
 
         if (!$metaCampaign) {
             /** @psalm-suppress DocblockTypeContradiction */
             if ($campaignData['campaignFamily'] === null) {
-                $this->logger->error('No campaign family on metacampaign ' . $campaignData['id']  . ' - ' . $slug->slug . ' skipping');
+                $this->logger->error(
+                    'No campaign family on metacampaign ' . $campaignData['id'] . ' - ' . $slug->slug . ' skipping',
+                );
                 return;
             }
             $metaCampaign = MetaCampaign::fromSfCampaignData($slug, $campaignData);
-            $this->logger->info("Saving new meta campaign from SF: {$metaCampaign->getTitle()} {$metaCampaign->getSalesforceId()}");
+            $this->logger->info(
+                "Saving new meta campaign from SF: {$metaCampaign->getTitle()} {$metaCampaign->getSalesforceId()}",
+            );
             $this->entityManager->persist($metaCampaign);
         } else {
             $metaCampaign->updateFromSfData($campaignData);
-            $this->logger->info('Entity state: ' . ($this->entityManager->contains($metaCampaign) ? 'managed' : 'detached'));
-            $this->logger->info("Updating meta campaign {$metaCampaign->getId()} from SF: {$metaCampaign->getTitle()} {$metaCampaign->getSalesforceId()}");
+            $this->logger->info(
+                'Entity state: ' . ( $this->entityManager->contains($metaCampaign) ? 'managed' : 'detached' ),
+            );
+            $this->logger->info(
+                "Updating meta campaign {$metaCampaign->getId()} from SF: {$metaCampaign->getTitle()} {$metaCampaign->getSalesforceId()}",
+            );
         }
     }
 }

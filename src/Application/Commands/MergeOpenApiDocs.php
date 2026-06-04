@@ -2,7 +2,6 @@
 
 namespace MatchBot\Application\Commands;
 
-use OpenApi\Annotations\OpenApi;
 use OpenApi\Generator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -60,7 +59,7 @@ class MergeOpenApiDocs extends Command
             $io->section('Saving merged documentation');
             $outputDir = __DIR__ . '/../../../docs';
             if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
+                mkdir($outputDir, 0o755, true);
             }
 
             $outputPath = $outputDir . '/openapi.yaml';
@@ -140,22 +139,36 @@ class MergeOpenApiDocs extends Command
         }
 
         // Handle other components sections
-        $componentSections = ['responses', 'parameters', 'examples', 'requestBodies', 'headers', 'securitySchemes', 'links', 'callbacks'];
+        $componentSections = [
+            'responses',
+            'parameters',
+            'examples',
+            'requestBodies',
+            'headers',
+            'securitySchemes',
+            'links',
+            'callbacks',
+        ];
         if (isset($attritributes['components']) && is_array($attritributes['components'])) {
             if (!isset($result['components']) || !is_array($result['components'])) {
                 $result['components'] = [];
             }
 
             foreach ($componentSections as $section) {
-                if (isset($attritributes['components'][$section]) && is_array($attritributes['components'][$section])) {
-                    if (!isset($result['components'][$section]) || !is_array($result['components'][$section])) {
-                        $result['components'][$section] = $attritributes['components'][$section];
-                    } else {
-                        $result['components'][$section] = array_merge(
-                            $result['components'][$section],
-                            $attritributes['components'][$section]
-                        );
-                    }
+                if (
+                    !( isset($attritributes['components'][$section])
+                    && is_array($attritributes['components'][$section]) )
+                ) {
+                    continue;
+                }
+
+                if (!isset($result['components'][$section]) || !is_array($result['components'][$section])) {
+                    $result['components'][$section] = $attritributes['components'][$section];
+                } else {
+                    $result['components'][$section] = array_merge(
+                        $result['components'][$section],
+                        $attritributes['components'][$section],
+                    );
                 }
             }
         }

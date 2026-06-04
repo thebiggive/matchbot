@@ -16,8 +16,9 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 readonly class FundTotalUpdatedHandler
 {
-    public function __construct(private Client\Fund $fundClient)
-    {
+    public function __construct(
+        private Client\Fund $fundClient,
+    ) {
     }
 
     public function __invoke(FundTotalUpdated $message): void

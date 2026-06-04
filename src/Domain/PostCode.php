@@ -2,10 +2,7 @@
 
 namespace MatchBot\Domain;
 
-use Doctrine\ORM\Mapping\Embeddable;
-use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\AssertionFailedException;
 
 readonly class PostCode
 {
@@ -19,6 +16,7 @@ readonly class PostCode
      * Much looser to support all postcode formats we know of around the world.
      */
     public const string INTERNATIONAL_VALIDATION_REGEX = '/^[0-9a-zA-Z -]{2,8}$/';
+
     public string $value;
 
     private function __construct(string $value, bool $skipUkSpecificValidation)
@@ -27,7 +25,7 @@ readonly class PostCode
 
         Assertion::betweenLength($value, 2, 8);
 
-        if (! $skipUkSpecificValidation) {
+        if (!$skipUkSpecificValidation) {
             Assertion::regex($value, self::UK_VALIDATION_REGEX);
         } else {
             Assertion::regex($value, self::INTERNATIONAL_VALIDATION_REGEX);

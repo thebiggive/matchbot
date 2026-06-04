@@ -2,13 +2,13 @@
 
 namespace MatchBot\Domain;
 
-use MatchBot\Application\Assertion;
 use MatchBot\Client\Mailer;
 
 class DonationFundsNotifier
 {
-    public function __construct(private Mailer $mailer)
-    {
+    public function __construct(
+        private Mailer $mailer,
+    ) {
     }
 
     /**

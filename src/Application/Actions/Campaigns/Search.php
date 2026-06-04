@@ -26,7 +26,8 @@ class Search extends Action
         parent::__construct($logger);
     }
 
-    #[\Override] protected function action(Request $request, Response $response, array $args): Response
+    #[\Override]
+    protected function action(Request $request, Response $response, array $args): Response
     {
         $params = $request->getQueryParams();
         $sortField = $params['sortField'] ?? 'distanceToTarget';
@@ -57,7 +58,7 @@ class Search extends Action
                     $jsonMatchInListConditions['countries'] = $value;
                     break;
                 default:
-                    // No other params apply a filter using the JSON `salesforceData` field.
+                // No other params apply a filter using the JSON `salesforceData` field.
             }
         }
 
@@ -70,13 +71,13 @@ class Search extends Action
         Assertion::nullOrString($fundSlug);
 
         // Use limit 100 if a higher value requested.
-        $limit = min(100, (int) ($params['limit'] ?? 20));
+        $limit = min(100, (int) ( $params['limit'] ?? 20 ));
 
         try {
             $campaigns = $this->campaignRepository->search(
                 sortField: $sortField,
                 sortDirection: $sortDirection,
-                offset: (int)($params['offset'] ?? 0),
+                offset: (int) ( $params['offset'] ?? 0 ),
                 limit: $limit,
                 metaCampaignSlug: $parentSlug,
                 fundSlug: $fundSlug,
@@ -94,10 +95,14 @@ class Search extends Action
          * Have to then pass through array_values to make sure it produces a JSON array as needed by FE not a JSON
          * object - any missing keys (other than at the end of the list) will make PHP output it as an object.
          */
-        return
-            \array_filter($campaigns, static fn(Campaign $c) => ! $c->isSfDataMissing())
+        return \array_filter($campaigns, static fn(Campaign $c) => !$c->isSfDataMissing())
             |> \array_values(...)
-            |> (fn(array $campaignsWithSfData) => \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData))
-            |> (fn(array $campaignSummaries) => new JsonResponse(['campaignSummaries' => $campaignSummaries], 200));
+            |> ( fn(array $campaignsWithSfData) => \array_map(
+                $this->campaignService->renderCampaignSummary(...),
+                $campaignsWithSfData,
+            ) )
+            |> ( static fn(array $campaignSummaries) => new JsonResponse([
+                'campaignSummaries' => $campaignSummaries,
+            ], 200) );
     }
 }

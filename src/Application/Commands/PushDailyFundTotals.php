@@ -15,7 +15,7 @@ use Symfony\Component\Messenger\RoutableMessageBus;
  */
 #[AsCommand(
     name: 'matchbot:push-daily-fund-totals',
-    description: 'Pushes champion funds used totals to Salesforce, for all associated with open campaigns'
+    description: 'Pushes champion funds used totals to Salesforce, for all associated with open campaigns',
 )]
 class PushDailyFundTotals extends LockingCommand
 {

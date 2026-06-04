@@ -10,10 +10,10 @@ use MatchBot\Application\Assertion;
 readonly class StripePaymentMethodId
 {
     #[Column(type: 'string')]
-    public readonly string $stripePaymentMethodId;
+    public string $stripePaymentMethodId;
 
     private function __construct(
-        string $stripeCustomerId
+        string $stripeCustomerId,
     ) {
         $this->stripePaymentMethodId = $stripeCustomerId;
         Assertion::notEmpty($this->stripePaymentMethodId);
@@ -32,7 +32,7 @@ readonly class StripePaymentMethodId
     /**
      * @psalm-suppress PossiblyUnusedMethod - simple enough to keep even though not used right now.
      */
-    public function equals(StripePaymentMethodId|null $that): bool
+    public function equals(?StripePaymentMethodId $that): bool
     {
         if ($that === null) {
             return false;

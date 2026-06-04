@@ -75,7 +75,7 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
         $expectedHash = hash_hmac(
             'sha256',
             trim($content),
-            $this->sfApiKey
+            $this->sfApiKey,
         );
 
         if ($givenHash !== $expectedHash) {
@@ -86,7 +86,7 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
             $asArray = \json_decode($content, true, flags: JSON_THROW_ON_ERROR);
             \assert(\is_array($asArray));
             /** @var int|null $contentTimestamp */
-            $contentTimestamp =  $asArray['timestamp'] ?? null;
+            $contentTimestamp = $asArray['timestamp'] ?? null;
             Assertion::nullOrNumeric($contentTimestamp);
 
             $currentTimestamp = $this->clock->now()->getTimestamp();

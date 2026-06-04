@@ -60,7 +60,7 @@ class HandleOutOfSyncFunds extends LockingCommand
         $this->addArgument(
             'mode',
             InputArgument::REQUIRED,
-            '"check" to print status information only or "fix" to attempt to restore under-matched funds.'
+            '"check" to print status information only or "fix" to attempt to restore under-matched funds.',
         );
     }
 
@@ -115,11 +115,11 @@ class HandleOutOfSyncFunds extends LockingCommand
 
             // If the sum of FundingWithdrawals is larger, log and count the over-match. No action can safely auto-fix
             // this.
-            $details = "Donation withdrawals $fundingWithdrawalTotal, funding allocations $campaignFundingAllocated";
+            $details = "Donation withdrawals {$fundingWithdrawalTotal}, funding allocations {$campaignFundingAllocated}";
             if ($comparison === -1) {
                 $numFundingsOvermatched++;
                 $overmatchAmount = bcsub($fundingWithdrawalTotal, $campaignFundingAllocated, 2);
-                $output->writeln("Funding {$funding->getId()} is over-matched by $overmatchAmount. $details");
+                $output->writeln("Funding {$funding->getId()} is over-matched by {$overmatchAmount}. {$details}");
                 continue;
             }
 
@@ -130,24 +130,31 @@ class HandleOutOfSyncFunds extends LockingCommand
 
             $undermatchAmount = bcsub($campaignFundingAllocated, $fundingWithdrawalTotal, 2);
 
-            $output->writeln("Funding {$funding->getId()} is under-matched by $undermatchAmount. $details");
+            $output->writeln("Funding {$funding->getId()} is under-matched by {$undermatchAmount}. {$details}");
 
             if ($mode === 'fix') {
-                $newTotal = $this->matchingAdapter->addAmount($funding, $undermatchAmount, null, 'handle-out-of-sync fix');
+                $newTotal = $this->matchingAdapter->addAmount(
+                    $funding,
+                    $undermatchAmount,
+                    null,
+                    'handle-out-of-sync fix',
+                );
 
                 $output->writeln("Released {$undermatchAmount} to funding ID {$funding->getId()}");
-                $output->writeln("New fund total for funding ID {$funding->getId()}: $newTotal");
+                $output->writeln("New fund total for funding ID {$funding->getId()}: {$newTotal}");
             }
         }
 
         $overmatchedDonations = $this->donationRepository->findOverMatchedDonations();
         foreach ($overmatchedDonations as $donation) {
-            $this->logger->error("Donation {$donation->getUuid()} is over-matched, withdrawal of {$donation->getFundingWithdrawalTotal()} for donation of only {$donation->getAmount()}");
+            $this->logger->error(
+                "Donation {$donation->getUuid()} is over-matched, withdrawal of {$donation->getFundingWithdrawalTotal()} for donation of only {$donation->getAmount()}",
+            );
         }
 
         $output->writeln(
-            "Checked $numFundings fundings. Found $numFundingsCorrect with correct allocations, " .
-            "$numFundingsOvermatched over-matched and $numFundingsUndermatched under-matched"
+            "Checked {$numFundings} fundings. Found {$numFundingsCorrect} with correct allocations, "
+            . "{$numFundingsOvermatched} over-matched and {$numFundingsUndermatched} under-matched",
         );
 
         if ($numFundingsOvermatched > 0 || $numFundingsUndermatched > 0) {

@@ -9,13 +9,10 @@ use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Query;
 use GuzzleHttp\Exception\BadResponseException;
-use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
-use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
-use MatchBot\Tests\Domain\DonationServiceTest;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -48,29 +45,29 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         // before it we would have already expired them in a previous run.
         $expireAfter = $now->sub(new \DateInterval('PT1H'));
 
-        if ((int) $now->format('i') % 30 === 0) {
+        if (( (int) $now->format('i') % 30 ) === 0) {
             // once every 30 minutes, try expiring any older donations just in case they were missed, but it shouldn't
             // really be necassary unless this stopped running for some reason.
             $expireAfter = new \DateTimeImmutable('2025-08-05T00:00:00z');
         }
 
-        $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT d.uuid FROM MatchBot\Domain\Donation d
+        $query = $this->getEntityManager()
+            ->createQuery(<<<'DQL'
+                SELECT d.uuid FROM MatchBot\Domain\Donation d
 
-            -- Only select donations with 1+ FWs. We don't need any further info about the FWs.
-            INNER JOIN d.fundingWithdrawals fw
-            WHERE d.donationStatus IN (:expireWithStatuses)
-            AND d.createdAt < :expireBefore
-            AND d.createdAt > :expireAfter
+                -- Only select donations with 1+ FWs. We don't need any further info about the FWs.
+                INNER JOIN d.fundingWithdrawals fw
+                WHERE d.donationStatus IN (:expireWithStatuses)
+                AND d.createdAt < :expireBefore
+                AND d.createdAt > :expireAfter
 
-            -- First of a regular giving series is Pending during 3DS. If we ever make the timeout for
-            -- that longer than the timeout for matching, we still want to ensure matching can't be
-            -- lost while 3DS is in progress.
-            AND d.mandate is null
-            AND fw.releasedAt is null
-            GROUP BY d.id
-            DQL
-        )
+                -- First of a regular giving series is Pending during 3DS. If we ever make the timeout for
+                -- that longer than the timeout for matching, we still want to ensure matching can't be
+                -- lost while 3DS is in progress.
+                AND d.mandate is null
+                AND fw.releasedAt is null
+                GROUP BY d.id
+                DQL)
             ->setParameter('expireWithStatuses', [DonationStatus::Pending->value, DonationStatus::Cancelled->value])
             ->setParameter('expireBefore', $expireBefore)
             ->setParameter('expireAfter', $expireAfter);
@@ -80,8 +77,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         // here rather than take the performance hit of a full query cache clear
         // after every single persisted donation.
         /** @var list<array{uuid: UuidInterface}> $rows */
-        $rows = $query
-            ->disableResultCache()
+        $rows = $query->disableResultCache()
             ->getResult();
 
         return array_map(static fn(array $row): UuidInterface => $row['uuid'], $rows);
@@ -93,25 +89,24 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         \DateTimeImmutable $donationsCollectedAfter,
     ): array {
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT d FROM MatchBot\Domain\Donation d
-            -- Only select donations with 1+ FWs (i.e. some matching).
-            INNER JOIN d.fundingWithdrawals fw
-            INNER JOIN fw.campaignFunding donationCf
-            INNER JOIN donationCf.fund donationFund
-            INNER JOIN d.campaign c
-            -- Join CampaignFundings allocated to campaign `c` with some amount available.
-            INNER JOIN c.campaignFundings availableCf WITH availableCf.amountAvailable > 0
-            INNER JOIN availableCf.fund availableFund
-            WHERE c.endDate < :campaignsClosedBefore
-            AND d.donationStatus IN (:collectedStatuses)
-            AND d.collectedAt > :donationsCollectedAfter
-            -- Only consider CampaignFundings with lower allocationOrder than `fw`'s.
-            AND availableFund.allocationOrder < donationFund.allocationOrder
-            AND fw.releasedAt is null
-            GROUP BY d.id
-            ORDER BY d.id ASC
-        DQL
-        );
+                SELECT d FROM MatchBot\Domain\Donation d
+                -- Only select donations with 1+ FWs (i.e. some matching).
+                INNER JOIN d.fundingWithdrawals fw
+                INNER JOIN fw.campaignFunding donationCf
+                INNER JOIN donationCf.fund donationFund
+                INNER JOIN d.campaign c
+                -- Join CampaignFundings allocated to campaign `c` with some amount available.
+                INNER JOIN c.campaignFundings availableCf WITH availableCf.amountAvailable > 0
+                INNER JOIN availableCf.fund availableFund
+                WHERE c.endDate < :campaignsClosedBefore
+                AND d.donationStatus IN (:collectedStatuses)
+                AND d.collectedAt > :donationsCollectedAfter
+                -- Only consider CampaignFundings with lower allocationOrder than `fw`'s.
+                AND availableFund.allocationOrder < donationFund.allocationOrder
+                AND fw.releasedAt is null
+                GROUP BY d.id
+                ORDER BY d.id ASC
+            DQL);
 
         $query->setParameter('campaignsClosedBefore', $campaignsClosedBefore);
         $query->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES);
@@ -119,26 +114,21 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
 
         // Result caching rationale as per `findWithExpiredMatching()`.
         /** @var Donation[] $donations */
-        $donations = $query
-            ->disableResultCache()
+        return $query->disableResultCache()
             ->getResult();
-
-        return $donations;
     }
 
     #[\Override]
     public function findByUuids(array $uuids): array
     {
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT d FROM MatchBot\Domain\Donation d
-            WHERE d.uuid IN (:uuids)
-            ORDER BY d.createdAt ASC
-DQL);
+                        SELECT d FROM MatchBot\Domain\Donation d
+                        WHERE d.uuid IN (:uuids)
+                        ORDER BY d.createdAt ASC
+            DQL);
         $query->setParameter('uuids', $uuids);
         /** @var Donation[] $donations */
-        $donations = $query->getResult();
-
-        return $donations;
+        return $query->getResult();
     }
 
     #[\Override]
@@ -156,9 +146,10 @@ DQL);
         // the hard requirement that Stripe tell us the donation is Paid. Additionally, we wait for HMRC to tell
         // us we're approved as Agent – for charities new to us claiming Gift Aid, this is likely to be a couple
         // of months as of 2023.
-        $cutoff = (new DateTime('now'))->sub(new \DateInterval('P13D'));
+        $cutoff = new DateTime('now')->sub(new \DateInterval('P13D'));
 
-        $qb = $this->getEntityManager()->createQueryBuilder()
+        $qb = $this->getEntityManager()
+            ->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
             ->innerJoin('d.campaign', 'campaign')
@@ -179,15 +170,15 @@ DQL);
         }
 
         /** @var Donation[] $result */
-        $result = $qb->getQuery()->getResult();
-        return $result;
+        return $qb->getQuery()->getResult();
     }
 
     #[\Override]
     public function findNotFullyMatchedToCampaignsWhichClosedSince(\DateTimeImmutable $closedSinceDate): array
     {
-        $now = (new DateTime('now'));
-        $qb = $this->getEntityManager()->createQueryBuilder()
+        $now = new DateTime('now');
+        $qb = $this->getEntityManager()
+            ->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
             ->join('d.campaign', 'c')
@@ -199,7 +190,7 @@ DQL);
             ->groupBy('d.id')
             ->having(
                 '(SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) IS NULL
-                      OR SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) < d.amount)'
+                      OR SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) < d.amount)',
             ) // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter(
@@ -211,12 +202,10 @@ DQL);
 
         // Result caching rationale as per `findWithExpiredMatching()`.
         /** @var Donation[] $result */
-        $result = $qb->getQuery()
+        return $qb->getQuery()
             ->disableResultCache()
             ->getResult();
-        return $result;
     }
-
 
     /**
      * @psalm-suppress MixedReturnTypeCoercion
@@ -224,7 +213,8 @@ DQL);
     #[\Override]
     public function findRecentNotFullyMatchedToMatchCampaigns(\DateTimeImmutable $sinceDate): array
     {
-        $qb = $this->getEntityManager()->createQueryBuilder()
+        $qb = $this->getEntityManager()
+            ->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
             ->join('d.campaign', 'c')
@@ -235,7 +225,7 @@ DQL);
             ->groupBy('d.id')
             ->having(
                 '(SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) IS NULL 
-                      OR SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) < d.amount)'
+                      OR SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) < d.amount)',
             ) // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter(
@@ -247,26 +237,23 @@ DQL);
         // Result caching rationale as per `findWithExpiredMatching()`, except this is
         // currently used only in the rarer case of manually invoking
         // `RetrospectivelyMatch`.
-        $result = $qb->getQuery()
+        return $qb->getQuery()
             ->disableResultCache()
             ->getResult();
-
-        return $result;
     }
 
     #[\Override]
     public function findWithTransferIdInArray(array $transferIds): array
     {
-        $qb = $this->getEntityManager()->createQueryBuilder()
+        $qb = $this->getEntityManager()
+            ->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
             ->where('d.transferId IN (:transferIds)')
             ->setParameter('transferIds', $transferIds);
 
         /** @var Donation[] $donations */
-        $donations = $qb->getQuery()->getResult();
-
-        return $donations;
+        return $qb->getQuery()->getResult();
     }
 
     #[\Override]
@@ -276,16 +263,15 @@ DQL);
         $sixteenMinutesPrior = $nowish->sub(new \DateInterval('PT16M'));
 
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT
-            COUNT(d.id) as donationCount,
-            SUM(CASE WHEN d.donationStatus IN (:completeStatuses) THEN 1 ELSE 0 END) as completeCount
-            FROM MatchBot\Domain\Donation d
-            LEFT JOIN d.fundingWithdrawals fw
-            WHERE d.createdAt >= :start
-            AND d.createdAt < :end
-            HAVING (SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END )) > 0
-        DQL
-        );
+                SELECT
+                COUNT(d.id) as donationCount,
+                SUM(CASE WHEN d.donationStatus IN (:completeStatuses) THEN 1 ELSE 0 END) as completeCount
+                FROM MatchBot\Domain\Donation d
+                LEFT JOIN d.fundingWithdrawals fw
+                WHERE d.createdAt >= :start
+                AND d.createdAt < :end
+                HAVING (SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END )) > 0
+            DQL);
         $query->setParameter('start', $sixteenMinutesPrior);
         $query->setParameter('end', $oneMinutePrior);
         $query->setParameter(
@@ -302,20 +288,20 @@ DQL);
             return null;
         }
 
-        return (float) ($result['completeCount'] / $result['donationCount']);
+        return (float) ( $result['completeCount'] / $result['donationCount'] );
     }
 
     #[\Override]
     public function countDonationsCreatedInMinuteTo(\DateTimeImmutable $end): int
     {
         $oneMinutePrior = $end->sub(new \DateInterval('PT1M'));
-        $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT COUNT(d.id)
-            FROM MatchBot\Domain\Donation d
-            WHERE d.createdAt >= :start
-            AND d.createdAt < :end
-        DQL
-        )
+        $query = $this->getEntityManager()
+            ->createQuery(<<<'DQL'
+                    SELECT COUNT(d.id)
+                    FROM MatchBot\Domain\Donation d
+                    WHERE d.createdAt >= :start
+                    AND d.createdAt < :end
+                DQL)
             ->setParameter('start', $oneMinutePrior)
             ->setParameter('end', $end);
 
@@ -326,13 +312,13 @@ DQL);
     public function countDonationsCollectedInMinuteTo(\DateTimeImmutable $end): int
     {
         $oneMinutePrior = $end->sub(new \DateInterval('PT1M'));
-        $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT COUNT(d.id)
-            FROM MatchBot\Domain\Donation d
-            WHERE d.collectedAt >= :start
-            AND d.collectedAt < :end
-        DQL
-        )
+        $query = $this->getEntityManager()
+            ->createQuery(<<<'DQL'
+                    SELECT COUNT(d.id)
+                    FROM MatchBot\Domain\Donation d
+                    WHERE d.collectedAt >= :start
+                    AND d.collectedAt < :end
+                DQL)
             ->setParameter('start', $oneMinutePrior)
             ->setParameter('end', $end);
 
@@ -342,14 +328,14 @@ DQL);
     #[\Override]
     public function abandonOldCancelled(): int
     {
-        $twentyMinsAgo = (new DateTime('now'))
-            ->sub(new \DateInterval('PT20M'));
+        $twentyMinsAgo = new DateTime('now')->sub(new \DateInterval('PT20M'));
         $pendingSFPushStatuses = [
             SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE,
             SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE,
         ];
 
-        $qb = $this->getEntityManager()->createQueryBuilder()
+        $qb = $this->getEntityManager()
+            ->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
             ->where('d.donationStatus = :cancelledStatus')
@@ -412,8 +398,10 @@ DQL);
             // Warning for now. SF blips happen, especially in sandboxes. So we think this is bad
             // enough to track on charts to see if volumes increase lots, but not to actively alert
             // on as `.ERROR`.
-            $this->getLogger()->warning("pushSalesforcePending found $count pending items to push to SF, " .
-                'suggests push via Symfony Messenger failed');
+            $this->getLogger()->warning(
+                "pushSalesforcePending found {$count} pending items to push to SF, "
+                . 'suggests push via Symfony Messenger failed',
+            );
 
             $first3OrFewerProxies = array_slice($proxiesToCreate, 0, 3);
             $firstUUIDs = array_map(static fn(Donation $d) => $d->getUuid(), $first3OrFewerProxies);
@@ -453,7 +441,7 @@ DQL);
      */
     private function setSalesforceFieldsWithRetry(
         DonationUpserted $changeMessage,
-        ?Salesforce18Id $salesforceId
+        ?Salesforce18Id $salesforceId,
     ): void {
         $tries = 0;
 
@@ -466,7 +454,9 @@ DQL);
             try {
                 if ($tries > 0) {
                     /** @psalm-suppress InvalidCast There's a bug analysing do/while w.r.t. $tries */
-                    $this->getLogger()->info("Retrying setting Salesforce fields for donation $uuid after $tries tries");
+                    $this->getLogger()->info(
+                        "Retrying setting Salesforce fields for donation {$uuid} after {$tries} tries",
+                    );
                 }
                 $this->setSalesforcePushComplete($uuid, $salesforceId);
                 return;
@@ -493,7 +483,7 @@ DQL);
         } while ($tries < self::MAX_SALEFORCE_FIELD_UPDATE_TRIES);
 
         $this->logError(
-            "Failed to set Salesforce fields for donation $uuid after $tries tries"
+            "Failed to set Salesforce fields for donation {$uuid} after {$tries} tries",
         );
     }
 
@@ -514,13 +504,13 @@ DQL);
         $now = new \DateTimeImmutable('now');
         $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
-            UPDATE Matchbot\Domain\Donation donation
-            SET
-                donation.salesforceId = :salesforceId,
-                donation.salesforcePushStatus = 'complete',
-                donation.salesforceLastPush = :now
-            WHERE donation.uuid = :uuid
-            DQL
+                UPDATE Matchbot\Domain\Donation donation
+                SET
+                    donation.salesforceId = :salesforceId,
+                    donation.salesforcePushStatus = 'complete',
+                    donation.salesforceLastPush = :now
+                WHERE donation.uuid = :uuid
+                DQL,
         );
         $query->setParameter('now', $now);
         $query->setParameter('salesforceId', $salesforceId?->value);
@@ -536,10 +526,10 @@ DQL);
     {
         $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
-            UPDATE Matchbot\Domain\Donation donation
-            SET donation.salesforcePushStatus = :status
-            WHERE donation.uuid = :uuid
-            DQL
+                UPDATE Matchbot\Domain\Donation donation
+                SET donation.salesforcePushStatus = :status
+                WHERE donation.uuid = :uuid
+                DQL,
         );
         $query->setParameter('status', SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
         $query->setParameter('uuid', $donationUUID);
@@ -559,8 +549,8 @@ DQL);
         } catch (NotFoundException) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
             $this->logInfo(
-                "Marking 404 campaign Salesforce donation {$changeMessage->uuid} as complete; " .
-                'will not try to push again.'
+                "Marking 404 campaign Salesforce donation {$changeMessage->uuid} as complete; "
+                . 'will not try to push again.',
             );
             $this->setSalesforceFieldsWithRetry($changeMessage, null);
 
@@ -575,14 +565,14 @@ DQL);
             // We throw a BadRequestException in one SF 500 case, so the actual HTTP code
             // upstream could be either 400 or 500.
             $this->logError(
-                "Pushing Salesforce donation {$changeMessage->uuid} got 400/500: {$exception->getMessage()}, donation snapshot was: $snapshot"
+                "Pushing Salesforce donation {$changeMessage->uuid} got 400/500: {$exception->getMessage()}, donation snapshot was: {$snapshot}",
             );
 
             return;
         } catch (BadResponseException $exception) {
             $this->setSalesforceRePushNeeded($changeMessage->uuid);
             $this->logError(
-                "Pushing Salesforce donation {$changeMessage->uuid} got bad response: {$exception->getMessage()}"
+                "Pushing Salesforce donation {$changeMessage->uuid} got bad response: {$exception->getMessage()}",
             );
 
             return;
@@ -595,19 +585,17 @@ DQL);
     public function findAllCompleteForCustomer(StripeCustomerId $stripeCustomerId): array
     {
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT donation from Matchbot\Domain\Donation donation
-            WHERE donation.pspCustomerId = :pspCustomerId
-            AND donation.donationStatus IN (:succcessStatus)
-            ORDER BY donation.createdAt DESC
-        DQL
-        );
+                SELECT donation from Matchbot\Domain\Donation donation
+                WHERE donation.pspCustomerId = :pspCustomerId
+                AND donation.donationStatus IN (:succcessStatus)
+                ORDER BY donation.createdAt DESC
+            DQL);
 
         $query->setParameter('pspCustomerId', $stripeCustomerId->stripeCustomerId);
         $query->setParameter('succcessStatus', DonationStatus::SUCCESS_STATUSES);
 
         /** @var list<Donation> $result */
-        $result = $query->getResult();
-        return $result;
+        return $query->getResult();
     }
 
     /**
@@ -620,19 +608,17 @@ DQL);
         $preAuthorized = DonationStatus::PreAuthorized->value;
         $active = MandateStatus::Active->value;
         $query = $this->getEntityManager()->createQuery(<<<DQL
-            SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
-            WHERE donation.donationStatus = '$preAuthorized'
-            AND donation.transactionId is null
-            AND donation.preAuthorizationDate <= :atDateTime
-            AND mandate.status = '$active'  
-        DQL
-        );
+                SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
+                WHERE donation.donationStatus = '{$preAuthorized}'
+                AND donation.transactionId is null
+                AND donation.preAuthorizationDate <= :atDateTime
+                AND mandate.status = '{$active}'  
+            DQL);
         $query->setParameter('atDateTime', $atDateTime);
         $query->setMaxResults($maxBatchSize);
 
         /** @var list<Donation> $result */
-        $result = $query->getResult();
-        return $result;
+        return $query->getResult();
     }
 
     #[\Override]
@@ -642,29 +628,26 @@ DQL);
         $active = MandateStatus::Active->value;
 
         $query = $this->getEntityManager()->createQuery(<<<DQL
-            SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
-            WHERE donation.donationStatus = '$preAuthorized'
-            AND mandate.status = '$active'
-            AND donation.preAuthorizationDate <= :atDateTime
-        DQL
-        );
+                SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
+                WHERE donation.donationStatus = '{$preAuthorized}'
+                AND mandate.status = '{$active}'
+                AND donation.preAuthorizationDate <= :atDateTime
+            DQL);
 
         $query->setParameter('atDateTime', $atDateTime);
         $query->setMaxResults($limit);
 
         /** @var list<Donation> $result */
-        $result = $query->getResult();
-        return $result;
+        return $query->getResult();
     }
 
     #[\Override]
     public function maxSequenceNumberForMandate(int $mandateId): ?DonationSequenceNumber
     {
         $query = $this->getEntityManager()->createQuery(<<<DQL
-            SELECT MAX(d.mandateSequenceNumber) from MatchBot\Domain\Donation d join d.mandate m
-            WHERE m.id = :mandate_id 
-        DQL
-        );
+                SELECT MAX(d.mandateSequenceNumber) from MatchBot\Domain\Donation d join d.mandate m
+                WHERE m.id = :mandate_id 
+            DQL);
 
         $query->setParameter('mandate_id', $mandateId);
 
@@ -684,13 +667,12 @@ DQL);
         $pending = DonationStatus::Pending->value;
 
         $query = $this->getEntityManager()->createQuery(<<<DQL
-            SELECT donation.uuid from Matchbot\Domain\Donation donation join donation.campaign c
-            WHERE donation.donationStatus = '$pending'
-            AND donation.paymentMethodType = 'customer_balance'
-            AND c.name = 'Big Give General Donations'
-            AND donation.createdAt < :latestCreationDate
-        DQL
-        );
+                SELECT donation.uuid from Matchbot\Domain\Donation donation join donation.campaign c
+                WHERE donation.donationStatus = '{$pending}'
+                AND donation.paymentMethodType = 'customer_balance'
+                AND c.name = 'Big Give General Donations'
+                AND donation.createdAt < :latestCreationDate
+            DQL);
 
         $query->setParameter('latestCreationDate', $atDateTime->sub($cancelationDelay));
         $query->setMaxResults(100);
@@ -708,13 +690,13 @@ DQL);
         PaymentMethodType $paymentMethodType,
     ): array {
         $query = $this->getEntityManager()->createQuery(<<<DQL
-            SELECT donation.uuid from Matchbot\Domain\Donation donation
-            INNER JOIN donation.campaign campaign
-            WHERE donation.donationStatus = :donationStatus
-            AND donation.pspCustomerId = :donorStripeId
-            AND campaign.salesforceId = :campaignId
-            AND donation.paymentMethodType = :paymentMethodType
-        DQL);
+                SELECT donation.uuid from Matchbot\Domain\Donation donation
+                INNER JOIN donation.campaign campaign
+                WHERE donation.donationStatus = :donationStatus
+                AND donation.pspCustomerId = :donorStripeId
+                AND campaign.salesforceId = :campaignId
+                AND donation.paymentMethodType = :paymentMethodType
+            DQL);
         $query->setParameter('donationStatus', DonationStatus::Pending->value);
         $query->setParameter('donorStripeId', $donorStripeId);
         $query->setParameter('campaignId', $campaignId->value);
@@ -739,33 +721,29 @@ DQL);
         $preAuthorized = DonationStatus::PreAuthorized->value;
 
         $query = $this->getEntityManager()->createQuery(<<<DQL
-            SELECT d from Matchbot\Domain\Donation d JOIN d.mandate m
-            WHERE m.uuid = :mandate_id
-            AND d.donationStatus IN ('$preAuthorized', '$pending')
-        DQL
-        );
+                SELECT d from Matchbot\Domain\Donation d JOIN d.mandate m
+                WHERE m.uuid = :mandate_id
+                AND d.donationStatus IN ('{$preAuthorized}', '{$pending}')
+            DQL);
 
         $query->setParameter('mandate_id', $mandateId);
 
         /** @var list<Donation> $result */
-        $result = $query->getResult();
-        return $result;
+        return $query->getResult();
     }
 
     #[\Override]
     public function findAllForMandate(UuidInterface $mandateId): array
     {
         $query = $this->getEntityManager()->createQuery(<<<DQL
-            SELECT d from Matchbot\Domain\Donation d JOIN d.mandate m
-            WHERE m.uuid = :mandate_id
-        DQL
-        );
+                SELECT d from Matchbot\Domain\Donation d JOIN d.mandate m
+                WHERE m.uuid = :mandate_id
+            DQL);
 
         $query->setParameter('mandate_id', $mandateId);
 
         /** @var list<Donation> $result */
-        $result = $query->getResult();
-        return $result;
+        return $query->getResult();
     }
 
     #[\Override]
@@ -790,18 +768,17 @@ DQL);
         }
 
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT COUNT(d.id)
-            FROM MatchBot\Domain\Donation d
-            WHERE d.campaign = :campaign_id
-            AND d.donationStatus IN (:collectedStatuses)
-        DQL
-        );
+                SELECT COUNT(d.id)
+                FROM MatchBot\Domain\Donation d
+                WHERE d.campaign = :campaign_id
+                AND d.donationStatus IN (:collectedStatuses)
+            DQL);
 
         $query->setParameter('campaign_id', $campaignId);
 
         $query->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES);
 
-        $count = (int)$query->getSingleScalarResult();
+        $count = (int) $query->getSingleScalarResult();
 
         \assert($count >= 0);
 
@@ -812,39 +789,39 @@ DQL);
     public function findOverMatchedDonations(): array
     {
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT d FROM MatchBot\Domain\Donation d
-            LEFT JOIN d.fundingWithdrawals fw
-            GROUP BY d.id
-            HAVING (SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END )) > d.amount
-        DQL
-        );
+                SELECT d FROM MatchBot\Domain\Donation d
+                LEFT JOIN d.fundingWithdrawals fw
+                GROUP BY d.id
+                HAVING (SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END )) > d.amount
+            DQL);
 
         /** @var list<Donation> $result */
-        $result = $query->getResult();
-        return $result;
+        return $query->getResult();
     }
 
     #[\Override]
     public function potentiallyCompetingDonations(Donation $donation): array
     {
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT d FROM MatchBot\Domain\Donation d
-            WHERE d.createdAt > :earliest 
-           AND d.createdAt < :latest
-           and d.campaign = :campaign
-           AND d.donationStatus IN (:incompleteStatuses)
-        DQL
-        );
+                SELECT d FROM MatchBot\Domain\Donation d
+                WHERE d.createdAt > :earliest 
+               AND d.createdAt < :latest
+               and d.campaign = :campaign
+               AND d.donationStatus IN (:incompleteStatuses)
+            DQL);
 
         $query->setParameter('earliest', $donation->getCreatedDateImmutable()->sub(self::expiryDateInterval()));
         $query->setParameter('latest', $donation->getCreatedDateImmutable());
-        $query->setParameter('incompleteStatuses', [DonationStatus::Pending, DonationStatus::PreAuthorized, DonationStatus::Cancelled, DonationStatus::Refunded]);
+        $query->setParameter('incompleteStatuses', [
+            DonationStatus::Pending,
+            DonationStatus::PreAuthorized,
+            DonationStatus::Cancelled,
+            DonationStatus::Refunded,
+        ]);
         $query->setParameter('campaign', $donation->getCampaign());
 
-
         /** @var list<Donation> $result */
-        $result = $query->getResult();
-        return $result;
+        return $query->getResult();
     }
 
     private static function expiryDateInterval(): \DateInterval

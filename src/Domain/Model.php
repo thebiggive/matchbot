@@ -39,6 +39,6 @@ abstract class Model
 
     public function __toString(): string
     {
-        return "Instance of " . get_class($this);
+        return 'Instance of ' . get_class($this);
     }
 }

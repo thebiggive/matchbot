@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -65,7 +64,7 @@ class ClaimGiftAid extends LockingCommand
         }
 
         $numberSent = count($toClaim);
-        $output->writeln("Submitted $numberSent donations to the ClaimBot queue");
+        $output->writeln("Submitted {$numberSent} donations to the ClaimBot queue");
 
         return 0;
     }

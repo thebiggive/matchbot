@@ -28,7 +28,7 @@ class UpdatePaymentMethod extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        if (! $this->environment->isFeatureEnabledRegularGiving()) {
+        if (!$this->environment->isFeatureEnabledRegularGiving()) {
             throw new HttpNotFoundException($request);
         }
 
@@ -39,15 +39,17 @@ class UpdatePaymentMethod extends Action
                 $request->getBody()->getContents(),
                 true,
                 512,
-                \JSON_THROW_ON_ERROR
+                \JSON_THROW_ON_ERROR,
             );
             \assert(is_array($requestBody));
         } catch (\JsonException) {
             throw new HttpBadRequestException($request, 'Cannot parse request body as JSON');
         }
 
-        $paymentMethodId = $requestBody['paymentMethodId']
-            ?? throw new HttpBadRequestException($request, 'Missing payment method id');
+        $paymentMethodId = $requestBody['paymentMethodId'] ?? throw new HttpBadRequestException(
+            $request,
+            'Missing payment method id',
+        );
         \assert(is_string($paymentMethodId));
 
         $methodId = StripePaymentMethodId::of($paymentMethodId);

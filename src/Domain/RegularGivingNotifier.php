@@ -4,7 +4,6 @@ namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Email\EmailMessage;
-use MatchBot\Application\Environment;
 use MatchBot\Client\Mailer;
 use Psr\Clock\ClockInterface;
 
@@ -12,11 +11,13 @@ class RegularGivingNotifier
 {
     /** e.g. "29 October 2025, 11:47 GMT" */
     public const string TIMESTAMP_FORMAT = 'j F Y, H:i T';
+
     private \DateTimeZone $tz;
+
     public function __construct(
         private readonly Mailer $mailer,
         private readonly DonorAccountRepository $donorAccountRepository,
-        private readonly ClockInterface $clock
+        private readonly ClockInterface $clock,
     ) {
         $this->tz = new \DateTimeZone('Europe/London');
     }
@@ -46,7 +47,9 @@ class RegularGivingNotifier
                 'campaignThankYouMessage' => $campaign->getThankYouMessage(),
                 'signupDate' => $signUpDate->setTimezone($this->tz)->format(self::TIMESTAMP_FORMAT),
                 'schedule' => $mandate->describeSchedule(),
-                'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->setTimezone($this->tz)->format('j F Y'),
+                'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())
+                    ->setTimezone($this->tz)
+                    ->format('j F Y'),
                 'amount' => $mandate->getDonationAmount()->format(),
                 'giftAidValue' => $mandate->getGiftAidAmount()->format(),
                 'totalIncGiftAid' => $mandate->totalIncGiftAid()->format(),
@@ -54,12 +57,11 @@ class RegularGivingNotifier
                 'firstDonation' => $this->donationToConfirmationEmailFields(
                     $firstDonation,
                     $charity,
-                    $campaign
-                )
-            ]
+                    $campaign,
+                ),
+            ],
         ));
     }
-
 
     /**
      * Sends an email to notify donor that a payment failed collecting for this regular giving donation.
@@ -72,7 +74,7 @@ class RegularGivingNotifier
         Assertion::notNull($mandate);
 
         $donor = $this->donorAccountRepository->findByPersonId(
-            $donation->getDonorId() ?? throw new \Exception('Donation missing Donor ID')
+            $donation->getDonorId() ?? throw new \Exception('Donation missing Donor ID'),
         );
         Assertion::notNull($donor);
 
@@ -102,7 +104,7 @@ class RegularGivingNotifier
     private function donationToConfirmationEmailFields(
         Donation $firstDonation,
         Charity $charity,
-        Campaign $campaign
+        Campaign $campaign,
     ): array {
         $firstDonationCollectedAt = $firstDonation->getCollectedAt();
 
@@ -117,7 +119,7 @@ class RegularGivingNotifier
             'matchedAmount' => $firstDonation->getFundingWithdrawalTotal(),
             'statementReference' => $campaign->getCharity()->getStatementDescriptor(),
             'giftAidAmountClaimed' => $firstDonation->getGiftAidValue(),
-            'totalCharityValueAmount' => $firstDonation->totalCharityValueAmount()
+            'totalCharityValueAmount' => $firstDonation->totalCharityValueAmount(),
         ];
     }
 }

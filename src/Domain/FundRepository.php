@@ -97,7 +97,7 @@ class FundRepository extends SalesforceReadProxyRepository
                     campaign: $campaign,
                     at: $at,
                     fundId: $fundData['id'],
-                    campaignSFId: $campaign->getSalesforceId()
+                    campaignSFId: $campaign->getSalesforceId(),
                 );
             } else {
                 // Not a previously existing campaign -> create one and set balances without checking for existing ones.
@@ -119,8 +119,10 @@ class FundRepository extends SalesforceReadProxyRepository
             } catch (UniqueConstraintViolationException $exception) {
                 // Somebody else created the specific funding -> proceed without modifying it.
                 $this->logError(
-                    'Skipping campaign funding create as constraint failed with campaign ' .
-                    ($campaign->getId() ?? '[unknown]') . ', fund ' . ($fund->getId() ?? -1)
+                    'Skipping campaign funding create as constraint failed with campaign '
+                    . ( $campaign->getId() ?? '[unknown]' )
+                    . ', fund '
+                    . ( $fund->getId() ?? -1 ),
                 );
             }
 
@@ -182,15 +184,13 @@ class FundRepository extends SalesforceReadProxyRepository
         $slug = $fundData['slug'];
         $type = $fundData['type'];
         $id = $fundData['id'];
-        $fund = new Fund(
+        return new Fund(
             currencyCode: $currencyCode,
             name: $name,
             slug: $slug,
             salesforceId: Salesforce18Id::ofFund($id),
             fundType: FundType::from($type),
         );
-
-        return $fund;
     }
 
     /**
@@ -198,26 +198,27 @@ class FundRepository extends SalesforceReadProxyRepository
      * @param DateTimeImmutable $closedSinceDate Typically 1 hour ago as determined at the point retro match script started
      * @return Fund[]
      */
-    public function findForCampaignsClosedSince(DateTimeImmutable $closedBeforeDate, DateTimeImmutable $closedSinceDate): array
-    {
+    public function findForCampaignsClosedSince(
+        DateTimeImmutable $closedBeforeDate,
+        DateTimeImmutable $closedSinceDate,
+    ): array {
         $query = <<<EOT
-            SELECT fund FROM MatchBot\Domain\Fund fund
-            JOIN fund.campaignFundings campaignFunding
-            JOIN campaignFunding.campaigns campaign
-            WHERE
-                campaign.endDate < :closedBeforeDate AND
-                campaign.endDate > :closedSinceDate
-            GROUP BY fund
-EOT;
+                        SELECT fund FROM MatchBot\Domain\Fund fund
+                        JOIN fund.campaignFundings campaignFunding
+                        JOIN campaignFunding.campaigns campaign
+                        WHERE
+                            campaign.endDate < :closedBeforeDate AND
+                            campaign.endDate > :closedSinceDate
+                        GROUP BY fund
+            EOT;
 
         /** @var Fund[] $result */
-        $result = $this->getEntityManager()->createQuery($query)
+        return $this->getEntityManager()
+            ->createQuery($query)
             ->setParameter('closedBeforeDate', $closedBeforeDate)
             ->setParameter('closedSinceDate', $closedSinceDate)
             ->disableResultCache()
             ->getResult();
-
-        return $result;
     }
 
     /**
@@ -228,23 +229,22 @@ EOT;
     {
         $eightDaysPrior = $openNearDate->sub(new DateInterval('P8D'));
         $query = <<<EOT
-            SELECT fund FROM MatchBot\Domain\Fund fund
-            JOIN fund.campaignFundings campaignFunding
-            JOIN campaignFunding.campaigns campaign
-            WHERE
-                campaign.startDate < :latestStart AND
-                campaign.endDate > :earliestEnd
-            GROUP BY fund
-        EOT;
+                SELECT fund FROM MatchBot\Domain\Fund fund
+                JOIN fund.campaignFundings campaignFunding
+                JOIN campaignFunding.campaigns campaign
+                WHERE
+                    campaign.startDate < :latestStart AND
+                    campaign.endDate > :earliestEnd
+                GROUP BY fund
+            EOT;
 
         /** @var Fund[] $result */
-        $result = $this->getEntityManager()->createQuery($query)
+        return $this->getEntityManager()
+            ->createQuery($query)
             ->setParameter('latestStart', $openNearDate)
             ->setParameter('earliestEnd', $eightDaysPrior)
             ->disableResultCache()
             ->getResult();
-
-        return $result;
     }
 
     private function getCampaignFundingRepository(): CampaignFundingRepository
@@ -258,19 +258,18 @@ EOT;
     public function findOldTestPledges(DateTimeImmutable $olderThan): array
     {
         $query = <<<DQL
-            SELECT fund FROM MatchBot\Domain\Fund fund
-            WHERE
-                fund.createdAt < :olderThan AND
-                fund.fundType IN (:fundTypes)
-        DQL;
+                SELECT fund FROM MatchBot\Domain\Fund fund
+                WHERE
+                    fund.createdAt < :olderThan AND
+                    fund.fundType IN (:fundTypes)
+            DQL;
 
         /** @var Fund[] $result */
-        $result = $this->getEntityManager()->createQuery($query)
+        return $this->getEntityManager()
+            ->createQuery($query)
             ->setParameter('olderThan', $olderThan)
             ->setParameter('fundTypes', [FundType::Pledge, FundType::TopupPledge])
             ->getResult();
-
-        return $result;
     }
 
     /**
@@ -282,18 +281,24 @@ EOT;
      *
      * @return bool Whether anything changed substantively. Use to decide about e.g. stats regeneration.
      */
-    private function applyFundBalanceChange(string $amountForCampaign, CampaignFunding $campaignFunding, Campaign $campaign, DateTimeImmutable $at, string $fundId, string $campaignSFId): bool
-    {
+    private function applyFundBalanceChange(
+        string $amountForCampaign,
+        CampaignFunding $campaignFunding,
+        Campaign $campaign,
+        DateTimeImmutable $at,
+        string $fundId,
+        string $campaignSFId,
+    ): bool {
         $increaseInAmount = bcsub($amountForCampaign, $campaignFunding->getAmount(), 2);
         if ($this->matchingAdapter === null) {
-            throw new \Exception("Matching Adapter not set");
+            throw new \Exception('Matching Adapter not set');
         }
 
         // No change
         if (bccomp($increaseInAmount, '0.00', 2) === 0) {
             $this->getLogger()->info(
-                "Campaign Funding ID {$campaignFunding->getId()} balance was already £{$amountForCampaign} " .
-                "for campaign {$campaignSFId} and fund SF ID {$fundId}"
+                "Campaign Funding ID {$campaignFunding->getId()} balance was already £{$amountForCampaign} "
+                . "for campaign {$campaignSFId} and fund SF ID {$fundId}",
             );
 
             return false;
@@ -306,12 +311,12 @@ EOT;
                 funding: $campaignFunding,
                 amount: $increaseInAmount,
                 donationId: null,
-                extraComment: 'applyFundBalanceChange'
+                extraComment: 'applyFundBalanceChange',
             );
 
             $this->getLogger()->info(
-                "Campaign Funding ID {$campaignFunding->getId()} balance increased " .
-                "£{$increaseInAmount} to £{$newTotal}"
+                "Campaign Funding ID {$campaignFunding->getId()} balance increased "
+                . "£{$increaseInAmount} to £{$newTotal}",
             );
 
             $campaignFunding->setAmount($amountForCampaign);
@@ -325,8 +330,8 @@ EOT;
 
         if (!self::reductionsAreAllowed($campaign, $campaignFunding, $at)) {
             $this->getLogger()->error(
-                "Campaign Funding ID {$campaignFunding->getId()} balance could not be decreased by " .
-                "£{$decreaseInAmount}. Salesforce Fund ID {$fundId} as campaign {$campaignSFId} opened in past"
+                "Campaign Funding ID {$campaignFunding->getId()} balance could not be decreased by "
+                . "£{$decreaseInAmount}. Salesforce Fund ID {$fundId} as campaign {$campaignSFId} opened in past",
             );
 
             return false;
@@ -341,8 +346,10 @@ EOT;
         );
 
         $this->getLogger()->info(
-            "Campaign Funding ID {$campaignFunding->getId()} balance decreased " .
-            "£" . bcmul($decreaseInAmount, '-1', 2) . " to £{$newTotal}"
+            "Campaign Funding ID {$campaignFunding->getId()} balance decreased "
+            . '£'
+            . bcmul($decreaseInAmount, '-1', 2)
+            . " to £{$newTotal}",
         );
 
         $campaignFunding->setAmount($amountForCampaign);
@@ -361,8 +368,11 @@ EOT;
      *    migration was run *before* a Salesforce data change. Follow the process at {@link https://youneedawiki.com/app/page/1aktyZ90uoX-nuAYW7mxPhlDLWb902FLV?p=1AR_eRWSQCFYUnvPWxf_uBW6Yz0yePCo0}
      *    to avoid creating data inconsistencies.
      */
-    public static function reductionsAreAllowed(Campaign $campaign, CampaignFunding $campaignFunding, DateTimeImmutable $at): bool
-    {
+    public static function reductionsAreAllowed(
+        Campaign $campaign,
+        CampaignFunding $campaignFunding,
+        DateTimeImmutable $at,
+    ): bool {
         if ($campaign->getStartDate() > $at) {
             return true;
         }

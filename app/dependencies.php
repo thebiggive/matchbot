@@ -105,7 +105,7 @@ use Symfony\Contracts\Cache\CacheInterface as SymfonyCacheInterface;
 
 // phpcs:disable PSR1.Files.SideEffects
 // `use` isn't supported so hard to replace a constant here with a local variable.
-if (! defined('DEPENDENCY_CONSTANTS_DEFINED')) {
+if (!defined('DEPENDENCY_CONSTANTS_DEFINED')) {
     define('DONATION_CREATION_RATE_LIMITER_FACTORY_KEY', 'donation-creation-rate-limiter-factory');
     define('NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY', 'new-card-usage-rate-limiter-factory');
     define('DEPENDENCY_CONSTANTS_DEFINED', true);
@@ -176,7 +176,9 @@ return function (ContainerBuilder $containerBuilder) {
             // without a listener like this.
             // https://symfony.com/doc/current/components/console/events.html#the-consoleevents-error-event
             $logger = $c->get(LoggerInterface::class);
-            $eventDispatcher->addListener(ConsoleEvents::ERROR, function (ConsoleErrorEvent $event) use ($logger): void {
+            $eventDispatcher->addListener(ConsoleEvents::ERROR, function (ConsoleErrorEvent $event) use (
+                $logger,
+            ): void {
                 $logger->error(sprintf(
                     'Exception running command %s. Code %d: %s',
                     $event->getCommand()?->getName() ?? '[unknown]',
@@ -206,7 +208,7 @@ return function (ContainerBuilder $containerBuilder) {
 
         SlackChannelChatterFactory::class => static function (ContainerInterface $c): SlackChannelChatterFactory {
             return new SlackChannelChatterFactory(
-                $c->get(Settings::class)->notifier['slack']['api_token']
+                $c->get(Settings::class)->notifier['slack']['api_token'],
             );
         },
 
@@ -289,7 +291,6 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Logger::class => function (ContainerInterface $c): Logger {
-
             $commitId = $c->get('commit-id');
             \assert(is_string($commitId));
 
@@ -310,11 +311,12 @@ return function (ContainerBuilder $containerBuilder) {
             $handler = new StreamHandler($loggerSettings['path'], $loggerSettings['level']);
             $logger->pushHandler($handler);
 
-            $logger->pushProcessor(new class ($commitId) implements Monolog\Processor\ProcessorInterface
-            {
-                public function __construct(private string $commit_id)
-                {
+            $logger->pushProcessor(new class ($commitId) implements Monolog\Processor\ProcessorInterface {
+                public function __construct(
+                    private string $commit_id,
+                ) {
                 }
+
                 #[\Override]
                 public function __invoke(array $record)
                 {
@@ -332,14 +334,17 @@ return function (ContainerBuilder $containerBuilder) {
 
             if ($alarmChannelName) {
                 $logger->pushHandler(
-                    new SlackHandler($c->get(SlackChannelChatterFactory::class)->makeChatter($alarmChannelName), $logger)
+                    new SlackHandler(
+                        $c->get(SlackChannelChatterFactory::class)->makeChatter($alarmChannelName),
+                        $logger,
+                    ),
                 );
             }
 
             return $logger;
         },
 
-        LoggerInterface::class => fn (ContainerInterface $c): LoggerInterface => $c->get(Logger::class),
+        LoggerInterface::class => fn(ContainerInterface $c): LoggerInterface => $c->get(Logger::class),
 
         Environment::class => function (ContainerInterface $_c): Environment {
             /** @psalm-suppress PossiblyFalseArgument - we expect APP_ENV to be set everywhere */
@@ -360,7 +365,7 @@ return function (ContainerBuilder $containerBuilder) {
                     // how often they can create new donations once the initial allowance is used up.
                     'rate' => ['interval' => '30 seconds'],
                 ],
-                storage: $c->get(RateLimiterStorage::class)
+                storage: $c->get(RateLimiterStorage::class),
             );
         },
 
@@ -373,7 +378,7 @@ return function (ContainerBuilder $containerBuilder) {
                     'limit' => 5,
                     'rate' => ['interval' => '30 minutes'],
                 ],
-                storage: $c->get(RateLimiterStorage::class)
+                storage: $c->get(RateLimiterStorage::class),
             );
         },
 
@@ -381,14 +386,13 @@ return function (ContainerBuilder $containerBuilder) {
             return new RedisMatchingStorage($c->get(Redis::class));
         },
 
-        Matching\Adapter::class =>
-            static function (ContainerInterface $c): Matching\Adapter {
-                return new Matching\Adapter(
-                    storage: $c->get(RealTimeMatchingStorage::class),
-                    logger: $c->get(LoggerInterface::class),
-                    clock: $c->get(\Psr\Clock\ClockInterface::class),
-                );
-            },
+        Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
+            return new Matching\Adapter(
+                storage: $c->get(RealTimeMatchingStorage::class),
+                logger: $c->get(LoggerInterface::class),
+                clock: $c->get(\Psr\Clock\ClockInterface::class),
+            );
+        },
 
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
             $logger = $c->get(LoggerInterface::class);
@@ -425,10 +429,14 @@ return function (ContainerBuilder $containerBuilder) {
             $handleMiddleware = new HandleMessageMiddleware(new HandlersLocator(
                 /** We lazy-load the handlers from the container to avoid circular dependencies. */
                 [
-                    DonationMatchingShouldBeChecked::class => [fn($msg) => $c->get(DonationMatchCheckHandler::class)($msg)],
+                    DonationMatchingShouldBeChecked::class => [
+                        fn($msg) => $c->get(DonationMatchCheckHandler::class)($msg),
+                    ],
                     Messages\Donation::class => [fn($msg) => $c->get(GiftAidResultHandler::class)($msg)],
                     Messages\Person::class => [fn($msg) => $c->get(PersonHandler::class)($msg)],
-                    Messages\EmailVerificationToken::class => [fn($msg) => $c->get(EmailVerificationTokenHandler::class)($msg)],
+                    Messages\EmailVerificationToken::class => [
+                        fn($msg) => $c->get(EmailVerificationTokenHandler::class)($msg),
+                    ],
                     StripePayout::class => [fn($msg) => $c->get(StripePayoutHandler::class)($msg)],
                     DonationUpserted::class => [fn($msg) => $c->get(DonationUpsertedHandler::class)($msg)],
                     MandateUpserted::class => [fn($msg) => $c->get(MandateUpsertedHandler::class)($msg)],
@@ -437,17 +445,15 @@ return function (ContainerBuilder $containerBuilder) {
             ));
             $handleMiddleware->setLogger($logger);
 
-            $messageBus = new MessageBus([
+            return new MessageBus([
                 new AddFifoStampMiddleware(),
                 new AddOrLogMessageId($logger),
                 $sendMiddleware,
                 $handleMiddleware,
             ]);
-
-            return $messageBus;
         },
 
-        'commit-id' => static fn(ContainerInterface $_c): string => require __DIR__ . "/../.build-commit-id.php",
+        'commit-id' => static fn(ContainerInterface $_c): string => require __DIR__ . '/../.build-commit-id.php',
 
         RateLimiterStorage::class => function (ContainerInterface $c): RateLimiterStorage {
             return new CacheStorage(new RedisCacheAdapter($c->get(Redis::class)));
@@ -467,14 +473,14 @@ return function (ContainerBuilder $containerBuilder) {
                 $redis->connect($settings->redis['host']);
                 $cacheAdapter = new RedisCacheAdapter(
                     redis: $redis,
-                    namespace: "matchbot-{$settings->appEnv}-{$commitId}"
+                    namespace: "matchbot-{$settings->appEnv}-{$commitId}",
                 );
             } catch (RedisException $exception) {
                 // This essentially means Doctrine is not using a cache. `/ping` should fail separately based on
                 // Redis being down whenever this happens, so we should find out without relying on this warning log.
                 $logger = $c->get(LoggerInterface::class);
                 $logger->warning(
-                    'Doctrine falling back to array cache - Redis host ' . $c->get(Settings::class)->redis['host']
+                    'Doctrine falling back to array cache - Redis host ' . $c->get(Settings::class)->redis['host'],
                 );
                 $logger->error(sprintf(
                     'Doctrine bootstrap error %s: %s',
@@ -499,11 +505,10 @@ return function (ContainerBuilder $containerBuilder) {
             $config->addCustomStringFunction('MATCH', \DoctrineExtensions\Query\Mysql\MatchAgainst::class);
             $config->addCustomStringFunction('FIELD', \DoctrineExtensions\Query\Mysql\Field::class);
 
-
             $config->enableNativeLazyObjects(true);
 
             $config->setMetadataDriverImpl(
-                new ORM\Mapping\Driver\AttributeDriver($settings->doctrine['metadata_dirs'])
+                new ORM\Mapping\Driver\AttributeDriver($settings->doctrine['metadata_dirs']),
             );
 
             // Ensure our custom SchemaManager is used by Doctrine tooling
@@ -516,7 +521,7 @@ return function (ContainerBuilder $containerBuilder) {
                     if ($platform instanceof AbstractMySQLPlatform) {
                         return new \MatchBot\Application\CustomMySQLSchemaManager($connection, $platform);
                     }
-                    return (new \Doctrine\DBAL\Schema\DefaultSchemaManagerFactory())->createSchemaManager($connection);
+                    return new \Doctrine\DBAL\Schema\DefaultSchemaManagerFactory()->createSchemaManager($connection);
                 }
             });
 
@@ -562,16 +567,17 @@ return function (ContainerBuilder $containerBuilder) {
             return $redis;
         },
 
-        ORM\EntityManager::class =>  static function (ContainerInterface $c): EntityManager {
+        ORM\EntityManager::class => static function (ContainerInterface $c): EntityManager {
             // DBAL configuration to ensure our custom SchemaManager is used even in CLI tooling
             $dbalConfig = new \Doctrine\DBAL\Configuration();
 
             // Only set schema assets filter for ORM schema tool commands, not for migrations
             if (defined('RUNNING_DOCTRINE_ORM_SCHEMA_TOOL') && RUNNING_DOCTRINE_ORM_SCHEMA_TOOL) {
                 $dbalConfig->setSchemaAssetsFilter(
-                    static fn (string|AbstractNamedObject|AbstractOptionallyNamedObject $asset): bool =>
+                    static fn(string|AbstractNamedObject|AbstractOptionallyNamedObject $asset): bool => (
                         // shouldn't reference it.
-                        (is_string($asset) ? $asset : $asset->getObjectName()) !== 'doctrine_migration_versions'
+                        ( is_string($asset) ? $asset : $asset->getObjectName() ) !== 'doctrine_migration_versions'
+                    ),
                 );
             }
 
@@ -584,18 +590,17 @@ return function (ContainerBuilder $containerBuilder) {
                     if ($platform instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
                         return new \MatchBot\Application\CustomMySQLSchemaManager($connection, $platform);
                     }
-                    return (new \Doctrine\DBAL\Schema\DefaultSchemaManagerFactory())->createSchemaManager($connection);
+                    return new \Doctrine\DBAL\Schema\DefaultSchemaManagerFactory()->createSchemaManager($connection);
                 }
             });
 
-
             $connection = DBALDriverManager::getConnection(
                 // @phpstan-ignore argument.type (DBAL docblock doesn't explicitly allow the platform key but it works for now)
-                $c->get(Settings::class)->doctrine['connection'] +
-                [
+                $c->get(Settings::class)->doctrine['connection']
+                + [
                     'platform' => new \MatchBot\Application\CustomMysqlPlatform(),
                 ],
-                $dbalConfig
+                $dbalConfig,
             );
 
             $config = $c->get(ORM\Configuration::class);
@@ -665,7 +670,7 @@ return function (ContainerBuilder $containerBuilder) {
                 secretKey: $settings->ryft['secretKey'],
                 client: $c->get(\GuzzleHttp\Client::class),
                 environment: $c->get(Environment::class),
-                log: $c->get(LoggerInterface::class)
+                log: $c->get(LoggerInterface::class),
             );
         },
 
@@ -678,68 +683,65 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         ClockInterface::class => fn() => new NativeClock(),
-        Psr\Clock\ClockInterface::class  => fn() => new NativeClock(),
+        Psr\Clock\ClockInterface::class => fn() => new NativeClock(),
 
         EventDispatcherInterface::class => fn() => new EventDispatcher(),
 
-        Auth\SalesforceAuthMiddleware::class =>
-            function (ContainerInterface $c) {
-                return new Auth\SalesforceAuthMiddleware(
-                    sfApiKey: $c->get(Settings::class)->salesforce['apiKey'],
-                    logger: $c->get(LoggerInterface::class),
-                    clock: $c->get(ClockInterface::class),
-                );
-            },
+        Auth\SalesforceAuthMiddleware::class => function (ContainerInterface $c) {
+            return new Auth\SalesforceAuthMiddleware(
+                sfApiKey: $c->get(Settings::class)->salesforce['apiKey'],
+                logger: $c->get(LoggerInterface::class),
+                clock: $c->get(ClockInterface::class),
+            );
+        },
 
-        DonationNotifier::class =>
-            static function (ContainerInterface $c): DonationNotifier {
-                $settings = $c->get(Settings::class);
-                $donateSettings = $settings->donate;
-                $donateBaseUri = $donateSettings['baseUri'];
+        DonationNotifier::class => static function (ContainerInterface $c): DonationNotifier {
+            $settings = $c->get(Settings::class);
+            $donateSettings = $settings->donate;
+            $donateBaseUri = $donateSettings['baseUri'];
 
-                return new DonationNotifier(
-                    mailer: $c->get(Client\Mailer::class),
-                    emailVerificationTokenRepository: $c->get(EmailVerificationTokenRepository::class),
-                    clock: $c->get(ClockInterface::class),
-                    donateBaseUri: $donateBaseUri,
-                );
-            },
+            return new DonationNotifier(
+                mailer: $c->get(Client\Mailer::class),
+                emailVerificationTokenRepository: $c->get(EmailVerificationTokenRepository::class),
+                clock: $c->get(ClockInterface::class),
+                donateBaseUri: $donateBaseUri,
+            );
+        },
 
-        DonationService::class =>
-            static function (ContainerInterface $c): DonationService {
+        DonationService::class => static function (ContainerInterface $c): DonationService {
             /**
              * @var ChatterInterface $chatter
              * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
              * is final and does not implement our custom interface.
              */
-                $chatter = $c->get(StripeChatterInterface::class); // @phpstan-ignore varTag.type
+            $chatter = $c->get(StripeChatterInterface::class); // @phpstan-ignore varTag.type
 
-                $creationRateLimiterFactory = $c->get(DONATION_CREATION_RATE_LIMITER_FACTORY_KEY);
-                \assert($creationRateLimiterFactory instanceof RateLimiterFactory);
+            $creationRateLimiterFactory = $c->get(DONATION_CREATION_RATE_LIMITER_FACTORY_KEY);
+            \assert($creationRateLimiterFactory instanceof RateLimiterFactory);
 
-                $confirmRateLimiterFactory = $c->get(NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY);
-                \assert($confirmRateLimiterFactory instanceof RateLimiterFactory);
-                return new DonationService(
-                    allocator: $c->get(Matching\Allocator::class),
-                    donationRepository: $c->get(DonationRepository::class),
-                    campaignRepository: $c->get(CampaignRepository::class),
-                    logger: $c->get(LoggerInterface::class),
-                    entityManager: $c->get(EntityManagerInterface::class),
-                    stripe: $c->get(\MatchBot\Client\Stripe::class),
-                    matchingAdapter: $c->get(Matching\Adapter::class),
-                    chatter: $chatter,
-                    clock: $c->get(ClockInterface::class),
-                    creationRateLimiterFactory: $creationRateLimiterFactory,
-                    donorAccountRepository: $c->get(DonorAccountRepository::class),
-                    bus: $c->get(RoutableMessageBus::class),
-                    donationNotifier: $c->get(DonationNotifier::class),
-                    campaignService: $c->get(CampaignService::class),
-                    redis: $c->get(Redis::class),
-                    confirmRateLimitFactory: $confirmRateLimiterFactory,
-                    regularGivingNotifier: $c->get(RegularGivingNotifier::class),
-                    ryftClient: $c->get(RyftClient::class),
-                );
-            },
+            $confirmRateLimiterFactory = $c->get(NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY);
+            \assert($confirmRateLimiterFactory instanceof RateLimiterFactory);
+            return new DonationService(
+                allocator: $c->get(Matching\Allocator::class),
+                donationRepository: $c->get(DonationRepository::class),
+                campaignRepository: $c->get(CampaignRepository::class),
+                logger: $c->get(LoggerInterface::class),
+                entityManager: $c->get(EntityManagerInterface::class),
+                stripe: $c->get(\MatchBot\Client\Stripe::class),
+                matchingAdapter: $c->get(Matching\Adapter::class),
+                chatter: $chatter,
+                clock: $c->get(ClockInterface::class),
+                creationRateLimiterFactory: $creationRateLimiterFactory,
+                donorAccountRepository: $c->get(DonorAccountRepository::class),
+                bus: $c->get(RoutableMessageBus::class),
+                donationNotifier: $c->get(DonationNotifier::class),
+                campaignService: $c->get(CampaignService::class),
+                redis: $c->get(Redis::class),
+                confirmRateLimitFactory: $confirmRateLimiterFactory,
+                regularGivingNotifier: $c->get(RegularGivingNotifier::class),
+                ryftClient: $c->get(RyftClient::class),
+            );
+        },
 
         Auth\FriendlyCaptchaVerifier::class => static function (ContainerInterface $c): Auth\FriendlyCaptchaVerifier {
             $FCSettings = $c->get(Settings::class)->friendlyCaptchaSettings;
@@ -747,8 +749,8 @@ return function (ContainerBuilder $containerBuilder) {
                 client: $c->get(GuzzleHttp\Client::class),
                 secret: $FCSettings['secret_key'],
                 siteKey: $FCSettings['site_key'],
-                logger: $c->get(LoggerInterface::class)
+                logger: $c->get(LoggerInterface::class),
             );
-        }
+        },
     ]);
 };

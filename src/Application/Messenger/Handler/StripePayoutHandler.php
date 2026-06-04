@@ -30,6 +30,7 @@ class StripePayoutHandler
      *          we can never end up in an infinite loop.
      */
     private const int MAX_RETRY_DEPTH = 10;
+
     /** @var string[] */
     private array $processedPayoutIds = [];
 
@@ -84,7 +85,7 @@ class StripePayoutHandler
             // Outside of production we expect Stripe to combine things from multiple test environments
             // (staging & regtest) into one, so we may get pings re payouts where we don't recognise any
             // donations.
-            $logLevel = (getenv('APP_ENV') === 'production') ? LogLevel::ERROR : LogLevel::INFO;
+            $logLevel = getenv('APP_ENV') === 'production' ? LogLevel::ERROR : LogLevel::INFO;
             $this->logger->log($logLevel, sprintf(
                 'Payout: Exited with no original donation charge IDs for Payout ID %s, account %s',
                 $payoutId,
@@ -106,11 +107,11 @@ class StripePayoutHandler
             //
             // In prod if we can't find the donation it's an error.
             if (!$donation) {
-                $logLevel = (getenv('APP_ENV') === 'production') ? 'ERROR' : 'INFO';
+                $logLevel = getenv('APP_ENV') === 'production' ? 'ERROR' : 'INFO';
 
                 $this->logger->log(
                     $logLevel,
-                    sprintf('Payout: Donation not found with Charge ID %s', $chargeId ?? 'null')
+                    sprintf('Payout: Donation not found with Charge ID %s', $chargeId ?? 'null'),
                 );
 
                 continue;
@@ -142,7 +143,7 @@ class StripePayoutHandler
                         'Payout: Skipping donation status %s found for Charge ID %s',
                         $donation->getDonationStatus()->value,
                         $chargeId ?? 'null',
-                    )
+                    ),
                 );
             }
         }
@@ -215,7 +216,7 @@ class StripePayoutHandler
                 'Payout: Getting all Connect account paid Charge IDs for Payout ID %s complete, found %s',
                 $payoutId,
                 count($paidChargeIds),
-            )
+            ),
         );
 
         return [
@@ -240,7 +241,7 @@ class StripePayoutHandler
     private function processChargesFromPreviousPayout(
         string $payoutId,
         string $connectAccountId,
-        int $retryDepth
+        int $retryDepth,
     ): array {
         $payoutInfo = $this->getPayoutInfo($payoutId, $connectAccountId);
 
@@ -274,16 +275,18 @@ class StripePayoutHandler
             ));
 
             foreach ($ids['payoutIds'] as $extraPayoutId) {
-                if (!in_array($extraPayoutId, $this->processedPayoutIds, true)) {
-                    $extraPayoutInfo = $this->processChargesFromPreviousPayout(
-                        payoutId: $extraPayoutId,
-                        connectAccountId: $connectAccountId,
-                        retryDepth: $retryDepth + 1,
-                    );
-                    // Include all previously delayed payouts' charge IDs in the handler's main list.
-                    $ids['chargeIds'] = [...$ids['chargeIds'], ...$extraPayoutInfo['chargeIds']];
-                    $this->processedPayoutIds[] = $extraPayoutId;
+                if (in_array($extraPayoutId, $this->processedPayoutIds, true)) {
+                    continue;
                 }
+
+                $extraPayoutInfo = $this->processChargesFromPreviousPayout(
+                    payoutId: $extraPayoutId,
+                    connectAccountId: $connectAccountId,
+                    retryDepth: $retryDepth + 1,
+                );
+                // Include all previously delayed payouts' charge IDs in the handler's main list.
+                $ids['chargeIds'] = [...$ids['chargeIds'], ...$extraPayoutInfo['chargeIds']];
+                $this->processedPayoutIds[] = $extraPayoutId;
             }
         }
 
@@ -292,7 +295,7 @@ class StripePayoutHandler
                 'Payout: Getting all Connect account paid Charge IDs for *earlier* Payout ID %s complete, found %s',
                 $payoutId,
                 count($ids['chargeIds']),
-            )
+            ),
         );
 
         return [
@@ -318,7 +321,7 @@ class StripePayoutHandler
 
         $payoutArrivalDate = \DateTimeImmutable::createFromFormat('U', (string) $stripePayout->arrival_date);
         $payoutCreated = \DateTimeImmutable::createFromFormat('U', (string) $stripePayout->created);
-        if (! $payoutCreated || !$payoutArrivalDate) {
+        if (!$payoutCreated || !$payoutArrivalDate) {
             throw new \Exception('Bad date format from stripe');
         }
 
@@ -364,6 +367,7 @@ class StripePayoutHandler
                     // source is the previous failed payout `po_...` ID.
                     $extraPayoutIdsToMap[] = (string) $balanceTransaction->source;
                     break;
+
                 // Other types are ignored. 'payout' is expected but we don't use it here.
             }
         }
@@ -380,7 +384,7 @@ class StripePayoutHandler
     private function getOriginalDonationChargeIds(
         array $paidChargeIds,
         string $connectAccountId,
-        \DateTimeImmutable $payoutCreated
+        \DateTimeImmutable $payoutCreated,
     ): array {
         $this->logger->info("Payout: Getting original TBG charge IDs related to payout's Charge IDs");
 
@@ -412,15 +416,16 @@ class StripePayoutHandler
         );
 
         foreach ($charges->autoPagingIterator() as $charge) {
-            if (in_array($charge->id, $paidChargeIds, true)) {
-                /** @var string $source_transfer */
-                $source_transfer = $charge->source_transfer;
-                /** @psalm-suppress DocblockTypeContradiction */
-                if (!is_string($source_transfer)) {
-                    $this->logger->error("source transfer not of expected type");
-                }
-                $sourceTransferIds[] = $source_transfer;
+            if (!in_array($charge->id, $paidChargeIds, true)) {
+                continue;
             }
+
+            $source_transfer = $charge->source_transfer;
+            /** @psalm-suppress DocblockTypeContradiction */
+            if (!is_string($source_transfer)) {
+                $this->logger->error('source transfer not of expected type');
+            }
+            $sourceTransferIds[] = $source_transfer;
         }
 
         $donations = $this->donationRepository->findWithTransferIdInArray($sourceTransferIds);
@@ -428,12 +433,12 @@ class StripePayoutHandler
 
         $this->logger->info(
             sprintf(
-                'Payout: Finished getting original Charge IDs, found %d ' .
-                    '(from %d source transfer IDs and %d donations whose transfer IDs matched)',
+                'Payout: Finished getting original Charge IDs, found %d '
+                . '(from %d source transfer IDs and %d donations whose transfer IDs matched)',
                 count($originalChargeIds),
                 count($sourceTransferIds),
                 count($donations),
-            )
+            ),
         );
 
         return $originalChargeIds;

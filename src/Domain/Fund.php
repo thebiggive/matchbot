@@ -50,7 +50,7 @@ class Fund extends SalesforceReadProxy
     /**
      * @psalm-suppress UnusedProperty used in DQL etc.
      */
-    #[ORM\Column()]
+    #[ORM\Column]
     private int $allocationOrder;
 
     /**
@@ -98,7 +98,9 @@ class Fund extends SalesforceReadProxy
 
         if (!$this->fundType->isPledge() || $newType !== FundType::TopupPledge) {
             // Refuse to make any change except to TopupPledge
-            throw new DisallowedFundTypeChange('Only supported type change is Pledge (or already TopupPledge) funds to TopupPledge');
+            throw new DisallowedFundTypeChange(
+                'Only supported type change is Pledge (or already TopupPledge) funds to TopupPledge',
+            );
         }
         $this->fundType = $newType;
         $this->setAllocationOrder($newType->allocationOrder());

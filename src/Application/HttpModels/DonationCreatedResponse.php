@@ -19,7 +19,9 @@ readonly class DonationCreatedResponse
         /**
          * @see https://docs.stripe.com/api/customer_sessions/object#customer_session_object-client_secret
          */
+        #[\SensitiveParameter]
         public ?string $stripeSessionSecret = null,
+        #[\SensitiveParameter]
         public ?string $ryftClientSecret = null,
     ) {
     }

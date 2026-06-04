@@ -16,8 +16,10 @@ readonly class CharityUpdated implements MessageDeduplicationAwareInterface, Mes
     /**
      * @param Salesforce18Id<Charity> $charityAccountId
      */
-    public function __construct(public Salesforce18Id $charityAccountId, private ?string $requestTraceId)
-    {
+    public function __construct(
+        public Salesforce18Id $charityAccountId,
+        private ?string $requestTraceId,
+    ) {
     }
 
     /**

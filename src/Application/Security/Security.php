@@ -14,8 +14,9 @@ class Security
     /**
      * @psalm-suppress PossiblyUnusedMethod - called by Container
      */
-    public function __construct(private DonorAccountRepository $donorAccountRepository)
-    {
+    public function __construct(
+        private DonorAccountRepository $donorAccountRepository,
+    ) {
     }
 
     private function maybeGetAuthenticatedDonorAccount(Request $request): ?DonorAccount
@@ -41,7 +42,7 @@ class Security
     {
         $donor = $this->maybeGetAuthenticatedDonorAccount($request);
 
-        if (! $donor) {
+        if (!$donor) {
             throw new HttpForbiddenException($request);
         }
 

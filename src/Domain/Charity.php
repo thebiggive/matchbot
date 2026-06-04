@@ -13,7 +13,7 @@ use Psr\Http\Message\UriInterface;
 
 #[ORM\Entity(repositoryClass: CharityRepository::class)]
 #[ORM\HasLifecycleCallbacks]
-#[ORM\Index(columns: ["salesforceId"])]
+#[ORM\Index(columns: ['salesforceId'])]
 class Charity extends SalesforceReadProxy
 {
     use TimestampsTrait;
@@ -57,7 +57,7 @@ class Charity extends SalesforceReadProxy
      * API.
      * @var array<string, mixed>
      */
-    #[ORM\Column(type: "json", nullable: false)]
+    #[ORM\Column(type: 'json', nullable: false)]
     private array $salesforceData = [];
 
     /**
@@ -258,7 +258,6 @@ class Charity extends SalesforceReadProxy
         return $this->regulatorNumber;
     }
 
-
     /**
      * @param string|null $regulatorNumber - if set must be 10 bytes long or less.
      *                              {@see self::MAX_REGULATOR_NUMBER_LENGTH}
@@ -311,7 +310,8 @@ class Charity extends SalesforceReadProxy
         ?string $phoneNumber,
         ?EmailAddress $emailAddress,
     ): void {
-        $statusUnexpected = !is_null($giftAidOnboardingStatus)
+        $statusUnexpected =
+            !is_null($giftAidOnboardingStatus)
             && !in_array($giftAidOnboardingStatus, self::POSSIBLE_GIFT_AID_STATUSES, true);
         if ($statusUnexpected) {
             throw new \UnexpectedValueException();
@@ -322,14 +322,14 @@ class Charity extends SalesforceReadProxy
         $this->ryftAccountId = $ryftAccountId?->ryftAccountId;
         $this->psp = $psp;
 
-        $tbgCanClaimGiftAid = (
-            $hmrcReferenceNumber !== null && $hmrcReferenceNumber !== '' &&
-            in_array($giftAidOnboardingStatus, self::GIFT_AID_ONBOARDED_STATUSES, true)
-        );
-        $tbgApprovedToClaimGiftAid = (
-            $hmrcReferenceNumber !== null && $hmrcReferenceNumber !== '' &&
-            $giftAidOnboardingStatus === self::GIFT_AID_APPROVED_STATUS
-        );
+        $tbgCanClaimGiftAid =
+            $hmrcReferenceNumber !== null
+            && $hmrcReferenceNumber !== ''
+            && in_array($giftAidOnboardingStatus, self::GIFT_AID_ONBOARDED_STATUSES, true);
+        $tbgApprovedToClaimGiftAid =
+            $hmrcReferenceNumber !== null
+            && $hmrcReferenceNumber !== ''
+            && $giftAidOnboardingStatus === self::GIFT_AID_APPROVED_STATUS;
 
         $this->setTbgClaimingGiftAid($tbgCanClaimGiftAid);
         $this->setTbgApprovedToClaimGiftAid($tbgApprovedToClaimGiftAid);
@@ -363,7 +363,8 @@ class Charity extends SalesforceReadProxy
         $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
         $prefix = 'Big Give ';
 
-        return $prefix . mb_substr(
+        return $prefix
+        . mb_substr(
             $this->removeSpecialChars($this->getName()),
             0,
             $maximumLength - mb_strlen($prefix),

@@ -9,11 +9,13 @@ class FriendlyCaptchaVerifier
 {
     public function __construct(
         private Client $client,
+        #[\SensitiveParameter]
         private string $secret,
         private string $siteKey,
         private LoggerInterface $logger,
     ) {
     }
+
     /**
      * @param string $solution Captcha solution submitted from the browser
      *
@@ -35,19 +37,21 @@ class FriendlyCaptchaVerifier
                     'siteKey' => $this->siteKey,
                 ],
                 'http_errors' => false, // https://docs.guzzlephp.org/en/stable/request-options.html#http-errors
-            ]
+            ],
         );
 
         $statusCode = $response->getStatusCode();
         $responseContent = $response->getBody()->getContents();
 
-        if ($statusCode  !== 200) {
+        if ($statusCode !== 200) {
             // we can log part of the secret for debugging so we can see which one its using without exposing the whole
             // secret.
             $secretEndsWith = substr($this->secret, -3);
-            $this->logger->error("Friendly Captcha verification failed: ($statusCode), {$response->getReasonPhrase()}");
-            $this->logger->error("Friendly Captcha verification response:" . $responseContent);
-            $this->logger->info("Configured friendly captcha secret ends with: $secretEndsWith");
+            $this->logger->error(
+                "Friendly Captcha verification failed: ({$statusCode}), {$response->getReasonPhrase()}",
+            );
+            $this->logger->error('Friendly Captcha verification response:' . $responseContent);
+            $this->logger->info("Configured friendly captcha secret ends with: {$secretEndsWith}");
             // not the fault of the client if we don't get a 200 response, so we must assume their solution was good.
 
             return true;

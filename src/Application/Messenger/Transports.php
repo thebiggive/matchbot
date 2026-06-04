@@ -38,13 +38,13 @@ class Transports
 
         $dsn = getenv(self::DEFINITIONS[$key]['dsn_var']);
         if ($dsn === false) {
-            throw new \RuntimeException("Environment variable " . self::DEFINITIONS[$key]['dsn_var'] . " is not set");
+            throw new \RuntimeException('Environment variable ' . self::DEFINITIONS[$key]['dsn_var'] . ' is not set');
         }
 
         $transportFactory = new TransportFactory([
             new InMemoryTransportFactory(), // For unit tests.
             new RedisTransportFactory(),
-            ...(self::DEFINITIONS[$key]['supports_sqs'] ? [new AmazonSqsTransportFactory()] : []),
+            ...( self::DEFINITIONS[$key]['supports_sqs'] ? [new AmazonSqsTransportFactory()] : [] ),
         ]);
 
         return $transportFactory->createTransport($dsn, [], new PhpSerializer());

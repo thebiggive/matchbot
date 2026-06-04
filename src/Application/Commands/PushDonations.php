@@ -31,13 +31,13 @@ class PushDonations extends LockingCommand
     #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        if (($numberAbandoned = $this->donationRepository->abandonOldCancelled()) > 0) {
-            $output->writeln("Abandoned $numberAbandoned old Cancelled donations from Salesforce push");
+        if (( $numberAbandoned = $this->donationRepository->abandonOldCancelled() ) > 0) {
+            $output->writeln("Abandoned {$numberAbandoned} old Cancelled donations from Salesforce push");
         }
 
         $numberPushed = $this->donationRepository->pushSalesforcePending(now: $this->clock->now(), bus: $this->bus);
 
-        $output->writeln("Pushed $numberPushed donations to Salesforce");
+        $output->writeln("Pushed {$numberPushed} donations to Salesforce");
 
         return 0;
     }

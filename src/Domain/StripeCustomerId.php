@@ -13,7 +13,7 @@ readonly class StripeCustomerId
     public string $stripeCustomerId;
 
     private function __construct(
-        string $stripeCustomerId
+        string $stripeCustomerId,
     ) {
         $this->stripeCustomerId = $stripeCustomerId;
         Assertion::notEmpty($this->stripeCustomerId);

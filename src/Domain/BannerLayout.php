@@ -10,23 +10,23 @@ use Psr\Http\Message\UriInterface;
  * Details of how the banner should be layed out for a given meta-campaign. Only includes details that
  * we don't already have in SF, as initially will be hard-coded.
  */
-#[OA\Schema(description: "Banner layout configuration for campaign display")]
+#[OA\Schema(description: 'Banner layout configuration for campaign display')]
 readonly class BannerLayout implements \JsonSerializable
 {
     #[OA\Property(
-        property: "imageUri",
-        description: "URI for the banner image",
-        type: "string",
-        format: "uri",
-        example: "https://example.com/banner.jpg"
+        property: 'imageUri',
+        description: 'URI for the banner image',
+        type: 'string',
+        format: 'uri',
+        example: 'https://example.com/banner.jpg',
     )]
     public ?UriInterface $imageUri;
 
     public function __construct(
         #[OA\Property(
-            property: "backgroundColour",
-            description: "Background color shown during loading or if image fails to load. Should be similar to the image color.",
-            ref: "#/components/schemas/Colour"
+            property: 'backgroundColour',
+            description: 'Background color shown during loading or if image fails to load. Should be similar to the image color.',
+            ref: '#/components/schemas/Colour',
         )]
         /**
          * Only shown during loading and/or if an image fails to load - behind the image.
@@ -34,27 +34,27 @@ readonly class BannerLayout implements \JsonSerializable
          */
         public Colour $backgroundColour,
         #[OA\Property(
-            property: "textBackgroundColour",
-            description: "Color for the text background, should contrast with the image",
-            ref: "#/components/schemas/Colour"
+            property: 'textBackgroundColour',
+            description: 'Color for the text background, should contrast with the image',
+            ref: '#/components/schemas/Colour',
         )]
         /**
          * Should contrast with the image
          */
         public Colour $textBackgroundColour,
         #[OA\Property(
-            property: "textColour",
-            description: "Color for the text, should contrast with the text background (typically black or white)",
-            ref: "#/components/schemas/Colour"
+            property: 'textColour',
+            description: 'Color for the text, should contrast with the text background (typically black or white)',
+            ref: '#/components/schemas/Colour',
         )]
         /**
          * Should contrast with the text background - typically expected to be black or white
          */
         public Colour $textColour,
         #[OA\Property(
-            property: "focalArea",
-            description: "Box that indicates the position of any image subject, to be preserved in crops",
-            ref: "#/components/schemas/FocalAreaBox"
+            property: 'focalArea',
+            description: 'Box that indicates the position of any image subject, to be preserved in crops',
+            ref: '#/components/schemas/FocalAreaBox',
         )]
         /**
          * Box that indicates the position of any image subject, to be preserved in crops.
@@ -73,7 +73,8 @@ readonly class BannerLayout implements \JsonSerializable
     /**
      * @return array<string, array<string, int>|string>
      */
-    #[\Override] public function jsonSerialize(): array
+    #[\Override]
+    public function jsonSerialize(): array
     {
         return [
             'backgroundColour' => $this->backgroundColour->toHex(),

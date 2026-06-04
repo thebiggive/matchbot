@@ -30,7 +30,7 @@ class Mailer extends Common
                         'x-send-verify-hash' => $this->hash(json_encode($requestBody, \JSON_THROW_ON_ERROR)),
                         'User-Agent' => 'matchbot',
                     ],
-                ]
+                ],
             );
 
             if ($response->getStatusCode() === 200) {
@@ -58,7 +58,7 @@ class Mailer extends Common
             ));
 
             if (!Environment::current()->isProduction()) {
-                $this->logger->error("Message request data: " . json_encode($requestBody, \JSON_THROW_ON_ERROR));
+                $this->logger->error('Message request data: ' . json_encode($requestBody, \JSON_THROW_ON_ERROR));
             }
 
             return;
@@ -93,7 +93,7 @@ class Mailer extends Common
                 'templateKey' => $command->templateKey,
                 'recipientEmailAddress' => $command->emailAddress->email,
                 'params' => $command->params,
-            ]
+            ],
         );
     }
 }

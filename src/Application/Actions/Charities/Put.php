@@ -45,7 +45,7 @@ class Put extends Action
                 $request->getBody()->getContents(),
                 true,
                 512,
-                \JSON_THROW_ON_ERROR
+                \JSON_THROW_ON_ERROR,
             );
         } catch (\JsonException) {
             throw new HttpBadRequestException($request, 'Cannot parse request body as JSON');
@@ -97,7 +97,7 @@ class Put extends Action
 
         $charity = $this->charityRepository->findOneBySalesforceId($charitySfId);
 
-        if (! $charity) {
+        if (!$charity) {
             $charity = new Charity(
                 salesforceId: $charitySfId->value,
                 charityName: $name,
@@ -156,7 +156,7 @@ class Put extends Action
             return null;
         }
 
-        Assertion::nullOrString($data[$key], "$key must be a string or null");
+        Assertion::nullOrString($data[$key], "{$key} must be a string or null");
         return is_string($data[$key]) ? $data[$key] : null;
     }
 }

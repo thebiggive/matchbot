@@ -101,11 +101,12 @@ class Settings
             ],
         ];
 
-        $this->displayErrorDetails = ($appEnv === 'local');
+        $this->displayErrorDetails = $appEnv === 'local';
 
-        $this->enableNoReservationsMode = \strtoupper(
-            $this->getStringEnv($env, 'ENABLE_NO_RESERVATIONS_MODE', throwIfMissing: false)
-        ) === 'TRUE';
+        $this->enableNoReservationsMode =
+            \strtoupper(
+                $this->getStringEnv($env, 'ENABLE_NO_RESERVATIONS_MODE', throwIfMissing: false),
+            ) === 'TRUE';
 
         $this->doctrine = [
             // if true, metadata caching is forcefully disabled
@@ -146,7 +147,7 @@ class Settings
             $this->los_rate_limit = [
                 // Dynamic so we can increase it for load tests or as needed based on observed
                 // Production behaviour.
-                'ip_max_requests' => (int)($maxCreatesPerIpPer5M),
+                'ip_max_requests' => (int) $maxCreatesPerIpPer5M,
                 'ip_reset_time' => 300, // 5 minutes
                 // All non-local envs, including 'test', assume ALB-style forwarded headers will be used.
                 'prefer_forwarded' => $appEnv !== 'local',
@@ -160,7 +161,7 @@ class Settings
             $this->los_rate_limit = [
                 // Dynamic so we can increase it for load tests or as needed based on observed
                 // Production behaviour.
-                'ip_max_requests' => (int)('1'),
+                'ip_max_requests' => (int) '1',
                 'ip_reset_time' => 300, // 5 minutes
                 // All non-local envs, including 'test', assume ALB-style forwarded headers will be used.
                 'prefer_forwarded' => $appEnv !== 'local',
@@ -204,7 +205,7 @@ class Settings
 
         $this->friendlyCaptchaSettings = [
             'site_key' => $this->getStringEnv($env, 'FRIENDLY_CAPTCHA_SITE_KEY', false),
-            'secret_key' =>  $this->getStringEnv($env, 'FRIENDLY_CAPTCHA_SECRET_KEY', false),
+            'secret_key' => $this->getStringEnv($env, 'FRIENDLY_CAPTCHA_SECRET_KEY', false),
         ];
     }
 
@@ -215,7 +216,7 @@ class Settings
     {
         $value = $this->getStringEnv($env, $varName, $throwIfMissing);
         if ($value === '') {
-            throw new \Exception("Required environment variable $varName is empty");
+            throw new \Exception("Required environment variable {$varName} is empty");
         }
 
         return $value;
@@ -228,14 +229,13 @@ class Settings
     {
         $value = $env[$varName] ?? null;
 
-        if ((! is_string($value))) {
+        if (!is_string($value)) {
             if ($throwIfMissing) {
-                throw new \Exception("Required environment variable $varName is missing.");
+                throw new \Exception("Required environment variable {$varName} is missing.");
             }
 
-            return "Env var $varName not set";
+            return "Env var {$varName} not set";
         }
-
 
         return $value;
     }
@@ -253,7 +253,7 @@ class Settings
      */
     public function withApiClient(array $apiClient): self
     {
-        $settings = clone($this);
+        $settings = clone $this;
         $settings->apiClient = $apiClient; // @phpstan-ignore property.readOnlyByPhpDocAssignNotInConstructor
 
         return $settings;

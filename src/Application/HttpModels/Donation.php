@@ -44,9 +44,9 @@ readonly class Donation
         public ?bool $optInChampionEmail = null,
         public ?string $tipAmount = null,
         public ?bool $tipGiftAid = null,
-        public bool $isOrganisationDonor = false
+        public bool $isOrganisationDonor = false,
     ) {
-        $this->emailAddress = (! is_null($emailAddress) && ! ($emailAddress === ''))
+        $this->emailAddress = !is_null($emailAddress) && !( $emailAddress === '' )
             ? EmailAddress::of($emailAddress)
             : null;
 
@@ -56,7 +56,7 @@ readonly class Donation
         Assertion::nullOrRegex(
             $this->tipAmount,
             '/^[0-9]+(\.\d\d?)?$/',
-            "Tip amount should be number with up to two decimals"
+            'Tip amount should be number with up to two decimals',
         );
     }
 }

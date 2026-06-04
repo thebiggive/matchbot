@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use BcMath\Number;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -69,7 +68,6 @@ class CampaignFunding extends Model
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $amountAvailable;
 
-
     /**
      * Logs increments, decrements etc to this CampaignFunding - not currently used in business logic but
      * intended to help us track what's wrong if the amountAvailable at any time does not match what it should
@@ -113,14 +111,16 @@ class CampaignFunding extends Model
             balance: $amountAvailable,
             relatedDonationId: null,
             at: new \DateTimeImmutable(),
-            comment: 'Constructing new record'
+            comment: 'Constructing new record',
         );
     }
 
     public function __toString(): string
     {
-        return "CampaignFunding, ID #{$this->id}, created {$this->createdAt->format('c')} " .
-            "of fund SF ID {$this->fund->getSalesforceId()}";
+        return (
+            "CampaignFunding, ID #{$this->id}, created {$this->createdAt->format('c')} "
+            . "of fund SF ID {$this->fund->getSalesforceId()}"
+        );
     }
 
     /**
@@ -130,16 +130,22 @@ class CampaignFunding extends Model
      * @param numeric-string $balance - the amaount available at the time of saving this adjustment.
      * @return void
      */
-    public function logAdjustmentNoOPForNow(string $incrementAmount, string $balance, ?int $relatedDonationId, \DateTimeImmutable $at, ?string $comment = null)
-    {
+    public function logAdjustmentNoOPForNow(
+        string $incrementAmount,
+        string $balance,
+        ?int $relatedDonationId,
+        \DateTimeImmutable $at,
+        ?string $comment = null,
+    ) {
         return;
-//        $this->adjustmentLog[] = [
-//            'incr' => $incrementAmount,
-//            'balance' => $balance,
-//            'd-id' => $relatedDonationId,
-//            'at' => $at->format(\DateTimeImmutable::ATOM),
-//            'c' => $comment,
-//        ];
+
+        //        $this->adjustmentLog[] = [
+        //            'incr' => $incrementAmount,
+        //            'balance' => $balance,
+        //            'd-id' => $relatedDonationId,
+        //            'at' => $at->format(\DateTimeImmutable::ATOM),
+        //            'c' => $comment,
+        //        ];
     }
 
     /**

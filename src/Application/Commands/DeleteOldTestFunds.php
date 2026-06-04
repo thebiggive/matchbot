@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'matchbot:delete-old-test-funds',
-    description: 'In regression environment only, removes Funds & associated data older than 1st of last month'
+    description: 'In regression environment only, removes Funds & associated data older than 1st of last month',
 )]
 class DeleteOldTestFunds extends LockingCommand
 {
@@ -36,7 +36,11 @@ class DeleteOldTestFunds extends LockingCommand
                 $this->entityManager->remove($funding); // Also removes FundingWithdrawals.
             }
             $this->entityManager->remove($pledge);
-            $output->writeln(sprintf('Deleting old test pledge %d with SF ID %s', $pledge->getId() ?? -1, $pledge->getSalesforceId() ?? '?'));
+            $output->writeln(sprintf(
+                'Deleting old test pledge %d with SF ID %s',
+                $pledge->getId() ?? -1,
+                $pledge->getSalesforceId() ?? '?',
+            ));
         }
 
         $this->entityManager->flush();

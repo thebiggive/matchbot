@@ -30,7 +30,7 @@ class CreateSetupIntent extends Action
         return new JsonResponse([
             'setupIntent' => [
                 'client_secret' => $setupIntent->client_secret,
-            ]
+            ],
         ]);
     }
 }

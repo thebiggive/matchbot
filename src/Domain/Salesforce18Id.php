@@ -28,7 +28,7 @@ class Salesforce18Id implements JsonSerializable
         Assertion::regex(
             $value,
             '/[a-zA-Z0-9]{18}/',
-            static fn(array $args) => "{$args['value']} does not match pattern for a Salesforce ID"
+            static fn(array $args) => "{$args['value']} does not match pattern for a Salesforce ID",
         );
 
         $caseCorrected = self::correctCase($value);
@@ -101,7 +101,6 @@ class Salesforce18Id implements JsonSerializable
         return $this->value;
     }
 
-
     /**
      * @param array{length: int, value: string} $args
      */
@@ -162,7 +161,7 @@ class Salesforce18Id implements JsonSerializable
         $result = [];
 
         for ($bit = 0; $bit < 5; $bit++) {
-            $result[] = ($index & (1 << $bit)) !== 0;
+            $result[] = ( $index & ( 1 << $bit ) ) !== 0;
         }
 
         return $result;

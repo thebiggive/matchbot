@@ -20,7 +20,7 @@ class DeletePaymentMethod extends Action
     #[Pure]
     public function __construct(
         private StripeClient $stripeClient,
-        LoggerInterface $logger
+        LoggerInterface $logger,
     ) {
         parent::__construct($logger);
     }
@@ -39,25 +39,28 @@ class DeletePaymentMethod extends Action
         \assert(is_string($paymentMethodId));
 
         /** @var array<array{id: string}> $allPaymentMethodsOfCustomer */
-        $allPaymentMethodsOfCustomer = $this->stripeClient->customers->allPaymentMethods(
-            $customerId,
-        )->toArray()['data'];
+        $allPaymentMethodsOfCustomer = $this->stripeClient
+            ->customers
+            ->allPaymentMethods(
+                $customerId,
+            )
+            ->toArray()['data'];
 
         $allCustomersPaymentMethodIds = array_map(
             static fn(array $pm): string => $pm['id'],
-            $allPaymentMethodsOfCustomer
+            $allPaymentMethodsOfCustomer,
         );
 
         if (!in_array($paymentMethodId, $allCustomersPaymentMethodIds, true)) {
             $this->logger->warning(
-                "Refusing to delete stripe payment method as not found for customer",
-                compact('customerId', 'paymentMethodId')
+                'Refusing to delete stripe payment method as not found for customer',
+                compact('customerId', 'paymentMethodId'),
             );
 
             return $this->respondWithData(
                 $response,
                 ['error' => 'Payment method not found'],
-                StatusCodeInterface::STATUS_BAD_REQUEST
+                StatusCodeInterface::STATUS_BAD_REQUEST,
             );
         }
 
@@ -65,10 +68,10 @@ class DeletePaymentMethod extends Action
             $this->stripeClient->paymentMethods->detach($paymentMethodId);
         } catch (InvalidRequestException $e) {
             $this->logger->error(
-                "Failed to delete payment method, error: " . $e->getMessage(),
-                compact('customerId', 'paymentMethodId')
+                'Failed to delete payment method, error: ' . $e->getMessage(),
+                compact('customerId', 'paymentMethodId'),
             );
-            return $this->respondWithData($response, ['error' => "Could not delete payment method"], 400);
+            return $this->respondWithData($response, ['error' => 'Could not delete payment method'], 400);
         }
 
         return $this->respondWithData($response, data: [], statusCode: StatusCodeInterface::STATUS_NO_CONTENT);

@@ -4,11 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Campaigns;
 
-use GuzzleHttp\Exception\TransferException;
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\Environment;
-use MatchBot\Client\Campaign as SfCampaignClient;
-use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\MetaCampaignRepository;
@@ -36,9 +32,9 @@ class Get extends Action
     protected function action(Request $request, Response $response, array $args): Response
     {
         $campaign = Salesforce18Id::ofCampaign(
-            $args['salesforceId'] ?? throw new HttpNotFoundException($request)
+            $args['salesforceId'] ?? throw new HttpNotFoundException($request),
         )
-                |> $this->campaignRepository->findOneBySalesforceId(...);
+            |> $this->campaignRepository->findOneBySalesforceId(...);
 
         if (!$campaign) {
             throw new HttpNotFoundException($request);
@@ -57,7 +53,7 @@ class Get extends Action
 
         return $this->respondWithData(
             $response,
-            $this->campaignService->renderCampaign(campaign: $campaign, metaCampaign: $metaCampaign)
+            $this->campaignService->renderCampaign(campaign: $campaign, metaCampaign: $metaCampaign),
         );
     }
 }

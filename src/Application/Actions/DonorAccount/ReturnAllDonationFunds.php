@@ -4,7 +4,6 @@ namespace MatchBot\Application\Actions\DonorAccount;
 
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Security\Security;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationFundsService;
 use MatchBot\Domain\PersonId;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -28,7 +27,7 @@ class ReturnAllDonationFunds extends Action
         $authedUser = $this->security->requireAuthenticatedDonorAccountWithPassword($request);
         $requestedUserId = PersonId::of((string) $args['personId']);
 
-        if (! $authedUser->id()->equals($requestedUserId)) {
+        if (!$authedUser->id()->equals($requestedUserId)) {
             throw new HttpUnauthorizedException($request);
         }
 

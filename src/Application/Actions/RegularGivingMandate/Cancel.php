@@ -49,7 +49,7 @@ class Cancel extends Action
 
             return $this->validationError(
                 response: $response,
-                logMessage: "$message: $exceptionType - {$exception->getMessage()}",
+                logMessage: "{$message}: {$exceptionType} - {$exception->getMessage()}",
                 publicMessage: $message,
             );
         }
@@ -58,7 +58,7 @@ class Cancel extends Action
         if ($args['mandateId'] !== $mandateUUID->toString()) {
             return $this->validationError(
                 response: $response,
-                logMessage: "Mandate Cancel UUID mismatch {$args['mandateId']} / {$mandateUUID->toString()}}"
+                logMessage: "Mandate Cancel UUID mismatch {$args['mandateId']} / {$mandateUUID->toString()}}",
             );
         }
 
@@ -67,12 +67,19 @@ class Cancel extends Action
             throw new HttpNotFoundException($request, 'Mandate not found for UUID ' . $mandateUUID->toString());
         }
 
-        if (! $authenticatedDonor->id()->equals($mandate->donorId())) {
-            throw new HttpUnauthorizedException($request, 'Mandate does not below to donor ID ' . $authenticatedDonor->id()->id->toString());
+        if (!$authenticatedDonor->id()->equals($mandate->donorId())) {
+            throw new HttpUnauthorizedException(
+                $request,
+                'Mandate does not below to donor ID ' . $authenticatedDonor->id()->id->toString(),
+            );
         }
 
         try {
-            $this->mandateService->cancelMandate($mandate, $cancellation->cancellationReason, MandateCancellationType::DonorRequestedCancellation);
+            $this->mandateService->cancelMandate(
+                $mandate,
+                $cancellation->cancellationReason,
+                MandateCancellationType::DonorRequestedCancellation,
+            );
         } catch (NonCancellableStatus $e) {
             return $this->validationError(
                 response: $response,

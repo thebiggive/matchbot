@@ -16,7 +16,7 @@ enum PaymentMethodType: string
             'card' => self::Card,
             'customer_balance' => self::CustomerBalance,
             'pay_by_bank' => self::PayByBank,
-            default => throw new \InvalidArgumentException("Unknown payment method type: $pspMethodType"),
+            default => throw new \InvalidArgumentException("Unknown payment method type: {$pspMethodType}"),
         };
     }
 

@@ -12,7 +12,7 @@ use PrinsFrank\Standards\Country\Groups\EU;
 readonly class Country
 {
     private function __construct(
-        public readonly CountryAlpha2 $alpha2
+        public CountryAlpha2 $alpha2,
     ) {
     }
 
@@ -24,8 +24,8 @@ readonly class Country
         Assertion::regex($countryCode, '/^[A-Za-z]{2}$/');
         $alpha2 = CountryAlpha2::tryFrom(strtoupper($countryCode));
 
-        if (! $alpha2) {
-            throw new \DomainException("Unrecognised Country code: '$countryCode'");
+        if (!$alpha2) {
+            throw new \DomainException("Unrecognised Country code: '{$countryCode}'");
         }
 
         return new self($alpha2);

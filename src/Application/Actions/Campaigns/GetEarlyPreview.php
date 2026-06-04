@@ -40,13 +40,13 @@ class GetEarlyPreview extends Action
     protected function action(Request $request, Response $response, array $args): Response
     {
         $sfId = Salesforce18Id::ofCampaign(
-            $args['salesforceId'] ?? throw new HttpNotFoundException($request)
+            $args['salesforceId'] ?? throw new HttpNotFoundException($request),
         );
 
         try {
             $campaignData = $this->salesforceCampaignClient->getById($sfId->value, false);
         } catch (NotFoundException $_exception) {
-            $this->logger->info("Campaign ID $sfId->value not found, likely deleted");
+            $this->logger->info("Campaign ID {$sfId->value} not found, likely deleted");
             throw new HttpNotFoundException($request);
         }
 
@@ -65,6 +65,9 @@ class GetEarlyPreview extends Action
         $metaCampaignSlug = $campaign->getMetaCampaignSlug();
         $metaCampaign = $metaCampaignSlug ? $this->metaCampaignRepository->getBySlug($metaCampaignSlug) : null;
 
-        return $this->respondWithData($response, ['campaign' => $this->campaignService->renderCampaign($campaign, $metaCampaign)]);
+        return $this->respondWithData($response, ['campaign' => $this->campaignService->renderCampaign(
+            $campaign,
+            $metaCampaign,
+        )]);
     }
 }

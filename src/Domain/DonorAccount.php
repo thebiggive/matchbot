@@ -7,7 +7,6 @@ use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DomainException\AccountNotReadyToDonate;
 use Messages\Person;
-use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -212,9 +211,12 @@ class DonorAccount extends Model
     public function assertHasRequiredInfoForRegularGiving(): void
     {
         Assert::lazy()
-            ->that($this->billingPostcode, null, 'Missing billing postcode')->notNull()
-            ->that($this->billingCountryCode, null, 'Missing billing country code')->notNull()
-            ->that($this->isOrganisation, null, 'Organisations are not eligible for regularGiving')->false()
+            ->that($this->billingPostcode, null, 'Missing billing postcode')
+            ->notNull()
+            ->that($this->billingCountryCode, null, 'Missing billing country code')
+            ->notNull()
+            ->that($this->isOrganisation, null, 'Organisations are not eligible for regularGiving')
+            ->false()
             ->setExceptionClass(AccountNotReadyToDonate::class)
             ->verifyNow();
     }

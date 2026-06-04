@@ -13,7 +13,7 @@ class LessThanRequestedAllocatedException extends \Exception
      */
     #[Pure]
     public function __construct(
-        private string $amountAllocated
+        private string $amountAllocated,
     ) {
         parent::__construct('Less than requested was allocated');
     }

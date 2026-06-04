@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions;
 
-use JetBrains\PhpStorm\ArrayShape;
 use JetBrains\PhpStorm\Pure;
 use JsonSerializable;
 
@@ -55,7 +54,7 @@ class ActionError implements JsonSerializable
      * @return null|string
      */
     #[Pure]
-    public function getDescription(): string|null
+    public function getDescription(): ?string
     {
         return $this->description;
     }
@@ -76,9 +75,11 @@ class ActionError implements JsonSerializable
     #[\Override]
     public function jsonSerialize(): array
     {
-        return [
-            'type' => $this->type,
-            'description' => $this->description,
-        ] + $this->data;
+        return (
+            [
+                'type' => $this->type,
+                'description' => $this->description,
+            ] + $this->data
+        );
     }
 }

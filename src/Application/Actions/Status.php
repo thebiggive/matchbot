@@ -4,16 +4,9 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions;
 
-use Doctrine\Common\Proxy\ProxyGenerator;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
-use MatchBot\Application\Assertion;
-use MatchBot\Domain\Campaign;
-use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\Charity;
-use MatchBot\Domain\Donation;
-use MatchBot\Domain\FundingWithdrawal;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -58,7 +51,7 @@ class Status extends Action
         }
 
         if ($errorMessage === null) {
-            if (($request->getQueryParams()['ping'] ?? null) === 'ping') {
+            if (( $request->getQueryParams()['ping'] ?? null ) === 'ping') {
                 return $this->respondWithData($response, ['pong']);
             }
 

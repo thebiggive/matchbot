@@ -14,7 +14,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'matchbot:tick',
-    description: 'Calls all per-minute commands; currently to expire old matching and send statistics'
+    description: 'Calls all per-minute commands; currently to expire old matching and send statistics',
 )]
 class CallFrequentTasks extends LockingCommand
 {
@@ -34,23 +34,24 @@ class CallFrequentTasks extends LockingCommand
         $app = $this->getApplication();
         \assert($app instanceof Application);
 
-        $commands = array_map(/**
-         * @param class-string<Command> $commandClass
-         */
-            function (string $commandClass) use ($app) {
+        $commands = array_map(
+            /**
+             * @param class-string<Command> $commandClass
+             */
+            static function (string $commandClass) use ($app) {
                 $name = $commandClass::getDefaultName();
                 \assert($name !== null);
 
                 return $app->find($name);
             },
-            self::COMMAND_CLASSES
+            self::COMMAND_CLASSES,
         );
         Assertion::allIsInstanceOf($commands, Command::class);
 
         foreach ($commands as $command) {
             $return = $command->run(
                 new ArrayInput(['command' => $command->getName()]),
-                $output
+                $output,
             );
 
             if ($return !== 0) {

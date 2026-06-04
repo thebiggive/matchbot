@@ -14,7 +14,7 @@ use Ramsey\Uuid\UuidInterface;
 readonly class PersonId
 {
     #[Column(type: 'uuid')]
-    public readonly UuidInterface $id;
+    public UuidInterface $id;
 
     private function __construct(string $personId)
     {

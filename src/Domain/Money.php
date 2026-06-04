@@ -28,20 +28,24 @@ class Money implements \JsonSerializable, \Stringable
     private function __construct(
         string $amountInPence,
         #[Column(length: 3)]
-        public Currency $currency
+        public Currency $currency,
     ) {
-        Assertion::regex($amountInPence, '/^-?\d+(?:\.00)?$/', 'Amount in pence must be an integer or have .00 decimal');
+        Assertion::regex(
+            $amountInPence,
+            '/^-?\d+(?:\.00)?$/',
+            'Amount in pence must be an integer or have .00 decimal',
+        );
 
         // casting to int and then back to string to get rid of any trailing '.00', just required so that two instances
         // for the same amount match internally when checked by phpunit.
-        $this->amountInPence = (string)(int)$amountInPence;
+        $this->amountInPence = (string) (int) $amountInPence;
         // Almost 10 trillion £ is well Over the Max. fund value we use in regtest Salesforce sandboxes - these have very high sums of fictional money to allow continous automated donations for a long time.
         // other envs of course don't use use sums anywhere near this big.
         Assertion::between(
             value: $this->amountInPence,
             lowerLimit: 0,
             upperLimit: 9_999_999_999_999_00,
-            message: "Cannot construct a negative or extremely large amount of money"
+            message: 'Cannot construct a negative or extremely large amount of money',
         );
     }
 
@@ -57,7 +61,7 @@ class Money implements \JsonSerializable, \Stringable
 
     public static function fromPoundsGBP(int $pounds): self
     {
-        return new self((string) ($pounds * 100), Currency::GBP);
+        return new self((string) ( $pounds * 100 ), Currency::GBP);
     }
 
     public static function sum(self ...$amounts): self
@@ -68,7 +72,7 @@ class Money implements \JsonSerializable, \Stringable
 
         return array_reduce(
             $amounts,
-            static fn (self $a, self $b): self => $a->plus($b),
+            static fn(self $a, self $b): self => $a->plus($b),
             self::zero($amounts[0]->currency),
         );
     }
@@ -92,13 +96,15 @@ class Money implements \JsonSerializable, \Stringable
      */
     public function format(): string
     {
-        return $this->currency->symbol() .
-            number_format(
+        return (
+            $this->currency->symbol()
+            . number_format(
                 num: $this->amountInPence() / 100,
                 decimals: 2,
                 decimal_separator: '.',
-                thousands_separator: ','
-            );
+                thousands_separator: ',',
+            )
+        );
     }
 
     /**
@@ -113,7 +119,7 @@ class Money implements \JsonSerializable, \Stringable
     public function lessThan(Money $that): bool
     {
         if ($this->currency !== $that->currency) {
-            throw new \UnexpectedValueException("Cannot compare amounts with different currencies");
+            throw new \UnexpectedValueException('Cannot compare amounts with different currencies');
         }
 
         return $this->amountInPence() < $that->amountInPence();
@@ -122,7 +128,7 @@ class Money implements \JsonSerializable, \Stringable
     public function moreThan(Money $that): bool
     {
         if ($this->currency !== $that->currency) {
-            throw new \UnexpectedValueException("Cannot compare amounts with different currencies");
+            throw new \UnexpectedValueException('Cannot compare amounts with different currencies');
         }
 
         return $this->amountInPence() > $that->amountInPence();
@@ -131,7 +137,7 @@ class Money implements \JsonSerializable, \Stringable
     #[\Override]
     public function __toString()
     {
-        return $this->currency->isoCode() . ' ' . (string)($this->amountInPence() / 100);
+        return $this->currency->isoCode() . ' ' . (string) ( $this->amountInPence() / 100 );
     }
 
     /**

@@ -135,7 +135,7 @@ class Donation extends SalesforceWriteProxy
      *
      * @psalm-suppress UnusedProperty - will be used soon.
      */
-    #[ORM\Embedded()]
+    #[ORM\Embedded]
     private Money $expectedMatchAmount;
 
     /**
@@ -200,7 +200,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * Whether the Donor has asked for Gift Aid to be claimed about this donation.
      */
-    #[ORM\Column()]
+    #[ORM\Column]
     protected bool $giftAid = false;
 
     /**
@@ -352,7 +352,7 @@ class Donation extends SalesforceWriteProxy
      * @var ?string Verbatim final errors or messages from HMRC received immediately or
      *              (most likely based on real world observation) via an async poll.
      */
-    #[ORM\Column(type: 'text', length: 65535, nullable: true)]
+    #[ORM\Column(type: 'text', length: 65_535, nullable: true)]
     protected ?string $tbgGiftAidResponseDetail = null;
 
     #[ORM\Column(nullable: true)]
@@ -404,7 +404,6 @@ class Donation extends SalesforceWriteProxy
      */
     #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?DateTimeImmutable $paidOutAt = null;
-
 
     #[ORM\Column(nullable: true)]
     private ?bool $payoutSuccessful = false;
@@ -463,8 +462,8 @@ class Donation extends SalesforceWriteProxy
         $maximumAmount = self::maximumAmount($paymentMethodType);
 
         if (
-            bccomp($amount, (string)self::MINUMUM_AMOUNT, 2) === -1 ||
-            bccomp($amount, (string)$maximumAmount, 2) === 1
+            bccomp($amount, (string) self::MINUMUM_AMOUNT, 2) === -1
+            || bccomp($amount, (string) $maximumAmount, 2) === 1
         ) {
             throw new \UnexpectedValueException(sprintf(
                 'Amount %s is out of allowed range %d-%d %s',
@@ -558,7 +557,7 @@ class Donation extends SalesforceWriteProxy
             tipGiftAid: $donationData->tipGiftAid,
             homeAddress: $donationData->homeAddress, // no support for billing post code on donation creation in API - only on update.
             homePostcode: $donationData->homePostcode,
-            billingPostcode: null
+            billingPostcode: null,
         );
     }
 
@@ -592,10 +591,10 @@ class Donation extends SalesforceWriteProxy
         } catch (\Throwable $t) {
             // perhaps the charity was never pulled from Salesforce into our database, in which case we might
             // have a TypeError trying to get a string name from it.
-            $charityName = "[pending charity threw " . get_class($t) . "]";
+            $charityName = '[pending charity threw ' . get_class($t) . ']';
         }
         $id = is_null($this->id) ? 'non-persisted' : "#{$this->id}";
-        return "Donation $id {$this->getUuid()} to $charityName";
+        return "Donation {$id} {$this->getUuid()} to {$charityName}";
     }
 
     /*
@@ -605,7 +604,7 @@ class Donation extends SalesforceWriteProxy
     public function getDescription(): string
     {
         $charityName = $this->getCampaign()->getCharity()->getName();
-        return "Donation {$this->getUuid()} to $charityName";
+        return "Donation {$this->getUuid()} to {$charityName}";
     }
 
     /**
@@ -628,7 +627,7 @@ class Donation extends SalesforceWriteProxy
      * @return array<string|mixed>|null A representation of the donation suitable for sending to Salesforce,
      * or null if this donation cannot be represented in SF in its current state.
      */
-    public function toSFApiModel(): null|array
+    public function toSFApiModel(): ?array
     {
         $data = [
             ...$this->toFrontEndApiModel(),
@@ -652,7 +651,7 @@ class Donation extends SalesforceWriteProxy
             }
 
             $data['mandate'] = [
-              'salesforceId' => $mandateSalesforceId,
+                'salesforceId' => $mandateSalesforceId,
             ];
         }
 
@@ -671,7 +670,8 @@ class Donation extends SalesforceWriteProxy
         $data = [
             'amountMatchedByChampionFunds' => (float) $fundingWithdrawalsByType['amountMatchedByChampionFunds'],
             'amountMatchedByPledges' => (float) $fundingWithdrawalsByType['amountMatchedByPledges'],
-            'amountPreauthorizedFromChampionFunds' => (float) $fundingWithdrawalsByType['amountPreauthorizedFromChampionFunds'],
+            'amountPreauthorizedFromChampionFunds' =>
+                (float) $fundingWithdrawalsByType['amountPreauthorizedFromChampionFunds'],
             'billingPostalAddress' => $this->donorBillingPostcode,
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
@@ -682,9 +682,9 @@ class Donation extends SalesforceWriteProxy
             'createdTime' => $this->getCreatedDate()->format(DateTimeInterface::ATOM),
             'currencyCode' => $this->currency()->isoCode(),
             'donationAmount' => (float) $this->getAmount(),
-            'totalPaid' => is_null($totalPaidByDonor) ? null : (float)$totalPaidByDonor,
+            'totalPaid' => is_null($totalPaidByDonor) ? null : (float) $totalPaidByDonor,
             'donationId' => $this->getUuid(),
-            'donationMatched' => $this->getCampaign()->isMatched() && ! $enableNoReservationsMode,
+            'donationMatched' => $this->getCampaign()->isMatched() && !$enableNoReservationsMode,
             'emailAddress' => $this->getDonorEmailAddress()?->email,
             'firstName' => $this->getDonorFirstName(true),
             'giftAid' => $this->hasGiftAid(),
@@ -703,8 +703,7 @@ class Donation extends SalesforceWriteProxy
             'pspMethodType' => $this->getPaymentMethodType()?->value,
             'refundedTime' => $this->refundedAt?->format(DateTimeInterface::ATOM),
             'status' => $this->getDonationStatus(),
-            'tbgGiftAidRequestConfirmedCompleteAt' =>
-                $this->tbgGiftAidRequestConfirmedCompleteAt?->format(DateTimeInterface::ATOM),
+            'tbgGiftAidRequestConfirmedCompleteAt' => $this->tbgGiftAidRequestConfirmedCompleteAt?->format(DateTimeInterface::ATOM),
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
             'transactionId' => $this->getTransactionId(),
@@ -738,20 +737,14 @@ class Donation extends SalesforceWriteProxy
         Assertion::eq(Environment::current(), Environment::Test);
 
         $this->donationStatus = match ($donationStatus) {
-            DonationStatus::Refunded =>
-                throw new \Exception('Donation::recordRefundAt must be used to set refunded status'),
-            DonationStatus::Cancelled =>
-                throw new \Exception('Donation::cancelled must be used to cancel'),
-            DonationStatus::Collected =>
-                throw new \Exception('Donation::collectFromStripe must be used to collect'),
-            DonationStatus::Paid =>
-                throw new \Exception('Donation::recordPayout must be used for paid status'),
-            DonationStatus::Chargedback =>
-                throw new \Exception('DonationStatus::Chargedback is deprecated'),
-            DonationStatus::Failed,
-            DonationStatus::Pending,
-            DonationStatus::PreAuthorized
-            => $donationStatus,
+            DonationStatus::Refunded => throw new \Exception(
+                'Donation::recordRefundAt must be used to set refunded status',
+            ),
+            DonationStatus::Cancelled => throw new \Exception('Donation::cancelled must be used to cancel'),
+            DonationStatus::Collected => throw new \Exception('Donation::collectFromStripe must be used to collect'),
+            DonationStatus::Paid => throw new \Exception('Donation::recordPayout must be used for paid status'),
+            DonationStatus::Chargedback => throw new \Exception('DonationStatus::Chargedback is deprecated'),
+            DonationStatus::Failed, DonationStatus::Pending, DonationStatus::PreAuthorized => $donationStatus,
         };
     }
 
@@ -778,7 +771,7 @@ class Donation extends SalesforceWriteProxy
 
     public function getDonorEmailAddress(): ?EmailAddress
     {
-        return ((bool) $this->donorEmailAddress) ? EmailAddress::of($this->donorEmailAddress) : null;
+        return (bool) $this->donorEmailAddress ? EmailAddress::of($this->donorEmailAddress) : null;
     }
 
     public function setDonorEmailAddress(?EmailAddress $donorEmailAddress): void
@@ -890,7 +883,8 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return numeric-string
      */
-    #[Pure] public function getCharityFeeGross(): string
+    #[Pure]
+    public function getCharityFeeGross(): string
     {
         return bcadd($this->getCharityFee(), $this->getCharityFeeVat(), 2);
     }
@@ -934,7 +928,7 @@ class Donation extends SalesforceWriteProxy
     {
         return Money::fromNumericString(
             $this->getFundingWithdrawalTotal(),
-            Currency::fromIsoCode($this->currencyCode)
+            Currency::fromIsoCode($this->currencyCode),
         );
     }
 
@@ -953,7 +947,7 @@ class Donation extends SalesforceWriteProxy
             'amountMatchedByPledges' => '0.00',
             'amountPreauthorizedFromChampionFunds' => '0.00',
             'amountMatchedOther' => '0.00', // This key is not sent to SF, covers match fund usage that we don't need to
-                                           // report, i.e. for donations that are neither sucessful nor preauthed.
+            // report, i.e. for donations that are neither sucessful nor preauthed.
         ];
 
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
@@ -963,20 +957,28 @@ class Donation extends SalesforceWriteProxy
 
             $fundTypeOfThisWithdrawal = $fundingWithdrawal->getCampaignFunding()->getFund()->getFundType();
 
-            $key = match ([$fundTypeOfThisWithdrawal, $this->donationStatus->isSuccessful(), $this->donationStatus === DonationStatus::PreAuthorized  ]) {
-                [FundType::ChampionFund, true, true] => throw new \LogicException("impossible status"),
+            $key = match (
+                [
+                $fundTypeOfThisWithdrawal,
+                $this->donationStatus->isSuccessful(),
+                $this->donationStatus === DonationStatus::PreAuthorized,
+                ]
+            ) {
+                [FundType::ChampionFund, true, true] => throw new \LogicException('impossible status'),
                 [FundType::ChampionFund, true, false] => 'amountMatchedByChampionFunds',
                 [FundType::ChampionFund, false, true] => 'amountPreauthorizedFromChampionFunds',
                 [FundType::ChampionFund, false, false] => 'amountMatchedOther',
-
-                [FundType::Pledge, true, true] => throw new \LogicException("impossible status"),
+                [FundType::Pledge, true, true] => throw new \LogicException('impossible status'),
                 [FundType::Pledge, true, false] => 'amountMatchedByPledges',
-                [FundType::Pledge, false, true] => throw new \RuntimeException("unexpected pre-authed donation using pledge fund"),
+                [FundType::Pledge, false, true] => throw new \RuntimeException(
+                    'unexpected pre-authed donation using pledge fund',
+                ),
                 [FundType::Pledge, false, false] => 'amountMatchedOther',
-
-                [FundType::TopupPledge, true, true] => throw new \LogicException("impossible status"),
+                [FundType::TopupPledge, true, true] => throw new \LogicException('impossible status'),
                 [FundType::TopupPledge, true, false] => 'amountMatchedByPledges',
-                [FundType::TopupPledge, false, true] => throw new \RuntimeException("unexpected pre-authed donation using top-up pledge fund"),
+                [FundType::TopupPledge, false, true] => throw new \RuntimeException(
+                    'unexpected pre-authed donation using top-up pledge fund',
+                ),
                 [FundType::TopupPledge, false, false] => 'amountMatchedOther',
             };
 
@@ -1001,8 +1003,6 @@ class Donation extends SalesforceWriteProxy
     {
         return $this->transactionId ?? $this->uuid->toString();
     }
-
-
 
     public function getChargeId(): ?string
     {
@@ -1071,7 +1071,7 @@ class Donation extends SalesforceWriteProxy
     private function setPsp(string $psp): void
     {
         if (!in_array($psp, PaymentServiceProvider::VALUES, true)) {
-            throw new \UnexpectedValueException("Unexpected PSP '$psp'");
+            throw new \UnexpectedValueException("Unexpected PSP '{$psp}'");
         }
 
         $this->psp = $psp;
@@ -1089,8 +1089,8 @@ class Donation extends SalesforceWriteProxy
     {
         /** @psalm-var numeric-string $tipAmount */
         if (
-            $this->paymentMethodType === PaymentMethodType::CustomerBalance &&
-            bccomp($tipAmount, '0', 2) !== 0
+            $this->paymentMethodType === PaymentMethodType::CustomerBalance
+            && bccomp($tipAmount, '0', 2) !== 0
         ) {
             // We would have accepted a tip at the time the customer balance was created, so we don't take a second
             // tip as part of the donation.
@@ -1099,7 +1099,7 @@ class Donation extends SalesforceWriteProxy
 
         $max = self::MAXIMUM_CARD_DONATION;
 
-        if (bccomp($tipAmount, (string)(self::MAXIMUM_CARD_DONATION), 2) === 1) {
+        if (bccomp($tipAmount, (string) self::MAXIMUM_CARD_DONATION, 2) === 1) {
             throw new \UnexpectedValueException(sprintf(
                 'Tip amount must not exceed %d %s',
                 $max,
@@ -1180,9 +1180,7 @@ class Donation extends SalesforceWriteProxy
     public function getAmountForCharityFractional(): int
     {
         $amountFractional = (int) bcmul('100', $this->getAmount(), 2);
-        return $amountFractional +
-            $this->getTipAmountFractional() -
-            $this->getAmountToDeductFractional();
+        return $amountFractional + $this->getTipAmountFractional() - $this->getAmountToDeductFractional();
     }
 
     /**
@@ -1304,7 +1302,7 @@ class Donation extends SalesforceWriteProxy
 
         if ($this->pspCustomerId === null) {
             return null;
-        };
+        }
 
         if ($this->psp !== PaymentServiceProvider::Stripe->value) {
             return null;
@@ -1344,15 +1342,14 @@ class Donation extends SalesforceWriteProxy
             ],
             // in these cases we want to use the Stripe Payment Element, so we can't specify card explicitly, we
             // need to turn on automatic methods instead and let the element decide what methods to show.
-            PaymentMethodType::Card,
-            PaymentMethodType::PayByBank => [
+            PaymentMethodType::Card, PaymentMethodType::PayByBank => [
                 'automatic_payment_methods' => [
                     'enabled' => true,
                     'allow_redirects' => 'always',
                 ],
             ],
             null => throw new \RuntimeException(
-                'Cannot get stripe method properties, no stripe method for donation ' . $this->uuid->toString()
+                'Cannot get stripe method properties, no stripe method for donation ' . $this->uuid->toString(),
             ),
         };
 
@@ -1423,7 +1420,7 @@ class Donation extends SalesforceWriteProxy
             return null;
         }
 
-        return trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
+        return trim(( $firstName ?? '' ) . ' ' . ( $lastName ?? '' ));
     }
 
     /**
@@ -1443,13 +1440,13 @@ class Donation extends SalesforceWriteProxy
         $firstName = $this->donorFirstName;
         $collectedAt = $this->getCollectedAt();
         if ($lastName === null) {
-            throw new \Exception("Missing donor last name; cannot send donation to claimbot");
+            throw new \Exception('Missing donor last name; cannot send donation to claimbot');
         }
         if ($firstName === null) {
-            throw new \Exception("Missing donor first name; cannot send donation to claimbot");
+            throw new \Exception('Missing donor first name; cannot send donation to claimbot');
         }
         if ($collectedAt === null) {
-            throw new \Exception("Missing donor collected date; cannot send donation to claimbot");
+            throw new \Exception('Missing donor collected date; cannot send donation to claimbot');
         }
 
         $donationMessage = new Messages\Donation();
@@ -1460,7 +1457,7 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->last_name = $lastName;
 
         $donationMessage->overseas = $this->donorHomePostcode === self::OVERSEAS;
-        $donationMessage->postcode = $donationMessage->overseas ? '' : ($this->donorHomePostcode ?? '');
+        $donationMessage->postcode = $donationMessage->overseas ? '' : $this->donorHomePostcode ?? '';
 
         // 'House' field has a 40 character maximum. Indications as of 2026 are that it's safest to
         // always supply street name etc. even though it's not in HMRC's valid XML samples.
@@ -1515,12 +1512,12 @@ class Donation extends SalesforceWriteProxy
         $this->refundedAt = $datetime;
         Assertion::nullOrEq(
             $this->totalPaidByDonor,
-            (string)($this->getAmountFractionalIncTip() / 100)
+            (string) ( $this->getAmountFractionalIncTip() / 100 ),
         );
 
         Assertion::true(
             $amountRefunded->equalsIgnoringCurrency($this->tipAmount),
-            'Amount Refunded should equal tip amount'
+            'Amount Refunded should equal tip amount',
         );
 
         if ($this->totalPaidByDonor !== null) {
@@ -1545,9 +1542,9 @@ class Donation extends SalesforceWriteProxy
                     DonationStatus::PreAuthorized,
                     DonationStatus::Cancelled,
                     DonationStatus::Collected, // doesn't really make sense to cancel a collected donation but we have
-                                               // existing unit tests doing that, not changing now.
+                    // existing unit tests doing that, not changing now.
                 ],
-                true
+                true,
             )
         ) {
             throw new \UnexpectedValueException("Cannot cancel {$this->donationStatus->value} donation");
@@ -1567,10 +1564,16 @@ class Donation extends SalesforceWriteProxy
     {
         $feeIsUpdateable = match ($this->donationStatus) {
             DonationStatus::Pending, DonationStatus::PreAuthorized => true,
-            DonationStatus::Cancelled, DonationStatus::Chargedback, DonationStatus::Collected, DonationStatus::Failed, DonationStatus::Paid, DonationStatus::Refunded => false,
+            DonationStatus::Cancelled,
+            DonationStatus::Chargedback,
+            DonationStatus::Collected,
+            DonationStatus::Failed,
+            DonationStatus::Paid,
+            DonationStatus::Refunded,
+                => false,
         };
 
-        if (! $feeIsUpdateable) {
+        if (!$feeIsUpdateable) {
             // It's too late to change the fee on this donation.
             return;
         }
@@ -1604,7 +1607,7 @@ class Donation extends SalesforceWriteProxy
         ?CardBrand $cardBrand,
         ?Country $cardCountry,
         ?string $originalFeeFractional,
-        int $chargeCreationTimestamp
+        int $chargeCreationTimestamp,
     ): void {
         Assertion::eq(is_null($cardBrand), is_null($cardCountry));
         Assertion::nullOrNumeric($originalFeeFractional);
@@ -1617,12 +1620,12 @@ class Donation extends SalesforceWriteProxy
 
         $this->chargeId = $chargeId;
         $this->donationStatus = DonationStatus::Collected;
-        $this->collectedAt = (new \DateTimeImmutable("@$chargeCreationTimestamp"));
+        $this->collectedAt = new \DateTimeImmutable("@{$chargeCreationTimestamp}");
         if ($originalFeeFractional !== null) {
             $this->setOriginalPspFeeFractional($originalFeeFractional);
         }
 
-        $this->totalPaidByDonor = bcdiv((string)$totalPaidFractional, '100', 2);
+        $this->totalPaidByDonor = bcdiv((string) $totalPaidFractional, '100', 2);
     }
 
     /**
@@ -1663,12 +1666,15 @@ class Donation extends SalesforceWriteProxy
         ?string $donorBillingPostcode = null,
     ): void {
         if ($this->donationStatus !== DonationStatus::Pending) {
-            throw new \UnexpectedValueException("Update only allowed for pending donation");
+            throw new \UnexpectedValueException('Update only allowed for pending donation');
         }
 
-        if ($this->paymentMethodType && $this->paymentMethodType->usesPaymentElement() !== $paymentMethodType->usesPaymentElement()) {
+        if (
+            $this->paymentMethodType
+            && $this->paymentMethodType->usesPaymentElement() !== $paymentMethodType->usesPaymentElement()
+        ) {
             throw new \UnexpectedValueException(
-                "Cannot change payment method type from {$this->paymentMethodType->value} to {$paymentMethodType->value}"
+                "Cannot change payment method type from {$this->paymentMethodType->value} to {$paymentMethodType->value}",
             );
         }
 
@@ -1683,18 +1689,18 @@ class Donation extends SalesforceWriteProxy
         }
 
         if ($giftAid && $donorHomeAddressLine1 === null) {
-            throw new \UnexpectedValueException("Cannot Claim Gift Aid Without Home Address");
+            throw new \UnexpectedValueException('Cannot Claim Gift Aid Without Home Address');
         }
 
         try {
             $lazyAssertion = Assert::lazy();
 
-            $lazyAssertion
-                ->that($donorHomeAddressLine1, 'donorHomeAddressLine1')
-                ->nullOr()->betweenLength(1, 255);
+            $lazyAssertion->that($donorHomeAddressLine1, 'donorHomeAddressLine1')
+                ->nullOr()
+                ->betweenLength(1, 255);
 
             /** postcode should either be a UK postcode or the word 'OVERSEAS' - either way length will be between 5 and
-                8. Could consider adding a regex validation.
+             * 8. Could consider adding a regex validation.
              * @see self::OVERSEAS
              */
             $lazyAssertion->that($donorHomePostcode, 'donorHomePostcode')->nullOr()->betweenLength(5, 8);
@@ -1774,13 +1780,13 @@ class Donation extends SalesforceWriteProxy
      */
     public function getTotalPaidByDonor(): ?string
     {
-        if (! $this->donationStatus->isSuccessful() && ! $this->donationStatus->isReversed()) {
+        if (!$this->donationStatus->isSuccessful() && !$this->donationStatus->isReversed()) {
             // incomplete donation, donor has not paid any amount yet.
             return null;
         }
 
         $total = $this->getAmountFractionalIncTip();
-        $totalString = bcdiv((string)$total, '100', 2);
+        $totalString = bcdiv((string) $total, '100', 2);
 
         if ($this->totalPaidByDonor !== null) {
             Assertion::eq(
@@ -1889,7 +1895,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function getGiftAidValue(): string
     {
-        if (! $this->giftAid) {
+        if (!$this->giftAid) {
             return '0.00';
         }
 
@@ -1907,8 +1913,8 @@ class Donation extends SalesforceWriteProxy
             ...array_map(Money::fromNumericStringGBP(...), [
                 $this->amount,
                 $this->getGiftAidValue(),
-                $this->getFundingWithdrawalTotal()
-            ])
+                $this->getFundingWithdrawalTotal(),
+            ]),
         )->toNumericString();
     }
 
@@ -1920,18 +1926,25 @@ class Donation extends SalesforceWriteProxy
     private function assertionsForConfirmOrPreAuth(): \Assert\LazyAssertion
     {
         return Assert::lazy()
-            ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
-            ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
-            ->that($this->donorCountryCode)->notNull('Missing Billing Country')
-            ->that($this->donorBillingPostcode)->notNull('Missing Billing Postcode')
-            ->that($this->tbgComms)->notNull('Missing tbgComms preference')
-            ->that($this->charityComms)->notNull('Missing charityComms preference')
+            ->that($this->donorLastName, 'donorLastName')
+            ->notNull('Missing Donor Last Name')
+            ->that($this->donorEmailAddress)
+            ->notNull('Missing Donor Email Address')
+            ->that($this->donorCountryCode)
+            ->notNull('Missing Billing Country')
+            ->that($this->donorBillingPostcode)
+            ->notNull('Missing Billing Postcode')
+            ->that($this->tbgComms)
+            ->notNull('Missing tbgComms preference')
+            ->that($this->charityComms)
+            ->notNull('Missing charityComms preference')
             ->that($this->donationStatus, 'donationStatus')
             ->that($this->hasExpectedMatchingReserved(), 'matchedAmount')
-            ->that($this->donationStatus)->inArray(
+            ->that($this->donationStatus)
+            ->inArray(
                 [DonationStatus::Pending, DonationStatus::PreAuthorized],
-                "Donation status is '{$this->donationStatus->value}', must be " .
-                "'Pending' or 'PreAuthorized' to confirm payment"
+                "Donation status is '{$this->donationStatus->value}', must be "
+                . "'Pending' or 'PreAuthorized' to confirm payment",
             );
     }
 
@@ -1946,10 +1959,12 @@ class Donation extends SalesforceWriteProxy
      */
     public function checkPreAuthDateAllowsCollectionAt(\DateTimeImmutable $now): void
     {
-        if (!($this->thisIsInDateRangeToConfirm($now))) {
+        if (!$this->thisIsInDateRangeToConfirm($now)) {
             throw new RegularGivingDonationTooOldToCollect(
-                "Donation ID {$this->getId()} should have been collected at " .
-                "{$this->getPreAuthorizationDate()?->format('Y-m-d')}, will not at this time of {$now->format('Y-m-d')}",
+                "Donation ID {$this->getId()} should have been collected at "
+                . "{$this->getPreAuthorizationDate()?->format('Y-m-d')}, will not at this time of {$now->format(
+                    'Y-m-d',
+                )}",
             );
         }
     }
@@ -1962,9 +1977,7 @@ class Donation extends SalesforceWriteProxy
             return true;
         }
 
-        return
-            $preAuthorizationDate <= $now &&
-            $preAuthorizationDate->add(new \DateInterval('P1M')) >= $now;
+        return $preAuthorizationDate <= $now && $preAuthorizationDate->add(new \DateInterval('P1M')) >= $now;
     }
 
     public function getRefundedAt(): ?DateTimeImmutable
@@ -2012,8 +2025,8 @@ class Donation extends SalesforceWriteProxy
             $formattedQueuedDate = $this->tbgGiftAidRequestQueuedAt->format('Y-m-d H:i');
 
             throw new CannotRemoveGiftAid(
-                "Cannot remove gift aid from donation {$salesforceId}, request already " .
-                "queued to send to HMRC at {$formattedQueuedDate}"
+                "Cannot remove gift aid from donation {$salesforceId}, request already "
+                . "queued to send to HMRC at {$formattedQueuedDate}",
             );
         }
 
@@ -2024,15 +2037,14 @@ class Donation extends SalesforceWriteProxy
             $salesforceId = $this->getSalesforceId();
 
             throw new CannotRemoveGiftAid(
-                "Cannot remove gift aid from donation {$salesforceId}, gift aid " .
-                "already removed at {$formattedQueuedDate}"
+                "Cannot remove gift aid from donation {$salesforceId}, gift aid "
+                . "already removed at {$formattedQueuedDate}",
             );
         }
 
         if (!$this->giftAid && !$this->tipGiftAid) {
             throw new CannotRemoveGiftAid(
-                "Cannot remove gift aid from donation {$salesforceId}, gift aid " .
-                "was not requested by donor"
+                "Cannot remove gift aid from donation {$salesforceId}, gift aid " . 'was not requested by donor',
             );
         }
 
@@ -2128,7 +2140,7 @@ class Donation extends SalesforceWriteProxy
         Assertion::same(
             \is_null($this->paymentCardCountry),
             \is_null($this->paymentCardBrand),
-            'Payment card must be fully null or non-null'
+            'Payment card must be fully null or non-null',
         );
 
         if ($this->paymentCardBrand === null || $this->paymentCardCountry === null) {
@@ -2146,7 +2158,7 @@ class Donation extends SalesforceWriteProxy
     public function getReturnUrl(): string
     {
         $url = Environment::current()->publicDonateURLPrefix() . 'thanks/' . $this->uuid->toString();
-        return ($this->paymentMethodType === PaymentMethodType::PayByBank) ? "$url?from=bank" : $url;
+        return $this->paymentMethodType === PaymentMethodType::PayByBank ? "{$url}?from=bank" : $url;
     }
 
     /**
@@ -2155,7 +2167,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function isOffSession(): bool
     {
-        if (! $this->isRegularGiving()) {
+        if (!$this->isRegularGiving()) {
             return false;
         }
 

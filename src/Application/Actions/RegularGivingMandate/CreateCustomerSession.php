@@ -47,6 +47,6 @@ class CreateCustomerSession extends Action
 
         $customerSession = $this->stripeClient->createRegularGivingCustomerSession($donor->stripeCustomerId);
 
-        return new JsonResponse(['stripeSessionSecret' =>  $customerSession->client_secret]);
+        return new JsonResponse(['stripeSessionSecret' => $customerSession->client_secret]);
     }
 }

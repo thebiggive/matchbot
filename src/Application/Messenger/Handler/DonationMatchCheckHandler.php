@@ -51,7 +51,10 @@ class DonationMatchCheckHandler
 
     public function __invoke(DonationMatchingShouldBeChecked $message): void
     {
-        $this->logger->debug('DonationMatchCheckHandler invoke; job ' . $message->retroMatchJobUuid . ', donations hash ' . $message->getMessageDeduplicationId());
+        $this->logger->debug(
+            'DonationMatchCheckHandler invoke; job ' . $message->retroMatchJobUuid . ', donations hash '
+                . $message->getMessageDeduplicationId(),
+        );
 
         // Instantiate stats for this specific message of e.g. 10 donations. This invocation's
         // figures will be combined with those from other messages in Redis.
@@ -96,7 +99,7 @@ class DonationMatchCheckHandler
         DonationMatchingShouldBeChecked $message,
         array $campaignIdsWithAllocations,
         int $numberAllocated,
-        int $penceAllocated
+        int $penceAllocated,
     ): void {
         $this->redis->incrBy($this->keyForStat('numChecked', $message), count($message->donationUuids));
         // Below are sometimes no-ops, but should be fast and it's more complicated to expire() usefully if they're conditional.
@@ -125,16 +128,20 @@ class DonationMatchCheckHandler
 
         // @todo-multi-currency This message assumes GBP for now but the actual reallocation would use
         // Campaign/Donation currency if we were live with others.
-        $summary = "Retrospectively matched $numWithMatchingAllocated of $numChecked donations. " .
-            "£$totalNewMatching total new matching, across $numDistinctCampaigns campaigns.";
+        $summary =
+            "Retrospectively matched {$numWithMatchingAllocated} of {$numChecked} donations. "
+            . "£{$totalNewMatching} total new matching, across {$numDistinctCampaigns} campaigns.";
         $this->logger->info($summary);
 
         // If we did any new matching allocation, whether because of campaigns just closed or because
         // the command was run manually, send the results to Slack.
         if ($numDistinctCampaigns > 0 && $this->environment !== Environment::Test) {
             $chatMessage = new ChatMessage('Retrospective matching');
-            $options = (new SlackOptions())
-                ->block(new SlackHeaderBlock(sprintf('[%s] %s', $this->environment->name, 'Retrospective matching completed')))
+            $options = new SlackOptions()->block(new SlackHeaderBlock(sprintf(
+                '[%s] %s',
+                $this->environment->name,
+                'Retrospective matching completed',
+            )))
                 ->block(new SlackSectionBlock()->text($summary));
             $chatMessage->options($options);
 
@@ -148,7 +155,7 @@ class DonationMatchCheckHandler
     private function redistributeFunds(): void
     {
         [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
-        $this->logger->info("Checked $numberChecked donations and redistributed matching for $donationsAmended");
+        $this->logger->info("Checked {$numberChecked} donations and redistributed matching for {$donationsAmended}");
     }
 
     private function syncFundUsage(DonationMatchingShouldBeChecked $message): void
