@@ -165,6 +165,7 @@ class CreateFictionalData extends Command
         if (!$charityOnStripe) {
             /** @psalm-suppress ArgumentTypeCoercion */
             $charityOnStripe = $this->campaignRepository->newCharityFromCampaignData(
+                // @mago-expect analysis:possibly-invalid-argument
                 ['charity' => $this->getFictionalCharityData($io, PaymentServiceProvider::Stripe)] // @phpstan-ignore argument.type
             );
 
@@ -177,6 +178,7 @@ class CreateFictionalData extends Command
         if (!$charityOnRyft) {
             /** @psalm-suppress ArgumentTypeCoercion */
             $charityOnRyft = $this->campaignRepository->newCharityFromCampaignData(
+                // @mago-expect analysis:possibly-invalid-argument
                 ['charity' => $this->getFictionalCharityData($io, PaymentServiceProvider::Ryft)] // @phpstan-ignore argument.type
             );
 
@@ -258,6 +260,7 @@ class CreateFictionalData extends Command
     {
         $randomSeed = \random_int(1, 100);
 
+        // @mago-expect analysis:invalid-return-statement
         return [ // @phpstan-ignore return.type
             'id' => $sfId,
             'charity' => [],
