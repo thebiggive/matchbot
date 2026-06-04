@@ -169,7 +169,7 @@
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
         "sa:check": "bash -c \"time vendor/bin/mago analyze && time vendor/bin/phpstan && time vendor/bin/psalm\"",
         "sa:check-with-new-cache": "vendor/bin/phpstan && vendor/bin/psalm --clear-cache; vendor/bin/psalm",
-        "lint:check": "mago lint --semantics; phpcs --standard=phpcs.xml -s . --ignore=reports",
+        "lint:check": "mago lint; phpcs --standard=phpcs.xml -s . --ignore=reports",
         "lint:fix": "phpcbf --standard=phpcs.xml -s . --ignore=reports",
         "matchbot:claim-gift-aid": [
             "Composer\\Config::disableProcessTimeout",
