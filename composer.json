@@ -171,6 +171,8 @@
         "sa:check-with-new-cache": "vendor/bin/phpstan && vendor/bin/psalm --clear-cache; vendor/bin/psalm",
         "lint:check": "mago lint; phpcs --standard=phpcs.xml -s . --ignore=reports",
         "lint:fix": "phpcbf --standard=phpcs.xml -s . --ignore=reports",
+        "fmt:check": "mago fmt --check",
+        "fmt:fix": "mago fmt",
         "matchbot:claim-gift-aid": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:claim-gift-aid"

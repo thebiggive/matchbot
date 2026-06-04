@@ -60,6 +60,10 @@ jobs:
 
       - run: composer run lint:check
 
+
+      - run: composer run fmt:check || true; # "|| true" so we don't break the build on different formatting just yet, including to show what the differences are.
+                                             # will make a PR to change format of all code to match what mago expects separately.
+
       - run: composer run sa:check
 
       - run: composer run test

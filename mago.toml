@@ -12,7 +12,7 @@ workspace = "."
 paths = ["src/", "app/"]
 
 includes = ["vendor"]
-excludes = []
+excludes = ["src/Migrations"]
 
 [source.glob]
 literal-separator = true
@@ -28,6 +28,7 @@ preserve-breaking-attribute-list = true
 preserve-breaking-conditional-expression = true
 preserve-breaking-condition-expression = true
 preserve-redundant-logical-binary-expression-parentheses = true
+trailing-comma = true
 
 [linter]
 integrations = ["symfony", "phpunit"]
