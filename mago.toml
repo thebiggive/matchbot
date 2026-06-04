@@ -6,7 +6,11 @@ php-version = "8.5.0"
 
 [source]
 workspace = "."
-paths = ["integrationTests/", "src/", "tests/"]
+
+# test directories not included for now because mago doesn't seem to have prophecy support.
+# see https://github.com/carthage-software/mago/issues/442#
+paths = ["src/", "app/"]
+
 includes = ["vendor"]
 excludes = []
 
