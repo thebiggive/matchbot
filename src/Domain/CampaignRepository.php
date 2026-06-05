@@ -27,10 +27,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
 {
     private ClockInterface $clock;  // @phpstan-ignore property.uninitialized
     private string $appStatusWhereClause = <<<DQL
-        campaign.metaCampaignSlug IS NULL OR
         (
-            campaign.relatedApplicationStatus = 'Approved' AND
-            campaign.relatedApplicationCharityResponseToOffer = 'Accepted'
+            campaign.metaCampaignSlug IS NULL OR
+            (
+                campaign.relatedApplicationStatus = 'Approved' AND
+                campaign.relatedApplicationCharityResponseToOffer = 'Accepted'
+            )
         )
     DQL;
 
