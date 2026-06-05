@@ -1,0 +1,1345 @@
+variant = "loose"
+
+[[issues]]
+file = "app/dependencies.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Application\Messenger\Handler\DonationMatchCheckHandler::__invoke`: expected `MatchBot\Application\Messenger\DonationMatchingShouldBeChecked`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Application\Messenger\Handler\DonationUpsertedHandler::__invoke`: expected `MatchBot\Application\Messenger\DonationUpserted`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Application\Messenger\Handler\EmailVerificationTokenHandler::__invoke`: expected `Messages\EmailVerificationToken`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Application\Messenger\Handler\FundTotalUpdatedHandler::__invoke`: expected `MatchBot\Application\Messenger\FundTotalUpdated`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Application\Messenger\Handler\GiftAidResultHandler::__invoke`: expected `Messages\Donation`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Application\Messenger\Handler\MandateUpsertedHandler::__invoke`: expected `MatchBot\Application\Messenger\MandateUpserted`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Application\Messenger\Handler\PersonHandler::__invoke`: expected `Messages\Person`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Application\Messenger\Handler\StripePayoutHandler::__invoke`: expected `MatchBot\Application\Messenger\StripePayout`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 4
+
+[[issues]]
+file = "app/dependencies.php"
+code = "mixed-operand"
+message = "Right operand in `&&` operation has `mixed` type."
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "mixed-return-statement"
+message = "Could not infer a precise return type for function `{closure:app/dependencies.php:450:24}`. Saw type `mixed`."
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "possibly-false-argument"
+message = 'Argument #1 of method `MatchBot\Application\Environment::fromAppEnv` is possibly `false`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "possibly-invalid-argument"
+message = '''Possible argument type mismatch for argument #1 of `Doctrine\DBAL\DriverManager::getConnection`: expected `array{'application_name'?: string, 'charset'?: string, 'dbname'?: string, 'defaultTableOptions'?: array<string, mixed>, 'driver'?: string('ibm_db2')|string('mysqli')|string('oci8')|string('pdo_mysql')|string('pdo_oci')|string('pdo_pgsql')|string('pdo_sqlite')|string('pdo_sqlsrv')|string('pgsql')|string('sqlite3')|string('sqlsrv'), 'driverClass'?: class-string<Doctrine\DBAL\Driver>, 'driverOptions'?: array<array-key, mixed>, 'host'?: string, 'keepReplica'?: bool, 'memory'?: bool, 'password'?: string, 'path'?: string, 'persistent'?: bool, 'port'?: int, 'primary'?: array{'application_name'?: string, 'charset'?: string, 'dbname'?: string, 'defaultTableOptions'?: array<string, mixed>, 'driver'?: string('ibm_db2')|string('mysqli')|string('oci8')|string('pdo_mysql')|string('pdo_oci')|string('pdo_pgsql')|string('pdo_sqlite')|string('pdo_sqlsrv')|string('pgsql')|string('sqlite3')|string('sqlsrv'), 'driverClass'?: class-string<Doctrine\DBAL\Driver>, 'driverOptions'?: array<array-key, mixed>, 'host'?: string, 'memory'?: bool, 'password'?: string, 'path'?: string, 'persistent'?: bool, 'port'?: int, 'serverVersion'?: string, 'sessionMode'?: int, 'unix_socket'?: string, 'user'?: string, 'wrapperClass'?: class-string<Doctrine\DBAL\Connection>}, 'replica'?: array<array-key, array{'application_name'?: string, 'charset'?: string, 'dbname'?: string, 'defaultTableOptions'?: array<string, mixed>, 'driver'?: string('ibm_db2')|string('mysqli')|string('oci8')|string('pdo_mysql')|string('pdo_oci')|string('pdo_pgsql')|string('pdo_sqlite')|string('pdo_sqlsrv')|string('pgsql')|string('sqlite3')|string('sqlsrv'), 'driverClass'?: class-string<Doctrine\DBAL\Driver>, 'driverOptions'?: array<array-key, mixed>, 'host'?: string, 'memory'?: bool, 'password'?: string, 'path'?: string, 'persistent'?: bool, 'port'?: int, 'serverVersion'?: string, 'sessionMode'?: int, 'unix_socket'?: string, 'user'?: string, 'wrapperClass'?: class-string<Doctrine\DBAL\Connection>}>, 'serverVersion'?: string, 'sessionMode'?: int, 'unix_socket'?: string, 'user'?: string, 'wrapperClass'?: class-string<Doctrine\DBAL\Connection>}`, but possibly received `array{'application_name'?: string, 'charset'?: string, 'dbname'?: string, 'defaultTableOptions'?: array<string, mixed>, 'driver'?: string('ibm_db2')|string('mysqli')|string('oci8')|string('pdo_mysql')|string('pdo_oci')|string('pdo_pgsql')|string('pdo_sqlite')|string('pdo_sqlsrv')|string('pgsql')|string('sqlite3')|string('sqlsrv'), 'driverClass'?: class-string<Doctrine\DBAL\Driver>, 'driverOptions'?: array<array-key, mixed>, 'host'?: string, 'keepReplica'?: bool, 'memory'?: bool, 'password'?: string, 'path'?: string, 'persistent'?: bool, 'platform': MatchBot\Application\CustomMysqlPlatform, 'port'?: int, 'primary'?: array{'application_name'?: string, 'charset'?: string, 'dbname'?: string, 'defaultTableOptions'?: array<string, mixed>, 'driver'?: string('ibm_db2')|string('mysqli')|string('oci8')|string('pdo_mysql')|string('pdo_oci')|string('pdo_pgsql')|string('pdo_sqlite')|string('pdo_sqlsrv')|string('pgsql')|string('sqlite3')|string('sqlsrv'), 'driverClass'?: class-string<Doctrine\DBAL\Driver>, 'driverOptions'?: array<array-key, mixed>, 'host'?: string, 'memory'?: bool, 'password'?: string, 'path'?: string, 'persistent'?: bool, 'port'?: int, 'serverVersion'?: string, 'sessionMode'?: int, 'unix_socket'?: string, 'user'?: string, 'wrapperClass'?: class-string<Doctrine\DBAL\Connection>}, 'replica'?: array<array-key, array{'application_name'?: string, 'charset'?: string, 'dbname'?: string, 'defaultTableOptions'?: array<string, mixed>, 'driver'?: string('ibm_db2')|string('mysqli')|string('oci8')|string('pdo_mysql')|string('pdo_oci')|string('pdo_pgsql')|string('pdo_sqlite')|string('pdo_sqlsrv')|string('pgsql')|string('sqlite3')|string('sqlsrv'), 'driverClass'?: class-string<Doctrine\DBAL\Driver>, 'driverOptions'?: array<array-key, mixed>, 'host'?: string, 'memory'?: bool, 'password'?: string, 'path'?: string, 'persistent'?: bool, 'port'?: int, 'serverVersion'?: string, 'sessionMode'?: int, 'unix_socket'?: string, 'user'?: string, 'wrapperClass'?: class-string<Doctrine\DBAL\Connection>}>, 'serverVersion'?: string, 'sessionMode'?: int, 'unix_socket'?: string, 'user'?: string, 'wrapperClass'?: class-string<Doctrine\DBAL\Connection>}`.'''
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "possibly-null-argument"
+message = 'Argument #1 of method `MatchBot\Client\RyftClient::__construct` is possibly `null`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "possibly-null-argument"
+message = 'Argument #2 of method `MatchBot\Client\RyftClient::__construct` is possibly `null`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "possibly-undefined-string-array-index"
+message = "Possibly undefined array key 'publicKey' accessed on `array{'publicKey'?: non-empty-string, 'secretKey'?: non-empty-string}`."
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "possibly-undefined-string-array-index"
+message = "Possibly undefined array key 'secretKey' accessed on `array{'publicKey'?: non-empty-string, 'secretKey'?: non-empty-string}`."
+count = 1
+
+[[issues]]
+file = "app/dependencies.php"
+code = "redundant-comparison"
+message = "Redundant `===` comparison: left-hand side is always identical to right-hand side."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Action.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/ActionError.php"
+code = "invalid-return-statement"
+message = '''Invalid return type for function `MatchBot\Application\Actions\ActionError::jsonSerialize`: expected `array{'description': string, 'type': string, ...}`, but found `array{'description': null|string, 'type': string, ...<string, mixed>}`.'''
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Campaigns/Search.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Campaigns/Search.php"
+code = "mixed-assignment"
+message = "Assigning `nonnull` type to a variable may lead to unexpected behavior."
+count = 2
+
+[[issues]]
+file = "src/Application/Actions/Campaigns/UpsertMany.php"
+code = "impossible-condition"
+message = "This condition (type `false`) will always evaluate to false."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Campaigns/UpsertMany.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Campaigns/UpsertMany.php"
+code = "redundant-comparison"
+message = "Redundant `===` comparison: left-hand side is never identical to right-hand side."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Campaigns/UpsertMany.php"
+code = "redundant-null-coalesce"
+message = "Redundant null coalesce: left-hand side can never be `null` or undefined."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Charities/Put.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Charities/Put.php"
+code = "null-operand"
+message = "Right operand in `!=` comparison is `null`."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Charities/Put.php"
+code = "possibly-null-operand"
+message = "Left operand in `!=` comparison might be `null` (type `null|string`)."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Charities/UpsertMany.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/DeletePaymentMethod.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/CancelAll.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 3
+
+[[issues]]
+file = "src/Application/Actions/Donations/Confirm.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #4 of `MatchBot\Domain\DonationService::confirmOnSessionDonation`: expected `null|string`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Confirm.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 5
+
+[[issues]]
+file = "src/Application/Actions/Donations/Confirm.php"
+code = "mixed-assignment"
+message = "Assigning `nonnull` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Confirm.php"
+code = "named-argument-not-allowed"
+message = "Named arguments are not allowed for `str_contains`."
+count = 4
+
+[[issues]]
+file = "src/Application/Actions/Donations/Confirm.php"
+code = "possibly-invalid-argument"
+message = "Possible argument type mismatch for argument #2 of `Exception::__construct`: expected `int`, but possibly received `int|string`."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Confirm.php"
+code = "possibly-null-argument"
+message = 'Argument #4 of method `MatchBot\Application\Actions\Donations\Confirm::handleCardException` is possibly `null`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Confirm.php"
+code = "possibly-null-property-access"
+message = "Attempting to access a property on a possibly `null` value."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Create.php"
+code = "avoid-catching-error"
+message = "Avoid catching 'Error' class instances."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Create.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 2
+
+[[issues]]
+file = "src/Application/Actions/Donations/Explain.php"
+code = "impossible-condition"
+message = "Redundant ternary operator: condition is always falsy."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Explain.php"
+code = "less-specific-nested-argument-type"
+message = "Argument type mismatch for argument #2 of `implode`: expected `array<array-key, Stringable|null|scalar>|null`, but provided type `array<array-key, mixed>` is less specific."
+count = 2
+
+[[issues]]
+file = "src/Application/Actions/Donations/Explain.php"
+code = "mixed-argument"
+message = "Invalid argument type for argument #1 of `array_filter`: expected `array<string, string>`, but found `mixed`."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Explain.php"
+code = "mixed-argument"
+message = "Invalid argument type for argument #1 of `array_keys`: expected `array<('K.array_keys() extends array-key), ('V.array_keys() extends mixed)>`, but found `mixed`."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Explain.php"
+code = "mixed-argument"
+message = "Invalid argument type for argument #2 of `implode`: expected `array<array-key, Stringable|null|scalar>|null`, but found `mixed`."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Explain.php"
+code = "mixed-argument"
+message = "Invalid argument type for argument #3 of `array_map`: expected `array<array-key, ('S.array_map() extends mixed)>`, but found `mixed`."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Explain.php"
+code = "possible-method-access-on-null"
+message = "Attempting to call a method on `null`."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Explain.php"
+code = "possibly-null-operand"
+message = "Right operand in arithmetic operation might be `null` (type `array<array-key, mixed|string>|null`)."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Explain.php"
+code = "redundant-comparison"
+message = "Redundant `===` comparison: left-hand side is never identical to right-hand side."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/GetAllForUser.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/ResendDonorThanksNotification.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 2
+
+[[issues]]
+file = "src/Application/Actions/Donations/Update.php"
+code = "avoid-catching-error"
+message = "Avoid catching 'Error' class instances."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Update.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Update.php"
+code = "mixed-property-access"
+message = "Attempting to access a property on a non-object type (`mixed`)."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Donations/Update.php"
+code = "named-argument-not-allowed"
+message = "Named arguments are not allowed for `str_starts_with`."
+count = 2
+
+[[issues]]
+file = "src/Application/Actions/GetPaymentMethods.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Hooks/Stripe.php"
+code = "impossible-condition"
+message = "This condition (type `false`) will always evaluate to false."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Hooks/StripePaymentsUpdate.php"
+code = "impossible-condition"
+message = "This condition (type `false`) will always evaluate to false."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Hooks/StripePaymentsUpdate.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Hooks/StripePaymentsUpdate.php"
+code = "mixed-method-access"
+message = "Attempting to access a method on a non-object type (`mixed`)."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Hooks/StripePaymentsUpdate.php"
+code = "mixed-property-access"
+message = "Attempting to access a property on a non-object type (`mixed`)."
+count = 5
+
+[[issues]]
+file = "src/Application/Actions/Hooks/StripePaymentsUpdate.php"
+code = "possibly-invalid-argument"
+message = '''Possible argument type mismatch for argument #2 of `sprintf`: expected `Stringable|null|scalar`, but possibly received `Stripe\PaymentIntent|string('null')`.'''
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Hooks/StripePaymentsUpdate.php"
+code = "possibly-invalid-argument"
+message = 'Possible argument type mismatch for argument #2 of `sprintf`: expected `Stringable|null|scalar`, but possibly received `Stripe\PaymentIntent|string`.'
+count = 2
+
+[[issues]]
+file = "src/Application/Actions/Hooks/StripePaymentsUpdate.php"
+code = "possibly-invalid-argument"
+message = 'Possible argument type mismatch for argument #4 of `sprintf`: expected `Stringable|null|scalar`, but possibly received `Stripe\PaymentIntent|string`.'
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Hooks/StripePaymentsUpdate.php"
+code = "redundant-null-coalesce"
+message = "Redundant null coalesce: left-hand side can never be `null` or undefined."
+count = 2
+
+[[issues]]
+file = "src/Application/Actions/Hooks/StripePaymentsUpdate.php"
+code = "redundant-type-comparison"
+message = "Redundant type assertion: `$eventAsArray` is already `array<string, mixed>`."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/Hooks/StripePayoutUpdate.php"
+code = "mixed-property-access"
+message = "Attempting to access a property on a non-object type (`mixed`)."
+count = 3
+
+[[issues]]
+file = "src/Application/Actions/Hooks/StripePayoutUpdate.php"
+code = "possibly-null-argument"
+message = 'Argument #2 of method `MatchBot\Application\Messenger\StripePayout::__construct` is possibly `null`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/MailingListSignup.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/MailingListSignup.php"
+code = "mixed-assignment"
+message = "Assigning `nonnull` type to a variable may lead to unexpected behavior."
+count = 4
+
+[[issues]]
+file = "src/Application/Actions/RegularGivingMandate/Cancel.php"
+code = "avoid-catching-error"
+message = "Avoid catching 'Error' class instances."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/RegularGivingMandate/Create.php"
+code = "avoid-catching-error"
+message = "Avoid catching 'Error' class instances."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/RegularGivingMandate/CreateCustomerSession.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 2
+
+[[issues]]
+file = "src/Application/Actions/RegularGivingMandate/Get.php"
+code = "redundant-cast"
+message = "Redundant cast to `(string)`: the expression already has this type."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/RegularGivingMandate/UpdatePaymentMethod.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/RegularGivingMandate/UpdatePaymentMethod.php"
+code = "mixed-assignment"
+message = "Assigning `nonnull` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Actions/UpdatePaymentMethod.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 2
+
+[[issues]]
+file = "src/Application/Actions/UpdatePaymentMethod.php"
+code = "possibly-invalid-argument"
+message = '''Possible argument type mismatch for argument #2 of `Stripe\Service\PaymentMethodService::update`: expected `array{'allow_redisplay'?: string, 'billing_details'?: array{'address'?: array{'city'?: string, 'country'?: string, 'line1'?: string, 'line2'?: string, 'postal_code'?: string, 'state'?: string}|null, 'email'?: null|string, 'name'?: null|string, 'phone'?: null|string, 'tax_id'?: string}, 'card'?: array{'exp_month'?: int, 'exp_year'?: int, 'networks'?: array{'preferred'?: null|string}}, 'expand'?: array<array-key, string>, 'metadata'?: array<string, string>|null, 'payto'?: array{'account_number'?: string, 'bsb_number'?: string, 'pay_id'?: string}, 'us_bank_account'?: array{'account_holder_type'?: string, 'account_type'?: string}}|null`, but possibly received `array<array-key, mixed>`.'''
+count = 1
+
+[[issues]]
+file = "src/Application/Auth/FriendlyCaptchaVerifier.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Auth/FriendlyCaptchaVerifier.php"
+code = "mixed-operand"
+message = "Casting `mixed` to `bool`."
+count = 1
+
+[[issues]]
+file = "src/Application/Auth/IdentityTokenService.php"
+code = "docblock-type-mismatch"
+message = 'Docblock return type `unknown-ref(MatchBot\Application\Auth\IdentityJWT)` is incompatible with native return type `object`.'
+count = 1
+
+[[issues]]
+file = "src/Application/Auth/IdentityTokenService.php"
+code = "invalid-property-access"
+message = 'Attempting to access a property on a non-object type (`unknown-ref(MatchBot\Application\Auth\IdentityJWT)`).'
+count = 5
+
+[[issues]]
+file = "src/Application/Auth/IdentityTokenService.php"
+code = "invalid-type-tag"
+message = "Could not resolve the type in the `@type` tag."
+count = 1
+
+[[issues]]
+file = "src/Application/Auth/IdentityTokenService.php"
+code = "non-existent-class-like"
+message = 'Cannot find class, interface, enum, or type alias `MatchBot\Application\Auth\IdentityJWT`.'
+count = 2
+
+[[issues]]
+file = "src/Application/Auth/IdentityTokenService.php"
+code = "null-argument"
+message = 'Argument #1 of method `MatchBot\Domain\PersonId::of` is `null`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "src/Application/Auth/IdentityTokenService.php"
+code = "null-property-access"
+message = "Attempting to access a property on an expression that is always `null`."
+count = 4
+
+[[issues]]
+file = "src/Application/Auth/IdentityTokenService.php"
+code = "redundant-comparison"
+message = "Redundant `!==` comparison: left-hand side is always not identical to right-hand side."
+count = 2
+
+[[issues]]
+file = "src/Application/Auth/IdentityTokenService.php"
+code = "redundant-condition"
+message = "This condition (type `true`) will always evaluate to true."
+count = 1
+
+[[issues]]
+file = "src/Application/Auth/IdentityTokenService.php"
+code = "redundant-logical-operation"
+message = "Redundant `&&` operation: left operand is evaluated and right operand is always truthy."
+count = 1
+
+[[issues]]
+file = "src/Application/Auth/IdentityTokenService.php"
+code = "redundant-null-coalesce"
+message = "Redundant null coalesce: left-hand side is always `null`."
+count = 2
+
+[[issues]]
+file = "src/Application/Auth/PersonManagementAuthMiddleware.php"
+code = "possibly-null-argument"
+message = 'Argument #1 of method `MatchBot\Application\Auth\IdentityTokenService::getPersonId` is possibly `null`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "src/Application/Auth/PersonManagementAuthMiddleware.php"
+code = "possibly-null-argument"
+message = 'Argument #1 of method `MatchBot\Application\Auth\IdentityTokenService::getPspId` is possibly `null`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "src/Application/Auth/SalesforceAuthMiddleware.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/Command.php"
+code = "mixed-operand"
+message = "Right operand in `&&` operation has `mixed` type."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/CreateFictionalData.php"
+code = "invalid-return-statement"
+message = 'Invalid return type for function `MatchBot\Application\Commands\CreateFictionalData::createStripeAccount`: expected `string`, but found `null|string`.'
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/CreateFictionalData.php"
+code = "invalid-return-statement"
+message = '''Invalid return type for function `MatchBot\Application\Commands\CreateFictionalData::getFictionalCampaignData`: expected `array{'additionalImageUris': list<array{'order': int, 'uri': string}>, 'additionalImages': list<array{'altText': string, 'rank': int, 'uri': string}>, 'aims': list<string>, 'alternativeFundUse': null|string, 'amountPledged'?: float, 'amountRaised': float, 'banner'?: array{'alt_text': null|string, 'uri': string}|null, 'bannerUri': null|string, 'beneficiaries': list<string>, 'budgetDetails': list<array{'amount': float, 'description': string}>, 'campaignCount': int|null, 'campaignFamily': string, 'categories': list<string>, 'championName': string, 'championOptInStatement': string, 'championPagePinPosition'?: int|null, 'championRef': null|string, 'charity': array{'emailAddress': null|string, 'facebook': null|string, 'giftAidOnboardingStatus': string, 'hmrcReferenceNumber': null|string, 'id': string, 'instagram': null|string, 'linkedin': null|string, 'logoUri': null|string, 'name': string, 'optInStatement': null|string, 'phoneNumber': null|string, 'psp'?: string, 'regulatorNumber': null|string, 'regulatorRegion': string, 'ryftAccountId': null|string, 'stripeAccountId': string, 'twitter': null|string, 'website': null|string}|null, 'countries': list<string>, 'currencyCode': string, 'donationCount': int|null, 'endDate': null|string, 'hidden': bool, 'id': string, 'imfCampaignTargetOverride'?: float, 'impactReporting': null|string, 'impactSummary': null|string, 'isEmergencyIMF': bool, 'isMatched': bool, 'isMetaCampaign': bool|null, 'isPublished': bool, 'isRegularGiving'?: bool, 'logoUri': null|string, 'matchFundsRemaining': float, 'matchFundsTotal': float, 'parentAmountRaised': float|null, 'parentDonationCount': int|null, 'parentMatchFundsRemaining': float|null, 'parentRef': null|string, 'parentTarget': float|null, 'parentUsesSharedFunds': bool, 'pinPosition'?: int|null, 'problem': null|string, 'quotes': list<array{'person': string, 'quote': string}>, 'regularGivingCollectionEnd'?: null|string, 'relatedApplicationCharityResponseToOffer'?: null|string('Accepted')|string('Rejected'), 'relatedApplicationStatus'?: null|string('Approved')|string('InProgress')|string('Missed Deadline')|string('Pending Approval')|string('Register Interest')|string('Rejected')|string('Submitted'), 'slug': null|string, 'solution': null|string, 'startDate': null|string, 'summary': string, 'surplusDonationInfo': string, 'thankYouMessage': null|string, 'title': null|string, 'totalAdjustment': float|null, 'totalFundingAllocation'?: float, 'totalFundraisingTarget'?: float, 'totalMatchedFundsAvailable'?: float, 'updates': list<array{'content': string, 'modifiedDate': string}>, 'usesSharedFunds': bool, 'video': array{'key': string, 'provider': string}|null}`, but found `array{'additionalImageUris': array{}, 'additionalImages': list{array{'altText': string('This is the image alt-text'), 'rank': int(1), 'uri': truthy-string}}, 'aims': array{0: string('First Aim')}, 'alternativeFundUse': null, 'amountRaised': float(0.0), 'bannerUri': non-empty-string, 'beneficiaries': list{string('Animals')}, 'budgetDetails': list{array{'amount': float(23.0), 'description': string('Improve the code')}, array{'amount': float(27.0), 'description': string('Invent a new programing paradigm')}}, 'campaignCount': null, 'categories': list{string('Education/Training/Employment'), string('Religious')}, 'championName': null, 'championOptInStatement': null, 'championRef': null, 'charity': array{}, 'countries': array{0: string('United Kingdom')}, 'currencyCode': string('GBP'), 'donationCount': int(0), 'endDate': string('2095-08-01T00:00:00.000Z'), 'hidden': false, 'id': string, 'impactReporting': null, 'impactSummary': null, 'isMatched': bool, 'isPublished': true, 'isRegularGiving': bool, 'logoUri': null, 'matchFundsRemaining': float(50.0), 'matchFundsTotal': float(50.0), 'parentAmountRaised': null, 'parentDonationCount': null, 'parentMatchFundsRemaining': null, 'parentRef': null|string, 'parentTarget': null, 'parentUsesSharedFunds': false, 'problem': string('Matchbot is threatened!'), 'quotes': array{}, 'regularGivingCollectionEnd': null, 'relatedApplicationCharityResponseToOffer': enum(MatchBot\Domain\CharityResponseToOffer::Accepted), 'relatedApplicationStatus': enum(MatchBot\Domain\ApplicationStatus::Approved), 'solution': string('do the saving'), 'startDate': string('2015-08-01T00:00:00.000Z'), 'status': string('Active'), 'summary': non-empty-string, 'surplusDonationInfo': null, 'target': float(100.0), 'thankYouMessage': string('Thank you for helping us save matchbot! We will be able to match twice as many bots now!'), 'title': string, 'updates': array{}, 'usesSharedFunds': false, 'video': null}`.'''
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/CreateFictionalData.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Domain\Salesforce18Id::ofMetaCampaign`: expected `string`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/CreateFictionalData.php"
+code = "mixed-array-access"
+message = "Unsafe array access on type `mixed`."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/CreateFictionalData.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/CreateFictionalData.php"
+code = "mixed-assignment"
+message = "Assigning `nonnull` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/CreateFictionalData.php"
+code = "mixed-return-statement"
+message = 'Could not infer a precise return type for function `MatchBot\Application\Commands\CreateFictionalData::createRyftAccount`. Saw type `mixed`.'
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/CreateFictionalData.php"
+code = "non-existent-method"
+message = 'Method `randomString` does not exist on type `MatchBot\Tests\TestCase`.'
+count = 2
+
+[[issues]]
+file = "src/Application/Commands/CreateFictionalData.php"
+code = "nullable-return-statement"
+message = 'Function `MatchBot\Application\Commands\CreateFictionalData::createStripeAccount` is declared to return `string` but possibly returns a nullable value (inferred as `null|string`).'
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/CreateFictionalData.php"
+code = "possibly-invalid-argument"
+message = '''Possible argument type mismatch for argument #1 of `MatchBot\Domain\CampaignRepository::newCharityFromCampaignData`: expected `array{'additionalImageUris': list<array{'order': int, 'uri': string}>, 'additionalImages': list<array{'altText': string, 'rank': int, 'uri': string}>, 'aims': list<string>, 'alternativeFundUse': null|string, 'amountPledged'?: float, 'amountRaised': float, 'banner'?: array{'alt_text': null|string, 'uri': string}|null, 'bannerUri': null|string, 'beneficiaries': list<string>, 'budgetDetails': list<array{'amount': float, 'description': string}>, 'campaignCount': int|null, 'campaignFamily': string, 'categories': list<string>, 'championName': string, 'championOptInStatement': string, 'championPagePinPosition'?: int|null, 'championRef': null|string, 'charity': array{'emailAddress': null|string, 'facebook': null|string, 'giftAidOnboardingStatus': string, 'hmrcReferenceNumber': null|string, 'id': string, 'instagram': null|string, 'linkedin': null|string, 'logoUri': null|string, 'name': string, 'optInStatement': null|string, 'phoneNumber': null|string, 'psp'?: string, 'regulatorNumber': null|string, 'regulatorRegion': string, 'ryftAccountId': null|string, 'stripeAccountId': string, 'twitter': null|string, 'website': null|string}|null, 'countries': list<string>, 'currencyCode': string, 'donationCount': int|null, 'endDate': null|string, 'hidden': bool, 'id': string, 'imfCampaignTargetOverride'?: float, 'impactReporting': null|string, 'impactSummary': null|string, 'isEmergencyIMF': bool, 'isMatched': bool, 'isMetaCampaign': bool|null, 'isPublished': bool, 'isRegularGiving'?: bool, 'logoUri': null|string, 'matchFundsRemaining': float, 'matchFundsTotal': float, 'parentAmountRaised': float|null, 'parentDonationCount': int|null, 'parentMatchFundsRemaining': float|null, 'parentRef': null|string, 'parentTarget': float|null, 'parentUsesSharedFunds': bool, 'pinPosition'?: int|null, 'problem': null|string, 'quotes': list<array{'person': string, 'quote': string}>, 'regularGivingCollectionEnd'?: null|string, 'relatedApplicationCharityResponseToOffer'?: null|string('Accepted')|string('Rejected'), 'relatedApplicationStatus'?: null|string('Approved')|string('InProgress')|string('Missed Deadline')|string('Pending Approval')|string('Register Interest')|string('Rejected')|string('Submitted'), 'slug': null|string, 'solution': null|string, 'startDate': null|string, 'summary': string, 'surplusDonationInfo': string, 'thankYouMessage': null|string, 'title': null|string, 'totalAdjustment': float|null, 'totalFundingAllocation'?: float, 'totalFundraisingTarget'?: float, 'totalMatchedFundsAvailable'?: float, 'updates': list<array{'content': string, 'modifiedDate': string}>, 'usesSharedFunds': bool, 'video': array{'key': string, 'provider': string}|null}`, but possibly received `array{'charity': array<string, mixed>}`.'''
+count = 2
+
+[[issues]]
+file = "src/Application/Commands/CreateFictionalData.php"
+code = "possibly-undefined-string-array-index"
+message = "Possibly undefined array key 'secretKey' accessed on `array{'publicKey'?: non-empty-string, 'secretKey'?: non-empty-string}`."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/HandleOutOfSyncFunds.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/MergeOpenApiDocs.php"
+code = "less-specific-nested-argument-type"
+message = "Argument type mismatch for argument #1 of `array_column`: expected `array<array-key, array<string('name'), ('V.array_column() extends mixed)>|object>|list<array<string('name'), ('V.array_column() extends mixed)>|object>`, but provided type `array<array-key, mixed>` is less specific."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/MergeOpenApiDocs.php"
+code = "mixed-array-assignment"
+message = "Unsafe array assignment on type `mixed`."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/MergeOpenApiDocs.php"
+code = "mixed-array-assignment"
+message = "Unsafe array assignment on type `nonnull`."
+count = 2
+
+[[issues]]
+file = "src/Application/Commands/MergeOpenApiDocs.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 6
+
+[[issues]]
+file = "src/Application/Commands/PullMetaCampaignFromSF.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/RetrospectivelyMatch.php"
+code = "invalid-type-cast"
+message = "Casting `mixed` to `float`."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/SetupTestMandate.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 6
+
+[[issues]]
+file = "src/Application/Commands/SetupTestMandate.php"
+code = "mixed-operand"
+message = "Casting `mixed` to `bool`."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/TakeRegularGivingDonations.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Application\Commands\TakeRegularGivingDonations::applySimulatedDate`: expected `null|string`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/WriteSchemaFile.php"
+code = "impossible-condition"
+message = "This condition (type `false`) will always evaluate to false."
+count = 2
+
+[[issues]]
+file = "src/Application/Commands/WriteSchemaFile.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 2
+
+[[issues]]
+file = "src/Application/Commands/WriteSchemaFile.php"
+code = "redundant-logical-operation"
+message = "Redundant `&&` operation: left operand is always falsy and right operand is not evaluated."
+count = 1
+
+[[issues]]
+file = "src/Application/Commands/WriteSchemaFile.php"
+code = "unreachable-else-clause"
+message = "Unreachable else clause"
+count = 1
+
+[[issues]]
+file = "src/Application/CustomMySQLSchemaManager.php"
+code = "incompatible-parameter-name"
+message = 'Parameter #1 of `MatchBot\Application\CustomMySQLSchemaManager::_getportabletableindexeslist()` is named `$tableIndexes` but parent `Doctrine\DBAL\Schema\AbstractSchemaManager::_getportabletableindexeslist()` names it `$rows`'
+count = 1
+
+[[issues]]
+file = "src/Application/CustomMySQLSchemaManager.php"
+code = "incompatible-parameter-name"
+message = 'Parameter #1 of `MatchBot\Application\CustomMySQLSchemaManager::_getportabletableindexeslist()` is named `$tableIndexes` but parent `Doctrine\DBAL\Schema\MySQLSchemaManager::_getportabletableindexeslist()` names it `$rows`'
+count = 1
+
+[[issues]]
+file = "src/Application/CustomMySQLSchemaManager.php"
+code = "incompatible-parameter-name"
+message = 'Parameter #3 of `MatchBot\Application\CustomMySQLSchemaManager::_getportabletablecolumnlist()` is named `$tableColumns` but parent `Doctrine\DBAL\Schema\AbstractSchemaManager::_getportabletablecolumnlist()` names it `$rows`'
+count = 1
+
+[[issues]]
+file = "src/Application/CustomMySQLSchemaManager.php"
+code = "possibly-null-argument"
+message = 'Argument #2 of method `Doctrine\DBAL\Schema\MySQLSchemaManager::_getPortableTableIndexesList` is possibly `null`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "src/Application/CustomMysqlPlatform.php"
+code = "deprecated-class"
+message = 'Use of deprecated class `Doctrine\DBAL\Platforms\MySQL84Platform` in `extends` clause'
+count = 1
+
+[[issues]]
+file = "src/Application/Fees/Calculator.php"
+code = "possibly-invalid-argument"
+message = "Possible argument type mismatch for argument #1 of `bcadd`: expected `numeric-string`, but possibly received `string`."
+count = 1
+
+[[issues]]
+file = "src/Application/Matching/Adapter.php"
+code = "invalid-destructuring-source"
+message = "Invalid destructuring assignment: Cannot unpack type `mixed` into variables."
+count = 2
+
+[[issues]]
+file = "src/Application/Matching/Adapter.php"
+code = "invalid-method-access"
+message = "Attempting to access a method on a non-object type (`bool`)."
+count = 2
+
+[[issues]]
+file = "src/Application/Matching/Adapter.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 2
+
+[[issues]]
+file = "src/Application/Matching/Adapter.php"
+code = "mixed-method-access"
+message = "Attempting to access a method on a non-object type (`mixed`)."
+count = 4
+
+[[issues]]
+file = "src/Application/Messenger/Handler/DonationMatchCheckHandler.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 3
+
+[[issues]]
+file = "src/Application/Messenger/Handler/DonationMatchCheckHandler.php"
+code = "possibly-invalid-argument"
+message = 'Possible argument type mismatch for argument #1 of `BcMath\Number::__construct`: expected `int|numeric-string`, but possibly received `numeric`.'
+count = 1
+
+[[issues]]
+file = "src/Application/Messenger/Handler/DonationMatchCheckHandler.php"
+code = "possibly-invalid-argument"
+message = 'Possible argument type mismatch for argument #2 of `MatchBot\Application\Messenger\Handler\DonationMatchCheckHandler::addToStats`: expected `array<array-key, int>`, but possibly received `array<array-key, int>|non-empty-list<int|null>`.'
+count = 1
+
+[[issues]]
+file = "src/Application/Messenger/Handler/DonationMatchCheckHandler.php"
+code = "possibly-null-operand"
+message = "Possibly null right operand used in string concatenation (type `null|string`)."
+count = 1
+
+[[issues]]
+file = "src/Application/Messenger/Handler/PersonHandler.php"
+code = "redundant-comparison"
+message = "Redundant `===` comparison: left-hand side is always identical to right-hand side."
+count = 1
+
+[[issues]]
+file = "src/Application/Messenger/Handler/PersonHandler.php"
+code = "redundant-condition"
+message = "Redundant condition"
+count = 1
+
+[[issues]]
+file = "src/Application/Messenger/Handler/PersonHandler.php"
+code = "redundant-logical-operation"
+message = "Redundant `&&` operation: left operand is always truthy and right operand is evaluated."
+count = 1
+
+[[issues]]
+file = "src/Application/Messenger/Handler/PersonHandler.php"
+code = "redundant-logical-operation"
+message = "Redundant `&&` operation: left operand is evaluated and right operand is always truthy."
+count = 2
+
+[[issues]]
+file = "src/Application/Messenger/Transports.php"
+code = "mixed-argument"
+message = "Invalid argument type for argument #1 of `getenv`: expected `null|string`, but found `mixed`."
+count = 1
+
+[[issues]]
+file = "src/Application/Messenger/Transports.php"
+code = "mixed-array-access"
+message = "Unsafe array access on type `nonnull`."
+count = 3
+
+[[issues]]
+file = "src/Application/Messenger/Transports.php"
+code = "mixed-operand"
+message = "Invalid middle operand: type `mixed` cannot be reliably used in string concatenation."
+count = 1
+
+[[issues]]
+file = "src/Application/Messenger/Transports.php"
+code = "possibly-invalid-argument"
+message = 'Possible argument type mismatch for argument #1 of `Symfony\Component\Messenger\Transport\TransportFactory::createTransport`: expected `string`, but possibly received `array<string, string>|string`.'
+count = 1
+
+[[issues]]
+file = "src/Application/RedisMatchingStorage.php"
+code = "invalid-return-statement"
+message = 'Invalid return type for function `MatchBot\Application\RedisMatchingStorage::set`: expected `bool|matchbot\application\redismatchingstorage`, but found `bool|string`.'
+count = 1
+
+[[issues]]
+file = "src/Application/RedisMatchingStorage.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Application/RedisMatchingStorage.php"
+code = "mixed-return-statement"
+message = 'Could not infer a precise return type for function `MatchBot\Application\RedisMatchingStorage::get`. Saw type `mixed`.'
+count = 1
+
+[[issues]]
+file = "src/Application/Security/Security.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Client/Common.php"
+code = "possibly-invalid-argument"
+message = '''Possible argument type mismatch for argument #5 of `sprintf`: expected `Stringable|null|scalar`, but possibly received `Psr\Http\Message\StreamInterface|string('N/A')`.'''
+count = 1
+
+[[issues]]
+file = "src/Client/Common.php"
+code = "possibly-invalid-argument"
+message = '''Possible argument type mismatch for argument #7 of `sprintf`: expected `Stringable|null|scalar`, but possibly received `Psr\Http\Message\StreamInterface|string('N/A')`.'''
+count = 1
+
+[[issues]]
+file = "src/Client/Common.php"
+code = "redundant-null-coalesce"
+message = "Redundant null coalesce: left-hand side can never be `null` or undefined."
+count = 1
+
+[[issues]]
+file = "src/Client/Donation.php"
+code = "less-specific-return-statement"
+message = 'Returned type `MatchBot\Domain\Salesforce18Id<MatchBot\Domain\SalesforceProxy>` is less specific than the declared return type `MatchBot\Domain\Salesforce18Id<MatchBot\Domain\Donation>|null` for function `MatchBot\Client\Donation::createOrUpdate`.'
+count = 1
+
+[[issues]]
+file = "src/Client/LiveStripeClient.php"
+code = "less-specific-nested-argument-type"
+message = '''Argument type mismatch for argument #2 of `Stripe\Service\PaymentIntentService::update`: expected `array{'amount'?: int, 'amount_details'?: array{'discount_amount'?: int|null, 'enforce_arithmetic_validation'?: bool, 'line_items'?: array<array-key, array{'discount_amount'?: int, 'payment_method_options'?: array{'card'?: array{'commodity_code'?: string}, 'card_present'?: array{'commodity_code'?: string}, 'klarna'?: array{'image_url'?: string, 'product_url'?: string, 'reference'?: string, 'subscription_reference'?: string}, 'paypal'?: array{'category'?: string, 'description'?: string, 'sold_by'?: string}}, 'product_code'?: string, 'product_name': string, 'quantity': int, 'tax'?: array{'total_tax_amount': int}, 'unit_cost': int, 'unit_of_measure'?: string}>|null, 'shipping'?: array{'amount'?: int|null, 'from_postal_code'?: null|string, 'to_postal_code'?: null|string}|null, 'tax'?: array{'total_tax_amount': int}|null}|null, 'application_fee_amount'?: int|null, 'capture_method'?: string, 'currency'?: string, 'customer'?: string, 'customer_account'?: string, 'description'?: string, 'excluded_payment_method_types'?: array<array-key, string>|null, 'expand'?: array<array-key, string>, 'hooks'?: array{'inputs'?: array{'tax'?: array{'calculation': null|string}}}, 'metadata'?: array<string, string>|null, 'payment_details'?: array{'customer_reference'?: null|string, 'order_reference'?: null|string}|null, 'payment_method'?: string, 'payment_method_configuration'?: string, 'payment_method_data'?: array{'acss_debit'?: array{'account_number': string, 'institution_number': string, 'transit_number': string}, 'affirm'?: array{}, 'afterpay_clearpay'?: array{}, 'alipay'?: array{}, 'allow_redisplay'?: string, 'alma'?: array{}, 'amazon_pay'?: array{}, 'au_becs_debit'?: array{'account_number': string, 'bsb_number': string}, 'bacs_debit'?: array{'account_number'?: string, 'sort_code'?: string}, 'bancontact'?: array{}, 'billie'?: array{}, 'billing_details'?: array{'address'?: array{'city'?: string, 'country'?: string, 'line1'?: string, 'line2'?: string, 'postal_code'?: string, 'state'?: string}|null, 'email'?: null|string, 'name'?: null|string, 'phone'?: null|string, 'tax_id'?: string}, 'blik'?: array{}, 'boleto'?: array{'tax_id': string}, 'cashapp'?: array{}, 'crypto'?: array{}, 'customer_balance'?: array{}, 'eps'?: array{'bank'?: string}, 'fpx'?: array{'account_holder_type'?: string, 'bank': string}, 'giropay'?: array{}, 'grabpay'?: array{}, 'ideal'?: array{'bank'?: string}, 'interac_present'?: array{}, 'kakao_pay'?: array{}, 'klarna'?: array{'dob'?: array{'day': int, 'month': int, 'year': int}}, 'konbini'?: array{}, 'kr_card'?: array{}, 'link'?: array{}, 'mb_way'?: array{}, 'metadata'?: array<string, string>, 'mobilepay'?: array{}, 'multibanco'?: array{}, 'naver_pay'?: array{'funding'?: string}, 'nz_bank_account'?: array{'account_holder_name'?: string, 'account_number': string, 'bank_code': string, 'branch_code': string, 'reference'?: string, 'suffix': string}, 'oxxo'?: array{}, 'p24'?: array{'bank'?: string}, 'pay_by_bank'?: array{}, 'payco'?: array{}, 'paynow'?: array{}, 'paypal'?: array{}, 'payto'?: array{'account_number'?: string, 'bsb_number'?: string, 'pay_id'?: string}, 'pix'?: array{}, 'promptpay'?: array{}, 'radar_options'?: array{'session'?: string}, 'revolut_pay'?: array{}, 'samsung_pay'?: array{}, 'satispay'?: array{}, 'sepa_debit'?: array{'iban': string}, 'sofort'?: array{'country': string}, 'swish'?: array{}, 'twint'?: array{}, 'type': string, 'us_bank_account'?: array{'account_holder_type'?: string, 'account_number'?: string, 'account_type'?: string, 'financial_connections_account'?: string, 'routing_number'?: string}, 'wechat_pay'?: array{}, 'zip'?: array{}}, 'payment_method_options'?: array{'acss_debit'?: array{'mandate_options'?: array{'custom_mandate_url'?: null|string, 'interval_description'?: string, 'payment_schedule'?: string, 'transaction_type'?: string}, 'setup_future_usage'?: null|string, 'target_date'?: string, 'verification_method'?: string}|null, 'affirm'?: array{'capture_method'?: null|string, 'preferred_locale'?: string, 'setup_future_usage'?: string}|null, 'afterpay_clearpay'?: array{'capture_method'?: null|string, 'reference'?: string, 'setup_future_usage'?: string}|null, 'alipay'?: array{'setup_future_usage'?: null|string}|null, 'alma'?: array{'capture_method'?: null|string}|null, 'amazon_pay'?: array{'capture_method'?: null|string, 'setup_future_usage'?: null|string}|null, 'au_becs_debit'?: array{'setup_future_usage'?: null|string, 'target_date'?: string}|null, 'bacs_debit'?: array{'mandate_options'?: array{'reference_prefix'?: null|string}, 'setup_future_usage'?: null|string, 'target_date'?: string}|null, 'bancontact'?: array{'preferred_language'?: string, 'setup_future_usage'?: null|string}|null, 'billie'?: array{'capture_method'?: null|string}|null, 'blik'?: array{'code'?: string, 'setup_future_usage'?: null|string}|null, 'boleto'?: array{'expires_after_days'?: int, 'setup_future_usage'?: null|string}|null, 'card'?: array{'capture_method'?: null|string, 'cvc_token'?: string, 'installments'?: array{'enabled'?: bool, 'plan'?: array{'count'?: int, 'interval'?: string, 'type': string}|null}, 'mandate_options'?: array{'amount': int, 'amount_type': string, 'description'?: string, 'end_date'?: int, 'interval': string, 'interval_count'?: int, 'reference': string, 'start_date': int, 'supported_types'?: array<array-key, string>}, 'moto'?: bool, 'network'?: string, 'request_extended_authorization'?: string, 'request_incremental_authorization'?: string, 'request_multicapture'?: string, 'request_overcapture'?: string, 'request_three_d_secure'?: string, 'require_cvc_recollection'?: bool, 'setup_future_usage'?: null|string, 'statement_descriptor_suffix_kana'?: null|string, 'statement_descriptor_suffix_kanji'?: null|string, 'three_d_secure'?: array{'ares_trans_status'?: string, 'cryptogram': string, 'electronic_commerce_indicator'?: string, 'exemption_indicator'?: string, 'network_options'?: array{'cartes_bancaires'?: array{'cb_avalgo': string, 'cb_exemption'?: string, 'cb_score'?: int}}, 'requestor_challenge_indicator'?: string, 'transaction_id': string, 'version': string}}|null, 'card_present'?: array{'capture_method'?: string, 'request_extended_authorization'?: bool, 'request_incremental_authorization_support'?: bool, 'routing'?: array{'requested_priority'?: string}}|null, 'cashapp'?: array{'capture_method'?: null|string, 'setup_future_usage'?: null|string}|null, 'crypto'?: array{'setup_future_usage'?: string}|null, 'customer_balance'?: array{'bank_transfer'?: array{'eu_bank_transfer'?: array{'country': string}, 'requested_address_types'?: array<array-key, string>, 'type': string}, 'funding_type'?: string, 'setup_future_usage'?: string}|null, 'eps'?: array{'setup_future_usage'?: string}|null, 'fpx'?: array{'setup_future_usage'?: string}|null, 'giropay'?: array{'setup_future_usage'?: string}|null, 'grabpay'?: array{'setup_future_usage'?: string}|null, 'ideal'?: array{'setup_future_usage'?: null|string}|null, 'interac_present'?: array{}|null, 'kakao_pay'?: array{'capture_method'?: null|string, 'setup_future_usage'?: null|string}|null, 'klarna'?: array{'capture_method'?: null|string, 'on_demand'?: array{'average_amount'?: int, 'maximum_amount'?: int, 'minimum_amount'?: int, 'purchase_interval'?: string, 'purchase_interval_count'?: int}, 'preferred_locale'?: string, 'setup_future_usage'?: string, 'subscriptions'?: array<array-key, array{'interval': string, 'interval_count'?: int, 'name'?: string, 'next_billing'?: array{'amount': int, 'date': string}, 'reference': string}>|null}|null, 'konbini'?: array{'confirmation_number'?: null|string, 'expires_after_days'?: int|null, 'expires_at'?: int|null, 'product_description'?: null|string, 'setup_future_usage'?: string}|null, 'kr_card'?: array{'capture_method'?: null|string, 'setup_future_usage'?: null|string}|null, 'link'?: array{'capture_method'?: null|string, 'persistent_token'?: string, 'setup_future_usage'?: null|string}|null, 'mb_way'?: array{'setup_future_usage'?: string}|null, 'mobilepay'?: array{'capture_method'?: null|string, 'setup_future_usage'?: string}|null, 'multibanco'?: array{'setup_future_usage'?: string}|null, 'naver_pay'?: array{'capture_method'?: null|string, 'setup_future_usage'?: null|string}|null, 'nz_bank_account'?: array{'setup_future_usage'?: null|string, 'target_date'?: string}|null, 'oxxo'?: array{'expires_after_days'?: int, 'setup_future_usage'?: string}|null, 'p24'?: array{'setup_future_usage'?: string, 'tos_shown_and_accepted'?: bool}|null, 'pay_by_bank'?: array{}|null, 'payco'?: array{'capture_method'?: null|string}|null, 'paynow'?: array{'setup_future_usage'?: string}|null, 'paypal'?: array{'capture_method'?: null|string, 'preferred_locale'?: string, 'reference'?: string, 'risk_correlation_id'?: string, 'setup_future_usage'?: null|string}|null, 'payto'?: array{'mandate_options'?: array{'amount'?: int|null, 'amount_type'?: null|string, 'end_date'?: null|string, 'payment_schedule'?: null|string, 'payments_per_period'?: int|null, 'purpose'?: null|string}, 'setup_future_usage'?: null|string}|null, 'pix'?: array{'amount_includes_iof'?: string, 'expires_after_seconds'?: int, 'expires_at'?: int, 'setup_future_usage'?: string}|null, 'promptpay'?: array{'setup_future_usage'?: string}|null, 'revolut_pay'?: array{'capture_method'?: null|string, 'setup_future_usage'?: null|string}|null, 'samsung_pay'?: array{'capture_method'?: null|string}|null, 'satispay'?: array{'capture_method'?: null|string}|null, 'sepa_debit'?: array{'mandate_options'?: array{'reference_prefix'?: null|string}, 'setup_future_usage'?: null|string, 'target_date'?: string}|null, 'sofort'?: array{'preferred_language'?: null|string, 'setup_future_usage'?: null|string}|null, 'swish'?: array{'reference'?: null|string, 'setup_future_usage'?: string}|null, 'twint'?: array{'setup_future_usage'?: string}|null, 'us_bank_account'?: array{'financial_connections'?: array{'filters'?: array{'account_subcategories'?: array<array-key, string>}, 'permissions'?: array<array-key, string>, 'prefetch'?: array<array-key, string>, 'return_url'?: string}, 'mandate_options'?: array{'collection_method'?: null|string}, 'networks'?: array{'requested'?: array<array-key, string>}, 'preferred_settlement_speed'?: null|string, 'setup_future_usage'?: null|string, 'target_date'?: string, 'transaction_purpose'?: null|string, 'verification_method'?: string}|null, 'wechat_pay'?: array{'app_id'?: string, 'client'?: string, 'setup_future_usage'?: string}|null, 'zip'?: array{'setup_future_usage'?: string}|null}, 'payment_method_types'?: array<array-key, string>, 'receipt_email'?: null|string, 'setup_future_usage'?: null|string, 'shipping'?: array{'address': array{'city'?: string, 'country'?: string, 'line1'?: string, 'line2'?: string, 'postal_code'?: string, 'state'?: string}, 'carrier'?: string, 'name': string, 'phone'?: string, 'tracking_number'?: string}|null, 'statement_descriptor'?: string, 'statement_descriptor_suffix'?: string, 'transfer_data'?: array{'amount'?: int}, 'transfer_group'?: string}|null`, but provided type `array{'amount'?: int, 'application_fee_amount'?: int, 'currency'?: string, 'metadata'?: array<string, mixed>, 'payment_method'?: null}` is less specific.'''
+count = 1
+
+[[issues]]
+file = "src/Client/Mailer.php"
+code = "deprecated-method"
+message = 'Call to deprecated method: `MatchBot\Client\Mailer::sendEmail`.'
+count = 1
+
+[[issues]]
+file = "src/Client/Mandate.php"
+code = "less-specific-return-statement"
+message = 'Returned type `MatchBot\Domain\Salesforce18Id<MatchBot\Domain\SalesforceProxy>` is less specific than the declared return type `MatchBot\Domain\Salesforce18Id<MatchBot\Domain\RegularGivingMandate>` for function `MatchBot\Client\Mandate::createOrUpdate`.'
+count = 1
+
+[[issues]]
+file = "src/Client/RyftClient.php"
+code = "mixed-array-access"
+message = "Unsafe array access on type `mixed`."
+count = 7
+
+[[issues]]
+file = "src/Client/RyftClient.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 6
+
+[[issues]]
+file = "src/Client/RyftClient.php"
+code = "mixed-return-statement"
+message = 'Could not infer a precise return type for function `MatchBot\Client\RyftClient::fetchPaymentSession`. Saw type `mixed`.'
+count = 1
+
+[[issues]]
+file = "src/Client/RyftClient.php"
+code = "unused-property"
+message = "Property `$publicKey` is never used."
+count = 1
+
+[[issues]]
+file = "src/Domain/CampaignFunding.php"
+code = "write-only-property"
+message = "Property `$fundingWithdrawals` is written to but never read."
+count = 1
+
+[[issues]]
+file = "src/Domain/CampaignRenderCompatibilityChecker.php"
+code = "named-argument-not-allowed"
+message = "Named arguments are not allowed for `str_starts_with`."
+count = 2
+
+[[issues]]
+file = "src/Domain/CampaignRenderCompatibilityChecker.php"
+code = "null-argument"
+message = 'Argument #2 of method `Assert\LazyAssertion::eq` is `null`, but parameter type `(callable(...mixed): mixed)|string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "src/Domain/CampaignRepository.php"
+code = "possibly-null-operand"
+message = "Left operand in `<` comparison might be `null` (type `DateTimeImmutable|null`)."
+count = 1
+
+[[issues]]
+file = "src/Domain/CampaignRepository.php"
+code = "redundant-null-coalesce"
+message = "Redundant null coalesce: left-hand side can never be `null` or undefined."
+count = 1
+
+[[issues]]
+file = "src/Domain/CampaignService.php"
+code = "docblock-type-mismatch"
+message = 'Docblock type `key-of<unknown-ref(MatchBot\Domain\Campaign::REGULATORS)>|null` for parameter `$regulator` is incompatible with native type `null|string`.'
+count = 1
+
+[[issues]]
+file = "src/Domain/CampaignService.php"
+code = "match-not-exhaustive"
+message = 'Non-exhaustive `match` expression: subject of type `key-of<unknown-ref(MatchBot\Domain\Campaign::REGULATORS)>|null` is not fully handled.'
+count = 1
+
+[[issues]]
+file = "src/Domain/CampaignService.php"
+code = "possibly-invalid-argument"
+message = '''Possible argument type mismatch for argument #1 of `MatchBot\Domain\CampaignService::getRegionForRegulator`: expected `key-of<unknown-ref(MatchBot\Domain\Campaign::REGULATORS)>|null`, but possibly received `null|string('CCEW')|string('CCNI')|string('OSCR')`.'''
+count = 1
+
+[[issues]]
+file = "src/Domain/CampaignService.php"
+code = "redundant-null-coalesce"
+message = "Redundant null coalesce: left-hand side can never be `null` or undefined."
+count = 1
+
+[[issues]]
+file = "src/Domain/CampaignService.php"
+code = "unreachable-match-arm"
+message = "This match arm is unreachable."
+count = 3
+
+[[issues]]
+file = "src/Domain/CampaignStatistics.php"
+code = "possibly-null-operand"
+message = 'Left operand in `!=` comparison might be `null` (type `MatchBot\Domain\Money|null`).'
+count = 6
+
+[[issues]]
+file = "src/Domain/CampaignStatistics.php"
+code = "write-only-property"
+message = "Property `$lastCheck` is written to but never read."
+count = 1
+
+[[issues]]
+file = "src/Domain/CampaignStatistics.php"
+code = "write-only-property"
+message = "Property `$lastRealUpdate` is written to but never read."
+count = 1
+
+[[issues]]
+file = "src/Domain/Charity.php"
+code = "invalid-property-assignment-value"
+message = "Invalid type for property `$regulator`: expected `null|string('CCEW')|string('CCNI')|string('OSCR')`, but got `null|string`."
+count = 1
+
+[[issues]]
+file = "src/Domain/Charity.php"
+code = "null-operand"
+message = "Right operand in `==` comparison is `null`."
+count = 1
+
+[[issues]]
+file = "src/Domain/Charity.php"
+code = "possibly-null-operand"
+message = "Left operand in `==` comparison might be `null` (type `null|string('CCEW')|string('CCNI')|string('OSCR')`)."
+count = 1
+
+[[issues]]
+file = "src/Domain/DoctrineDonationRepository.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 2
+
+[[issues]]
+file = "src/Domain/DoctrineDonationRepository.php"
+code = "mixed-return-statement"
+message = 'Could not infer a precise return type for function `MatchBot\Domain\DoctrineDonationRepository::findRecentNotFullyMatchedToMatchCampaigns`. Saw type `mixed`.'
+count = 1
+
+[[issues]]
+file = "src/Domain/Donation.php"
+code = "invalid-return-statement"
+message = '''Invalid return type for function `MatchBot\Domain\Donation::createStripePaymentIntentPayload`: expected `array{'amount': int, 'currency': string}`, but found `array{'amount': int, 'application_fee_amount': int, 'capture_method': string('automatic_async'), 'currency': string, 'customer': null|string, 'description': string, 'metadata': array{'campaignId': string, 'campaignName': string, 'charityId': string, 'charityName': string, 'donationId': Ramsey\Uuid\UuidInterface, 'environment': false|string, 'mandateId'?: int|null, 'mandateSequenceNumber'?: int, 'matchedAmount': numeric-string, 'stripeFeeRechargeGross': numeric-string, 'stripeFeeRechargeNet': numeric-string, 'stripeFeeRechargeVat': numeric-string, 'tipAmount': numeric-string}, 'statement_descriptor': string, 'statement_descriptor_suffix': string, 'transfer_data': array{'destination': null|string}}`.'''
+count = 1
+
+[[issues]]
+file = "src/Domain/Donation.php"
+code = "match-not-exhaustive"
+message = 'Non-exhaustive `match` expression: subject of type `list{enum(MatchBot\Domain\FundType), bool, bool}` is not fully handled.'
+count = 1
+
+[[issues]]
+file = "src/Domain/Donation.php"
+code = "possibly-null-argument"
+message = 'Argument #1 of method `MatchBot\Domain\EmailAddress::of` is possibly `null`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "src/Domain/Donation.php"
+code = "undefined-string-array-index"
+message = "Undefined array key 'matchReservedAmount' accessed on `array{'isOffSession': bool, 'originalPspFee': float, 'paidOutAt': null|string, 'payoutSuccessful': bool|null, 'stripePayoutId': null|string, 'tipRefundAmount': float|null}`."
+count = 1
+
+[[issues]]
+file = "src/Domain/Donation.php"
+code = "write-only-property"
+message = "Property `$ryftPaymentSessionId` is written to but never read."
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationFundsNotifier.php"
+code = "deprecated-method"
+message = 'Call to deprecated method: `MatchBot\Client\Mailer::sendEmail`.'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "ambiguous-object-property-access"
+message = "Cannot statically verify property access on a generic `object` type."
+count = 4
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "docblock-type-mismatch"
+message = "Docblock type mismatch for variable `$card`."
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "invalid-method-access"
+message = 'Attempting to access a method on a non-object type (`(closure(): MatchBot\Domain\Donation)`).'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Client\RyftClient::capturePayment`: expected `MatchBot\Domain\RyftAccountId`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Client\Stripe::retrieveCharge`: expected `string`, but found `mixed`.'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Domain\CardBrand::fromNameOrNull`: expected `null|string`, but found `mixed`.'
+count = 4
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Domain\Country::fromAlpha2OrNull`: expected `null|string`, but found `mixed`.'
+count = 4
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #1 of `MatchBot\Domain\Donation::collectFromRyftPaymentSession`: expected `array<string, mixed>`, but found `nonnull`.'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-argument"
+message = '''Invalid argument type for argument #2 of `MatchBot\Client\RyftClient::capturePayment`: expected `array{'id': string, ...}`, but found `nonnull`.'''
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-argument"
+message = 'Invalid argument type for argument #3 of `MatchBot\Domain\DonationService::updatePaymentMethodFromStripe`: expected `Stripe\StripeObject&object{card: null|object, pay_by_bank: Stripe\StripeObject|null}`, but found `nonnull`.'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-method-access"
+message = "Attempting to access a method on a non-object type (`mixed`)."
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-operand"
+message = "Invalid right operand: type `truthy-mixed` cannot be reliably used in string concatenation."
+count = 2
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-operand"
+message = "Left operand in `&&` operation has `mixed` type."
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-property-access"
+message = "Attempting to access a property on a non-object type (`nonnull`)."
+count = 2
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-return-statement"
+message = 'Could not infer a precise return type for function `MatchBot\Domain\DonationService::buildFromAPIRequest`. Saw type `mixed`.'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "mixed-return-statement"
+message = 'Could not infer a precise return type for function `MatchBot\Domain\DonationService::confirmOnSessionDonation`. Saw type `mixed`.'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "possibly-invalid-argument"
+message = 'Possible argument type mismatch for argument #3 of `MatchBot\Domain\Donation::collectFromStripeCharge`: expected `Stringable|null|string`, but possibly received `Stripe\Transfer|null|string`.'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "possibly-invalid-argument"
+message = 'Possible argument type mismatch for argument #4 of `sprintf`: expected `Stringable|null|scalar`, but possibly received `matchbot\domain\country`.'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "possibly-null-argument"
+message = 'Argument #1 of method `MatchBot\Domain\Donation::collectFromStripeCharge` is possibly `null`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "possibly-null-argument"
+message = 'Argument #1 of method `MatchBot\Domain\Donation::setTransactionId` is possibly `null`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "possibly-null-operand"
+message = "Left operand in `<` comparison might be `null` (type `DateTimeImmutable|null`)."
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "redundant-comparison"
+message = "Redundant `===` comparison: left-hand side is always identical to right-hand side."
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "redundant-condition"
+message = "This condition (type `true`) will always evaluate to true."
+count = 1
+
+[[issues]]
+file = "src/Domain/DonationService.php"
+code = "unreachable-else-clause"
+message = "Unreachable else clause"
+count = 1
+
+[[issues]]
+file = "src/Domain/DonorAccountRepository.php"
+code = "null-operand"
+message = "Right operand in `==` comparison is `null`."
+count = 1
+
+[[issues]]
+file = "src/Domain/DonorAccountRepository.php"
+code = "possibly-null-operand"
+message = 'Left operand in `==` comparison might be `null` (type `MatchBot\Domain\PersonId|null`).'
+count = 1
+
+[[issues]]
+file = "src/Domain/DonorName.php"
+code = "possibly-null-argument"
+message = 'Argument #2 of method `MatchBot\Domain\DonorName::of` is possibly `null`, but parameter type `string` does not accept it.'
+count = 1
+
+[[issues]]
+file = "src/Domain/EmailVerificationToken.php"
+code = "unused-property"
+message = "Property `$id` is never used."
+count = 1
+
+[[issues]]
+file = "src/Domain/EmailVerificationTokenRepository.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 1
+
+[[issues]]
+file = "src/Domain/Fund.php"
+code = "write-only-property"
+message = "Property `$allocationOrder` is written to but never read."
+count = 1
+
+[[issues]]
+file = "src/Domain/Fund.php"
+code = "write-only-property"
+message = "Property `$slug` is written to but never read."
+count = 1
+
+[[issues]]
+file = "src/Domain/FundRepository.php"
+code = "redundant-null-coalesce"
+message = "Redundant null coalesce: left-hand side can never be `null` or undefined."
+count = 1
+
+[[issues]]
+file = "src/Domain/MetaCampaign.php"
+code = "impossible-condition"
+message = "This condition (type `false`) will always evaluate to false."
+count = 1
+
+[[issues]]
+file = "src/Domain/MetaCampaign.php"
+code = "redundant-comparison"
+message = "Redundant `===` comparison: left-hand side is never identical to right-hand side."
+count = 1
+
+[[issues]]
+file = "src/Domain/MetaCampaign.php"
+code = "unused-property"
+message = "Property `$status` is never used."
+count = 1
+
+[[issues]]
+file = "src/Domain/MetaCampaignRepository.php"
+code = "redundant-cast"
+message = "Redundant cast to `(string)`: the expression already has this type."
+count = 1
+
+[[issues]]
+file = "src/Domain/RegularGivingMandate.php"
+code = "write-only-property"
+message = "Property `$donationsCreatedUpTo` is written to but never read."
+count = 1
+
+[[issues]]
+file = "src/Domain/RegularGivingService.php"
+code = "redundant-comparison"
+message = "Redundant `!==` comparison: left-hand side is always not identical to right-hand side."
+count = 1
+
+[[issues]]
+file = "src/Migrations/Version20250424095340.php"
+code = "mixed-assignment"
+message = "Assigning `mixed` type to a variable may lead to unexpected behavior."
+count = 3
+
+[[issues]]
+file = "src/Monolog/Handler/SlackHandler.php"
+code = "mixed-operand"
+message = "Left operand in `<` comparison has `mixed` type."
+count = 1
+
+[[issues]]
+file = "src/Monolog/Processor/AwsTraceIdProcessor.php"
+code = "invalid-return-statement"
+message = '''Invalid return type for function `MatchBot\Monolog\Processor\AwsTraceIdProcessor::__invoke`: expected `array{'channel': string, 'context': array<array-key, mixed>, 'datetime': DateTimeImmutable, 'extra': array<array-key, mixed>, 'level': int(100)|int(200)|int(250)|int(300)|int(400)|int(500)|int(550)|int(600), 'level_name': string('ALERT')|string('CRITICAL')|string('DEBUG')|string('EMERGENCY')|string('ERROR')|string('INFO')|string('NOTICE')|string('WARNING'), 'message': string}`, but found `ArrayAccess<mixed, mixed>|array<array-key, mixed>`.'''
+count = 1
+
+[[issues]]
+file = "src/Monolog/Processor/AwsTraceIdProcessor.php"
+code = "mixed-array-assignment"
+message = "Unsafe array assignment on type `mixed`."
+count = 1

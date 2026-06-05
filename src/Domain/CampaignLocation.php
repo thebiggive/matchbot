@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 
+// @mago-expect analysis:write-only-property
 /**
  * @psalm-suppress UnusedProperty Various fields to be used soon.
  */

@@ -83,6 +83,7 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(type: 'string')]
     protected string $name;
 
+    // @mago-expect analysis:write-only-property
     #[ORM\Column(nullable: true, length: 5_000)]
     private ?string $summary;
 
@@ -172,6 +173,7 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Embedded(columnPrefix: 'total_fundraising_target_')]
     private(set) Money $totalFundraisingTarget;
 
+    // @mago-expect analysis:write-only-property
     /**
      * Optional BG-defined default sort override for the metacampaign grid. Works as a rank value when set,
      * typically positive but not *required* to be positive or unique.
@@ -184,6 +186,7 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(nullable: true)]
     private ?int $pinPosition;
 
+    // @mago-expect analysis:write-only-property
     /**
      * Optional BG-defined default sort override specifically for the funder-filtered view of a metacampaign.
      *
@@ -269,7 +272,7 @@ class Campaign extends SalesforceReadProxy
         $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
             null : new \DateTimeImmutable($regularGivingCollectionEnd);
 
-        $isPublished = $campaignData['isPublished'] ?? false;
+        $isPublished = $campaignData['isPublished'];
 
         $startDate = $campaignData['startDate'];
         $endDate = $campaignData['endDate'];
@@ -373,6 +376,7 @@ class Campaign extends SalesforceReadProxy
             // envrionments
 
             $_charity = $this->charity;
+            // @mago-expect analysis:avoid-catching-error
         } catch (\Error $e) {
             throw new \Exception(
                 "Error on attempt to persist campaign #{$this->id}, sfID {$this->getSalesforceId()}: \n{$e}"
@@ -644,6 +648,7 @@ class Campaign extends SalesforceReadProxy
      */
     public function getSalesforceData(): array
     {
+        // @mago-expect analysis:invalid-return-statement
         return $this->salesforceData + ['charity' => $this->charity->getSalesforceData()]; // @phpstan-ignore return.type
     }
 

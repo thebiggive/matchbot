@@ -53,14 +53,22 @@ jobs:
 
       - run: composer check-platform-reqs
 
+      - run: vendor/bin/mago version ## installs mago as a side effect before we save cache
+
       - save_cache:
           paths:
             - vendor
-          key: composer-v2-{{ checksum "composer.lock" }}
+          key: composer-v3-{{ checksum "composer.lock" }}
 
       - run: composer run lint:check
 
+
+      - run: composer run fmt:check || true; # "|| true" so we don't break the build on different formatting just yet, including to show what the differences are.
+                                             # will make a PR to change format of all code to match what mago expects separately.
+
       - run: composer run sa:check
+
+      - run: composer run guard
 
       - run: composer run test
 
@@ -125,14 +133,14 @@ jobs:
 
       - restore_cache:
           keys:
-            - composer-v2-{{ checksum "composer.lock" }}
+            - composer-v3-{{ checksum "composer.lock" }}
 
       - run: composer install --no-interaction
 
       - save_cache:
           paths:
             - vendor
-          key: composer-v2-{{ checksum "composer.lock" }}
+          key: composer-v3-{{ checksum "composer.lock" }}
 
       - run:
           name: Mutation Test only changed and added files in PR
