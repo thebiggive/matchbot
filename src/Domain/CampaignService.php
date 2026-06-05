@@ -249,7 +249,7 @@ class CampaignService
             championOptInStatement: $sfCampaignData['championOptInStatement'],
             championRef: $sfCampaignData['championRef'],
             charity: $charityHttpModel,
-            countries: $sfCampaignData['countries'],
+            countries: $sfCampaignData['countries'], // @todo-SO-78 remove
             currencyCode: $campaign->getCurrencyCode() ?? '',
             donationCount: $this->donationRepository->countCompleteDonationsToCampaign($campaign),
             endDate: $this->formatDate($campaign->getEndDate()),
@@ -257,6 +257,7 @@ class CampaignService
             impactReporting: $sfCampaignData['impactReporting'],
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
+            locations: $campaign->getLocationsForApi(),
             logoUri: $sfCampaignData['logoUri'],
             matchFundsRemaining: $stats->getMatchFundsRemaining()->toMajorUnitFloat(),
             matchFundsTotal: $stats->getMatchFundsTotal()->toMajorUnitFloat(),

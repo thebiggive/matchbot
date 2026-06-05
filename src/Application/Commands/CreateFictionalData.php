@@ -165,6 +165,7 @@ class CreateFictionalData extends Command
         if (!$charityOnStripe) {
             /** @psalm-suppress ArgumentTypeCoercion */
             $charityOnStripe = $this->campaignRepository->newCharityFromCampaignData(
+                // @mago-expect analysis:possibly-invalid-argument
                 ['charity' => $this->getFictionalCharityData($io, PaymentServiceProvider::Stripe)] // @phpstan-ignore argument.type
             );
 
@@ -177,6 +178,7 @@ class CreateFictionalData extends Command
         if (!$charityOnRyft) {
             /** @psalm-suppress ArgumentTypeCoercion */
             $charityOnRyft = $this->campaignRepository->newCharityFromCampaignData(
+                // @mago-expect analysis:possibly-invalid-argument
                 ['charity' => $this->getFictionalCharityData($io, PaymentServiceProvider::Ryft)] // @phpstan-ignore argument.type
             );
 
@@ -258,6 +260,7 @@ class CreateFictionalData extends Command
     {
         $randomSeed = \random_int(1, 100);
 
+        // @mago-expect analysis:invalid-return-statement
         return [ // @phpstan-ignore return.type
             'id' => $sfId,
             'charity' => [],
@@ -277,7 +280,8 @@ class CreateFictionalData extends Command
             'solution' => 'do the saving',
             // in prod bannerUri is available in multiple sizes with a `width` param added by FE. Picsum will always send the image at 1700px wide.
             'bannerUri' => "https://picsum.photos/seed/$randomSeed/1700/500",
-            'countries' => [0 => 'United Kingdom',],
+            'countries' => [0 => 'United Kingdom'],
+            'locations' => [['countryName' => 'United Kingdom', 'regionCode' => null]],
             'isMatched' => $isMatched,
             'parentRef' => $metaCampaign?->getSlug()?->slug,
             'startDate' => '2015-08-01T00:00:00.000Z',

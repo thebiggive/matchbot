@@ -1812,6 +1812,7 @@ class Donation extends SalesforceWriteProxy
         return $this->mandate;
     }
 
+    // @mago-expect analysis:invalid-return-statement
     /**
      * @psalm-suppress InvalidReturnType - don't want to write a type with every property here, but
      * psalm doesn't treat array shapes with extra params as subtypes unless explictily declared open,
@@ -1865,7 +1866,7 @@ class Donation extends SalesforceWriteProxy
             $payload['metadata']['mandateSequenceNumber'] = $sequenceNumber->number; // @phpstan-ignore offsetAccess.nonOffsetAccessible
         }
 
-        /** @psalm-suppress InvalidReturnStatement - see note in docblock */
+        /** @psalm-suppress InvalidReturnStatement - see note in docblock*/
         return $payload; // @phpstan-ignore return.type (see note in docblock)
     }
 

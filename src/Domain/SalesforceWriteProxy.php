@@ -14,15 +14,15 @@ use Doctrine\ORM\Mapping as ORM;
  */
 abstract class SalesforceWriteProxy extends SalesforceProxy
 {
-    /** @var string Object should be created in Salesforce. This might be imminent or queued. */
-    public const string PUSH_STATUS_PENDING_CREATE = 'pending-create';
-    /** @var string Object should be updated in Salesforce. This might be imminent or queued. */
-    public const string PUSH_STATUS_PENDING_UPDATE = 'pending-update';
+    /** Object should be created in Salesforce. This might be imminent or queued. */
+    public final const string PUSH_STATUS_PENDING_CREATE = 'pending-create';
+    /** Object should be updated in Salesforce. This might be imminent or queued. */
+    public final const string PUSH_STATUS_PENDING_UPDATE = 'pending-update';
     /**
-     * @var string  Object has been created and/or updated in Salesforce and no push is pending. Includes some cases
+     *  Object has been created and/or updated in Salesforce and no push is pending. Includes some cases
      *              where there is just no applicable data to send.
      */
-    public const string PUSH_STATUS_COMPLETE = 'complete';
+    public final const string PUSH_STATUS_COMPLETE = 'complete';
 
     /**
      * @psalm-suppress PossiblyUnusedProperty   Used for manual dev database checks.

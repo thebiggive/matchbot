@@ -26,6 +26,13 @@ use function trim;
 class CampaignRepository extends SalesforceReadProxyRepository
 {
     private ClockInterface $clock;  // @phpstan-ignore property.uninitialized
+    private string $appStatusWhereClause = <<<DQL
+        campaign.metaCampaignSlug IS NULL OR
+        (
+            campaign.relatedApplicationStatus = 'Approved' AND
+            campaign.relatedApplicationCharityResponseToOffer = 'Accepted'
+        )
+    DQL;
 
     /**
      * Gets campaigns that it is particular important matchbot has up-to-date information about.
@@ -357,7 +364,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function findCampaignsForCharityPage(Charity $charity, \DateTimeImmutable $at): array
     {
         $query = $this->getEntityManager()->createQuery(
-            <<<'DQL'
+            <<<DQL
             SELECT campaign,
             CASE
                 WHEN statistics.approxStatus = 'Active' THEN 0 
@@ -370,6 +377,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
              campaign.charity = :charity
              AND campaign.isPublished = true
              AND (statistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
+             AND {$this->appStatusWhereClause}
              ORDER BY approxStatusRank ASC, campaign.endDate ASC
             DQL
         );
@@ -386,13 +394,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     public function countCampaignsInMetaCampaign(MetaCampaign $metaCampaign): int
     {
-        $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT COUNT(c.id)
-            FROM MatchBot\Domain\Campaign c
-            WHERE c.metaCampaignSlug = :slug
-            AND c.isPublished = true
-            AND c.relatedApplicationStatus = 'Approved'
-            AND c.relatedApplicationCharityResponseToOffer = 'Accepted'
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT COUNT(campaign.id)
+            FROM MatchBot\Domain\Campaign campaign
+            WHERE campaign.metaCampaignSlug = :slug
+            AND campaign.isPublished = true
+            AND {$this->appStatusWhereClause}
         DQL
         );
 
@@ -515,6 +522,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             thankYouMessage: $campaignData['thankYouMessage'],
             hidden: $campaignData['hidden'] ?? false,
             totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
+            locations: $campaignData['locations'],
             sfData: $campaignData,
         );
 
@@ -542,18 +550,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
         if ($metaCampaignSlug === null) {
             $qb->andWhere($qb->expr()->gt('campaign.endDate', ':now'));
             $qb->setParameter('now', $this->clock->now());
-        } else {
-            $qb->andWhere('campaign.isPublished = true');
         }
 
-        $qb->andWhere(<<<DQL
-            campaign.metaCampaignSlug IS NULL OR
-            (
-                campaign.relatedApplicationStatus = 'Approved' AND
-                campaign.relatedApplicationCharityResponseToOffer = 'Accepted'
-            )
-            DQL
-        );
+        $qb->andWhere($this->appStatusWhereClause);
 
         if ($metaCampaignSlug !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.metaCampaignSlug', ':metaCampaignSlug'));
