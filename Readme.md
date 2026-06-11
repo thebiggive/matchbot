@@ -35,17 +35,22 @@ to pull events from Stripe and forward them to the local HTTP server.
 
 Visit https://dashboard.stripe.com/test/webhooks and select "Add local listener".
 
-Instead of running the suggested commands natively, use:
-* `docker compose run --rm stripe-cli login`
-Use the "CLI webhook secret" that
-Stripe will give you to replace the value of `STRIPE_WEBHOOK_SIGNING_SECRET` in `.env`. Make sure you also have a good
-value for `STRIPE_SECRET_KEY` set in `.env`. You will also find this in the Stripe dashboard, and in a dev environment 
-it should start with `rk_test_` or `sk_test_`.
-
-Copy `stripe_cli.env.example` to `stripe_cli.env`.  
+Copy `stripe_cli.env.example` to `stripe_cli.env`.
 
 Inside `stripe_cli.env` set STRIPE_API_KEY to the same value as `STRIPE_SECRET_KEY` in `.env`, and replace "some-developer"
 with your name in `STRIPE_DEVICE_NAME = some-developer-dev`.
+
+Instead of running the suggested commands natively, use:
+* `docker compose run --rm stripe-cli login`
+Use the "CLI webhook secret" that
+Stripe will give you to replace the value of `STRIPE_WEBHOOK_SIGNING_SECRET` in `.env`. To retrieve the secret run
+* 
+```shell
+docker compose run --rm stripe-cli listen
+```
+
+Make sure you also have a good value for `STRIPE_SECRET_KEY` set in `.env`. You will also find this in the Stripe 
+dashboard, and in a dev environment it should start with `rk_test_` or `sk_test_`.
 
 As there is only one stripe test environment, your copy of matchbot will receive events relating to tests done by others
 in dev, staging and regression test environments as well as yourself, but other than causing errors to be logged, these 
