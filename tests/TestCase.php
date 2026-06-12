@@ -453,6 +453,7 @@ class TestCase extends PHPUnitTestCase
             amountRaised: Money::zero(),
             matchFundsUsed: Money::zero(),
             matchFundsTotal: $withMatchFundsTotal ?? Money::zero(),
+            target: Money::zero(),
         ));
 
         return $campaign;
