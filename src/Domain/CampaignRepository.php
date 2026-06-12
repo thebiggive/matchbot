@@ -544,6 +544,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         array $jsonMatchInListConditions,
         bool $filterOutTargetMet,
         ?string $term,
+        ?string $country,
     ): array|null {
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
         $qb->andWhere($qb->expr()->eq('campaign.isPublished', '1'));
@@ -565,6 +566,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->andWhere($qb->expr()->eq('fund.slug', ':fundSlug'))
                 ->andWhere($qb->expr()->gt('campaignFunding.amount', 0));
             $qb->setParameter('fundSlug', $fundSlug);
+        }
+
+        if ($country !== null) {
+            $qb->andWhere($qb->expr()->eq('campaignLocation.countryName', ':country'));
+            $qb->setParameter('country', $country);
         }
 
         foreach ($jsonMatchInListConditions as $field => $value) {
@@ -660,6 +666,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $fundSlug,
         array $jsonMatchInListConditions,
         ?string $term,
+        ?string $country = null,
     ): array {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
@@ -692,6 +699,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             ->join('campaign.campaignStatistics', 'campaignStatistics')
             ->leftJoin('campaign.campaignFundings', 'campaignFunding')
             ->leftJoin('campaignFunding.fund', 'fund')
+            ->leftJoin('campaign.locations', 'campaignLocation')
             ->groupBy('campaign.id')
             ->setFirstResult($offset)
             ->setMaxResults($limit);
@@ -707,6 +715,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             jsonMatchInListConditions: $jsonMatchInListConditions,
             filterOutTargetMet: $filterOutTargetMet,
             term: $term,
+            country: $country,
         );
 
         $this->sortForSearch(
