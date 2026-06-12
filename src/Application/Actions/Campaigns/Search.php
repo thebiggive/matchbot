@@ -31,8 +31,10 @@ class Search extends Action
         $params = $request->getQueryParams();
         $sortField = $params['sortField'] ?? 'distanceToTarget';
         $sortDirection = $params['sortDirection'] ?? 'desc';
-        /** @var ?string */
+        /** @var ?string $term */
         $term = $params['term'] ?? null;
+        /** @var ?string $country */
+        $country = $params['country'] ?? null;
         Assertion::string($sortDirection);
         Assertion::string($sortField);
         Assertion::nullOrString($term);
@@ -51,11 +53,6 @@ class Search extends Action
                 case 'category':
                     Assertion::string($value);
                     $jsonMatchInListConditions['categories'] = $value;
-                    break;
-                case 'country':
-                    // @todo SO-78 switch to filtering on CampaignLocation joined records, once populated.
-                    Assertion::string($value);
-                    $jsonMatchInListConditions['countries'] = $value;
                     break;
                 default:
                     // No other params apply a filter using the JSON `salesforceData` field.
@@ -83,6 +80,7 @@ class Search extends Action
                 fundSlug: $fundSlug,
                 jsonMatchInListConditions: $jsonMatchInListConditions,
                 term: $term,
+                country: $country,
             );
         } catch (\InvalidArgumentException $exception) {
             throw new HttpBadRequestException($request, $exception->getMessage(), $exception);
