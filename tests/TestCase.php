@@ -86,7 +86,6 @@ class TestCase extends PHPUnitTestCase
         'amountRaised' => 0.0,
         'championName' => '',
         'currencyCode' => 'GBP',
-        'parentTarget' => null,
         'beneficiaries' => ['Animals'],
         'budgetDetails' => [
             ['amount' => 23.0, 'description' => 'Improve the code'],
@@ -199,7 +198,6 @@ class TestCase extends PHPUnitTestCase
         'aims' => [],
         'budgetDetails' => [],
         'beneficiaries' => [],
-        'parentTarget' => null,
     ];
 
     /**
