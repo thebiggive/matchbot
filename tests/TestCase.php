@@ -86,7 +86,6 @@ class TestCase extends PHPUnitTestCase
         'amountRaised' => 0.0,
         'championName' => '',
         'currencyCode' => 'GBP',
-        'parentTarget' => null,
         'beneficiaries' => ['Animals'],
         'budgetDetails' => [
             ['amount' => 23.0, 'description' => 'Improve the code'],
@@ -199,7 +198,6 @@ class TestCase extends PHPUnitTestCase
         'aims' => [],
         'budgetDetails' => [],
         'beneficiaries' => [],
-        'parentTarget' => null,
     ];
 
     /**
@@ -455,6 +453,7 @@ class TestCase extends PHPUnitTestCase
             amountRaised: Money::zero(),
             matchFundsUsed: Money::zero(),
             matchFundsTotal: $withMatchFundsTotal ?? Money::zero(),
+            target: Money::zero(),
         ));
 
         return $campaign;
