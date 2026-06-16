@@ -249,7 +249,6 @@ class CampaignService
             championOptInStatement: $sfCampaignData['championOptInStatement'],
             championRef: $sfCampaignData['championRef'],
             charity: $charityHttpModel,
-            countries: $sfCampaignData['countries'], // @todo-SO-78 remove
             currencyCode: $campaign->getCurrencyCode() ?? '',
             donationCount: $this->donationRepository->countCompleteDonationsToCampaign($campaign),
             endDate: $this->formatDate($campaign->getEndDate()),

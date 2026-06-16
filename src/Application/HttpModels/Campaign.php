@@ -30,7 +30,6 @@ readonly class Campaign
      * @param list<string> $beneficiaries
      * @param list<array{amount: float, description: string}> $budgetDetails
      * @param list<string> $categories
-     * @param list<string> $countries
      * @param array<int, array{countryName: ?string, regionCode: ?string}> $locations array is simplest way to match type; ArrayCollection is not covariant.
      * @param list<array{person: string, quote: string}> $quotes
      * @param list<array{content: string, modifiedDate: string}> $updates
@@ -153,13 +152,6 @@ readonly class Campaign
             ref: "#/components/schemas/Charity"
         )]
         public Charity $charity,
-        #[OA\Property(
-            property: "countries",
-            description: "List of countries where the campaign operates",
-            type: "array",
-            items: new OA\Items(type: "string", example: "United Kingdom")
-        )]
-        public array $countries,
         #[OA\Property(
             property: "currencyCode",
             description: "Currency code for the campaign",

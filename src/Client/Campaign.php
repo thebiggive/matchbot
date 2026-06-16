@@ -57,7 +57,6 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     banner?: array{uri: string, alt_text: ?string}|null,
  *     amountRaised: float,
  *     summary: string,
- *     countries: list<string>,
  *     locations: list<array{countryName: ?string, regionCode: ?string}>,
  *     categories: list<string>,
  *     budgetDetails: list<array{amount: float, description: string}>,
