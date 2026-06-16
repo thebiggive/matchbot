@@ -26,7 +26,9 @@ In advance of the first app run:
   preferences.
 * copy `.env.example` to `.env` and change any values you need to. e.g. if you
   are working with your own Salesforce sandbox you would want to change most of the `SALESFORCE_*`
-  variables.
+* copy `.env.example` to `.env` and change any values you need to. e.g. if you
+are working with your own Salesforce sandbox you would want to change most of the `SALESFORCE_*`
+variables. Values that have to be set for each dev workstation should be under the "*Variables to edit for each dev workstation:*" heading near the top.
 
 ### Set up a connection to the Stripe test environment
 
