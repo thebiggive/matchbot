@@ -84,10 +84,11 @@ class CampaignStatistics
     protected CampaignStatus $approxStatus;
 
     /**
-     * @param Campaign $campaign
-     * @param Money $amountRaised
-     * @param Money $matchFundsUsed
+     * @param Money $target
      * @param Money $matchFundsTotal
+     * @param Campaign $campaign
+     * @param Money $matchFundsUsed
+     * @param Money $amountRaised
      *
      * $amountRaised must be equal to $matchFundsUsed + $donationSum
      */
@@ -98,6 +99,7 @@ class CampaignStatistics
         Money $amountRaised,
         Money $matchFundsUsed,
         Money $matchFundsTotal,
+        Money $target,
     ) {
         $this->createdNow();
         $this->campaign = $campaign;
@@ -111,6 +113,7 @@ class CampaignStatistics
             matchFundsUsed: $matchFundsUsed,
             matchFundsTotal: $matchFundsTotal,
             alwaysConsiderChanged: true,
+            target: $target,
         );
     }
 
@@ -118,7 +121,7 @@ class CampaignStatistics
     {
         $zero = Money::zero($campaign->getCurrency());
 
-        return new self($at, $campaign, $zero, $zero, $zero, $zero);
+        return new self($at, $campaign, $zero, $zero, $zero, $zero, $zero);
     }
 
     public function getDonationSum(): Money
@@ -155,6 +158,7 @@ class CampaignStatistics
      * We manually set $lastCheck and $lastRealUpdate, since we need the former to avoid wasting resources and
      * changing that will cause lifecycle hooks to change $updatedAt.
      *
+     * @param Money $target
      * @param bool $alwaysConsiderChanged Hacky prop for now to avoid sa & runtime confusion about uninitialised
      *                                    props. Constructor sets true, other callers false.
      * @return bool Whether anything changed vs. the previously persisted stats.
@@ -166,6 +170,7 @@ class CampaignStatistics
         Money $matchFundsUsed,
         Money $matchFundsTotal,
         bool $alwaysConsiderChanged,
+        Money $target,
     ): bool {
         Assertion::greaterOrEqualThan(
             $matchFundsTotal->toNumericString(),
@@ -200,8 +205,6 @@ class CampaignStatistics
             $this->matchFundsRemaining = $matchFundsTotal->minus($matchFundsUsed);
         }
 
-        $campaign = $this->campaign;
-        $target = $campaign->totalFundraisingTarget;
         $this->distanceToTarget = $target->lessThan($amountRaised)
             ? Money::zero($this->campaign->getCurrency())
             : $target->minus($amountRaised);

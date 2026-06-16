@@ -69,7 +69,6 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     surplusDonationInfo: string,
  *     quotes: list<array{person: string, quote: string}>,
  *     parentUsesSharedFunds: boolean,
- *     parentTarget: ?float,
  *     parentRef: ?string,
  *     parentMatchFundsRemaining: ?float,
  *     parentDonationCount: ?int,
