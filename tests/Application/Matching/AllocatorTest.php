@@ -21,6 +21,7 @@ use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Lock\LockFactory;
 
 class AllocatorTest extends TestCase
@@ -54,6 +55,7 @@ class AllocatorTest extends TestCase
         $matchingAdapter = new Adapter(
             new ArrayMatchingStorage(),
             new NullLogger(),
+            new MockClock('2020-01-01T00:00:00'),
         );
 
         $this->sut = new Allocator(
@@ -62,6 +64,7 @@ class AllocatorTest extends TestCase
             logger: new NullLogger(),
             campaignFundingRepository: $this->campaignFundingsRepositoryProphecy->reveal(),
             lockFactory: $this->createStub(LockFactory::class),
+            clock: new MockClock('2020-01-01T00:00:00'),
         );
 
         $this->campaign = \MatchBot\Tests\TestCase::someCampaign();
@@ -326,7 +329,8 @@ class AllocatorTest extends TestCase
             entityManager: $this->emProphecy->reveal(),
             logger: new NullLogger(),
             campaignFundingRepository: $this->campaignFundingsRepositoryProphecy->reveal(),
-            lockFactory: $this->createStub(LockFactory::class)
+            lockFactory: $this->createStub(LockFactory::class),
+            clock: new MockClock('2020-01-01T00:00:00'),
         );
 
         /** @psalm-suppress InternalMethod */

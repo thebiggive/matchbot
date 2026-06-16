@@ -5,11 +5,11 @@ namespace MatchBot\IntegrationTests;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Assertion;
 use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignStatistics;
+use MatchBot\Domain\CampaignStatus;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityResponseToOffer;
 use MatchBot\Domain\Money;
@@ -19,63 +19,7 @@ use Random\Randomizer;
 
 class CampaignRepositoryTest extends IntegrationTest
 {
-    public function testItFindsANineMonthOldCampaignForACharityAwaitingGiftAidApproval(): void
-    {
-        // arrange
-        $sut = $this->getService(CampaignRepository::class);
-
-        $campaign = new Campaign(
-            $this->randomCampaignId(),
-            metaCampaignSlug: null,
-            charity: $this->getCharityAwaitingGiftAidApproval(),
-            startDate: new \DateTimeImmutable('-10 months'), // less than the 9 month limit
-            endDate: new \DateTimeImmutable(-29 * 9 . 'days'),
-            isMatched: true,
-            ready: true,
-            status: null,
-            name: 'Campaign Name',
-            summary: 'Campaign Summary',
-            currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
-            isRegularGiving: false,
-            pinPosition: null,
-            championPagePinPosition: null,
-            relatedApplicationStatus: null,
-            relatedApplicationCharityResponseToOffer: null,
-            regularGivingCollectionEnd: null,
-            totalFundraisingTarget: Money::zero(),
-            thankYouMessage: null,
-            rawData: [],
-            hidden: false
-        );
-
-
-        $em = $this->getService(EntityManagerInterface::class);
-        $em->persist($campaign);
-        $em->flush();
-
-        $newCampaignId = $campaign->getId();
-
-        // act
-        $campaignsFromDB = $sut->findCampaignsThatNeedToBeUpToDate();
-
-        // assert
-
-        // We don't clear past data or isolate integration tests', so it is likely that there are other campaigns
-        // in this list too.
-        $idCriterion = Criteria::create()->where(Criteria::expr()->eq('id', $newCampaignId));
-        $campaignsMatchingFixture = (new ArrayCollection($campaignsFromDB))->matching($idCriterion);
-
-        $this->assertGreaterThanOrEqual(1, count($campaignsFromDB));
-        $this->assertCount(1, $campaignsMatchingFixture);
-        $this->assertSame($campaign, $campaignsMatchingFixture->first());
-        $firstCampaign = $campaignsMatchingFixture->first();
-        Assertion::isInstanceOf($firstCampaign, Campaign::class);
-        $this->assertSame('Charity Name', $firstCampaign->getCharity()->getName());
-    }
-
-    public function testItFindsNo10MonthOldCampaignEvenIfCharityAwaitingGiftAidApproval(): void
+    public function testItFindsNo10MonthOldCampaign(): void
     {
         // arrange
         $sut = $this->getService(CampaignRepository::class);
@@ -87,13 +31,10 @@ class CampaignRepositoryTest extends IntegrationTest
             startDate: new \DateTimeImmutable('-11 months'),
             endDate: new \DateTimeImmutable('-10 months'),
             isMatched: true,
-            ready: true,
-            status: null,
+            isPublished: true,
             name: 'Campaign Name',
             summary: 'Campaign Summary',
             currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
             isRegularGiving: false,
             pinPosition: null,
             championPagePinPosition: null,
@@ -113,7 +54,7 @@ class CampaignRepositoryTest extends IntegrationTest
         $newCampaignId = $campaign->getId();
 
         // act
-        $campaignsFromDB = $sut->findCampaignsThatNeedToBeUpToDate();
+        $campaignsFromDB = $sut->findCampaignsWhereFundsNeedToBeUpToDate();
 
         // assert
 
@@ -138,7 +79,6 @@ class CampaignRepositoryTest extends IntegrationTest
             sortDirection: 'desc',
             offset: 0,
             limit: 6,
-            status: 'Active',
             metaCampaignSlug: 'the-family',
             fundSlug: null,
             jsonMatchInListConditions: [
@@ -174,11 +114,9 @@ class CampaignRepositoryTest extends IntegrationTest
             sortDirection: 'desc',
             offset: 0,
             limit: 600,
-            status: null,
             metaCampaignSlug: null,
             fundSlug: null,
-            jsonMatchInListConditions: [
-            ],
+            jsonMatchInListConditions: [],
             term: $query,
         );
 
@@ -195,12 +133,15 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $charity = TestCase::someCharity();
 
-        foreach (['Expired', 'Active', 'Preview'] as $status) {
+        foreach ([CampaignStatus::Expired, CampaignStatus::Active, CampaignStatus::Preview] as $status) {
             $campaign = $this->createCampaign(
                 charity: $charity,
-                name: 'Campaign ' . $status,
+                name: 'Campaign ' . $status->value,
                 status: $status,
                 withUniqueSalesforceId: true,
+                metaCampaignSlug: 'some-slug',
+                relatedApplicationStatus: ApplicationStatus::Approved,
+                relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted
             );
             $stats = CampaignStatistics::zeroPlaceholder($campaign, new \DateTimeImmutable('now'));
             $em->persist($campaign);
@@ -213,8 +154,7 @@ class CampaignRepositoryTest extends IntegrationTest
             sortDirection: 'desc',
             offset: 0,
             limit: 6,
-            status: null,
-            metaCampaignSlug: null,
+            metaCampaignSlug: 'some-slug',
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
@@ -226,7 +166,7 @@ class CampaignRepositoryTest extends IntegrationTest
         );
 
         // Expired is excluded from the Explore list with no metacampaign slug.
-        $this->assertSame(['Campaign Active', 'Campaign Preview'], $returnCampaignNames);
+        $this->assertSame(['Campaign Active', 'Campaign Expired', 'Campaign Preview'], $returnCampaignNames);
     }
 
     private function getCharityAwaitingGiftAidApproval(): Charity
@@ -260,13 +200,10 @@ class CampaignRepositoryTest extends IntegrationTest
             startDate: new \DateTimeImmutable('-10 months'),
             endDate: new \DateTimeImmutable('-9 months'),
             isMatched: true,
-            ready: true,
-            status: null,
+            isPublished: true,
             name: 'Campaign One',
             summary: 'Campaign Summary',
             currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
             isRegularGiving: false,
             pinPosition: null,
             championPagePinPosition: null,
@@ -300,13 +237,10 @@ class CampaignRepositoryTest extends IntegrationTest
                 startDate: new \DateTimeImmutable('-8 months'),
                 endDate: new \DateTimeImmutable('+1 month'),
                 isMatched: true,
-                ready: true,
-                status: 'Active',
+                isPublished: true,
                 name: $campaignName,
                 summary: 'Campaign Summary',
                 currencyCode: 'GBP',
-                totalFundingAllocation: Money::zero(),
-                amountPledged: Money::zero(),
                 isRegularGiving: false,
                 pinPosition: null,
                 championPagePinPosition: null,

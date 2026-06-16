@@ -7,10 +7,11 @@ use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assertion;
 
 /**
+ * (not using PHP native readonly as ORM will replace properties during hydration)
  * @psalm-immutable
  */
 #[Embeddable]
-readonly class Money implements \JsonSerializable, \Stringable
+class Money implements \JsonSerializable, \Stringable
 {
     /**
      * @var numeric-string
@@ -37,9 +38,10 @@ readonly class Money implements \JsonSerializable, \Stringable
         // Almost 10 trillion £ is well Over the Max. fund value we use in regtest Salesforce sandboxes - these have very high sums of fictional money to allow continous automated donations for a long time.
         // other envs of course don't use use sums anywhere near this big.
         Assertion::between(
-            $this->amountInPence,
-            0,
-            9_999_999_999_999_00,
+            value: $this->amountInPence,
+            lowerLimit: 0,
+            upperLimit: 9_999_999_999_999_00,
+            message: "Cannot construct a negative or extremely large amount of money"
         );
     }
 
@@ -213,5 +215,14 @@ readonly class Money implements \JsonSerializable, \Stringable
     public function times(int $multiplier): self
     {
         return new self(bcmul($this->amountInPence, (string) $multiplier, 0), $this->currency);
+    }
+
+    public function greaterThan(Money $that): bool
+    {
+        if ($this->currency !== $that->currency) {
+            throw new \Exception('Cannot compare money in different currencies');
+        }
+
+        return $this->amountInPence > $that->amountInPence;
     }
 }

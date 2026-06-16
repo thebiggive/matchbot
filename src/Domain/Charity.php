@@ -11,7 +11,6 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 use Psr\Http\Message\UriInterface;
 
-#[ORM\Table]
 #[ORM\Entity(repositoryClass: CharityRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Index(columns: ["salesforceId"])]
@@ -85,6 +84,9 @@ class Charity extends SalesforceReadProxy
     #[ORM\Column(length: 255, unique: true, nullable: true)]
     protected ?string $stripeAccountId = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $ryftAccountId = null;
+
     #[ORM\Column(length: 7, unique: true, nullable: true)]
     protected ?string $hmrcReferenceNumber = null;
 
@@ -114,7 +116,11 @@ class Charity extends SalesforceReadProxy
     #[ORM\Column(type: 'boolean')]
     private bool $tbgApprovedToClaimGiftAid = false;
 
+    #[ORM\Column(options: ['default' => 'stripe'])]
+    private(set) PaymentServiceProvider $psp;
+
     /**
+     * @param RyftAccountId|null $ryftAccountId
      * @param EmailAddress|null $emailAddress
      * @param array<string,mixed> $rawData - data about the charity as sent from Salesforce
      */
@@ -122,6 +128,8 @@ class Charity extends SalesforceReadProxy
         string $salesforceId,
         string $charityName,
         ?string $stripeAccountId,
+        ?RyftAccountId $ryftAccountId,
+        PaymentServiceProvider $psp,
         ?string $hmrcReferenceNumber,
         ?string $giftAidOnboardingStatus,
         ?string $regulator,
@@ -143,6 +151,8 @@ class Charity extends SalesforceReadProxy
             websiteUri: $websiteUri,
             logoUri: $logoUri,
             stripeAccountId: $stripeAccountId,
+            ryftAccountId: $ryftAccountId,
+            psp: $psp,
             hmrcReferenceNumber: $hmrcReferenceNumber,
             giftAidOnboardingStatus: $giftAidOnboardingStatus,
             regulator: $regulator,
@@ -187,6 +197,11 @@ class Charity extends SalesforceReadProxy
     public function getStripeAccountId(): ?string
     {
         return $this->stripeAccountId;
+    }
+
+    public function getRyftAccountId(): ?RyftAccountId
+    {
+        return is_null($this->ryftAccountId) ? null : RyftAccountId::of($this->ryftAccountId);
     }
 
     /**
@@ -273,6 +288,8 @@ class Charity extends SalesforceReadProxy
 
     /**
      *
+     * @param RyftAccountId|null $ryftAccountId
+     * @param PaymentServiceProvider $psp
      * @param EmailAddress|null $emailAddress
      * @param array<string,mixed> $rawData Data about the charity as received directly from SF.
      *
@@ -283,6 +300,8 @@ class Charity extends SalesforceReadProxy
         ?string $websiteUri,
         ?string $logoUri,
         ?string $stripeAccountId,
+        ?RyftAccountId $ryftAccountId,
+        PaymentServiceProvider $psp,
         ?string $hmrcReferenceNumber,
         ?string $giftAidOnboardingStatus,
         ?string $regulator,
@@ -300,6 +319,8 @@ class Charity extends SalesforceReadProxy
 
         $this->setName($charityName);
         $this->setStripeAccountId($stripeAccountId);
+        $this->ryftAccountId = $ryftAccountId?->ryftAccountId;
+        $this->psp = $psp;
 
         $tbgCanClaimGiftAid = (
             $hmrcReferenceNumber !== null && $hmrcReferenceNumber !== '' &&
@@ -337,6 +358,11 @@ class Charity extends SalesforceReadProxy
         $this->emailAddress = $emailAddress?->email;
     }
 
+    /**
+     * This is now our approximation of the statement descriptor Salesforce sets at account level.
+     * It's only directly used to tell donors what to look out for rather than sent to Stripe
+     * per-donation which didn't work as we wanted pre-BG2-3145.
+     */
     public function getStatementDescriptor(): string
     {
         $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor

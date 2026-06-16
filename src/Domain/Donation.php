@@ -30,7 +30,6 @@ use Stripe\Payout;
 use function bccomp;
 use function sprintf;
 
-#[ORM\Table]
 #[ORM\UniqueConstraint(fields: ['mandateSequenceNumber', 'mandate'])]
 #[ORM\Index(name: 'campaign_and_status', columns: ['campaign_id', 'donationStatus'])]
 #[ORM\Index(name: 'date_and_status', columns: ['createdAt', 'donationStatus'])]
@@ -59,8 +58,6 @@ class Donation extends SalesforceWriteProxy
      * OVERSEAS constant in donate-frontend.
      */
     public const string OVERSEAS = 'OVERSEAS';
-
-    private const array POSSIBLE_PSPS = ['stripe'];
 
     /**
      * The donation ID for PSPs and public APIs. Not the same as the internal auto-increment $id used
@@ -209,7 +206,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * Date at which we amended the donation to cancel claiming gift aid.
      */
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?DateTimeImmutable $giftAidRemovedAt = null;
 
     /**
@@ -380,7 +377,7 @@ class Donation extends SalesforceWriteProxy
      * Date at which we refunded this to the donor. Ideally will be null. Should be not null only iff status is
      * DonationStatus::Refunded
      */
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?\DateTimeImmutable $refundedAt = null;
 
     /**
@@ -389,7 +386,7 @@ class Donation extends SalesforceWriteProxy
      *
      * @see DonationStatus::PreAuthorized
      */
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?DateTimeImmutable $preAuthorizationDate = null;
 
     /**
@@ -405,7 +402,7 @@ class Donation extends SalesforceWriteProxy
      *
      * Based on {@see Payout::$arrival_date}
      */
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?DateTimeImmutable $paidOutAt = null;
 
 
@@ -428,6 +425,10 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(nullable: true, name: 'paymentCard_country')]
     private ?CountryAlpha2 $paymentCardCountry;
 
+    /** @psalm-suppress UnusedProperty - for now just recorded for internal reference */
+    #[ORM\Column(nullable: true)]
+    private ?string $ryftPaymentSessionId = null;
+
     /**
      * @param string|null $billingPostcode
      * @psalm-param numeric-string $amount
@@ -441,6 +442,7 @@ class Donation extends SalesforceWriteProxy
         ?bool $charityComms,
         ?bool $championComms,
         ?string $pspCustomerId,
+        PaymentServiceProvider $psp,
         ?bool $optInTbgEmail,
         ?DonorName $donorName,
         ?EmailAddress $emailAddress,
@@ -481,7 +483,7 @@ class Donation extends SalesforceWriteProxy
 
         $this->paymentMethodType = $paymentMethodType;
         $this->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
-        $this->setPsp('stripe');
+        $this->setPsp($campaign->getCharity()->psp->value);
         $this->campaign = $campaign; // Charity & match expectation determined implicitly from this
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
@@ -518,6 +520,7 @@ class Donation extends SalesforceWriteProxy
         $this->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
 
         $this->deriveFees();
+        $this->psp = $psp->value;
     }
 
     /**
@@ -527,7 +530,8 @@ class Donation extends SalesforceWriteProxy
      */
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign, PersonId $donorId): Donation
     {
-        Assertion::eq($donationData->psp, 'stripe');
+        Assertion::inArray($donationData->psp, PaymentServiceProvider::VALUES);
+
         return new self(
             amount: $donationData->donationAmount,
             currencyCode: $donationData->currencyCode,
@@ -536,23 +540,24 @@ class Donation extends SalesforceWriteProxy
             charityComms: $donationData->optInCharityEmail,
             championComms: $donationData->optInChampionEmail,
             pspCustomerId: $donationData->pspCustomerId,
+            psp: PaymentServiceProvider::from($donationData->psp),
             optInTbgEmail: $donationData->optInTbgEmail,
             donorName: $donationData->donorName,
             emailAddress: $donationData->emailAddress,
             countryCode: $donationData->countryCode,
             tipAmount: $donationData->tipAmount,
             mandate: null,
-            mandateSequenceNumber: null,
             // Main form starts off with this null on init in the API model, so effectively it's ignored here
             // then as `false` is also the constructor's default. Donation Funds tips should send a bool value
             // from the start.
-            donorId: $donorId,
+            mandateSequenceNumber: null,
             // Not meaningfully used yet (typical donations set it on Update instead; Donation Funds
             // tips don't have a "tip" because the donation is to BG), but map just in case.
+            donorId: $donorId,
             giftAid: $donationData->giftAid ?? false,
             tipGiftAid: $donationData->tipGiftAid,
-            homeAddress: $donationData->homeAddress,
-            homePostcode: $donationData->homePostcode, // no support for billing post code on donation creation in API - only on update.
+            homeAddress: $donationData->homeAddress, // no support for billing post code on donation creation in API - only on update.
+            homePostcode: $donationData->homePostcode,
             billingPostcode: null
         );
     }
@@ -685,6 +690,7 @@ class Donation extends SalesforceWriteProxy
             'giftAid' => $this->hasGiftAid(),
             'homeAddress' => $this->getDonorHomeAddressLine1(),
             'homePostcode' => $this->getDonorHomePostcode(),
+            'isOrganisationDonor' => empty($this->donorFirstName) && $this->getDonorLastName(true),
             'lastName' => $this->getDonorLastName(true),
             'matchedAmount' => $this->matchedAmount()->toMajorUnitFloat(),
             'matchReservedAmount' => 0,
@@ -702,6 +708,7 @@ class Donation extends SalesforceWriteProxy
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
             'transactionId' => $this->getTransactionId(),
+            'referenceCode' => $this->getReferenceCode(),
             'updatedTime' => $this->getUpdatedDate()->format(DateTimeInterface::ATOM),
         ];
 
@@ -913,6 +920,10 @@ class Donation extends SalesforceWriteProxy
     {
         $withdrawalTotal = '0.00';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
+            if ($fundingWithdrawal->isReleased()) {
+                continue;
+            }
+
             $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
         }
 
@@ -946,10 +957,12 @@ class Donation extends SalesforceWriteProxy
         ];
 
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
+            if ($fundingWithdrawal->isReleased()) {
+                continue;
+            }
+
             $fundTypeOfThisWithdrawal = $fundingWithdrawal->getCampaignFunding()->getFund()->getFundType();
 
-            // I don't think the match.unhandled error from phpstan here can be right - we handle 12 cases: 3 cases of enum * 2 values of bool * 2 values of bool
-            // @phpstan-ignore match.unhandled
             $key = match ([$fundTypeOfThisWithdrawal, $this->donationStatus->isSuccessful(), $this->donationStatus === DonationStatus::PreAuthorized  ]) {
                 [FundType::ChampionFund, true, true] => throw new \LogicException("impossible status"),
                 [FundType::ChampionFund, true, false] => 'amountMatchedByChampionFunds',
@@ -983,6 +996,12 @@ class Donation extends SalesforceWriteProxy
         return $this->transactionId;
     }
 
+    /** Code to be given to donor so they can quote it back to us to identify the donation. */
+    public function getReferenceCode(): string
+    {
+        return $this->transactionId ?? $this->uuid->toString();
+    }
+
 
 
     public function getChargeId(): ?string
@@ -1004,11 +1023,19 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return Collection<int, FundingWithdrawal>
+     * @return Collection<int, FundingWithdrawal> All withdrawals *including* any released / soft deleted.
+     */
+    public function getFundingWithdrawalsIncludingReleased(): Collection
+    {
+        return $this->fundingWithdrawals;
+    }
+
+    /**
+     * @return Collection<int, FundingWithdrawal> Withdrawals that have not been released i.e. soft deleted.
      */
     public function getFundingWithdrawals(): Collection
     {
-        return $this->fundingWithdrawals;
+        return $this->fundingWithdrawals->filter(static fn(FundingWithdrawal $fw) => !$fw->isReleased());
     }
 
     /**
@@ -1043,7 +1070,7 @@ class Donation extends SalesforceWriteProxy
      */
     private function setPsp(string $psp): void
     {
-        if (!in_array($psp, self::POSSIBLE_PSPS, true)) {
+        if (!in_array($psp, PaymentServiceProvider::VALUES, true)) {
             throw new \UnexpectedValueException("Unexpected PSP '$psp'");
         }
 
@@ -1271,12 +1298,16 @@ class Donation extends SalesforceWriteProxy
 
     public function getPspCustomerId(): ?StripeCustomerId
     {
+        // I think it may make sense to retrospectively redefine 'PspCustomerID' to mean 'stripe customer ID'
+        // hence now returning null if the PSP is not stripe. Since stripe CustomerID and a Ryft customer ID
+        // can not be used interchangably it may not be useful to mix them into the samre static type.
+
         if ($this->pspCustomerId === null) {
             return null;
         };
 
-        if ($this->psp !== 'stripe') {
-            throw new \RuntimeException('Unexpected PSP');
+        if ($this->psp !== PaymentServiceProvider::Stripe->value) {
+            return null;
         }
 
         return StripeCustomerId::of($this->pspCustomerId);
@@ -1395,12 +1426,15 @@ class Donation extends SalesforceWriteProxy
         return trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
     }
 
+    /**
+     * MatchBot and Salesforce are both allowing blank first names for orgs so AFAIK first name is
+     * the only field we historically checked that has a hard and fast rule.
+     */
     public function hasEnoughDataForSalesforce(): bool
     {
-        $firstName = $this->getDonorFirstName();
         $lastName = $this->getDonorLastName();
 
-        return is_string($firstName) && $firstName !== '' && is_string($lastName) && $lastName !== '';
+        return is_string($lastName) && $lastName !== '';
     }
 
     public function toClaimBotModel(): Messages\Donation
@@ -1550,6 +1584,8 @@ class Donation extends SalesforceWriteProxy
             $this->getAmount(),
             $this->currency()->isoCode(),
             $incursGiftAidFee,
+            $this->getCreatedDateImmutable(),
+            $this->mandate?->getActiveFrom(),
         );
 
         $this->charityFee = $fees->coreFee;
@@ -1557,6 +1593,8 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
+     * Typically called multiple times per donation, on charge success & updates.
+     * @see DonationService::updateDonationStatusFromSuccessfulCharge()
      * @param numeric-string|null $originalFeeFractional In pence or similar, if known
      */
     public function collectFromStripeCharge(
@@ -1585,6 +1623,27 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->totalPaidByDonor = bcdiv((string)$totalPaidFractional, '100', 2);
+    }
+
+    /**
+     * @param array<string, mixed> $paymentSession
+     */
+    public function collectFromRyftPaymentSession(
+        array $paymentSession,
+        Money $netAmount,
+        Money $originalFeeFractional,
+        \DateTimeImmutable $at,
+    ): void {
+        $this->donationStatus = DonationStatus::Collected;
+        $this->collectedAt = $at;
+        // We have to add `netAmount` which is net amount reported by Ryft after their equivalent of application fee,
+        // to the gross fee and tip that we asked to deduct.
+        $this->totalPaidByDonor = bcadd(
+            $netAmount->toNumericString(),
+            bcdiv((string) $this->getAmountToDeductFractional(), '100', 2),
+            2,
+        );
+        $this->setOriginalPspFeeFractional((string) $originalFeeFractional->amountInPence());
     }
 
     /**
@@ -1678,11 +1737,15 @@ class Donation extends SalesforceWriteProxy
      */
     public function assertIsReadyToConfirm(\DateTimeImmutable $at): true
     {
-        $this->assertionsForConfirmOrPreAuth()
-            ->that($this->transactionId)->notNull('Missing Transaction ID')
+        $assertions = $this->assertionsForConfirmOrPreAuth()
             ->that($this->getCampaign()->isOpenForFinalising($at))
-            ->that($this->hasCharityFee())
-            ->verifyNow();
+            ->that($this->hasCharityFee());
+
+        if ($this->psp === PaymentServiceProvider::Stripe->value) {
+            $assertions = $assertions->that($this->transactionId)->notNull('Missing Transaction ID');
+        }
+
+        $assertions->verifyNow();
 
         return true;
     }
@@ -1749,6 +1812,7 @@ class Donation extends SalesforceWriteProxy
         return $this->mandate;
     }
 
+    // @mago-expect analysis:invalid-return-statement
     /**
      * @psalm-suppress InvalidReturnType - don't want to write a type with every property here, but
      * psalm doesn't treat array shapes with extra params as subtypes unless explictily declared open,
@@ -1759,7 +1823,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function createStripePaymentIntentPayload(): array
     {
-        Assertion::same('stripe', $this->psp);
+        Assertion::same(PaymentServiceProvider::Stripe->value, $this->psp);
 
         $payload = [
             ...$this->getStripeMethodProperties(),
@@ -1788,8 +1852,6 @@ class Donation extends SalesforceWriteProxy
                 'stripeFeeRechargeVat' => $this->getCharityFeeVat(),
                 'tipAmount' => $this->getTipAmount(),
             ],
-            'statement_descriptor' => $this->getCampaign()->getCharity()->getStatementDescriptor(),
-            'statement_descriptor_suffix' => $this->getCampaign()->getCharity()->getStatementDescriptor(),
             // See https://stripe.com/docs/connect/destination-charges#application-fee
             'application_fee_amount' => $this->getAmountToDeductFractional(),
             'transfer_data' => [
@@ -1804,8 +1866,8 @@ class Donation extends SalesforceWriteProxy
             $payload['metadata']['mandateSequenceNumber'] = $sequenceNumber->number; // @phpstan-ignore offsetAccess.nonOffsetAccessible
         }
 
-        /** @psalm-suppress InvalidReturnStatement - see note in docblock */
-        return $payload;
+        /** @psalm-suppress InvalidReturnStatement - see note in docblock*/
+        return $payload; // @phpstan-ignore return.type (see note in docblock)
     }
 
     public function isFullyMatched(): bool
@@ -1856,12 +1918,7 @@ class Donation extends SalesforceWriteProxy
      */
     private function assertionsForConfirmOrPreAuth(): \Assert\LazyAssertion
     {
-        // Since DON-1188 - consider requiring first name only if donor is an individual not an organisation.
-        // will require passing in the donor account if present or that detail from it.
-        // probably not critical enough to be worth doing now.
-
         return Assert::lazy()
-//            ->that($this->donorFirstName, 'donorFirstName')->notNull('Missing Donor First Name')
             ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
             ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
             ->that($this->donorCountryCode)->notNull('Missing Billing Country')
@@ -2104,5 +2161,15 @@ class Donation extends SalesforceWriteProxy
         \assert(\is_int($this->mandateSequenceNumber));
 
         return $this->mandateSequenceNumber > 1;
+    }
+
+    public function paymentServiceProvider(): ?PaymentServiceProvider
+    {
+        return PaymentServiceProvider::tryFrom($this->psp);
+    }
+
+    public function setRyftPaymentSessionId(RyftPaymentSessionId $id): void
+    {
+        $this->ryftPaymentSessionId = $id->id;
     }
 }

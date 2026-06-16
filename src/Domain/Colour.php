@@ -30,6 +30,16 @@ readonly class Colour
         return new self($hexCode);
     }
 
+    public static function black(): Colour
+    {
+        return Colour::fromHex('#000000');
+    }
+
+    public static function white(): Colour
+    {
+        return Colour::fromHex('#FFFFFF');
+    }
+
     /**
      * @return string hex colour code prefixed with #, e.g. '#B30510'
      */

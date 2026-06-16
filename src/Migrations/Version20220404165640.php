@@ -6,6 +6,7 @@ namespace MatchBot\Migrations;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -69,8 +70,8 @@ EOT,
             ],
             // https://stackoverflow.com/a/36710894/2803757
             [
-                'correlationId' => \PDO::PARAM_STR,
-                'responseDetail' => \PDO::PARAM_STR,
+                'correlationId' => ParameterType::STRING,
+                'responseDetail' => ParameterType::STRING,
                 'completeUuids' => ArrayParameterType::STRING,
             ]
         );

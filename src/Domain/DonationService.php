@@ -16,6 +16,7 @@ use MatchBot\Application\Matching\DbErrorPreventedMatch;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Client\NotFoundException;
+use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
@@ -103,10 +104,11 @@ class DonationService
         private DonorAccountRepository $donorAccountRepository,
         private RoutableMessageBus $bus,
         private DonationNotifier $donationNotifier,
-        private FundRepository $fundRepository,
+        private CampaignService $campaignService,
         private \Redis $redis,
         private RateLimiterFactory $confirmRateLimitFactory,
         private RegularGivingNotifier $regularGivingNotifier,
+        private RyftClient $ryftClient,
     ) {
     }
 
@@ -160,7 +162,7 @@ class DonationService
             return $this->fakeDonationProviderForTestUseOnly->__invoke();
         }
 
-        if (!in_array($donationData->psp, ['stripe'], true)) {
+        if (!in_array($donationData->psp, \array_map(fn($psp) => $psp->value, PaymentServiceProvider::cases()), true)) {
             throw new \UnexpectedValueException(sprintf(
                 'PSP %s is invalid',
                 $donationData->psp,
@@ -183,7 +185,7 @@ class DonationService
                 $this->logger->warning("Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed");
             }
 
-            $this->fundRepository->pullForCampaign($campaign, $this->clock->now());
+            $this->campaignService->pullFundsAndUpdateStats($campaign);
 
             $this->entityManager->flush();
 
@@ -262,28 +264,74 @@ class DonationService
      * @throws RegularGivingDonationTooOldToCollect
      * @throws PaymentIntentNotSucceeded
      * @throws RateLimitExceededException
+     * @return \Stripe\PaymentIntent|null payment intent for stripe, null for ryft.
      */
     public function confirmOnSessionDonation(
         Donation $donation,
-        StripeConfirmationTokenId $tokenId,
+        ?StripeConfirmationTokenId $tokenId,
         ?string $confirmationTokenSetupFutureUsage,
-    ): \Stripe\PaymentIntent {
-        $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
+        ?string $ryftPaymentSessionId,
+    ): ?\Stripe\PaymentIntent {
+        $psp = $donation->paymentServiceProvider();
+        Assertion::notNull($psp, 'Donation must have a payment service provider');
+        $confirmationToken = null;
+        if ($psp === PaymentServiceProvider::Stripe) {
+            Assertion::notNull($tokenId);
+            $confirmationToken = $this->stripe->retrieveConfirmationToken($tokenId);
 
-        /**
-         * phpstan is newly reporting a variable type issue here, hard to see at a glance exactly what the issue
-         * is as the type involved is rather complicated.
-         *
-         * @var StripeObject&object{
-         *     card: null|object{country: string, brand: string, fingerprint: string},
-         *     pay_by_bank: null|StripeObject
-         * } $paymentMethodPreview
-         */
-        $paymentMethodPreview = $confirmationToken->payment_method_preview; // @phpstan-ignore varTag.type
+            /**
+             * phpstan is newly reporting a variable type issue here, hard to see at a glance exactly what the issue
+             * is as the type involved is rather complicated.
+             *
+             * @var StripeObject&object{
+             *     card: null|object{country: string, brand: string, fingerprint: string},
+             *     pay_by_bank: null|StripeObject
+             * } $paymentMethodPreview
+             */
+            $paymentMethodPreview = $confirmationToken->payment_method_preview; // @phpstan-ignore varTag.type
 
-        $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
+            $this->limitNewPaymentCardUsageRate($paymentMethodPreview, $donation);
+            $card = null;
+        } elseif ($psp === PaymentServiceProvider::Ryft) {
+            Assertion::notNull($ryftPaymentSessionId, 'Ryft payment session ID must be set for Ryft PSP');
 
-        $this->updateDonationFeesFromConfirmationToken($donation, $confirmationToken);
+            $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
+            Assertion::notNull($ryftAccountId, 'Ryft account ID must be set for Ryft PSP');
+            $paymentSession = $this->ryftClient->fetchPaymentSession(
+                $ryftAccountId,
+                $ryftPaymentSessionId
+            );
+
+            $card = new PaymentCard(
+                CardBrand::from(strtolower($paymentSession['paymentMethod']['card']['scheme'])),
+                Country::fromAlpha2($paymentSession['paymentMethod']['card']['binDetails']['issuerCountry'])
+            );
+        } else {
+            throw new \InvalidArgumentException('Unsupported payment service provider: ' . $psp->name);
+        }
+
+        $this->updateDonationFeesFromConfirmationTokenOrCard($donation, $confirmationToken, $card);
+
+        if ($psp === PaymentServiceProvider::Ryft) {
+            \assert(isset($paymentSession)); // @phpstan-ignore isset.variable (psalm still needs this)
+            \assert(isset($ryftAccountId)); // @phpstan-ignore isset.variable (psalm still needs this)
+            $donationWasPreviouslyCollected = $donation->getDonationStatus() === DonationStatus::Collected;
+
+            $capture = $this->ryftClient->capturePayment(
+                $ryftAccountId,
+                $paymentSession,
+                Money::fromPence($donation->getAmountToDeductFractional(), $donation->currency()),
+            );
+
+            $donation->collectFromRyftPaymentSession(
+                paymentSession: $paymentSession,
+                netAmount: Money::fromPence($capture['amount'], Currency::fromIsoCode($capture['currency'])),
+                originalFeeFractional: Money::fromPence($capture['platformFee'], Currency::fromIsoCode($capture['currency'])),
+                at: $this->clock->now(),
+            );
+
+            $this->notifyDonationSuccesIfRequired($donation, $donationWasPreviouslyCollected);
+        }
 
         // We flush now to make sure the actual fees we're charging are recorded. If there's any DB error at this point
         // we prefer to crash without collecting the donation over collecting the donation without a proper record
@@ -291,7 +339,6 @@ class DonationService
         $this->entityManager->flush();
 
         $paymentIntentId = $donation->getTransactionId();
-        Assertion::notNull($paymentIntentId);
 
         Assertion::false(
             $donation->getDonationStatus() === DonationStatus::PreAuthorized,
@@ -300,36 +347,42 @@ class DonationService
         // following line has no mutation coverage but I think its fine to delete anyway given new assertion above.
         $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
 
-        $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
+        if ($psp === PaymentServiceProvider::Stripe) {
+            \assert(isset($paymentMethodPreview));
+            \assert(isset($paymentIntentId));
+            \assert(isset($tokenId));
+            $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentId);
 
-        // Check if PaymentIntent has a payment_method of a different type
-        /** @var string|null $paymentMethodId */
-        $paymentMethodId = $paymentIntent->payment_method ?? null;
-        if ($paymentMethodId !== null) {
-            $paymentIntent = $this->updatePaymentMethodFromStripe(
-                donation: $donation,
-                paymentMethodId: $paymentMethodId,
-                paymentMethodPreview: $paymentMethodPreview,
-                paymentIntentId: $paymentIntentId,
-                paymentIntent: $paymentIntent
+            // Check if PaymentIntent has a payment_method of a different type
+            /** @var string|null $paymentMethodId */
+            $paymentMethodId = $paymentIntent->payment_method ?? null;
+
+            if ($paymentMethodId !== null) {
+                $paymentIntent = $this->updatePaymentMethodFromStripe(
+                    donation: $donation,
+                    paymentMethodId: $paymentMethodId,
+                    paymentMethodPreview: $paymentMethodPreview,
+                    paymentIntentId: $paymentIntentId,
+                    paymentIntent: $paymentIntent
+                );
+            }
+
+            if ($confirmationTokenSetupFutureUsage === null && $paymentIntent->setup_future_usage !== null) {
+                $paymentIntentId = $this->replacePaymentIntent($donation, $paymentIntentId);
+            }
+
+            $updatedIntent = $this->stripe->confirmPaymentIntent(
+                $paymentIntentId, // May have changed just above, if setup_future_usage did.
+                [
+                    'confirmation_token' => $tokenId->stripeConfirmationTokenId,
+                    'return_url' => $donation->getReturnUrl(),
+                ]
             );
+
+            $this->throwIfUnsuccessful($updatedIntent);
         }
 
-        if ($confirmationTokenSetupFutureUsage === null && $paymentIntent->setup_future_usage !== null) {
-            $paymentIntentId = $this->replacePaymentIntent($donation, $paymentIntentId);
-        }
-
-        $updatedIntent = $this->stripe->confirmPaymentIntent(
-            $paymentIntentId, // May have changed just above, if setup_future_usage did.
-            [
-                'confirmation_token' => $tokenId->stripeConfirmationTokenId,
-                'return_url' => $donation->getReturnUrl(),
-            ]
-        );
-
-        $this->throwIfUnsuccessful($updatedIntent);
-
-        return $updatedIntent;
+        return $updatedIntent ?? null;
     }
 
     /**
@@ -455,7 +508,7 @@ class DonationService
         $this->entityManager->commit();
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
-        if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {
+        if ($donation->getPsp() === PaymentServiceProvider::Stripe->value && $donation->getDonationStatus() === DonationStatus::Pending) {
             $this->loadCampaignsStripeId($campaign);
             $this->createAndAssociatePaymentIntent($donation);
         }
@@ -489,9 +542,10 @@ class DonationService
         }
     }
 
-    private function updateDonationFeesFromConfirmationToken(
+    private function updateDonationFeesFromConfirmationTokenOrCard(
         Donation $donation,
-        ConfirmationToken $confirmationToken
+        ?ConfirmationToken $confirmationToken,
+        ?PaymentCard $paymentCard,
     ): void {
         /**
          *  phpstan is newly reporting a variable type issue here, hard to see at a glance exactly what the issue
@@ -501,9 +555,11 @@ class DonationService
          *     pay_by_bank: null|StripeObject
          * } $paymentMethodPreview
          */
-        $paymentMethodPreview = $confirmationToken->payment_method_preview; // @phpstan-ignore varTag.type
+        $paymentMethodPreview = $confirmationToken?->payment_method_preview; // @phpstan-ignore varTag.type
 
-        if ($paymentMethodPreview->card !== null) {
+        if ($paymentCard !== null) {
+            $card = $paymentCard;
+        } elseif ($paymentMethodPreview->card !== null) {
             $cardBrand = CardBrand::fromNameOrNull($paymentMethodPreview->card->brand) ?? throw new \Exception('Missing card brand');
             $cardCountry = Country::fromAlpha2OrNull($paymentMethodPreview->card->country) ?? throw new \Exception('Missing card country');
 
@@ -514,13 +570,14 @@ class DonationService
                 $cardCountry,
             ));
 
-            $donation->setPaymentCard(new PaymentCard($cardBrand, $cardCountry));
+            $card = new PaymentCard($cardBrand, $cardCountry);
         } else {
             // if we had a ctoken at all we're not using Donation Funds so must be using Pay By Bank, which
             // has no card / default fees.
             \assert($paymentMethodPreview->pay_by_bank !== null);
-            $donation->setPaymentCard(null);
+            $card = null;
         }
+        $donation->setPaymentCard($card);
 
         $this->doUpdateDonationFees(
             donation: $donation,
@@ -533,7 +590,7 @@ class DonationService
      */
     public function createAndAssociatePaymentIntent(Donation $donation): void
     {
-        Assertion::same($donation->getPsp(), 'stripe');
+        Assertion::same($donation->getPsp(), PaymentServiceProvider::Stripe->value);
 
         $now = $this->clock->now();
 
@@ -628,7 +685,7 @@ class DonationService
         }
 
         $transactionId = $donation->getTransactionId();
-        if ($donation->getPsp() === 'stripe' && $transactionId !== null) {
+        if ($donation->getPsp() === PaymentServiceProvider::Stripe->value && $transactionId !== null) {
             try {
                 $this->stripe->cancelPaymentIntent($transactionId);
             } catch (ApiErrorException $exception) {
@@ -786,10 +843,6 @@ class DonationService
         $this->logger->info("PaymentIntent: {$paymentIntent->toJSON()}");
 
         if ($paymentIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
-            // @todo-regular-giving-mat-407: create a new db field on Donation - e.g. payment_attempt_count and update here
-            // decide on a limit and log an error (or warning) if exceeded & perhaps auto-cancel the donation and/or
-            // mandate.
-
             throw new PaymentIntentNotSucceeded(
                 $paymentIntent,
                 "Payment Intent not succeded, status is {$paymentIntent->status}",
@@ -891,52 +944,41 @@ class DonationService
             chargeCreationTimestamp: $charge->created,
         );
 
-        $showAccountExistsForEmail = $this->donorAccountRepository->accountExistsMatchingEmailWithDonation($donation);
-
-        if (!$donation->isRegularGiving() && !$donationWasPreviouslyCollected) {
-            // Regular giving donors get an email confirming the setup of the mandate, but not an email for
-            // each individual donation.
-            $this->donationNotifier->notifyDonorOfDonationSuccess(
-                donation: $donation,
-                sendRegisterUri: $this->shouldInviteRegistration($donation) && ! $showAccountExistsForEmail,
-                showAccountExistsForEmail: $showAccountExistsForEmail,
-            );
-        }
+        $this->notifyDonationSuccesIfRequired($donation, $donationWasPreviouslyCollected);
     }
 
     private function getOriginalFeeFractional(string $balanceTransactionId, string $expectedCurrencyCode): int
     {
         $txn = $this->stripe->retrieveBalanceTransaction($balanceTransactionId);
 
-        if (count($txn->fee_details) !== 1) {
-            $this->logger->warning(sprintf(
-                'StripeChargeUpdate::getFee: Unexpected composite fee with %d parts: %s',
-                count($txn->fee_details),
+        /**
+         * @var list<StripeObject&object{amount: int, application?: string, currency: string, description: string, type: string}> $feeDetails
+         * @link https://docs.stripe.com/api/balance_transactions/object#balance_transaction_object-fee_details
+         * @phpstan-ignore varTag.type
+         */
+        $feeDetails = $txn->fee_details;
+        // Even with zero tax, the Stripe API now (at least sometimes) includes a 'tax' line; and the order of the
+        // line items is not guaranteed. May be that it gets added on charge.updated after some time.
+        $primaryFeeDetails = array_values(array_filter($feeDetails, static fn($fee) => $fee->type === 'stripe_fee'));
+
+        if (count($primaryFeeDetails) === 0) {
+            $this->logger->error(sprintf(
+                'Stripe getOriginalFeeFractional: No stripe_fee. All lines: %s',
                 json_encode($txn->fee_details, \JSON_THROW_ON_ERROR),
             ));
+            return 0;
         }
 
-        /**
-         * See https://docs.stripe.com/api/balance_transactions/object#balance_transaction_object-fee_details
-         * @var object{currency: string, type: string} $feeDetail
-         * // @phpstan-ignore varTag.type
-         */
-        $feeDetail = $txn->fee_details[0];
-
-        if ($feeDetail->currency !== strtolower($expectedCurrencyCode)) {
+        if ($primaryFeeDetails[0]->currency !== strtolower($expectedCurrencyCode)) {
             // `fee` should presumably still be in parent account's currency, so don't bail out.
-            $this->logger->warning(sprintf(
+            $this->logger->error(sprintf(
                 'StripeChargeUpdate::getFee: Unexpected fee currency %s',
-                $feeDetail->currency,
+                $primaryFeeDetails[0]->currency,
             ));
         }
 
-        if ($feeDetail->type !== 'stripe_fee') {
-            $this->logger->warning(sprintf(
-                'StripeChargeUpdate::getFee: Unexpected type %s',
-                $feeDetail->type,
-            ));
-        }
+        // Because the tax line is either omitted or zero, these should always match.
+        \assert($primaryFeeDetails[0]->amount === $txn->fee);
 
         return $txn->fee;
     }
@@ -947,7 +989,7 @@ class DonationService
             $this->allocator->allocateMatchFunds($donation);
         } catch (\Throwable $throwable) {
             $this->logger->info(sprintf('Releasing allocated funds after match error for UUID %s', $donation->getUuid()));
-            $this->matchingAdapter->releaseNewlyAllocatedFunds();
+            $this->matchingAdapter->releaseNewlyAllocatedFunds($donation->getId());
             throw $throwable;
         }
     }
@@ -1032,7 +1074,7 @@ class DonationService
             throw new DonationCreateModelLoadFailure(previous: $e);
         }
 
-        if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
+        if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId && $donation->getPsp() === 'stripe') {
             throw new \UnexpectedValueException(sprintf(
                 'Route customer ID %s did not match %s in donation body',
                 $pspCustomerId,
@@ -1050,7 +1092,10 @@ class DonationService
     }
 
     /**
-     * @throws CouldNotRetrievePaymentMethod
+     * For use only with saved methods, because they'll only be attached to Customers reliably in that case and
+     * we use https://docs.stripe.com/api/payment_methods/customer
+     *
+     * @throws CouldNotRetrievePaymentMethod if e.g. the method ID doesn't meet the condition above.
      */
     private function updateDonationFeesFromPaymentMethodId(Donation $donation, StripePaymentMethodId $paymentMethodId): void
     {
@@ -1156,13 +1201,12 @@ class DonationService
 
         $paymentMethod = null;
         try {
-            $paymentMethod = $this->stripe->retrievePaymentMethod(
-                $donation->getPspCustomerId() ?? throw new \LogicException('Missing customer ID'),
+            $paymentMethod = $this->stripe->retrievePendingPaymentMethod(
                 StripePaymentMethodId::of($paymentMethodId),
             );
-        } catch (ApiErrorException $exception) { // e.g. a 404 from a detached-by-Stripe.js method is an InvalidRequestException.
-            $this->logger->info(sprintf(
-                'Donation UUID %s: Could not retrieve probably detached payment method %s: %s',
+        } catch (ApiErrorException $exception) {
+            $this->logger->error(sprintf(
+                'Donation UUID %s: Could not retrieve payment method %s: %s',
                 $donation->getUuid(),
                 $paymentMethodId,
                 $exception->getMessage()
@@ -1198,6 +1242,21 @@ class DonationService
             throw new PaymentIntentNotSucceeded(
                 $intent,
                 "Payment Intent not succeded, status is {$intent->status}",
+            );
+        }
+    }
+
+    private function notifyDonationSuccesIfRequired(Donation $donation, bool $donationWasPreviouslyCollected): void
+    {
+        $showAccountExistsForEmail = $this->donorAccountRepository->accountExistsMatchingEmailWithDonation($donation);
+
+        if (!$donation->isRegularGiving() && !$donationWasPreviouslyCollected) {
+            // Regular giving donors get an email confirming the setup of the mandate, but not an email for
+            // each individual donation.
+            $this->donationNotifier->notifyDonorOfDonationSuccess(
+                donation: $donation,
+                sendRegisterUri: $this->shouldInviteRegistration($donation) && !$showAccountExistsForEmail,
+                showAccountExistsForEmail: $showAccountExistsForEmail,
             );
         }
     }

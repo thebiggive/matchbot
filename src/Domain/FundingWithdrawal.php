@@ -9,7 +9,6 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @psalm-suppress PropertyNotSetInConstructor Not requiring all props on construct for now.
  */
-#[ORM\Table]
 #[ORM\Entity(repositoryClass: FundingWithdrawalRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class FundingWithdrawal extends Model
@@ -35,6 +34,13 @@ class FundingWithdrawal extends Model
      */
     #[ORM\ManyToOne(targetEntity: CampaignFunding::class, fetch: 'EAGER', inversedBy: 'fundingWithdrawals')]
     private readonly CampaignFunding $campaignFunding; // @phpstan-ignore doctrine.associationType
+
+    /**
+     * If non-null indicates that this FW has now been released (e.g. because the related inchoate donation expired or
+     * was cancelled), so is now of historical interest only and should not count towards current totals.
+     */
+    #[ORM\Column(nullable: true)]
+    private(set) \DateTimeImmutable|null $releasedAt = null;
 
     /**
      * @param CampaignFunding $campaignFunding
@@ -74,5 +80,19 @@ class FundingWithdrawal extends Model
     public function getCampaignFunding(): CampaignFunding
     {
         return $this->campaignFunding;
+    }
+
+    public function isReleased(): bool
+    {
+        return $this->releasedAt !== null;
+    }
+
+    public function release(\DateTimeImmutable $at): void
+    {
+        if ($this->releasedAt !== null) {
+            return;
+        }
+
+        $this->releasedAt = $at;
     }
 }

@@ -11,9 +11,11 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DoctrineDonationRepository;
 use Psr\Log\LoggerInterface;
 use Redis;
+use Symfony\Component\Clock\MockClock;
 
 class DonationMatchingTest extends IntegrationTest
 {
+    // @phpstan-ignore property.onlyWritten (this seems to be untrue, it is read in e.g. testACrashedDonationDoesNOtReduceAvailableMatchFunds )
     private int $campaignFundingId;
     private CampaignFundingRepository $campaignFundingRepository;
     private Adapter $matchingAdapater;
@@ -118,17 +120,17 @@ class DonationMatchingTest extends IntegrationTest
             }
 
             #[\Override]
-            public function subtractAmount(CampaignFunding $funding, string $amount): never
+            public function subtractAmount(CampaignFunding $funding, string $amount, ?int $donationId, string $extraComment = ''): never
             {
-                $this->wrappedAdapter->subtractAmount($funding, $amount);
+                $this->wrappedAdapter->subtractAmount($funding, $amount, $donationId, $extraComment);
 
                 throw new \Exception("Throwing after subtracting funds to test how our system handles the crash");
             }
 
             #[\Override]
-            public function releaseNewlyAllocatedFunds(): void
+            public function releaseNewlyAllocatedFunds(?int $donationId): void
             {
-                $this->wrappedAdapter->releaseNewlyAllocatedFunds();
+                $this->wrappedAdapter->releaseNewlyAllocatedFunds($donationId);
             }
         };
     }
@@ -144,7 +146,7 @@ class DonationMatchingTest extends IntegrationTest
 
         $this->setInContainer(
             Adapter::class,
-            new Adapter(new RedisMatchingStorage($redis), $logger),
+            new Adapter(new RedisMatchingStorage($redis), $logger, new MockClock()),
         );
     }
 }

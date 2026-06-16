@@ -2,9 +2,12 @@
 
 namespace MatchBot\Domain;
 
+use Assert\AssertionFailedException;
 use Assert\InvalidArgumentException;
 use Assert\LazyAssertionException;
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Commands\UpdateCampaignDonationStats;
 use MatchBot\Application\HttpModels\Campaign as CampaignHttpModel;
 use MatchBot\Application\HttpModels\MetaCampaign as MetaCampaignHttpModel;
 use MatchBot\Client\Campaign as CampaignClient;
@@ -19,21 +22,34 @@ use Symfony\Contracts\Cache\ItemInterface;
  */
 class CampaignService
 {
-    private const string CAMPAIGN_MATCH_AMOUNT_AVAILABLE_PREFIX = 'campaign_match_amount_available.';
-    private const string METACAMPAIGN_MATCH_AMOUNT_TOTAL_PREFIX = 'metacampaign_match_amount_total';
-
-    private const string METACAMPAIGN_MATCH_FUNDS_TOTAL_PREFIX = 'metacampaign_match_funds_total';
-
+    private const string METACAMPAIGN_MATCH_AMOUNT_REMAINING_PREFIX = 'metacampaign_match_amount_remaining.';
+    private const string METACAMPAIGN_MATCH_AMOUNT_RAISED_PREFIX = 'metacampaign_match_amount_raised.';
+    private const string METACAMPAIGN_MATCH_FUNDS_TOTAL_PREFIX = 'metacampaign_match_funds_total.';
 
     public function __construct(
-        private CampaignRepository $campaignRepository,
-        private MetaCampaignRepository $metaCampaignRepository,
-        private CacheInterface $cache,
-        private DonationRepository $donationRepository,
-        private MatchFundsService $matchFundsService,
-        private LoggerInterface $log,
-        private ClockInterface $clock,
+        private readonly CacheInterface $cache,
+        private readonly CampaignRepository $campaignRepository,
+        private readonly ClockInterface $clock,
+        private readonly DonationRepository $donationRepository,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly FundRepository $fundRepository,
+        private readonly LoggerInterface $logger,
+        private readonly MatchFundsService $matchFundsService,
+        private readonly MetaCampaignRepository $metaCampaignRepository,
     ) {
+    }
+
+    /**
+     * @param Campaign $campaign
+     * @return void
+     * @throws \Doctrine\ORM\Exception\ORMException
+     * @see UpdateCampaignDonationStats command.
+     */
+    public function pullFundsAndUpdateStats(Campaign $campaign): void
+    {
+        if ($this->fundRepository->pullForCampaign($campaign, $this->clock->now())) {
+            $this->regenerateStats($campaign);
+        }
     }
 
     /**
@@ -55,16 +71,16 @@ class CampaignService
             // target for Emergency IMFs&apos; children: double the total match funds available (or override if set)
             //because parents do not have total fund raising target set */
 
-            return $this->getMatchFundsTotalForMetaCampaign($metaCampaign)->times(2);
+            return $this->cachedMetaCampaignMatchFundsTotal($metaCampaign)->times(2);
         }
 
         // SF implementation uses `Type__c = 'Regular Campaign'` is the condition. We don't have a copy of
         // `Type__c` but I think the below is equivalent:
         if (!$campaign->isMatched()) {
-            return $campaign->getTotalFundraisingTarget();
+            return $campaign->totalFundraisingTarget;
         }
 
-        return Money::sum($campaign->getAmountPledged(), $campaign->getTotalFundingAllocation())->times(2);
+        return $campaign->getStatistics()->getMatchFundsTotal()->times(2);
     }
 
     /**
@@ -91,7 +107,7 @@ class CampaignService
             'isMatched' => $campaign->isMatched(),
             'matchFundsRemaining' => $stats->getMatchFundsRemaining()->toMajorUnitFloat(),
             'startDate' => $this->formatDate($campaign->getStartDate()),
-            'status' => $campaign->getStatus(),
+            'status' => $campaign->getStatus($this->clock->now())->value,
             'title' => $campaign->getCampaignName(),
             // fields below are all directly entered through the SF UI and not involved in business logic, so no need to
             // do anything more than this with them in matchbot for now.
@@ -99,7 +115,7 @@ class CampaignService
             'categories' => $sfCampaignData['categories'],
             'championName' => $sfCampaignData['championName'],
             'imageUri' => $sfCampaignData['bannerUri'],
-            'target' => $sfCampaignData['target'],
+            'target' => $this->campaignTarget($campaign, $metaCampaign)->toMajorUnitFloat(),
             'parentUsesSharedFunds' => $metaCampaign && $metaCampaign->usesSharedFunds(),
             'parentRef' => $metaCampaign?->getSlug()->slug,
 
@@ -124,7 +140,6 @@ class CampaignService
             currencyCode: $metaCampaign->getCurrency()->isoCode(case: 'upper'),
             status: $metaCampaign->getStatusAt($this->clock->now()),
             hidden: $metaCampaign->isHidden(),
-            ready: true, // @todo-mat-405 - store get a copy of the `ready` value for the metacampaign from SF.
             summary: $metaCampaign->getSummary(),
             bannerUri: $bannerUri?->__toString(),
             amountRaised: $this->getAmountRaisedForMetaCampaign($metaCampaign)->toMajorUnitFloat(),
@@ -132,7 +147,7 @@ class CampaignService
             donationCount: $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign),
             startDate: $this->formatDate($metaCampaign->getStartDate()),
             endDate: $this->formatDate($metaCampaign->getEndDate()),
-            matchFundsTotal: $this->getMatchFundsTotalForMetaCampaign($metaCampaign)->toMajorUnitFloat(),
+            matchFundsTotal: $this->cachedMetaCampaignMatchFundsTotal($metaCampaign)->toMajorUnitFloat(),
             campaignCount: $this->campaignRepository->countCampaignsInMetaCampaign($metaCampaign),
             usesSharedFunds: $metaCampaign->usesSharedFunds(),
             shouldBeIndexed: $metaCampaign->shouldBeIndexed($this->clock->now()),
@@ -155,10 +170,6 @@ class CampaignService
     {
         $charity = $campaign->getCharity();
 
-        $campaignStatus = $campaign->getStatus();
-
-        Assertion::inArray($campaignStatus, ['Active','Expired','Preview', null]);
-
         // the next two vars are the data as originally served to matchbot by Salesforce. For now we
         // repeat many parts of them verbatim, but its likely we may want to replace several fields with things
         // either computed inside matchbot or saved to specific fields in our own object model soon, so that we can
@@ -172,7 +183,7 @@ class CampaignService
         try {
             $websiteUri = $charity->getWebsiteUri()?->__toString();
         } catch (\Laminas\Diactoros\Exception\InvalidArgumentException) {
-            $this->log->warning("Bad website URI for charity {$charity->getSalesforceId()} for campaign {$campaign->getSalesforceId()}");
+            $this->logger->warning("Bad website URI for charity {$charity->getSalesforceId()} for campaign {$campaign->getSalesforceId()}");
             $websiteUri = null;
         }
 
@@ -193,6 +204,8 @@ class CampaignService
             regulatorRegion: $this->getRegionForRegulator($charity->getRegulator()),
             logoUri: $charity->getLogoUri()?->__toString(),
             stripeAccountId: $charity->getStripeAccountId(),
+            ryftAccountId: $charity->getRyftAccountId()?->ryftAccountId,
+            psp: $charity->psp->value,
         );
 
         if ($metaCampaign && $metaCampaign->usesSharedFunds()) {
@@ -236,7 +249,7 @@ class CampaignService
             championOptInStatement: $sfCampaignData['championOptInStatement'],
             championRef: $sfCampaignData['championRef'],
             charity: $charityHttpModel,
-            countries: $sfCampaignData['countries'],
+            countries: $sfCampaignData['countries'], // @todo-SO-78 remove
             currencyCode: $campaign->getCurrencyCode() ?? '',
             donationCount: $this->donationRepository->countCompleteDonationsToCampaign($campaign),
             endDate: $this->formatDate($campaign->getEndDate()),
@@ -244,6 +257,7 @@ class CampaignService
             impactReporting: $sfCampaignData['impactReporting'],
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
+            locations: $campaign->getLocationsForApi(),
             logoUri: $sfCampaignData['logoUri'],
             matchFundsRemaining: $stats->getMatchFundsRemaining()->toMajorUnitFloat(),
             matchFundsTotal: $stats->getMatchFundsTotal()->toMajorUnitFloat(),
@@ -252,10 +266,11 @@ class CampaignService
             parentUsesSharedFunds: $metaCampaign && $metaCampaign->usesSharedFunds(),
             problem: $sfCampaignData['problem'],
             quotes: $sfCampaignData['quotes'],
-            ready: $campaign->isReady(),
+            ready: $campaign->isPublished,
+            isPublished: $campaign->isPublished,
             solution: $sfCampaignData['solution'],
             startDate: $this->formatDate($campaign->getStartDate()),
-            status: $campaignStatus,
+            status: $campaign->getStatus($this->clock->now())->value,
             isRegularGiving: $campaign->isRegularGiving(),
             regularGivingCollectionEnd: $this->formatDate($campaign->getRegularGivingCollectionEnd()),
             summary: $sfCampaignData['summary'],
@@ -344,6 +359,24 @@ class CampaignService
         };
     }
 
+    private function cachedMetaCampaignMatchFundsTotal(MetaCampaign $metaCampaign): Money
+    {
+        $id = $metaCampaign->getId();
+        if ($id === null) {
+            return Money::zero($metaCampaign->getCurrency());
+        }
+
+        $cachedAmountArray = $this->cache->get(
+            key: self::METACAMPAIGN_MATCH_FUNDS_TOTAL_PREFIX . (string)$id,
+            callback: function (ItemInterface $item) use ($metaCampaign): array {
+                $item->expiresAfter(120); // two minutes
+                return $this->matchFundsService->getFundsTotalForMetaCampaign($metaCampaign)->jsonSerialize();
+            }
+        );
+
+        return Money::fromSerialized($cachedAmountArray);
+    }
+
     private function cachedMetaCampaignMatchFundsRemaining(MetaCampaign $metaCampaign): Money
     {
         $id = $metaCampaign->getId();
@@ -352,7 +385,7 @@ class CampaignService
         }
 
         $cachedAmountArray = $this->cache->get(
-            key: self::CAMPAIGN_MATCH_AMOUNT_AVAILABLE_PREFIX . (string)$id,
+            key: self::METACAMPAIGN_MATCH_AMOUNT_REMAINING_PREFIX . (string)$id,
             callback: function (ItemInterface $item) use ($metaCampaign): array {
                 $item->expiresAfter(120); // two minutes
                 $startTime = $this->clock->now();
@@ -360,7 +393,7 @@ class CampaignService
                 $endTime = $this->clock->now();
 
                 $diffSeconds = $startTime->diff($endTime)->f;
-                $this->log->info("Getting getFundsRemaining for metaCampaign {$metaCampaign->getSalesforceId()} took " . (string) $diffSeconds . "s");
+                $this->logger->info("getFundsRemainingForMetaCampaign {$metaCampaign->getSalesforceId()} took " . (string) $diffSeconds . "s");
 
                 return $returnValue;
             }
@@ -375,7 +408,7 @@ class CampaignService
         Assertion::notNull($id);
 
         $cachedAmountArray = $this->cache->get(
-            key: self::METACAMPAIGN_MATCH_AMOUNT_TOTAL_PREFIX . (string)$id,
+            key: self::METACAMPAIGN_MATCH_AMOUNT_RAISED_PREFIX . (string)$id,
             callback: function (ItemInterface $item) use ($metaCampaign): array {
                 $item->expiresAfter(120); // two minutes
                 return $this->metaCampaignRepository->totalAmountRaised($metaCampaign)->jsonSerialize();
@@ -385,19 +418,51 @@ class CampaignService
         return Money::fromSerialized($cachedAmountArray);
     }
 
-    private function getMatchFundsTotalForMetaCampaign(MetaCampaign $metaCampaign): Money
+    /**
+     * Used by {@see UpdateCampaignDonationStats} (hence public) and as part of fund pull/update from Salesforce
+     * in {@see self::pullFundsAndUpdateStats()}.
+     *
+     * @return bool whether or not the statistics have changed
+     */
+    public function regenerateStats(Campaign $campaign): bool
     {
-        $id = $metaCampaign->getId();
-        Assertion::notNull($id);
+        if ($this->campaignRepository->isStatsIgnoredCampaign($campaign)) {
+            $this->logger->info("Skipping campaign {$campaign->getSalesforceId()} as it is configured to be ignored");
+            return false;
+        }
 
-        $cachedAmountArray = $this->cache->get(
-            key: self::METACAMPAIGN_MATCH_FUNDS_TOTAL_PREFIX . (string)$id,
-            callback: function (ItemInterface $item) use ($metaCampaign): array {
-                $item->expiresAfter(120); // two minutes
-                return $this->metaCampaignRepository->matchFundsTotal($metaCampaign)->jsonSerialize();
-            }
-        );
+        $campaignId = $campaign->getId();
+        \assert($campaignId !== null);
+        $matchFundsUsed = $this->campaignRepository->totalMatchFundsUsed($campaignId);
+        $donationSum = $this->campaignRepository->totalCoreDonations($campaign);
 
-        return Money::fromSerialized($cachedAmountArray);
+        $statistics = $campaign->getStatistics(); // New & zeroes if not done before.
+
+        $slug = $campaign->getMetaCampaignSlug();
+        $metaCampaign = $slug === null ? null : $this->metaCampaignRepository->getBySlug($slug);
+
+        try {
+            $changed = $statistics->setTotals(
+                at: $this->clock->now(),
+                donationSum: $donationSum,
+                amountRaised: $donationSum->plus($matchFundsUsed),
+                matchFundsUsed: $matchFundsUsed,
+                matchFundsTotal: $this->matchFundsService->getTotalFunds($campaign),
+                alwaysConsiderChanged: false,
+                target: $this->campaignTarget($campaign, $metaCampaign),
+            );
+        } catch (AssertionFailedException $exception) {
+            $errorMessage = "Error updating statistics for campaign ID {$campaignId} ({$campaign->getSalesforceId()}): {$exception->getMessage()}";
+            $this->logger->error($errorMessage);
+            return false; // Not re-throwing for now so that we can get a complete list of campaigns with issues in one go.
+        }
+
+        $this->entityManager->persist($statistics);
+
+        if ($changed) {
+            $this->logger->info("Prepared statistics for campaign ID {$campaignId}, SF ID {$campaign->getSalesforceId()}");
+        }
+
+        return $changed;
     }
 }

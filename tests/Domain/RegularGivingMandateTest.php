@@ -76,7 +76,7 @@ class RegularGivingMandateTest extends TestCase
         $mandate->createPreAuthorizedDonation(
             DonationSequenceNumber::of(1),
             $donor,
-            $this->createStub(Campaign::class)
+            self::someCampaign(),
         );
     }
 
@@ -148,7 +148,7 @@ class RegularGivingMandateTest extends TestCase
         $donation = $mandate->createPreAuthorizedDonation(
             DonationSequenceNumber::of($sequenceNo),
             $donor,
-            $this->createStub(Campaign::class)
+            self::someCampaign(),
         );
         $this->assertEquals(
             (new \DateTimeImmutable(
@@ -399,6 +399,7 @@ class RegularGivingMandateTest extends TestCase
         // - would need a CampaignFunding which would need Fund, each with constructor params.
         $fundingWithdrawalProphecy = $this->prophesize(FundingWithdrawal::class);
         $fundingWithdrawalProphecy->getAmount()->willReturn($amount);
+        $fundingWithdrawalProphecy->isReleased()->willReturn(false);
 
         return $fundingWithdrawalProphecy->reveal();
     }

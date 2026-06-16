@@ -7,6 +7,7 @@ namespace MatchBot\Application\Auth;
 use Fig\Http\Message\StatusCodeInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -40,6 +41,12 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
     #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        if (Environment::current() === Environment::Local) {
+            // there likely is no relevant SF org, but we may still need to use
+            // the protected handler for testing, so:
+            return $handler->handle($request);
+        }
+
         $givenHash = $request->getHeaderLine(self::HEADER_NAME);
         $content = $request->getBody()->getContents();
 

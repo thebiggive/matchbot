@@ -4,6 +4,7 @@ namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignService;
+use MatchBot\Domain\CampaignStatus;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\Money;
@@ -22,13 +23,10 @@ class CampaignTest extends TestCase
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
             isMatched: true,
-            ready: true,
-            status: null,
+            isPublished: true,
             name: 'Test campaign',
             summary: 'Test Campaign Summary',
             currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
             isRegularGiving: false,
             pinPosition: null,
             championPagePinPosition: null,
@@ -52,13 +50,10 @@ class CampaignTest extends TestCase
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
             isMatched: true,
-            ready: false,
-            status: null,
+            isPublished: false,
             name: 'Test campaign',
             summary: 'Test Campaign Summary',
             currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
             isRegularGiving: false,
             pinPosition: null,
             championPagePinPosition: null,
@@ -83,13 +78,10 @@ class CampaignTest extends TestCase
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
             isMatched: true,
-            ready: true,
-            status: null,
+            isPublished: true,
             name: 'Test campaign',
             summary: 'Test Campaign Summary',
             currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
             isRegularGiving: false,
             pinPosition: null,
             championPagePinPosition: null,
@@ -114,13 +106,10 @@ class CampaignTest extends TestCase
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
             isMatched: true,
-            ready: true,
-            status: null,
+            isPublished: true,
             name: 'campaign name',
             summary: 'Test Campaign Summary',
             currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
             isRegularGiving: false,
             pinPosition: null,
             championPagePinPosition: null,
@@ -172,5 +161,17 @@ class CampaignTest extends TestCase
             regularGivingMandate: $this->createStub(RegularGivingMandate::class),
             campaign: $campaign
         ), $date);
+    }
+
+    public function testCampaignStatusIsBasedOnDate(): void
+    {
+        $campaign = self::someCampaign();
+        $campaign->setStartDate(new \DateTimeImmutable('2026-01-01T12:00:00'));
+        $campaign->setEndDate(new \DateTimeImmutable('2027-01-01T12:00:00'));
+
+        $this->assertSame(CampaignStatus::Preview, $campaign->getStatus(new \DateTimeImmutable('2026-01-01T11:59:59')));
+        $this->assertSame(CampaignStatus::Active, $campaign->getStatus(new \DateTimeImmutable('2026-01-01T12:00:00')));
+        $this->assertSame(CampaignStatus::Active, $campaign->getStatus(new \DateTimeImmutable('2027-01-01T12:00:00')));
+        $this->assertSame(CampaignStatus::Expired, $campaign->getStatus(new \DateTimeImmutable('2027-01-01T12:00:01')));
     }
 }

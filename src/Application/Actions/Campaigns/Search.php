@@ -31,13 +31,12 @@ class Search extends Action
         $params = $request->getQueryParams();
         $sortField = $params['sortField'] ?? 'distanceToTarget';
         $sortDirection = $params['sortDirection'] ?? 'desc';
-        /** @var 'Active'|'Expired'|'Preview'|null */
-        $status = $params['status'] ?? null;
-        /** @var ?string */
+        /** @var ?string $term */
         $term = $params['term'] ?? null;
+        /** @var ?string $country */
+        $country = $params['country'] ?? null;
         Assertion::string($sortDirection);
         Assertion::string($sortField);
-        Assertion::inArray($status, ['Active','Expired','Preview', null]);
         Assertion::nullOrString($term);
 
         if (!\in_array($sortDirection, ['asc', 'desc'], true)) {
@@ -54,10 +53,6 @@ class Search extends Action
                 case 'category':
                     Assertion::string($value);
                     $jsonMatchInListConditions['categories'] = $value;
-                    break;
-                case 'country':
-                    Assertion::string($value);
-                    $jsonMatchInListConditions['countries'] = $value;
                     break;
                 default:
                     // No other params apply a filter using the JSON `salesforceData` field.
@@ -81,11 +76,11 @@ class Search extends Action
                 sortDirection: $sortDirection,
                 offset: (int)($params['offset'] ?? 0),
                 limit: $limit,
-                status: $status,
                 metaCampaignSlug: $parentSlug,
                 fundSlug: $fundSlug,
                 jsonMatchInListConditions: $jsonMatchInListConditions,
                 term: $term,
+                country: $country,
             );
         } catch (\InvalidArgumentException $exception) {
             throw new HttpBadRequestException($request, $exception->getMessage(), $exception);

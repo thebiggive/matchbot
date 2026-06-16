@@ -12,6 +12,7 @@ use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\FundingWithdrawal;
+use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Lock\Exception\LockConflictedException;
 use Symfony\Component\Lock\LockFactory;
@@ -24,6 +25,7 @@ class Allocator
         private LoggerInterface $logger,
         private CampaignFundingRepository $campaignFundingRepository,
         private LockFactory $lockFactory,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -81,7 +83,7 @@ class Allocator
             // Flush `$newWithdrawals` if any and updates to DB copies of CampaignFundings.
             $this->entityManager->flush();
         } catch (\Throwable $exception) {
-            $this->adapter->releaseNewlyAllocatedFunds();
+            $this->adapter->releaseNewlyAllocatedFunds($donation->getId());
 
             // Ensure nothing later tries to persist the pending Donation or CampaignFunding changes.
             $this->entityManager->close();
@@ -187,7 +189,11 @@ class Allocator
 
             $newTotal = '[new total not defined]';
             try {
-                $newTotal = $this->adapter->subtractAmount($funding, $amountToAllocateNow);
+                $newTotal = $this->adapter->subtractAmount(
+                    funding: $funding,
+                    amount: $amountToAllocateNow,
+                    donationId: $donation->getId(),
+                );
                 $amountAllocated = $amountToAllocateNow; // If no exception thrown
             } catch (LessThanRequestedAllocatedException $exception) {
                 $amountAllocated = $exception->getAmountAllocated();
@@ -221,7 +227,7 @@ class Allocator
     {
         $this->entityManager->wrapInTransaction(function () use ($donation) {
             foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                $this->entityManager->remove($fundingWithdrawal);
+                $fundingWithdrawal->release($this->clock->now());
             }
         });
     }

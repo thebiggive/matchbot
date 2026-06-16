@@ -22,12 +22,14 @@ CREATE TABLE `CampaignStatistics` (
   `match_funds_remaining_currency` varchar(3) NOT NULL,
   `distance_to_target_amountInPence` bigint NOT NULL,
   `distance_to_target_currency` varchar(3) NOT NULL,
-  `lastCheck` datetime DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)',
-  `lastRealUpdate` datetime DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)',
+  `lastCheck` datetime DEFAULT NULL,
+  `lastRealUpdate` datetime DEFAULT NULL,
+  `approxStatus` varchar(255) NOT NULL,
   PRIMARY KEY (`campaign_id`),
   UNIQUE KEY `UNIQ_7DDC8DA446D048DD` (`campaignSalesforceId`),
   KEY `amount_raised_amountInPence` (`amount_raised_amountInPence`),
   KEY `match_funds_used_amountInPence` (`match_funds_used_amountInPence`),
   KEY `lastCheck` (`lastCheck`),
+  KEY `approxStatus` (`approxStatus`),
   CONSTRAINT `FK_7DDC8DA4F639F774` FOREIGN KEY (`campaign_id`) REFERENCES `Campaign` (`id`)
 )

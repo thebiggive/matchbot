@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityRepository;
-use MatchBot\Application\Assertion;
 
 /**
  * @extends EntityRepository<FundingWithdrawal>
@@ -22,6 +21,7 @@ class FundingWithdrawalRepository extends EntityRepository
             ->select('SUM(fw.amount)')
             ->from(FundingWithdrawal::class, 'fw')
             ->where('fw.campaignFunding = :campaignFunding')
+            ->andWhere('fw.releasedAt is null')
             ->setParameter('campaignFunding', $campaignFunding->getId());
 
         $amount = (string) $qb->getQuery()->getSingleScalarResult();

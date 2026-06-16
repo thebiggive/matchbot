@@ -10,10 +10,11 @@ use MatchBot\Application\Assertion;
  * We keep copies so search ordering can stay performant, and to keep sync from Salesforce to charity
  * Campaigns one-way.
  *
+ * @see Campaign for notes on deferred explicit change tracking.
+ *
  * @psalm-suppress UnusedProperty Properties are used in DQL & for manual DB queries
  * @psalm-suppress PossiblyUnusedProperty
  */
-#[ORM\Table]
 #[ORM\Entity(
     repositoryClass: null // we construct our own repository
 )]
@@ -21,14 +22,16 @@ use MatchBot\Application\Assertion;
 #[ORM\Index(columns: ['amount_raised_amountInPence'], name: 'amount_raised_amountInPence')]
 #[ORM\Index(columns: ['match_funds_used_amountInPence'], name: 'match_funds_used_amountInPence')]
 #[ORM\Index(columns: ['lastCheck'], name: 'lastCheck')]
+#[ORM\Index(columns: ['approxStatus'], name: 'approxStatus')]
+#[ORM\ChangeTrackingPolicy('DEFERRED_EXPLICIT')]
 class CampaignStatistics
 {
     use TimestampsTrait;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?\DateTimeImmutable $lastCheck = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?\DateTimeImmutable $lastRealUpdate = null;
 
     #[ORM\OneToOne(inversedBy: 'campaignStatistics', fetch: 'EAGER')]
@@ -73,10 +76,19 @@ class CampaignStatistics
     private Money $distanceToTarget;
 
     /**
-     * @param Campaign $campaign
-     * @param Money $amountRaised
-     * @param Money $matchFundsUsed
+     * Roughly what the campaign status is, but as we can't update all campaigns instantaneously, at campaign start time
+     * this will be updated to Active shortly before the campaign opens, and not updated to Expired until some time
+     * after the campaign closes. Used to determine sort order. For precise status {@see Campaign::getStatus}
+     */
+    #[ORM\Column]
+    protected CampaignStatus $approxStatus;
+
+    /**
+     * @param Money $target
      * @param Money $matchFundsTotal
+     * @param Campaign $campaign
+     * @param Money $matchFundsUsed
+     * @param Money $amountRaised
      *
      * $amountRaised must be equal to $matchFundsUsed + $donationSum
      */
@@ -87,10 +99,12 @@ class CampaignStatistics
         Money $amountRaised,
         Money $matchFundsUsed,
         Money $matchFundsTotal,
+        Money $target,
     ) {
         $this->createdNow();
         $this->campaign = $campaign;
         $this->campaignSalesforceId = $campaign->getSalesforceId();
+        $this->approxStatus = $this->approximateStatus($campaign, $at);
 
         $this->setTotals(
             at: $at,
@@ -99,6 +113,7 @@ class CampaignStatistics
             matchFundsUsed: $matchFundsUsed,
             matchFundsTotal: $matchFundsTotal,
             alwaysConsiderChanged: true,
+            target: $target,
         );
     }
 
@@ -106,7 +121,7 @@ class CampaignStatistics
     {
         $zero = Money::zero($campaign->getCurrency());
 
-        return new self($at, $campaign, $zero, $zero, $zero, $zero);
+        return new self($at, $campaign, $zero, $zero, $zero, $zero, $zero);
     }
 
     public function getDonationSum(): Money
@@ -143,6 +158,7 @@ class CampaignStatistics
      * We manually set $lastCheck and $lastRealUpdate, since we need the former to avoid wasting resources and
      * changing that will cause lifecycle hooks to change $updatedAt.
      *
+     * @param Money $target
      * @param bool $alwaysConsiderChanged Hacky prop for now to avoid sa & runtime confusion about uninitialised
      *                                    props. Constructor sets true, other callers false.
      * @return bool Whether anything changed vs. the previously persisted stats.
@@ -154,12 +170,14 @@ class CampaignStatistics
         Money $matchFundsUsed,
         Money $matchFundsTotal,
         bool $alwaysConsiderChanged,
+        Money $target,
     ): bool {
         Assertion::greaterOrEqualThan(
             $matchFundsTotal->toNumericString(),
             $matchFundsUsed->toNumericString(),
             'Match funds total must be greater than or equal to match funds used',
         );
+
         Assertion::eq(
             $amountRaised->toNumericString(),
             $donationSum->plus($matchFundsUsed)->toNumericString(),
@@ -176,9 +194,17 @@ class CampaignStatistics
         $this->donationSum = $donationSum;
         $this->matchFundsUsed = $matchFundsUsed;
         $this->matchFundsTotal = $matchFundsTotal;
-        $this->matchFundsRemaining = $matchFundsTotal->minus($matchFundsUsed);
 
-        $target = $this->campaign->getTotalFundraisingTarget();
+        if ($matchFundsUsed->greaterThan($matchFundsTotal)) {
+            // possibly we should say the matchFundsRemaining is negative in this case due to an error
+            // but various systems may not support negative, setting to zero is better than
+            // not updating at all in this case. The Money Constructor does not currently allow constructing
+            // negative sums.
+            $this->matchFundsRemaining = Money::zero($matchFundsTotal->currency);
+        } else {
+            $this->matchFundsRemaining = $matchFundsTotal->minus($matchFundsUsed);
+        }
+
         $this->distanceToTarget = $target->lessThan($amountRaised)
             ? Money::zero($this->campaign->getCurrency())
             : $target->minus($amountRaised);
@@ -201,5 +227,22 @@ class CampaignStatistics
         $this->lastRealUpdate = $at;
 
         return true;
+    }
+
+    /**
+      * Returns a status based on a very rough approximation of the time, with a bias towards making the campaign
+     *  appear open for longer than it really is not shorter, to make sure it's easy to find before and after opening.
+     */
+    private function approximateStatus(Campaign $campaign, \DateTimeImmutable $at): CampaignStatus
+    {
+        $oneDay = new \DateInterval('P1D');
+
+        if ($at < $campaign->getStartDate()->sub($oneDay)) {
+            return CampaignStatus::Preview;
+        } elseif ($at <= $campaign->getEndDate()) { // no need to approximate this part, it's not expected to change again
+            return CampaignStatus::Active;
+        } else {
+            return CampaignStatus::Expired;
+        }
     }
 }

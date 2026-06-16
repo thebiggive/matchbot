@@ -26,6 +26,8 @@ use MatchBot\Domain\MetaCampaignSlug;
      * instagram: ?string,
      * optInStatement: ?string,
      * stripeAccountId: string,
+     * ryftAccountId: ?string,
+     * psp?: string,
      * hmrcReferenceNumber: string|null,
      * giftAidOnboardingStatus: string,
      * regulatorRegion: string,
@@ -37,9 +39,8 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     endDate: ?string,
  *     id: string,
  *     isMatched: bool,
- *     ready: bool,
+ *     isPublished: bool,
  *     startDate: ?string,
- *     status: 'Active'|'Expired'|'Preview'|null,
  *     pinPosition?: int|null,
  *     championPagePinPosition?: int|null,
  *     relatedApplicationStatus?: value-of<\MatchBot\Domain\ApplicationStatus>|null,
@@ -50,7 +51,6 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     regularGivingCollectionEnd?: ?string,
  *     thankYouMessage: ?string,
  *     aims: list<string>,
- *     target: ?float,
  *     problem: ?string,
  *     solution: ?string,
  *     bannerUri: ?string,
@@ -58,6 +58,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     amountRaised: float,
  *     summary: string,
  *     countries: list<string>,
+ *     locations: list<array{countryName: ?string, regionCode: ?string}>,
  *     categories: list<string>,
  *     budgetDetails: list<array{amount: float, description: string}>,
  *     beneficiaries: list<string>,
@@ -69,7 +70,6 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     surplusDonationInfo: string,
  *     quotes: list<array{person: string, quote: string}>,
  *     parentUsesSharedFunds: boolean,
- *     parentTarget: ?float,
  *     parentRef: ?string,
  *     parentMatchFundsRemaining: ?float,
  *     parentDonationCount: ?int,
@@ -96,8 +96,6 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     amountPledged?: float,
  *     totalMatchedFundsAvailable?: float,
  *     totalFundraisingTarget?: float,
- *     masterCampaignStatus?: string,
- *     campaignStatus?: string,
  *     }
  */
 
@@ -159,7 +157,7 @@ class Campaign extends Common
      */
     public function getBySlug(MetaCampaignSlug $slug): array
     {
-        $uri = $this->getUri("{$this->baseUriCached()}/slug/$slug->slug", true);
+        $uri = $this->getUri("{$this->baseUriCached()}/slug/{$slug->slug}", true);
         try {
             $response = $this->getHttpClient()->get($uri);
         } catch (RequestException $exception) {
@@ -178,49 +176,6 @@ class Campaign extends Common
         $campaignResponse = json_decode((string)$response->getBody(), true, flags: \JSON_THROW_ON_ERROR);
 
         return $campaignResponse;
-    }
-
-    /**
-     * Returns a list of all campaigns associated with the meta-campagin with the given slug.
-     *
-     * @psalm-suppress MoreSpecificReturnType
-     * @psalm-suppress LessSpecificReturnStatement
-     * @return list<array>
-     */
-    public function findCampaignsForMetaCampaign(MetaCampaignSlug $metaCampaignSlug, int $limit = 100): array
-    {
-        $campaigns = [];
-        $encodedSlug = urlencode($metaCampaignSlug->slug);
-
-        $offset = 0;
-        $pageSize = 100;
-        $foundEmptyPage = false;
-        while ($offset < $limit) {
-            $uri = $this->getUri(
-                "{$this->baseUriCached()}?parentSlug=$encodedSlug&limit=$pageSize&offset=$offset",
-                true
-            );
-            $response = $this->getHttpClient()->get($uri);
-
-            $decoded = json_decode((string)$response->getBody(), true);
-
-            Assertion::isArray($decoded);
-            if ($decoded === []) {
-                $foundEmptyPage = true;
-                break;
-            }
-
-            $campaigns = [...$campaigns, ...$decoded];
-            $offset += $pageSize;
-        }
-
-        if (! $foundEmptyPage) {
-            throw new \Exception(
-                "Did not find empty page in campaign search results, too many campaigns in metacampaign?"
-            );
-        }
-
-        return $campaigns;
     }
 
     private function baseUri(): string

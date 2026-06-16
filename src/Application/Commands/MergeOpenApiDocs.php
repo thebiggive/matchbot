@@ -108,8 +108,8 @@ class MergeOpenApiDocs extends Command
                             continue;
                         }
 
-                        if (!isset($result['paths'][$path][$method])) { // @phpstan-ignore offsetAccess.nonOffsetAccessible
-                            $result['paths'][$path][$method] = $methodData; // @phpstan-ignore offsetAccess.nonOffsetAccessible
+                        if (!isset($result['paths'][$path][$method])) {
+                            $result['paths'][$path][$method] = $methodData;
                         }
                     }
                 }
@@ -117,13 +117,15 @@ class MergeOpenApiDocs extends Command
         }
 
         // Special handling for components/schemas
+        // @phpstan-ignore offsetAccess.nonOffsetAccessible
         if (isset($attritributes['components']['schemas']) && is_array($attritributes['components']['schemas'])) {
             if (!isset($result['components'])) {
                 $result['components'] = [];
             }
 
+            // @phpstan-ignore offsetAccess.nonOffsetAccessible
             if (!isset($result['components']['schemas']) || !is_array($result['components']['schemas'])) {
-                $result['components']['schemas'] = [];
+                $result['components']['schemas'] = []; // @phpstan-ignore offsetAccess.nonOffsetAccessible
             }
 
             foreach ($attritributes['components']['schemas'] as $schema => $schemaData) {

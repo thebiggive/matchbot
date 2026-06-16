@@ -46,6 +46,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Stripe\ConfirmationToken;
 use Stripe\PaymentIntent;
+use Symfony\Component\Clock\MockClock;
 
 /**
 
@@ -297,6 +298,7 @@ class RegularGivingServiceTest extends TestCase
             Argument::type(Donation::class),
             $confirmationTokenId,
             ConfirmationToken::SETUP_FUTURE_USAGE_OFF_SESSION,
+            null,
         )
             ->shouldBeCalledOnce()
             ->will(/**
@@ -590,7 +592,7 @@ class RegularGivingServiceTest extends TestCase
         $this->assertSame(MandateStatus::Cancelled, $mandate->getStatus());
         $this->assertSame('Because I don\'t have any more money to give', $mandate->cancellationReason());
         $this->assertSame(MandateCancellationType::DonorRequestedCancellation, $mandate->cancellationType());
-        $this->assertSame($now, $mandate->cancelledAt());
+        $this->assertEquals($now, $mandate->cancelledAt());
     }
 
     public function testCancellingMandateCancelsPendingDonations(): void
@@ -602,7 +604,7 @@ class RegularGivingServiceTest extends TestCase
         $this->donationRepositoryProphecy->findPendingAndPreAuthedForMandate($mandate->getUuid())->willReturn([$donation]);
 
         // This is how DonationService wraps the calls to cancel donations safely.
-        $this->entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))->shouldBeCalled();
+        $this->entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))->shouldBeCalled()->willReturn(null);
         $this->entityManagerProphecy->flush()->shouldBeCalled();
 
         $sut->cancelMandate(mandate: $mandate, reason: '', cancellationType: MandateCancellationType::DonorRequestedCancellation);
@@ -647,7 +649,7 @@ class RegularGivingServiceTest extends TestCase
     private function makeSut(?\DateTimeImmutable $simulatedNow = null): RegularGivingService
     {
         return new RegularGivingService(
-            now: $simulatedNow ?? new \DateTimeImmutable('2025-01-01T00:00:00'),
+            clock: new MockClock($simulatedNow ?? new \DateTimeImmutable('2025-01-01T00:00:00')),
             donationRepository: $this->donationRepositoryProphecy->reveal(),
             donorAccountRepository: $this->donorAccountRepositoryProphecy->reveal(),
             campaignRepository: $this->campaignRepositoryProphecy->reveal(),

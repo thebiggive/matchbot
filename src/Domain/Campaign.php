@@ -4,34 +4,37 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use DateTimeInterface;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Mapping\Index;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Client\Campaign as CampaignClient;
 
 /**
+ * Note that mutation tracking seems not quite right, possibly related to the use
+ * of a JSON field and/or @link https://github.com/doctrine/dbal/issues/6651
+ * So to avoid donations incorrectly leading to Campaign updates we use deferred
+ * explicit change tracking here. Callers that actually need to update Campaign must
+ * call persist().
+ *
  * @psalm-import-type SFCampaignApiResponse from CampaignClient
  *
  * @psalm-suppress UnusedProperty - new properties to be used in MAT-405 campaign.parentTarget rendering.
  */
-#[ORM\Table]
 #[ORM\Index(name: 'end_date_and_is_matched', columns: ['endDate', 'isMatched'])]
 #[ORM\Index(name: 'metaCampaignSlug', columns: ['metaCampaignSlug'])]
 #[ORM\Index(name: 'relatedApplicationStatus', columns: ['relatedApplicationStatus'])]
 #[ORM\Index(name: 'relatedApplicationCharityResponseToOffer', columns: ['relatedApplicationCharityResponseToOffer'])]
 #[ORM\Entity(repositoryClass: CampaignRepository::class)]
 #[ORM\HasLifecycleCallbacks]
+#[ORM\ChangeTrackingPolicy('DEFERRED_EXPLICIT')]
 class Campaign extends SalesforceReadProxy
 {
     use TimestampsTrait;
-
-    public final const array CHARITY_RESPONSES_TO_OFFER = ['Accepted', 'Rejected'];
 
     /**
      * @var Charity
@@ -47,8 +50,14 @@ class Campaign extends SalesforceReadProxy
     #[ORM\ManyToMany(targetEntity: CampaignFunding::class, mappedBy: 'campaigns')]
     protected Collection $campaignFundings;
 
-    #[ORM\OneToOne(mappedBy: 'campaign', targetEntity: CampaignStatistics::class, fetch: 'EAGER')]
+    #[ORM\OneToOne(mappedBy: 'campaign', targetEntity: CampaignStatistics::class, cascade: ['persist'], fetch: 'EAGER')]
     private ?CampaignStatistics $campaignStatistics = null;
+
+    /**
+     * @var Collection<int, CampaignLocation>
+     */
+    #[ORM\OneToMany(mappedBy: 'campaign', targetEntity: CampaignLocation::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $locations;
 
     /**
      * @var string  ISO 4217 code for the currency in which donations can be accepted and matching's organised.
@@ -57,16 +66,10 @@ class Campaign extends SalesforceReadProxy
     protected string $currencyCode;
 
     /**
-     * Status as sent from SF API.
-     *
-     * Consider converting to enum or value object before using in any logic.
-     *
-     * @var 'Active' | 'Expired' | 'Preview' | null
-     *
-     * Default null because campaigns not recently updated in matchbot have not pulled this field from SF.
+     * Has this campaign been published to the public? Currently, corrosponds to a status of any of 'Preview, 'Active', or 'Expired' in SF.
      */
-    #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
-    private ?string $status = null; // @phpstan-ignore doctrine.columnType
+    #[ORM\Column]
+    private(set) bool $isPublished;
 
     #[ORM\Column(nullable:true, options: ['default' => null])]
     private ?ApplicationStatus $relatedApplicationStatus;
@@ -80,6 +83,7 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(type: 'string')]
     protected string $name;
 
+    // @mago-expect analysis:write-only-property
     #[ORM\Column(nullable: true, length: 5_000)]
     private ?string $summary;
 
@@ -109,18 +113,17 @@ class Campaign extends SalesforceReadProxy
     /**
      * The first moment when donors should be able to make a donation, or a regular giving mandate
      **/
-    #[ORM\Column(type: 'datetime')]
-    protected DateTimeInterface $startDate;
+    #[ORM\Column(type: 'datetime_immutable')]
+    protected \DateTimeImmutable $startDate;
 
     /**
      * The last moment when donors should be able to make an ad-hoc donation, or create a new
      * regular giving mandate.
      *
      * @see self::$regularGivingCollectionEnd
-     * @var DateTimeInterface
      */
-    #[ORM\Column(type: 'datetime')]
-    protected DateTimeInterface $endDate;
+    #[ORM\Column(type: 'datetime_immutable')]
+    protected \DateTimeImmutable $endDate;
 
     /**
      * @var bool    Whether the Campaign was launched as a match-funded type of campaign. This does not
@@ -128,13 +131,6 @@ class Campaign extends SalesforceReadProxy
      */
     #[ORM\Column(type: 'boolean')]
     protected bool $isMatched;
-
-    /**
-     * Dictates whether campaign is/will be ready to accept donations. Currently calculated in SF Apex code
-     * based on status. A campaign may be ready but not yet open, in which case it will not accept donations right now.
-     */
-    #[ORM\Column(type: 'boolean', options: ['default' => true])]
-    private bool $ready;
 
     /**
      * If true, FE will show a message that donations are currently unavailable for this campaign and searches
@@ -166,15 +162,18 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(nullable: true)]
     protected ?\DateTimeImmutable $regularGivingCollectionEnd;
 
-    #[ORM\Embedded(columnPrefix: 'total_funding_allocation_')]
-    private Money $totalFundingAllocation;
-
-    #[ORM\Embedded(columnPrefix: 'amount_pledged_')]
-    private Money $amountPledged;
-
+    /**
+     * Target from Salesforce verbatim. This might be slightly misleading for printing in shared funds cases
+     * (where charity campaigns don't really independently have a target) but is good enough to use for sorting in
+     * all campaign types. It's used for {@see CampaignStatistics} for example.
+     *
+     * See also {@see CampaignService::campaignTarget} which may be better for surfacing the most relevant
+     * target in a response.
+     */
     #[ORM\Embedded(columnPrefix: 'total_fundraising_target_')]
-    private Money $totalFundraisingTarget;
+    private(set) Money $totalFundraisingTarget;
 
+    // @mago-expect analysis:write-only-property
     /**
      * Optional BG-defined default sort override for the metacampaign grid. Works as a rank value when set,
      * typically positive but not *required* to be positive or unique.
@@ -187,6 +186,7 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(nullable: true)]
     private ?int $pinPosition;
 
+    // @mago-expect analysis:write-only-property
     /**
      * Optional BG-defined default sort override specifically for the funder-filtered view of a metacampaign.
      *
@@ -201,9 +201,9 @@ class Campaign extends SalesforceReadProxy
      * @param Money $totalFundraisingTarget
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
      * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
+     * @param list<array{countryName: null|string, regionCode: null|string}> $locations
      * @param bool $isRegularGiving
      * @param ApplicationStatus|null $relatedApplicationStatus,
-     * @param 'Active'|'Expired'|'Preview'|null $status
      * @param CharityResponseToOffer|null $relatedApplicationCharityResponseToOffer
      * */
     public function __construct(
@@ -213,13 +213,10 @@ class Campaign extends SalesforceReadProxy
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
         bool $isMatched,
-        bool $ready,
-        ?string $status,
+        bool $isPublished,
         string $name,
         ?string $summary,
         string $currencyCode,
-        Money $totalFundingAllocation,
-        Money $amountPledged,
         bool $isRegularGiving,
         ?int $pinPosition,
         ?int $championPagePinPosition,
@@ -228,17 +225,18 @@ class Campaign extends SalesforceReadProxy
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         Money $totalFundraisingTarget,
         ?string $thankYouMessage = null,
+        array $locations = [],
         array $rawData = [],
         bool $hidden = false,
     ) {
         $this->createdNow();
         $this->campaignFundings = new ArrayCollection();
         $this->charity = $charity;
+        $this->locations = new ArrayCollection();
         parent::setSalesforceId($sfId->value);
 
         $this->updateFromSfPull(
             currencyCode: $currencyCode,
-            status: $status,
             pinPosition: $pinPosition,
             championPagePinPosition: $championPagePinPosition,
             relatedApplicationStatus: $relatedApplicationStatus,
@@ -249,14 +247,13 @@ class Campaign extends SalesforceReadProxy
             summary: $summary,
             metaCampaignSlug: $metaCampaignSlug,
             startDate: $startDate,
-            ready: $ready,
+            isPublished: $isPublished,
             isRegularGiving: $isRegularGiving,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
             thankYouMessage: $thankYouMessage,
             hidden: $hidden,
-            totalFundingAllocation: $totalFundingAllocation,
-            amountPledged: $amountPledged,
             totalFundraisingTarget: $totalFundraisingTarget,
+            locations: $locations,
             sfData: $rawData,
         );
         $this->summary = $summary;
@@ -275,14 +272,13 @@ class Campaign extends SalesforceReadProxy
         $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
             null : new \DateTimeImmutable($regularGivingCollectionEnd);
 
-        $status = $campaignData['status'];
-        $ready = $campaignData['ready'] ?? false;
+        $isPublished = $campaignData['isPublished'];
 
         $startDate = $campaignData['startDate'];
         $endDate = $campaignData['endDate'];
         $title = $campaignData['title'];
 
-        if (($status === null || $status === 'Expired') && $fillInDefaultValues) {
+        if (! $isPublished || is_string($endDate) && (new \DateTimeImmutable($endDate) < new \DateTimeImmutable('now')) && $fillInDefaultValues) {
             // this campaign is not yet ready for public viewing so fill in some placeholder values to make it usable.
             // 1970 is effectively another form of null that's harder to insert by accident that actual null would be
             // if we allowed it  - we convert back to real null when rendering the campaign to an array.
@@ -304,6 +300,7 @@ class Campaign extends SalesforceReadProxy
 
         $relatedApplicationStatusString = $campaignData['relatedApplicationStatus'] ?? null;
         $relatedApplicationCharityResponseToOfferString = $campaignData['relatedApplicationCharityResponseToOffer'] ?? null;
+
         return new self(
             sfId: $salesforceId,
             metaCampaignSlug: $campaignData['parentRef'],
@@ -311,13 +308,10 @@ class Campaign extends SalesforceReadProxy
             startDate: new \DateTimeImmutable($startDate),
             endDate: new \DateTimeImmutable($endDate),
             isMatched: $campaignData['isMatched'],
-            ready: $ready,
-            status: $status,
+            isPublished: $isPublished,
             name: $title,
             summary: $campaignData['summary'],
             currencyCode: $currency->isoCode(),
-            totalFundingAllocation: Money::fromPence((int)(100.0 * ($campaignData['totalFundingAllocation'] ?? 0.0)), $currency),
-            amountPledged: Money::fromPence((int)(100.0 * ($campaignData['amountPledged'] ?? 0.0)), $currency),
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             pinPosition: $campaignData['pinPosition'] ?? null,
             championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
@@ -327,6 +321,7 @@ class Campaign extends SalesforceReadProxy
             totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
             thankYouMessage: $campaignData['thankYouMessage'],
             rawData: $campaignData,
+            locations: $campaignData['locations'],
             hidden: $campaignData['hidden'],
         );
     }
@@ -380,6 +375,7 @@ class Campaign extends SalesforceReadProxy
             // envrionments
 
             $_charity = $this->charity;
+            // @mago-expect analysis:avoid-catching-error
         } catch (\Error $e) {
             throw new \Exception(
                 "Error on attempt to persist campaign #{$this->id}, sfID {$this->getSalesforceId()}: \n{$e}"
@@ -411,12 +407,12 @@ class Campaign extends SalesforceReadProxy
         $this->name = $name;
     }
 
-    public function setStartDate(DateTimeInterface $startDate): void
+    public function setStartDate(DateTimeImmutable $startDate): void
     {
         $this->startDate = $startDate;
     }
 
-    public function setEndDate(DateTimeInterface $endDate): void
+    public function setEndDate(DateTimeImmutable $endDate): void
     {
         $this->endDate = $endDate;
     }
@@ -474,14 +470,9 @@ class Campaign extends SalesforceReadProxy
         return Currency::fromIsoCode($this->currencyCode);
     }
 
-    public function getEndDate(): DateTimeInterface
+    public function getEndDate(): DateTimeImmutable
     {
         return $this->endDate;
-    }
-
-    public function isReady(): bool
-    {
-        return $this->ready;
     }
 
     public function isNeverProceedingAppCampaign(): bool
@@ -492,31 +483,29 @@ class Campaign extends SalesforceReadProxy
     /**
      * @param string $summary
      * @param Money $totalFundraisingTarget
-     * @param 'Active'|'Expired'|'Preview'|null $status
      * @param CharityResponseToOffer|null $relatedApplicationCharityResponseToOffer
+     * @param list<array{countryName: null|string, regionCode: null|string}> $locations
      * @param array<string,mixed> $sfData
      */
     final public function updateFromSfPull(
         string $currencyCode,
-        ?string $status,
         ?int $pinPosition,
         ?int $championPagePinPosition,
         ?ApplicationStatus $relatedApplicationStatus,
         ?CharityResponseToOffer $relatedApplicationCharityResponseToOffer,
-        \DateTimeInterface $endDate,
+        \DateTimeImmutable $endDate,
         bool $isMatched,
         string $name,
         ?string $summary,
         ?string $metaCampaignSlug,
-        \DateTimeInterface $startDate,
-        bool $ready,
+        \DateTimeImmutable $startDate,
+        bool $isPublished,
         bool $isRegularGiving,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         ?string $thankYouMessage,
         bool $hidden,
-        Money $totalFundingAllocation,
-        Money $amountPledged,
         Money $totalFundraisingTarget,
+        array $locations,
         array $sfData,
     ): void {
         Assertion::lessOrEqualThan(
@@ -526,7 +515,6 @@ class Campaign extends SalesforceReadProxy
         );
 
         Assertion::eq($currencyCode, 'GBP', 'Only GBP currency supported at present');
-        Assertion::nullOrRegex($status, "/^[A-Za-z]{2,30}$/");
         Assertion::betweenLength($name, 1, 255);
         Assertion::nullOrMaxLength($thankYouMessage, 500);
         Assertion::nullOrBetweenLength($metaCampaignSlug, 1, 64);
@@ -552,28 +540,32 @@ class Campaign extends SalesforceReadProxy
         $this->summary = $summary;
         $this->metaCampaignSlug = $metaCampaignSlug;
         $this->startDate = $startDate;
-        $this->ready = $ready;
-        $this->status = $status;
+        $this->isPublished = $isPublished;
         $this->thankYouMessage = $thankYouMessage;
         $this->isRegularGiving = $isRegularGiving;
         $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
         $this->hidden = $hidden;
-        $this->totalFundingAllocation = $totalFundingAllocation;
-        $this->amountPledged = $amountPledged;
         $this->totalFundraisingTarget = $totalFundraisingTarget;
         $this->pinPosition = $pinPosition;
         $this->championPagePinPosition = $championPagePinPosition;
         $this->relatedApplicationStatus = $relatedApplicationStatus;
         $this->relatedApplicationCharityResponseToOffer = $relatedApplicationCharityResponseToOffer;
 
+        $this->replaceLocations($locations);
+
         unset($sfData['charity']); // charity stores its own data, we don't need to keep a copy here.
         $this->salesforceData = $sfData;
     }
 
-    /** @return  'Active' | 'Expired' | 'Preview' | null */
-    public function getStatus(): ?string
+    public function getStatus(\DateTimeImmutable $at): CampaignStatus
     {
-        return $this->status;
+        if ($at < $this->startDate) {
+            return CampaignStatus::Preview;
+        } elseif ($at <= $this->endDate) {
+            return CampaignStatus::Active;
+        } else {
+            return CampaignStatus::Expired;
+        }
     }
 
     #[\Override]
@@ -636,7 +628,7 @@ class Campaign extends SalesforceReadProxy
 
     private function isOpenWithEffectiveEndDate(\DateTimeImmutable $at, \DateTimeImmutable $effectiveEndDate): bool
     {
-        return $this->ready && $this->startDate <= $at && $effectiveEndDate > $at;
+        return $this->isPublished && $this->startDate <= $at && $effectiveEndDate > $at;
     }
 
     public function getStartDate(): \DateTimeImmutable
@@ -655,7 +647,8 @@ class Campaign extends SalesforceReadProxy
      */
     public function getSalesforceData(): array
     {
-        return $this->salesforceData + ['charity' => $this->charity->getSalesforceData()];
+        // @mago-expect analysis:invalid-return-statement
+        return $this->salesforceData + ['charity' => $this->charity->getSalesforceData()]; // @phpstan-ignore return.type
     }
 
     /**
@@ -682,16 +675,9 @@ class Campaign extends SalesforceReadProxy
         return MetaCampaignSlug::of($this->metaCampaignSlug);
     }
 
-    /**
-     * Get the target from Salesforce verbatim. This might be slightly misleading for printing in shared funds cases
-     * (where charity campaigns don't really independently have a target) but is good enough to use for sorting in
-     * all campaign types. It's used for {@see CampaignStatistics} for example.
-     *
-     * See also {@see target()} which may be better for surfacing the most relevant target in a response.
-     */
-    public function getTotalFundraisingTarget(): Money
+    public function setTestStatistics(CampaignStatistics $campaignStatistics): void
     {
-        return $this->totalFundraisingTarget;
+        $this->campaignStatistics = $campaignStatistics;
     }
 
     public function getStatistics(): CampaignStatistics
@@ -699,13 +685,32 @@ class Campaign extends SalesforceReadProxy
         return $this->campaignStatistics ?? CampaignStatistics::zeroPlaceholder($this, new \DateTimeImmutable('now'));
     }
 
-    public function getAmountPledged(): Money
+    /**
+     * @param list<array{countryName: ?string, regionCode: ?string}> $locationsData
+     */
+    public function replaceLocations(array $locationsData): void
     {
-        return $this->amountPledged;
+        $this->locations->clear();
+        foreach ($locationsData as $locData) {
+            $this->locations->add(new CampaignLocation(
+                campaign: $this,
+                countryName: $locData['countryName'] ?? null,
+                regionCode: $locData['regionCode'] ?? null
+            ));
+        }
     }
 
-    public function getTotalFundingAllocation(): Money
+    /**
+     * @return array<int, array{countryName: ?string, regionCode: ?string}>
+     */
+    public function getLocationsForApi(): array
     {
-        return $this->totalFundingAllocation;
+        // Ensure sequence gaps from clear()ing are removed.
+        return array_values(
+            array_map(
+                static fn (CampaignLocation $location) => $location->toApi(),
+                $this->locations->toArray()
+            )
+        );
     }
 }

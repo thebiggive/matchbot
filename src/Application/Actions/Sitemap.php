@@ -9,6 +9,7 @@ use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\MetaCampaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\MetaCampaignRepository;
+use Psr\Clock\ClockInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -26,7 +27,7 @@ class Sitemap extends Action
         private CampaignRepository $campaignRepository,
         private MetaCampaignRepository $metaCampaignRepository,
         private Environment $environment,
-        private \DateTimeImmutable $now,
+        private ClockInterface $clock,
         LoggerInterface $logger,
     ) {
         parent::__construct($logger);
@@ -45,7 +46,6 @@ class Sitemap extends Action
             sortDirection:  'asc',
             offset: 0,
             limit: 100_000,
-            status: null,
             metaCampaignSlug: null,
             fundSlug: null,
             jsonMatchInListConditions: [],
@@ -53,10 +53,10 @@ class Sitemap extends Action
         );
 
         foreach ($campaigns as $campaign) {
-            $endsInFuture = $campaign->getEndDate() > $this->now;
+            $endsInFuture = $campaign->getEndDate() > $this->clock->now();
 
             $changefreq = $endsInFuture ? 'daily' : 'monthly';
-            if ($campaign->isOpen($this->now)) {
+            if ($campaign->isOpen($this->clock->now())) {
                 $changefreq = 'hourly';
             }
 
@@ -67,7 +67,7 @@ class Sitemap extends Action
                 priority: $endsInFuture ? '0.5' : '0.25',
             );
 
-            if ($campaign->isOpen($this->now) && ! $campaign->isRegularGiving()) {
+            if ($campaign->isOpen($this->clock->now()) && ! $campaign->isRegularGiving()) {
                 // regular giving donate pages are at a different address and in any case behind a login-wall,
                 // so not worth listing in sitemap.
                 $this->addUrl(
@@ -79,12 +79,12 @@ class Sitemap extends Action
             }
         }
 
-        $metaCampaigns = $this->metaCampaignRepository->allToIncludeInSitemap($this->now);
+        $metaCampaigns = $this->metaCampaignRepository->allToIncludeInSitemap($this->clock->now());
 
         foreach ($metaCampaigns as $metaCampaign) {
-            if ($metaCampaign->isOpen($this->now)) {
+            if ($metaCampaign->isOpen($this->clock->now())) {
                 $changefreq = 'always';
-            } elseif ($metaCampaign->getEndDate() > $this->now->sub(new \DateInterval("P1D"))) {
+            } elseif ($metaCampaign->getEndDate() > $this->clock->now()->sub(new \DateInterval("P1D"))) {
                 $changefreq = 'hourly';
             } else {
                 $changefreq = 'monthly';
@@ -94,7 +94,7 @@ class Sitemap extends Action
                 xml: $xml,
                 url: $this->environment->publicDonateURLPrefix() . $metaCampaign->getSlug()->slug,
                 changefreq: $changefreq,
-                priority: ($metaCampaign->getEndDate() > $this->now->add(new \DateInterval("P14D"))) ? '0.75' : '0.5',
+                priority: ($metaCampaign->getEndDate() > $this->clock->now()->add(new \DateInterval("P14D"))) ? '0.75' : '0.5',
             );
         }
 

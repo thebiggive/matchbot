@@ -9,19 +9,18 @@ use JetBrains\PhpStorm\Pure;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Environment;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\EmailAddress;
-use MatchBot\Domain\PostalAddress;
+use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
-use Slim\Exception\HttpNotFoundException;
 use Symfony\Component\Clock\Clock;
+use MatchBot\Domain\RyftAccountId;
 
 /**
  * @psalm-import-type SFCharityApiResponse from \MatchBot\Client\Campaign
@@ -79,6 +78,11 @@ class Put extends Action
         $stripeAccountId = $charityData['stripeAccountId'];
         $regulatorRegion = $charityData['regulatorRegion'];
         $regulatorNumber = self::nullOrStringValue($charityData, 'regulatorNumber');
+        $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
+        $ryftAccountId = $charityData['ryftAccountId'];
+        if ($ryftAccountId != null) {
+            $ryftAccountId = RyftAccountId::of($ryftAccountId);
+        }
 
         // Optional fields
         $hmrcReferenceNumber = self::nullOrStringValue($charityData, 'hmrcReferenceNumber');
@@ -98,16 +102,18 @@ class Put extends Action
                 salesforceId: $charitySfId->value,
                 charityName: $name,
                 stripeAccountId: $stripeAccountId,
+                ryftAccountId: $ryftAccountId,
+                psp: $psp,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
                 giftAidOnboardingStatus: $giftAidOnboardingStatus,
                 regulator: CampaignRepository::getRegulatorHMRCIdentifier($regulatorRegion),
                 regulatorNumber: $regulatorNumber,
                 time: \DateTime::createFromInterface($this->clock->now()),
-                rawData: $charityData,
+                emailAddress: $emailAddress,
                 websiteUri: $website,
                 logoUri: $logoUri,
                 phoneNumber: $phoneNumber,
-                emailAddress: $emailAddress,
+                rawData: $charityData,
             );
             $this->entityManager->persist($charity);
 
@@ -118,6 +124,8 @@ class Put extends Action
                 websiteUri: $website,
                 logoUri: $logoUri,
                 stripeAccountId: $stripeAccountId,
+                ryftAccountId: $ryftAccountId,
+                psp: $psp,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
                 giftAidOnboardingStatus: $giftAidOnboardingStatus,
                 regulator: CampaignRepository::getRegulatorHMRCIdentifier($regulatorRegion),

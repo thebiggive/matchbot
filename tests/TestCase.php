@@ -11,6 +11,7 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFamily;
+use MatchBot\Domain\CampaignStatistics;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityResponseToOffer;
 use MatchBot\Domain\Currency;
@@ -23,8 +24,10 @@ use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RyftAccountId;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\IntegrationTests\IntegrationTest;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
@@ -61,13 +64,11 @@ class TestCase extends PHPUnitTestCase
         'id' => 'a05xxxxxxxxxxxxxxx',
         'isMetaCampaign' => false,
         'aims' => [0 => 'First Aim'],
-        'ready' => true,
+        'isPublished' => true,
         'title' => 'Save Matchbot',
         'video' => null,
         'hidden' => false,
         'quotes' => [],
-        'status' => 'Active',
-        'target' => 100.0,
         'endDate' => '2095-08-01T00:00:00.000Z',
         'logoUri' => null,
         'problem' => 'Matchbot is threatened!',
@@ -75,7 +76,8 @@ class TestCase extends PHPUnitTestCase
         'updates' => [],
         'solution' => 'do the saving',
         'bannerUri' => null,
-        'countries' => [0 => 'United Kingdom',],
+        'countries' => [0 => 'United Kingdom'],
+        'locations' => [['countryName' => 'United Kingdom', 'regionCode' => null]],
         'isMatched' => true,
         'parentRef' => null,
         'startDate' => '2015-08-01T00:00:00.000Z',
@@ -84,7 +86,6 @@ class TestCase extends PHPUnitTestCase
         'amountRaised' => 0.0,
         'championName' => '',
         'currencyCode' => 'GBP',
-        'parentTarget' => null,
         'beneficiaries' => ['Animals'],
         'budgetDetails' => [
             ['amount' => 23.0, 'description' => 'Improve the code'],
@@ -133,23 +134,24 @@ class TestCase extends PHPUnitTestCase
             'regulatorNumber' => '1000000',
             'regulatorRegion' => 'England and Wales',
             'stripeAccountId' => 'acc_123456',
+            'ryftAccountId' => null,
             'hmrcReferenceNumber' => null,
             'giftAidOnboardingStatus' => 'Invited to Onboard',
         ]
     ];
 
 
-    /** @var SFCampaignApiResponse  */
+    /**
+     * @var SFCampaignApiResponse
+     */
     public const array META_CAMPAIGN_FROM_SALESFORCE = [
         'id' => 'a05xxxxxxxxxxxxxxx',
         'isMetaCampaign' => true,
-        'ready' => true,
+        'isPublished' => true,
         'title' => 'This is a meta campaign',
         'video' => null,
         'hidden' => false,
         'quotes' => [],
-        'status' => 'Active',
-        'target' => 100.0,
         'endDate' => '2095-08-01T00:00:00.000Z',
         'logoUri' => null,
         'problem' => '',
@@ -157,7 +159,10 @@ class TestCase extends PHPUnitTestCase
         'updates' => [],
         'solution' => 'do the saving',
         'bannerUri' => null,
+        // These properties aren't actually used on MetaCampaign but it's only tests affected and
+        // quicker to continue importing a shared type for now.
         'countries' => [0 => 'United Kingdom',],
+        'locations' => [['countryName' => 'United Kingdom', 'regionCode' => null]],
         'isMatched' => true,
         'parentRef' => null,
         'startDate' => '2015-08-01T00:00:00.000Z',
@@ -193,7 +198,6 @@ class TestCase extends PHPUnitTestCase
         'aims' => [],
         'budgetDetails' => [],
         'beneficiaries' => [],
-        'parentTarget' => null,
     ];
 
     /**
@@ -380,27 +384,29 @@ class TestCase extends PHPUnitTestCase
         string $name = 'Charity Name',
         ?string $phoneNumber = null,
         ?EmailAddress $emailAddress = null,
+        PaymentServiceProvider $psp = PaymentServiceProvider::Stripe,
     ): Charity {
         return new Charity(
             salesforceId: $salesforceId->value ?? ('123CharityId' . self::randomHex(3)),
             charityName: $name,
-            stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
+            stripeAccountId: $psp === PaymentServiceProvider::Stripe ? ($stripeAccountId ?? "stripe-account-id-" . self::randomHex()) : null,
+            ryftAccountId: $psp === PaymentServiceProvider::Ryft ? RyftAccountId::of("ac_aaaaaaaa-bbbb-aaaa-bbbb-aaaaaaaaaaaa") : null,
+            psp: $psp,
             hmrcReferenceNumber: 'H' . self::randomHex(3),
             giftAidOnboardingStatus: 'Onboarded',
             regulator: 'CCEW',
             regulatorNumber: 'Reg-no',
             time: new \DateTime('2023-10-06T18:51:27'),
+            emailAddress: $emailAddress,
             websiteUri: 'https://charityname.com',
             logoUri: 'https://some-logo-host/charityname/logo.png',
             phoneNumber: $phoneNumber,
-            emailAddress: $emailAddress,
             rawData: self::CAMPAIGN_FROM_SALESFORCE['charity'],
         );
     }
 
     /**
      * @param ?Salesforce18Id<Campaign> $sfId
-     * @param 'Active'|'Expired'|'Preview' $status
      */
     public static function someCampaign(
         ?string $stripeAccountId = null,
@@ -413,27 +419,22 @@ class TestCase extends PHPUnitTestCase
         bool $isMatched = false,
         ?bool $charityRejected = false,
         ?Money $totalFundraisingTarget = null,
-        ?Money $amountPledged = null,
-        ?Money $totalFundingAllocation = null,
-        string $status = 'Active',
+        ?Money $withMatchFundsTotal = null,
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         $sfId ??= Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
 
-        return new Campaign(
+        $campaign = new Campaign(
             $sfId,
             metaCampaignSlug: $metaCampaignSlug?->slug,
             charity: $charity ?? self::someCharity(stripeAccountId: $stripeAccountId),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('3000-01-01'),
             isMatched: $isMatched,
-            ready: true,
-            status: $status,
+            isPublished: true,
             name: 'someCampaign',
             summary: 'Some Campaign Summary',
             currencyCode: 'GBP',
-            totalFundingAllocation: $totalFundingAllocation ?? Money::zero(),
-            amountPledged: $amountPledged ?? Money::zero(),
             isRegularGiving: $isRegularGiving,
             pinPosition: null,
             championPagePinPosition: null,
@@ -445,6 +446,17 @@ class TestCase extends PHPUnitTestCase
             rawData: self::CAMPAIGN_FROM_SALESFORCE,
             hidden: false,
         );
+        $campaign->setTestStatistics(new CampaignStatistics(
+            at: new \DateTimeImmutable('2020-01-01'),
+            campaign: $campaign,
+            donationSum: Money::zero(),
+            amountRaised: Money::zero(),
+            matchFundsUsed: Money::zero(),
+            matchFundsTotal: $withMatchFundsTotal ?? Money::zero(),
+            target: Money::zero(),
+        ));
+
+        return $campaign;
     }
 
     /**
@@ -465,6 +477,8 @@ class TestCase extends PHPUnitTestCase
         bool $collected = false,
         ?string $transferId = null,
         ?int $mandateSequenceNumber = null,
+        ?string $transactionId = null,
+        PaymentServiceProvider $psp = \MatchBot\Domain\PaymentServiceProvider::Stripe,
     ): Donation {
 
         $donation = new Donation(
@@ -475,6 +489,7 @@ class TestCase extends PHPUnitTestCase
             charityComms: null,
             championComms: null,
             pspCustomerId: null,
+            psp: $psp,
             optInTbgEmail: null,
             donorName: $donorName,
             emailAddress: $emailAddress,
@@ -482,15 +497,18 @@ class TestCase extends PHPUnitTestCase
             tipAmount: $tipAmount,
             mandate: $regularGivingMandate,
             mandateSequenceNumber: is_int($mandateSequenceNumber) ? DonationSequenceNumber::of($mandateSequenceNumber) : null,
+            donorId: PersonId::of(Uuid::NIL),
             giftAid: $giftAid,
             tipGiftAid: null,
             homeAddress: null,
             homePostcode: null,
             billingPostcode: null,
-            donorId: PersonId::of(Uuid::NIL),
         );
 
         $donation->setUuid($uuid ?? Uuid::uuid4());
+        if (\is_string($transactionId)) {
+            $donation->setTransactionId($transactionId);
+        }
 
         if ($collected) {
             self::collectDonation(
@@ -561,8 +579,6 @@ class TestCase extends PHPUnitTestCase
             salesforceId: IntegrationTest::randomSalesForce18Id(MetaCampaign::class),
             title: 'not relevant ' . TestCase::randomHex(),
             currency: Currency::GBP,
-            status: 'Active',
-            masterCampaignStatus: MetaCampaign::STATUS_VIEW_CAMPAIGN,
             hidden: false,
             summary: 'not relevant',
             bannerURI: null,

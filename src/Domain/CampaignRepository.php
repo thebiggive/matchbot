@@ -25,78 +25,49 @@ use function trim;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
-    private FundRepository $fundRepository; // @phpstan-ignore property.uninitialized
-
     private ClockInterface $clock;  // @phpstan-ignore property.uninitialized
+    private string $appStatusWhereClause = <<<DQL
+        (
+            campaign.metaCampaignSlug IS NULL OR
+            (
+                campaign.relatedApplicationStatus = 'Approved' AND
+                campaign.relatedApplicationCharityResponseToOffer = 'Accepted'
+            )
+        )
+    DQL;
 
     /**
      * Gets campaigns that it is particular important matchbot has up-to-date information about.
      *
      * More specifically gets those campaigns which are live now or recently closed (in the last week),
-     * based on their last known end time, and those closed semi-recently where we are
-     * awaiting HMRC agent approval for Gift Aid claims, and regular giving campaigns.
+     * based on their last known end time.
      * This allows for campaigns to receive updates shortly after closure if a decision is made to reopen them soon after the end date,
      * while keeping the number of API calls for regular update runs under control long-term.
-     * Technically future campaigns are also included if they are already known to MatchBot,
-     * though this would typically only happen after manual API call antics or if a start
-     * date was pushed back belatedly after a campaign already started.
+     * Future campaigns are also covered.
      *
-     * Regular giving campaigns are all included as they may have ongoing donations after the end date - changes
-     * in particular to the regularGivingCollectionEnd date in any direction need to be pulled quickly into matchbot
-     * to control whether we do or don't continue to collect those donations.
+     * Note that core account & campaign information important to MatchBot is now pushed, not pulled.
+     * This simplifies this query and dramatically reduces the maximum time we must look back for
+     * 'pulls' of funds.
      *
      * @return Campaign[]
      */
-    public function findCampaignsThatNeedToBeUpToDate(): array
+    public function findCampaignsWhereFundsNeedToBeUpToDate(): array
     {
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT c FROM MatchBot\Domain\Campaign c
             INNER JOIN c.charity charity
-            WHERE c.endDate >= :shortLookBackDate OR (
-                charity.tbgClaimingGiftAid = 1 AND
-                charity.tbgApprovedToClaimGiftAid = 0 AND
-                c.endDate >= :extendedLookbackDate
-            )
-            OR c.isRegularGiving = 1
+            WHERE c.endDate >= :lookBackDate
             ORDER BY c.createdAt ASC
             DQL
         );
         $query->setParameters([
-            'shortLookBackDate' => (new DateTime('now'))->sub(new \DateInterval('P7D')),
-            'extendedLookbackDate' => (new DateTime('now'))->sub(new \DateInterval('P9M')),
+            'lookBackDate' => (new DateTime('now'))->sub(new \DateInterval('P7D')),
         ]);
 
         /** @var Campaign[] $campaigns */
         $campaigns = $query->getResult();
 
         return $campaigns;
-    }
-
-    /**
-     * @param Salesforce18Id<Charity> $charitySfId
-     * @return list<Campaign>
-     */
-    public function findUpdatableForCharity(Salesforce18Id $charitySfId): array
-    {
-        $query = $this->getEntityManager()->createQuery(
-            <<<'DQL'
-            SELECT campaign FROM MatchBot\Domain\Campaign campaign
-            JOIN campaign.charity charity
-            WHERE 
-             charity.salesforceId = :charityId AND 
-            campaign.endDate >= :eighteenMonthsAgo
-            DQL
-        );
-
-        $query->setParameters([
-            'charityId' => $charitySfId->value,
-            'eighteenMonthsAgo' => (new \DateTime('now'))->sub(new \DateInterval('P18M')),
-        ]);
-
-        /** @var list<Campaign> $result */
-        $result =  $query->getResult();
-
-        return $result;
     }
 
     /**
@@ -113,8 +84,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign = Campaign::fromSfCampaignData($campaignData, $salesforceId, $charity);
 
         $campaign->setSalesforceLastPull(new \DateTime());
+        $campaignStatistics = $campaign->getStatistics();
 
         $this->getEntityManager()->persist($campaign);
+        $this->getEntityManager()->persist($campaignStatistics);
         $this->getEntityManager()->flush();
 
         $this->logInfo('Done persisting new campiagn ' . $campaign->getSalesforceId());
@@ -155,13 +128,21 @@ class CampaignRepository extends SalesforceReadProxyRepository
  *@throws NotFoundException
      *
      */
-    public function fetchAllForMetaCampaign(MetaCampaignSlug $metaCampaginSlug): array
+    public function fetchAlreadyKnownChildrenForMetaCampaign(MetaCampaignSlug $metaCampaignSlug): array
     {
-        /** @var list<array{id: string}> $campaignList */
-        $campaignList = $this->getClient()->findCampaignsForMetaCampaign($metaCampaginSlug, limit: 10_000);
+        $campaignList = $this->search(
+            sortField: 'amountRaised',
+            sortDirection: 'asc',
+            offset: 0,
+            limit: 10_000,
+            metaCampaignSlug: $metaCampaignSlug->slug,
+            fundSlug: null,
+            jsonMatchInListConditions: [],
+            term: null,
+        );
 
-        $campaignIds = array_map(function (array $campaign) {
-            return Salesforce18Id::ofCampaign($campaign['id']);
+        $campaignIds = array_map(function (Campaign $campaign) {
+            return Salesforce18Id::ofCampaign($campaign->getSalesforceId());
         }, $campaignList);
 
         $newFetchCount = 0;
@@ -177,7 +158,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $campaign = $this->findOneBySalesforceId($id);
 
             if ($campaign) {
-                $this->updateFromSf($campaign, withCache: false, autoSave: true);
+                $this->updateFromSf($campaign, withCache: false);
                 $updatedCount++;
             } else {
                 $campaign = $this->pullNewFromSf($id);
@@ -230,21 +211,24 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $emailString = $charityData['emailAddress'] ?? null;
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
+        $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
 
         return new Charity(
             salesforceId: $charityData['id'],
             charityName: $charityData['name'],
             stripeAccountId: $charityData['stripeAccountId'],
+            ryftAccountId: is_string($charityData['ryftAccountId'] ?? null) ? RyftAccountId::of($charityData['ryftAccountId']) : null,
+            psp: $psp,
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
             regulator: self::getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
             regulatorNumber: $charityData['regulatorNumber'],
             time: new \DateTime('now'),
-            rawData: $charityData,
+            emailAddress: $emailAddress,
             websiteUri: $charityData['website'],
             logoUri: $charityData['logoUri'],
             phoneNumber: $charityData['phoneNumber'] ?? null,
-            emailAddress: $emailAddress,
+            rawData: $charityData,
         );
     }
 
@@ -259,12 +243,15 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $emailString = $charityData['emailAddress'] ?? null;
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
+        $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
 
         $charity->updateFromSfPull(
             charityName: $charityData['name'],
             websiteUri: $charityData['website'],
             logoUri: $charityData['logoUri'],
             stripeAccountId: $charityData['stripeAccountId'],
+            ryftAccountId: null,
+            psp: $psp,
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
             regulator: self::getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
@@ -281,6 +268,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
      *
      * For performance only does a count, doesn't load the campaign from the DB if it already exists.
      *
+     * Does not load fund info. Callers needing that should use {@see CampaignService::pullFundsAndUpdateStats()}.
+     *
      * @param Salesforce18Id<Campaign> $campaignId
      */
     public function pullFromSFIfNotPresent(Salesforce18Id $campaignId): void
@@ -292,14 +281,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $count = $query->getSingleScalarResult();
 
         if ($count === 0) {
-            $campaign = $this->pullNewFromSf($campaignId);
-            $this->fundRepository->pullForCampaign($campaign, $this->clock->now());
+            $this->pullNewFromSf($campaignId);
         }
-    }
-
-    public function setFundRepository(FundRepository $fundRepository): void
-    {
-        $this->fundRepository = $fundRepository;
     }
 
     /**
@@ -350,6 +333,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             JOIN fw.donation donation
             JOIN fw.campaignFunding cf
             WHERE donation.campaign = :campaignId AND donation.donationStatus IN (:succcessStatus)
+            AND fw.releasedAt is null
             GROUP BY cf.currencyCode
         DQL
         );
@@ -382,14 +366,21 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function findCampaignsForCharityPage(Charity $charity, \DateTimeImmutable $at): array
     {
         $query = $this->getEntityManager()->createQuery(
-            <<<'DQL'
-            SELECT campaign FROM MatchBot\Domain\Campaign campaign
+            <<<DQL
+            SELECT campaign,
+            CASE
+                WHEN statistics.approxStatus = 'Active' THEN 0 
+                WHEN statistics.approxStatus = 'Expired' THEN 1
+                WHEN statistics.approxStatus = 'Preview' THEN 2
+                ELSE 2 END AS HIDDEN approxStatusRank
+            FROM MatchBot\Domain\Campaign campaign
             JOIN campaign.campaignStatistics statistics
             WHERE 
              campaign.charity = :charity
-             AND campaign.status IN ('Active', 'Preview', 'Expired')
+             AND campaign.isPublished = true
              AND (statistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
-             ORDER BY campaign.status ASC, campaign.endDate ASC 
+             AND {$this->appStatusWhereClause}
+             ORDER BY approxStatusRank ASC, campaign.endDate ASC
             DQL
         );
 
@@ -405,14 +396,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     public function countCampaignsInMetaCampaign(MetaCampaign $metaCampaign): int
     {
-        // query copied from SOQL query in Salesforce function CampaignService.campaignSfToApi
-        $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT COUNT(c.id)
-            FROM MatchBot\Domain\Campaign c
-            WHERE c.metaCampaignSlug = :slug
-            AND c.status IN ('Active', 'Preview', 'Expired')
-            AND c.relatedApplicationStatus = 'Approved'
-            AND c.relatedApplicationCharityResponseToOffer = 'Accepted'
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT COUNT(campaign.id)
+            FROM MatchBot\Domain\Campaign campaign
+            WHERE campaign.metaCampaignSlug = :slug
+            AND campaign.isPublished = true
+            AND {$this->appStatusWhereClause}
         DQL
         );
 
@@ -509,10 +498,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             throw new DomainCurrencyMustNotChangeException();
         }
 
-        if ($campaignData['status'] === null) {
-            $this->getLogger()->debug("null status from SF for campaign " . $campaignData['id']);
-        }
-
         $regularGivingCollectionEnd = $campaignData['regularGivingCollectionEnd'] ?? null;
         $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
             null : new \DateTimeImmutable($regularGivingCollectionEnd);
@@ -523,27 +508,27 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $relatedApplicationCharityResponseToOfferString = $campaignData['relatedApplicationCharityResponseToOffer'] ?? null;
         $campaign->updateFromSfPull(
             currencyCode: $currency->isoCode(),
-            status: $campaignData['status'],
             pinPosition: $campaignData['pinPosition'] ?? null,
             championPagePinPosition: $campaignData['championPagePinPosition'] ?? null,
             relatedApplicationStatus: is_string($relatedApplicationStatusString) ? ApplicationStatus::from($relatedApplicationStatusString) : null,
             relatedApplicationCharityResponseToOffer: is_string($relatedApplicationCharityResponseToOfferString) ? CharityResponseToOffer::from($relatedApplicationCharityResponseToOfferString) : null,
-            endDate: new DateTime($endDateString),
+            endDate: new \DateTimeImmutable($endDateString),
             isMatched: $campaignData['isMatched'],
             name: $title,
             summary: $campaignData['summary'],
             metaCampaignSlug: $campaignData['parentRef'],
-            startDate: new DateTime($startDateString),
-            ready: $campaignData['ready'],
+            startDate: new \DateTimeImmutable($startDateString),
+            isPublished: $campaignData['isPublished'],
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
             thankYouMessage: $campaignData['thankYouMessage'],
             hidden: $campaignData['hidden'] ?? false,
-            totalFundingAllocation: Money::fromPence((int)(100.0 * ($campaignData['totalFundingAllocation'] ?? 0.0)), $currency),
-            amountPledged: Money::fromPence((int)(100.0 * ($campaignData['amountPledged'] ?? 0.0)), $currency),
             totalFundraisingTarget: Money::fromPence((int)(100.0 * ($campaignData['totalFundraisingTarget'] ?? 0.0)), $currency),
+            locations: $campaignData['locations'],
             sfData: $campaignData,
         );
+
+        $this->getEntityManager()->persist($campaign);
     }
 
     /**
@@ -554,37 +539,23 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     private function filterForSearch(
         QueryBuilder $qb,
-        ?string $status,
         ?string $metaCampaignSlug,
         ?string $fundSlug,
         array $jsonMatchInListConditions,
         bool $filterOutTargetMet,
         ?string $term,
+        ?string $country,
     ): array|null {
         $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
+        $qb->andWhere($qb->expr()->eq('campaign.isPublished', '1'));
         $qb->andWhere($qb->expr()->eq('campaign.isMatched', '1'));
 
-        if ($status !== null) {
-            $qb->andWhere($qb->expr()->eq('campaign.status', ':status'));
-            $qb->setParameter('status', $status);
-        } elseif ($metaCampaignSlug === null) {
-            $qb->andWhere('campaign.status IN (:nonExpired)');
-            // we can't rely on the status being updated when the campaign expires, so also check that the end-date is not past:
+        if ($metaCampaignSlug === null) {
             $qb->andWhere($qb->expr()->gt('campaign.endDate', ':now'));
-            $qb->setParameter('nonExpired', ['Active', 'Preview']);
             $qb->setParameter('now', $this->clock->now());
-        } else {
-            $qb->andWhere('campaign.status IS NOT NULL');
         }
 
-        $qb->andWhere(<<<DQL
-            campaign.metaCampaignSlug IS NULL OR
-            (
-                campaign.relatedApplicationStatus = 'Approved' AND
-                campaign.relatedApplicationCharityResponseToOffer = 'Accepted'
-            )
-            DQL
-        );
+        $qb->andWhere($this->appStatusWhereClause);
 
         if ($metaCampaignSlug !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.metaCampaignSlug', ':metaCampaignSlug'));
@@ -595,6 +566,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->andWhere($qb->expr()->eq('fund.slug', ':fundSlug'))
                 ->andWhere($qb->expr()->gt('campaignFunding.amount', 0));
             $qb->setParameter('fundSlug', $fundSlug);
+        }
+
+        if ($country !== null) {
+            $qb->andWhere($qb->expr()->eq('campaignLocation.countryName', ':country'));
+            $qb->setParameter('country', $country);
         }
 
         foreach ($jsonMatchInListConditions as $field => $value) {
@@ -650,8 +626,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         string $sortDirection,
         array|null $idsOrderedByRelavence
     ): void {
-        // Active, Expired, Preview in that order; status sort takes highest precedence.
-        $qb->addOrderBy('campaign.status', 'asc');
+        $qb->addOrderBy('approxStatusRank', 'asc');
 
         if ($applyPinSort) {
             $qb->addOrderBy('pinPosition', 'asc');
@@ -687,11 +662,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
         string $sortDirection,
         int $offset,
         int $limit,
-        ?string $status,
         ?string $metaCampaignSlug,
         ?string $fundSlug,
         array $jsonMatchInListConditions,
         ?string $term,
+        ?string $country = null,
     ): array {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
@@ -710,7 +685,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $qb->select(<<<SELECT
               campaign,
-              COALESCE(campaign.pinPosition, 999999999) AS HIDDEN pinPosition
+              COALESCE(campaign.pinPosition, 999999999) AS HIDDEN pinPosition,
+              CASE
+                WHEN campaignStatistics.approxStatus = 'Active' THEN 0
+                WHEN campaignStatistics.approxStatus = 'Expired' THEN 1
+                WHEN campaignStatistics.approxStatus = 'Preview' THEN 2
+                ELSE 2 END AS HIDDEN approxStatusRank
             SELECT)
             ->from(Campaign::class, 'campaign')
             ->join('campaign.charity', 'charity')
@@ -719,6 +699,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             ->join('campaign.campaignStatistics', 'campaignStatistics')
             ->leftJoin('campaign.campaignFundings', 'campaignFunding')
             ->leftJoin('campaignFunding.fund', 'fund')
+            ->leftJoin('campaign.locations', 'campaignLocation')
             ->groupBy('campaign.id')
             ->setFirstResult($offset)
             ->setMaxResults($limit);
@@ -729,12 +710,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $idsOrderedByRelavence = $this->filterForSearch(
             qb: $qb,
-            status: $status,
             metaCampaignSlug: $metaCampaignSlug,
             fundSlug: $fundSlug,
             jsonMatchInListConditions: $jsonMatchInListConditions,
             filterOutTargetMet: $filterOutTargetMet,
             term: $term,
+            country: $country,
         );
 
         $this->sortForSearch(
@@ -767,11 +748,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @throws Client\NotFoundException
      * @throws AssertionFailedException if data in SF does not fit in our campaign or charity model.
      */
-    public function updateFromSf(
-        Campaign $campaign,
-        bool $withCache = true,
-        bool $autoSave = true,
-    ): void {
+    public function updateFromSf(Campaign $campaign, bool $withCache = true): void
+    {
         // Make sure we update existing object if passed in a partial copy and we already have that Salesforce object
         // persisted, otherwise we'll try to insert a duplicate and get an ORM crash.
         $salesforceId = $campaign->getSalesforceId();
@@ -790,6 +768,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $this->updateCampaignFromSFData($campaign, $campaignData);
 
+        $campaign->setSalesforceLastPull(new DateTime('now'));
+        $this->getEntityManager()->persist($campaign);
         try {
             $this->getEntityManager()->flush();
         } catch (\PDOException $e) {
@@ -797,12 +777,18 @@ class CampaignRepository extends SalesforceReadProxyRepository
             throw $e;
         }
 
-        $campaign->setSalesforceLastPull(new DateTime('now'));
-        $this->getEntityManager()->persist($campaign);
-        if ($autoSave) {
-            $this->getEntityManager()->flush();
+        $this->logInfo('Done persisting ' . get_class($campaign) . ' ' . $salesforceId);
+    }
+
+    public function isStatsIgnoredCampaign(Campaign $campaign): bool
+    {
+        $excludeJson = getenv('KNOWN_OVERMATCHED_CAMPAIGN_IDS');
+        $excludedCampaignIds = [];
+        if (is_string($excludeJson) && $excludeJson !== '') {
+            /** @var list<int> $excludedCampaignIds */
+            $excludedCampaignIds = json_decode($excludeJson, true, 512, \JSON_THROW_ON_ERROR);
         }
 
-        $this->logInfo('Done persisting ' . get_class($campaign) . ' ' . $salesforceId);
+        return in_array($campaign->getId(), $excludedCampaignIds, true);
     }
 }

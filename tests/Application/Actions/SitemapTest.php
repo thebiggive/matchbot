@@ -12,6 +12,7 @@ use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Psr\Log\NullLogger;
+use Symfony\Component\Clock\MockClock;
 
 class SitemapTest extends TestCase
 {
@@ -30,7 +31,6 @@ class SitemapTest extends TestCase
             100_000,
             null,
             null,
-            null,
             [],
             null,
         )->willReturn([
@@ -45,7 +45,7 @@ class SitemapTest extends TestCase
             $campaignRepositoryProphecy->reveal(),
             $metaCampaignRepositoryProphecy->reveal(),
             Environment::Test,
-            $now,
+            new MockClock($now),
             new NullLogger(),
         );
 

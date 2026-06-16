@@ -15,6 +15,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -78,8 +79,8 @@ class Confirm extends Action
 
         $paymentMethodId = $requestBody['stripePaymentMethodId'] ?? null;
         \assert(is_string($paymentMethodId) || is_null($paymentMethodId));
-        $confirmationTokenId = $requestBody['stripeConfirmationTokenId'] ?? null;
-        \assert(is_string($confirmationTokenId) || is_null($confirmationTokenId));
+        $stripeConfirmationTokenId = $requestBody['stripeConfirmationTokenId'] ?? null;
+        \assert(is_string($stripeConfirmationTokenId) || is_null($stripeConfirmationTokenId));
         /** @var null|'on_session'|'off_session' $confirmationTokenFutureUsage */
         $confirmationTokenFutureUsage = $requestBody['stripeConfirmationTokenFutureUsage'] ?? null;
         Assertion::inArray($confirmationTokenFutureUsage, [
@@ -87,6 +88,15 @@ class Confirm extends Action
             ConfirmationToken::SETUP_FUTURE_USAGE_ON_SESSION,
             null,
         ]);
+        $paymentAmount = $requestBody['amount'] ?? null;
+
+        $psp = $requestBody['psp'] ?? 'stripe';
+        Assertion::string($psp);
+        Assertion::inArray($psp, PaymentServiceProvider::VALUES);
+        $psp = PaymentServiceProvider::from($psp);
+
+        $ryftPaymentSessionId = $requestBody['paymentSessionId'] ?? null;
+        Assertion::nullOrString($ryftPaymentSessionId);
 
         $this->entityManager->beginTransaction();
 
@@ -96,16 +106,23 @@ class Confirm extends Action
             throw new NotFoundException();
         }
 
-        if (!is_string($confirmationTokenId) || trim($confirmationTokenId) === '') {
+        if ((!is_string($stripeConfirmationTokenId) || trim($stripeConfirmationTokenId) === '') && $psp === PaymentServiceProvider::Stripe) {
             $donationUUID = $donation->getId();
             $this->logger->warning(
                 <<<EOF
-Donation Confirmation attempted with missing confirmation token id "$confirmationTokenId" for Donation $donationUUID
+Donation Confirmation attempted with missing confirmation token id "$stripeConfirmationTokenId" for Donation $donationUUID
 EOF
             );
             throw new HttpBadRequestException($request, "stripeConfirmationTokenId required");
         }
 
+        if ($psp === PaymentServiceProvider::Ryft) {
+            Assertion::integer($paymentAmount);
+
+            // seams confusing that the amount Ryft tells us is just the amount for the charity
+            // (i.e. exclusive of tip & fees) but that's what tests so far show:
+            Assertion::same($paymentAmount, $donation->getAmountForCharityFractional());
+        }
 
         \assert($paymentMethodId !== ""); // required to call updatePaymentMethodBillingDetail
 
@@ -162,13 +179,16 @@ EOF
         }
 
         $paymentIntentId = $donation->getTransactionId();
-        Assertion::notNull($paymentIntentId);
+        if ($psp === PaymentServiceProvider::Stripe) {
+            Assertion::notNull($paymentIntentId);
+        }
 
         try {
             $updatedIntent = $this->donationService->confirmOnSessionDonation(
-                $donation,
-                StripeConfirmationTokenId::of($confirmationTokenId),
-                $confirmationTokenFutureUsage,
+                donation: $donation,
+                tokenId: StripeConfirmationTokenId::maybeOf($stripeConfirmationTokenId),
+                confirmationTokenSetupFutureUsage: $confirmationTokenFutureUsage,
+                ryftPaymentSessionId: $ryftPaymentSessionId,
             );
         } catch (CardException $exception) {
             $this->entityManager->rollback();
@@ -261,8 +281,8 @@ EOF
 
         return new JsonResponse([
             'paymentIntent' => [
-                'status' => $updatedIntent->status,
-                'client_secret' => $updatedIntent->status === 'requires_action'
+                'status' => $updatedIntent?->status,
+                'client_secret' => $updatedIntent?->status === 'requires_action'
                     ?  $updatedIntent->client_secret
                     : null,
             ],

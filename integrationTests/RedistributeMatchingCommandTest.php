@@ -24,6 +24,7 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Random\Randomizer;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Lock\LockFactory;
@@ -133,7 +134,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $matchingAdapter = $this->getService(Adapter::class);
 
         // Also calls Doctrine model's `setAmountAvailable()` in a not-guaranteed-realtime way.
-        $matchingAdapter->addAmount($campaignFunding, (string) $amount);
+        $matchingAdapter->addAmount($campaignFunding, (string) $amount, null, 'RedistributeMatchingCommandTest::prepareInRedis');
     }
 
     /**
@@ -176,7 +177,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
         // Withdraw the donation value from the champion fund in Redis.
         $matchingAdapter = $this->getService(Adapter::class);
-        $matchingAdapter->subtractAmount($championFundCampaignFunding, (string) $amount);
+        $matchingAdapter->subtractAmount($championFundCampaignFunding, (string) $amount, null);
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($championFundWithdrawal);
@@ -221,7 +222,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         return [$campaign, $championFundCampaignFunding];
     }
 
-    public function runCommand(): BufferedOutput
+    private function runCommand(): BufferedOutput
     {
         $output = new BufferedOutput();
         $command = new RedistributeMatchFunds(
@@ -229,7 +230,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
                 allocator: $this->getService(Allocator::class),
                 chatter: $this->createStub(ChatterInterface::class),
                 donationRepository: $this->getService(DonationRepository::class),
-                now: new \DateTimeImmutable('now'),
+                clock: new MockClock(),
                 campaignFundingRepository: $this->campaignFundingRepository,
                 logger: $this->getService(LoggerInterface::class),
                 entityManager: $this->createStub(EntityManagerInterface::class),

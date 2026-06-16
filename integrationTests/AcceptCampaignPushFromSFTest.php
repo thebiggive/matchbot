@@ -2,16 +2,13 @@
 
 namespace MatchBot\IntegrationTests;
 
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Auth\SalesforceAuthMiddleware;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Salesforce18Id;
-use MatchBot\Tests\Application\Actions\Hooks\StripeTest;
 use MatchBot\Tests\TestCase;
 use MatchBot\Client;
 

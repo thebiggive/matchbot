@@ -12,8 +12,10 @@ use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Settings;
+use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
@@ -21,10 +23,8 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
-use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\RegularGivingNotifier;
-use MatchBot\Domain\RegularGivingService;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -187,11 +187,8 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $this->entityManagerProphecy->flush()->will(function () use ($donation, $newStatus, $testCase) {
             if ($testCase->alreadyThrewTimes < 1) { // we could make this 3 but that would slow test down.
                 $testCase->alreadyThrewTimes++;
-                /**
-                 * @psalm-suppress InternalMethod - use in test to simulate failure is not a big issue. We'll
-                 * fix if/when the test errors.
-                 */
-                throw new LockWaitTimeoutException( // @phpstan-ignore method.internal
+
+                throw new LockWaitTimeoutException(
                     $testCase->createStub(DriverException::class),
                     null
                 );
@@ -248,10 +245,11 @@ class UpdateHandlesLockExceptionTest extends TestCase
                 donorAccountRepository: $this->createStub(DonorAccountRepository::class),
                 bus: $this->messageBusProphecy->reveal(),
                 donationNotifier: $this->createStub(DonationNotifier::class),
-                fundRepository: $this->createStub(FundRepository::class),
+                campaignService: $this->createStub(CampaignService::class),
                 redis: $this->prophesize(\Redis::class)->reveal(),
                 confirmRateLimitFactory: $stubRateLimiter,
                 regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
+                ryftClient: $this->createStub(RyftClient::class),
             ),
             settings: Settings::fromEnvVars(getenv()),
         );

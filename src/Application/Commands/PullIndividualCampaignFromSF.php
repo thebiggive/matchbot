@@ -9,7 +9,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\Salesforce18Id;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
@@ -27,8 +27,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
     public function __construct(
         private Environment $environment,
         private CampaignRepository $campaignRepository,
-        private FundRepository $fundRepository,
-        private \DateTimeImmutable $now,
+        private CampaignService $campaignService,
     ) {
         parent::__construct();
     }
@@ -67,7 +66,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
             $output->writeln("Campaign {$this->campaignFullName($campaign)} not found, pulled from SF");
         }
 
-        $this->fundRepository->pullForCampaign($campaign, $this->now);
+        $this->campaignService->pullFundsAndUpdateStats($campaign);
         $output->writeln("Fund data updated for campaign " . $this->campaignFullName($campaign));
 
         return 0;

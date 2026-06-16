@@ -14,7 +14,6 @@ use Psr\Http\Message\UriInterface;
  * @psalm-import-type SFCampaignApiResponse from Client\Campaign
  *
  */
-#[ORM\Table]
 #[ORM\Entity(
     repositoryClass: null // we construct our own repository
 )]
@@ -26,8 +25,6 @@ use Psr\Http\Message\UriInterface;
 class MetaCampaign extends SalesforceReadProxy
 {
     use TimestampsTrait;
-
-    public const string STATUS_VIEW_CAMPAIGN = 'View campaign';
 
     /** Metacampaigns from before this date may not have accurate data so should not be indexed */
     public const string INDEX_FROM = '2019-12-01T00:00:00z';
@@ -48,16 +45,11 @@ class MetaCampaign extends SalesforceReadProxy
 
     /**
      * @var string|null Copy of Campaign_Status__c in Salesforce
+     * @deprecated as we don't want to rely on this property, and in fact in prod DB for this table
+     * it's all null apart from four 'Expired'
      */
     #[ORM\Column(nullable: true)]
-    private ?string $status;
-
-
-    /**
-     * @var string|null Copy of Master_Campaign_Status__c in Salesforce
-     */
-    #[ORM\Column(nullable: true)]
-    private ?string $masterCampaignStatus;
+    private ?string $status = null;
 
     #[ORM\Column()]
     private bool $hidden;
@@ -68,10 +60,10 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Column(nullable: true)]
     private ?string $bannerURI;
 
-    #[ORM\Column()]
+    #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $startDate;
 
-    #[ORM\Column()]
+    #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $endDate;
 
     /**
@@ -128,8 +120,6 @@ class MetaCampaign extends SalesforceReadProxy
         Salesforce18Id $salesforceId,
         string $title,
         Currency $currency,
-        string $status,
-        string $masterCampaignStatus,
         bool $hidden,
         ?string $summary,
         ?UriInterface $bannerURI,
@@ -148,8 +138,6 @@ class MetaCampaign extends SalesforceReadProxy
         $this->setSalesforceId($salesforceId->value);
         $this->title = $title;
         $this->currency = $currency;
-        $this->status = $status;
-        $this->masterCampaignStatus = $masterCampaignStatus;
         $this->hidden = $hidden;
         $this->summary = $summary;
         $this->bannerURI = $bannerURI?->__toString();
@@ -178,8 +166,6 @@ class MetaCampaign extends SalesforceReadProxy
             salesforceId: Salesforce18Id::ofMetaCampaign($data['id']),
             title: '',
             currency: Currency::GBP,
-            status: '',
-            masterCampaignStatus: '',
             hidden: false,
             summary: '',
             bannerURI: null,
@@ -212,10 +198,6 @@ class MetaCampaign extends SalesforceReadProxy
         $endDate = $data['endDate'];
         $title = $data['title'];
 
-        // status may be null for now.
-        $status = $data['campaignStatus'] ?? null;
-        $masterCampaignStatus = $data['masterCampaignStatus'] ?? null;
-
         Assertion::notNull($startDate);
         Assertion::notNull($endDate);
         Assertion::notNull($title);
@@ -229,8 +211,6 @@ class MetaCampaign extends SalesforceReadProxy
         }
         Assertion::numeric($totalAdjustment);
 
-        $this->status = $status;
-        $this->masterCampaignStatus = $masterCampaignStatus;
         $this->bannerURI = \is_string($bannerUri) ? (new Uri($bannerUri))->__toString() : null;
         $this->isRegularGiving = $isRegularGiving;
         $this->title = $title;
@@ -274,10 +254,6 @@ class MetaCampaign extends SalesforceReadProxy
 
     public function getStatusAt(\DateTimeImmutable $date): ?string
     {
-        if ($this->masterCampaignStatus !== self::STATUS_VIEW_CAMPAIGN) {
-            return $this->status;
-        }
-
         if ($date < $this->startDate) {
             return 'Preview';
         }

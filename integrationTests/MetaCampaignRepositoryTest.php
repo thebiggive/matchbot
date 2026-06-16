@@ -108,54 +108,20 @@ class MetaCampaignRepositoryTest extends IntegrationTest
         $this->assertEquals(Money::fromPence(57_00, Currency::GBP), $amountRaised);
     }
 
-    public function testAnEmptyMetaCampaignHasZeroMatchFunds(): void
+    public function testItFindsTotalOfOneDonationWithNoGAPartlyMatchedButMatchingReleased(): void
     {
-        $metaCampaign = TestCase::someMetaCampaign(
-            isRegularGiving: false,
-            isEmergencyIMF: false,
-        );
-        // the meta-campaign doesn't actually have to be persisted, it just needs
-        // to have zero related charity campaigns in the DB>
+        $donation = TestCase::someDonation(amount: '47.00', giftAid: false, campaign: $this->campaign, collected: true);
 
-        $matchFundsTotal = $this->sut->matchFundsTotal($metaCampaign);
+        $fundingWithdrawal = new FundingWithdrawal($this->campaignFunding, $donation, '10.00');
+        $fundingWithdrawal->release(new \DateTimeImmutable());
 
-        $this->assertEquals(Money::zero(), $matchFundsTotal);
-    }
-
-    public function testMetaCampaignHasMatchFundsTotalBasedOnCharityCampaigns(): void
-    {
-        $metaCampaign = TestCase::someMetaCampaign(
-            isRegularGiving: false,
-            isEmergencyIMF: false,
-        );
-
-        /** @var Campaign[] $charityCampaigns */
-        $charityCampaigns = [
-            TestCase::someCampaign(
-                metaCampaignSlug: $metaCampaign->getSlug(),
-                amountPledged: Money::fromNumericStringGBP('10.00'),
-                totalFundingAllocation: Money::fromNumericStringGBP('10.00'),
-                status: 'Active',
-            ),
-            TestCase::someCampaign(
-                metaCampaignSlug: $metaCampaign->getSlug(),
-                amountPledged: Money::fromNumericStringGBP('10.00'),
-                totalFundingAllocation: Money::fromNumericStringGBP('10.00'),
-                status: 'Expired',
-            ),
-            TestCase::someCampaign(
-                metaCampaignSlug: $metaCampaign->getSlug(),
-                amountPledged: Money::fromNumericStringGBP('100.00'),
-                totalFundingAllocation: Money::fromNumericStringGBP('100.00'),
-                status: 'Preview', // doesn't count towards total as preview
-            ),
-        ];
-
-        \array_map($this->em->persist(...), [...$charityCampaigns, $metaCampaign]);
+        $this->em->persist($donation);
+        $this->em->persist($fundingWithdrawal);
         $this->em->flush();
 
-        $matchFundsTotal = $this->sut->matchFundsTotal($metaCampaign);
+        $amountRaised = $this->sut->totalAmountRaised($this->metaCampaign);
 
-        $this->assertEquals(Money::fromNumericStringGBP('40.00'), $matchFundsTotal);
+        // 47 = 47 + 0 (10 is released)
+        $this->assertEquals(Money::fromPence(47_00, Currency::GBP), $amountRaised);
     }
 }

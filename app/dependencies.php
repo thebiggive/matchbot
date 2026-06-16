@@ -8,10 +8,9 @@ use DI\ContainerBuilder;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager as DBALDriverManager;
 use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+use Doctrine\DBAL\Schema\AbstractNamedObject;
+use Doctrine\DBAL\Schema\AbstractOptionallyNamedObject;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
-use Doctrine\DBAL\Schema\CustomDBALDriver;
-use Doctrine\DBAL\Schema\MySQLSchemaManager;
-use Doctrine\DBAL\Schema\SchemaManagerFactory;
 use Doctrine\ORM;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,13 +18,12 @@ use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityTokenService;
-use MatchBot\Application\CustomMySQLSchemaManager;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
-use MatchBot\Application\Messenger\CharityUpdated;
+use MatchBot\Application\Messenger\DonationMatchingShouldBeChecked;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\FundTotalUpdated;
-use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
+use MatchBot\Application\Messenger\Handler\DonationMatchCheckHandler;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\FundTotalUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
@@ -44,14 +42,15 @@ use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Application\Settings;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
+use MatchBot\Client\RyftClient;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\EmailVerificationTokenRepository;
-use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
@@ -385,8 +384,9 @@ return function (ContainerBuilder $containerBuilder) {
         Matching\Adapter::class =>
             static function (ContainerInterface $c): Matching\Adapter {
                 return new Matching\Adapter(
-                    $c->get(RealTimeMatchingStorage::class),
-                    $c->get(LoggerInterface::class)
+                    storage: $c->get(RealTimeMatchingStorage::class),
+                    logger: $c->get(LoggerInterface::class),
+                    clock: $c->get(\Psr\Clock\ClockInterface::class),
                 );
             },
 
@@ -401,7 +401,7 @@ return function (ContainerBuilder $containerBuilder) {
                     // Outbound, priority, for MatchBot worker; SQS queue in Production.
                     // `CharityUpdated` does call out to Salesforce, to read data, but it's rarer and
                     // occasionally more time-sensitive than the group below which push data.
-                    CharityUpdated::class => [Transports::TRANSPORT_HIGH_PRIORITY],
+                    DonationMatchingShouldBeChecked::class => [Transports::TRANSPORT_HIGH_PRIORITY],
 
                     // Outbound, payout processing and Salesforce pushes (lower priority). For MatchBot worker; SQS
                     // queue in Production. Payouts are low priority solely because they can be slow due to numerous
@@ -425,7 +425,7 @@ return function (ContainerBuilder $containerBuilder) {
             $handleMiddleware = new HandleMessageMiddleware(new HandlersLocator(
                 /** We lazy-load the handlers from the container to avoid circular dependencies. */
                 [
-                    CharityUpdated::class => [fn($msg) => $c->get(CharityUpdatedHandler::class)($msg)],
+                    DonationMatchingShouldBeChecked::class => [fn($msg) => $c->get(DonationMatchCheckHandler::class)($msg)],
                     Messages\Donation::class => [fn($msg) => $c->get(GiftAidResultHandler::class)($msg)],
                     Messages\Person::class => [fn($msg) => $c->get(PersonHandler::class)($msg)],
                     Messages\EmailVerificationToken::class => [fn($msg) => $c->get(EmailVerificationTokenHandler::class)($msg)],
@@ -485,10 +485,10 @@ return function (ContainerBuilder $containerBuilder) {
             }
 
             $config = ORM\ORMSetup::createAttributeMetadataConfiguration(
-                $settings->doctrine['metadata_dirs'],
-                $settings->doctrine['dev_mode'],
-                $settings->doctrine['cache_dir'] . '/proxies',
-                $cacheAdapter,
+                paths: $settings->doctrine['metadata_dirs'],
+                isDevMode: $settings->doctrine['dev_mode'],
+                proxyDir: null,
+                cache: $cacheAdapter,
             );
 
             $config->addCustomStringFunction(JsonExtract::FUNCTION_NAME, JsonExtract::class);
@@ -500,9 +500,7 @@ return function (ContainerBuilder $containerBuilder) {
             $config->addCustomStringFunction('FIELD', \DoctrineExtensions\Query\Mysql\Field::class);
 
 
-            // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
-            // files indefinitely.
-            $config->setAutoGenerateProxyClasses($settings->doctrine['dev_mode']);
+            $config->enableNativeLazyObjects(true);
 
             $config->setMetadataDriverImpl(
                 new ORM\Mapping\Driver\AttributeDriver($settings->doctrine['metadata_dirs'])
@@ -567,6 +565,16 @@ return function (ContainerBuilder $containerBuilder) {
         ORM\EntityManager::class =>  static function (ContainerInterface $c): EntityManager {
             // DBAL configuration to ensure our custom SchemaManager is used even in CLI tooling
             $dbalConfig = new \Doctrine\DBAL\Configuration();
+
+            // Only set schema assets filter for ORM schema tool commands, not for migrations
+            if (defined('RUNNING_DOCTRINE_ORM_SCHEMA_TOOL') && RUNNING_DOCTRINE_ORM_SCHEMA_TOOL) {
+                $dbalConfig->setSchemaAssetsFilter(
+                    static fn (string|AbstractNamedObject|AbstractOptionallyNamedObject $asset): bool =>
+                        // shouldn't reference it.
+                        (is_string($asset) ? $asset : $asset->getObjectName()) !== 'doctrine_migration_versions'
+                );
+            }
+
             $dbalConfig->setSchemaManagerFactory(new class implements \Doctrine\DBAL\Schema\SchemaManagerFactory {
                 /** @return AbstractSchemaManager<\Doctrine\DBAL\Platforms\AbstractPlatform> */
                 #[\Override]
@@ -582,6 +590,7 @@ return function (ContainerBuilder $containerBuilder) {
 
 
             $connection = DBALDriverManager::getConnection(
+                // @phpstan-ignore argument.type (DBAL docblock doesn't explicitly allow the platform key but it works for now)
                 $c->get(Settings::class)->doctrine['connection'] +
                 [
                     'platform' => new \MatchBot\Application\CustomMysqlPlatform(),
@@ -613,7 +622,7 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer->set('claimbot.donation.claim', $bus);
             $busContainer->set('claimbot.donation.result', $bus);
             $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
-            $busContainer->set(CharityUpdated::class, $bus);
+            $busContainer->set(DonationMatchCheckHandler::class, $bus);
             $busContainer->set(DonationUpserted::class, $bus);
 
             return new RoutableMessageBus($busContainer, $bus);
@@ -638,7 +647,7 @@ return function (ContainerBuilder $containerBuilder) {
         StripeClient::class => static function (ContainerInterface $c): StripeClient {
             // Both hardcoding the version and using library default - see discussion at
             // https://github.com/thebiggive/matchbot/pull/927/files/5fa930f3eee3b0c919bcc1027319dc7ae9d0be05#diff-c4fef49ee08946228bb39de898c8770a1a6a8610fc281627541ec2e49c67b118
-            \assert(ApiVersion::CURRENT === '2026-01-28.clover'); // @phpstan-ignore function.alreadyNarrowedType, identical.alwaysTrue
+            \assert(ApiVersion::CURRENT === '2026-02-25.clover'); // @phpstan-ignore function.alreadyNarrowedType, identical.alwaysTrue
 
             Stripe::setMaxNetworkRetries(2);
 
@@ -646,6 +655,18 @@ return function (ContainerBuilder $containerBuilder) {
                 'api_key' => $c->get(Settings::class)->stripe['apiKey'],
                 'stripe_version' => ApiVersion::CURRENT,
             ]);
+        },
+
+        Client\RyftClient::class => static function (ContainerInterface $c): Client\RyftClient {
+            $settings = $c->get(Settings::class);
+
+            return new Client\RyftClient(
+                publicKey: $settings->ryft['publicKey'],
+                secretKey: $settings->ryft['secretKey'],
+                client: $c->get(\GuzzleHttp\Client::class),
+                environment: $c->get(Environment::class),
+                log: $c->get(LoggerInterface::class)
+            );
         },
 
         Transports::TRANSPORT_HIGH_PRIORITY => static function (): TransportInterface {
@@ -679,7 +700,7 @@ return function (ContainerBuilder $containerBuilder) {
                 return new DonationNotifier(
                     mailer: $c->get(Client\Mailer::class),
                     emailVerificationTokenRepository: $c->get(EmailVerificationTokenRepository::class),
-                    now: new \DateTimeImmutable('now'),
+                    clock: $c->get(ClockInterface::class),
                     donateBaseUri: $donateBaseUri,
                 );
             },
@@ -712,10 +733,11 @@ return function (ContainerBuilder $containerBuilder) {
                     donorAccountRepository: $c->get(DonorAccountRepository::class),
                     bus: $c->get(RoutableMessageBus::class),
                     donationNotifier: $c->get(DonationNotifier::class),
-                    fundRepository: $c->get(FundRepository::class),
+                    campaignService: $c->get(CampaignService::class),
                     redis: $c->get(Redis::class),
                     confirmRateLimitFactory: $confirmRateLimiterFactory,
                     regularGivingNotifier: $c->get(RegularGivingNotifier::class),
+                    ryftClient: $c->get(RyftClient::class),
                 );
             },
 

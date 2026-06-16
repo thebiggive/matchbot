@@ -13,6 +13,7 @@ use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Settings;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
@@ -20,11 +21,9 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
-use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingNotifier;
-use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -47,6 +46,7 @@ use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
+use MatchBot\Client\RyftClient;
 
 class ConfirmTest extends TestCase
 {
@@ -111,10 +111,11 @@ class ConfirmTest extends TestCase
                 donorAccountRepository: $this->createStub(DonorAccountRepository::class),
                 bus: $this->createStub(RoutableMessageBus::class),
                 donationNotifier: $this->createStub(DonationNotifier::class),
-                fundRepository: $this->createStub(FundRepository::class),
+                campaignService: $this->createStub(CampaignService::class),
                 redis: $redisProphecy->reveal(),
                 confirmRateLimitFactory: $stubRateLimiter,
                 regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
+                ryftClient: $this->createStub(RyftClient::class),
             ),
             clock: new MockClock('2025-01-01'),
             lockFactory: $this->createStub(LockFactory::class),

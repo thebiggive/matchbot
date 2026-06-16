@@ -7,11 +7,11 @@ namespace MatchBot\Application\Commands;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\MetaCampaign;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\MetaCampaignSlug;
-use DateTimeImmutable;
+use Psr\Clock\ClockInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,19 +22,17 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 #[AsCommand(
     name: 'matchbot:pull-meta-campaign-from-sf',
-    description: 'Pulls a meta campaign (or at least all its related individual campaigns) from Salesforce into the
-     matchbot db. Should improve performance and reduce chance of any db contention particularly if run shortly before 
-     campaign start time'
+    description: 'Pulls already-known children of meta-campaign from Salesforce into the matchbot DB.'
 )]
 class PullMetaCampaignFromSF extends LockingCommand
 {
     public function __construct(
         private CampaignRepository $campaignRepository,
         private MetaCampaignRepository $metaCampaignRepository,
-        private FundRepository $fundRepository,
+        private CampaignService $campaignService,
         private EntityManagerInterface $entityManager,
         private CampaignClient $campaignClient,
-        private DateTimeImmutable $now,
+        private ClockInterface $clock,
     ) {
         parent::__construct();
     }
@@ -47,7 +45,7 @@ class PullMetaCampaignFromSF extends LockingCommand
     public function pullCharityCampaigns(MetaCampaignSlug $metaCampaginSlug, OutputInterface $output): void
     {
         ['newFetchCount' => $newFetchCount, 'updatedCount' => $updatedCount, 'campaigns' => $campaigns] =
-            $this->campaignRepository->fetchAllForMetaCampaign($metaCampaginSlug);
+            $this->campaignRepository->fetchAlreadyKnownChildrenForMetaCampaign($metaCampaginSlug);
 
         $total = $newFetchCount + $updatedCount;
 
@@ -55,7 +53,7 @@ class PullMetaCampaignFromSF extends LockingCommand
         foreach ($campaigns as $campaign) {
             $i++;
             $output->writeln("Pulling funds for ($i of $total) '{$campaign->getCampaignName()}'");
-            $this->fundRepository->pullForCampaign($campaign, $this->now);
+            $this->campaignService->pullFundsAndUpdateStats($campaign);
         }
 
         $output->writeln("Fetched $total campaigns total from Salesforce for '$metaCampaginSlug->slug'");
@@ -74,11 +72,11 @@ class PullMetaCampaignFromSF extends LockingCommand
 
         if (\is_null($existingMetaCampaignInDB)) {
             $metaCampaign = MetaCampaign::fromSfCampaignData($slug, $data);
-            $metaCampaign->setSalesforceLastPull(\DateTime::createFromInterface($this->now));
+            $metaCampaign->setSalesforceLastPull(\DateTime::createFromInterface($this->clock->now()));
             // create new one from SF data
             $this->entityManager->persist($metaCampaign);
         } else {
-            // todo update existing from SF data
+            $existingMetaCampaignInDB->updateFromSfData($data);
         }
 
         $this->entityManager->flush();

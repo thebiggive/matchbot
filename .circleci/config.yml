@@ -4,7 +4,7 @@ orbs:
   aws-ecr: circleci/aws-ecr@9.3.1
   aws-ecs: circleci/aws-ecs@4.1.0
   aws-cli: circleci/aws-cli@5.0.0
-  codecov: codecov/codecov@5.3.0
+  codecov: codecov/codecov@6.0.0
   jira: circleci/jira@2.2.0
   slack: circleci/slack@5.1.1
 
@@ -47,20 +47,28 @@ jobs:
 
       - restore_cache:
           keys:
-            - composer-v1-{{ checksum "composer.lock" }}
+            - composer-v2-{{ checksum "composer.lock" }}
 
       - run: composer install --no-interaction
 
       - run: composer check-platform-reqs
 
+      - run: vendor/bin/mago version ## installs mago as a side effect before we save cache
+
       - save_cache:
           paths:
             - vendor
-          key: composer-v1-{{ checksum "composer.lock" }}
+          key: composer-v3-{{ checksum "composer.lock" }}
 
       - run: composer run lint:check
 
+
+      - run: composer run fmt:check || true; # "|| true" so we don't break the build on different formatting just yet, including to show what the differences are.
+                                             # will make a PR to change format of all code to match what mago expects separately.
+
       - run: composer run sa:check
+
+      - run: composer run guard
 
       - run: composer run test
 
@@ -69,7 +77,7 @@ jobs:
       # Ensures schema is in sync and implicitly that future migration diffs should work.
       # Deliberately doesn't use `doctrine:validate` because it clears caches (which CI doesn't need)
       # including the local test DB (which CI doesn't have).
-      - run: vendor/bin/doctrine orm:validate-schema --verbose
+      - run: ./doctrine orm:validate-schema --verbose
 
       - run: ./matchbot matchbot:write-schema-files --check
 
@@ -125,14 +133,14 @@ jobs:
 
       - restore_cache:
           keys:
-            - composer-v1-{{ checksum "composer.lock" }}
+            - composer-v3-{{ checksum "composer.lock" }}
 
       - run: composer install --no-interaction
 
       - save_cache:
           paths:
             - vendor
-          key: composer-v1-{{ checksum "composer.lock" }}
+          key: composer-v3-{{ checksum "composer.lock" }}
 
       - run:
           name: Mutation Test only changed and added files in PR

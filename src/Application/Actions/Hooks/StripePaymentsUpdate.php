@@ -6,6 +6,7 @@ namespace MatchBot\Application\Actions\Hooks;
 
 use Assert\Assertion;
 use DateTimeImmutable;
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Messenger\DonationUpserted;
@@ -122,7 +123,13 @@ class StripePaymentsUpdate extends Stripe
         $this->entityManager->beginTransaction();
 
         if (is_string($intentId)) {
-            $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+            try {
+                $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+            } catch (LockWaitTimeoutException $exception) {
+                $this->logger->warning(sprintf('charge.succeeded: Failed to acquire lock on donation with Payment Intent ID %s', $intentId));
+                $this->entityManager->rollback();
+                return $this->respond($response, new ActionPayload(409));
+            }
         } else {
             $donation = null;
         }
@@ -134,8 +141,6 @@ class StripePaymentsUpdate extends Stripe
             return $this->respond($response, new ActionPayload(204));
         }
 
-        // For now we support the happy success path –
-        // as this is the only event type we're handling right now besides refunds.
         if ($charge->status === 'succeeded') {
             $donationService = $this->donationService;
             $donationService->updateDonationStatusFromSuccessfulCharge($charge, $donation);
@@ -168,8 +173,8 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->entityManager->persist($donation);
-        $this->entityManager->commit();
         $this->entityManager->flush();
+        $this->entityManager->commit();
         $this->queueSalesforceUpdate($donation);
 
         return $this->respondWithData($response, $charge);
@@ -191,7 +196,13 @@ class StripePaymentsUpdate extends Stripe
         $this->entityManager->beginTransaction();
 
         if (is_string($intentId)) {
-            $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+            try {
+                $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+            } catch (LockWaitTimeoutException $exception) {
+                $this->logger->warning(sprintf('charge.updated: Failed to acquire lock on donation with Payment Intent ID %s', $intentId));
+                $this->entityManager->rollback();
+                return $this->respond($response, new ActionPayload(409));
+            }
         } else {
             $donation = null;
         }
@@ -223,8 +234,8 @@ class StripePaymentsUpdate extends Stripe
         ));
 
         $this->entityManager->persist($donation);
-        $this->entityManager->commit();
         $this->entityManager->flush();
+        $this->entityManager->commit();
         $this->queueSalesforceUpdate($donation);
 
         return $this->respondWithData($response, $charge);

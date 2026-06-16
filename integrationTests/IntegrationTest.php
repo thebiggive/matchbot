@@ -11,8 +11,11 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Settings;
 use MatchBot\Client\Mandate as MandateSFClient;
+use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignStatus;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\CharityResponseToOffer;
 use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundType;
@@ -205,7 +208,7 @@ abstract class IntegrationTest extends TestCase
         };
 
         /** @var ApiClient $client */
-        $client = [
+        $client = [ // @phpstan-ignore varTag.nativeType
             'global' => $global,
             'mailer' => [
                 'baseUri' => 'dummy-mailer-base-uri',
@@ -309,9 +312,11 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<EOF
             INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                                 psp,
                      hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
                                  salesforceData)
             VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    'stripe',
                     null, 0, 0, null, null, '{}')
             EOF
         );
@@ -322,13 +327,11 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<SQL
             INSERT INTO Campaign (charity_id, name, summary, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
-                                  createdAt, updatedAt, currencyCode, isRegularGiving, salesforceData,
-                                  total_funding_allocation_amountInPence, total_funding_allocation_currency,
-                                  amount_pledged_amountInPence, amount_pledged_currency,
+                                  createdAt, updatedAt, isPublished, currencyCode, isRegularGiving, salesforceData,
                                   total_fundraising_target_amountInPence, total_fundraising_target_currency
                                   )
             VALUES ('$charityId', 'some charity', 'campaign summary', '$nyd', '$closeDate', '$matched', '$campaignSfId',
-                    '$nyd', '$nyd', '$nyd', 'GBP',  '$isRegularGivingInt', '{}', 0, 'GBP', 0, 'GBP', 0, 'GBP')
+                    '$nyd', '$nyd', '$nyd', true, 'GBP',  '$isRegularGivingInt', '{}', 0, 'GBP')
             SQL
         );
 
@@ -493,39 +496,42 @@ abstract class IntegrationTest extends TestCase
         return $fakeStripeClient;
     }
 
-    /**
-     * @param 'Active'|'Expired'|'Preview' $status
-     */
     protected function createCampaign(
         ?Charity $charity = null,
         string $name = 'Campaign Name',
         string $summary = 'Campaign Summary',
-        string $status = 'Active',
+        CampaignStatus $status = CampaignStatus::Active,
         bool $withUniqueSalesforceId = false,
+        ?string $metaCampaignSlug = null,
+        ?ApplicationStatus $relatedApplicationStatus = null,
+        ?CharityResponseToOffer $relatedApplicationCharityResponseToOffer = null
     ): Campaign {
         $salesforceId = $withUniqueSalesforceId
             ? Salesforce18Id::ofCampaign(self::randomString())
             : Salesforce18Id::ofCampaign('campaignId12345678');
 
+        [$startDate, $endDate] = match ($status) {
+            CampaignStatus::Preview => [new \DateTimeImmutable('now')->add(new \DateInterval('P2D')), new \DateTimeImmutable('now')->add(new \DateInterval('P3D'))],
+            CampaignStatus::Active => [new \DateTimeImmutable('now')->sub(new \DateInterval('P1D')), new \DateTimeImmutable('now')->add(new \DateInterval('P1D'))],
+            CampaignStatus::Expired => [new \DateTimeImmutable('now')->sub(new \DateInterval('P3D')),  new \DateTimeImmutable('now')->sub(new \DateInterval('P2D'))],
+        };
+
         return new Campaign(
             $salesforceId,
-            metaCampaignSlug: null,
+            metaCampaignSlug: $metaCampaignSlug,
             charity: $charity ?? \MatchBot\Tests\TestCase::someCharity(),
-            startDate: new \DateTimeImmutable('now'),
-            endDate: (new \DateTimeImmutable('now'))->modify('+1 minute'),
+            startDate: $startDate,
+            endDate: $endDate,
             isMatched: true,
-            ready: true,
-            status: $status,
+            isPublished: true,
             name: $name,
             summary: $summary,
             currencyCode: 'GBP',
-            totalFundingAllocation: Money::zero(),
-            amountPledged: Money::zero(),
             isRegularGiving: false,
             pinPosition: null,
             championPagePinPosition: null,
-            relatedApplicationStatus: null,
-            relatedApplicationCharityResponseToOffer: null,
+            relatedApplicationStatus: $relatedApplicationStatus,
+            relatedApplicationCharityResponseToOffer: $relatedApplicationCharityResponseToOffer,
             regularGivingCollectionEnd: null,
             totalFundraisingTarget: Money::zero(),
             thankYouMessage: null,

@@ -19,32 +19,42 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
         ['Charity', 'FULLTEXT_NORMALISED_NAME'],
     ];
 
-    private const array GENERATED_COLUMNS = [
+    private const array IGNORED_COLUMNS = [
         ['Campaign', 'normalisedName'],
         ['Campaign', 'searchable_text'],
+        ['Campaign', 'ready'], // can be dropped from DB after next deploy
         ['Charity', 'normalisedName'],
         ['Charity', 'searchable_text'],
     ];
 
     #[\Override]
-    protected function _getPortableTableIndexesList($tableIndexes, $tableName = null) // phpcs:ignore
+    protected function _getPortableTableIndexesList(array $tableIndexes, ?string $tableName = null): array // phpcs:ignore
     {
         $indexes = parent::_getPortableTableIndexesList($tableIndexes, $tableName);
 
         return \array_filter(
             $indexes,
-            static fn($index) => !in_array([$tableName, $index->getName()], self::GENERATED_INDEXES, true),
+            static fn($index) => !in_array(
+                needle: [$tableName, $index->getObjectName()->toString()],
+                haystack: self::GENERATED_INDEXES,
+                strict: true
+            ),
         );
     }
 
     #[\Override]
-    protected function _getPortableTableColumnList($table, $database, $tableColumns) // phpcs:ignore
+    protected function _getPortableTableColumnList(string $table, string $database, array $tableColumns): array // phpcs:ignore
     {
         $columns = parent::_getPortableTableColumnList($table, $database, $tableColumns);
 
         return array_filter(
             $columns,
-            static fn($column) => !in_array([$table, $column->getName()], self::GENERATED_COLUMNS, true),
+            static fn($column) => !in_array(
+                needle: [$table, $column->getObjectName()->toString()], // @phpstan.ignore method.internalClass
+                // releasedAt is new, want to wait until its in prod DB before we allow the ORM to rely on it.
+                haystack: self::IGNORED_COLUMNS,
+                strict: true,
+            ),
         );
     }
 }

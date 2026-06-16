@@ -73,8 +73,10 @@ class CampaignFundingRepository extends EntityRepository
     /**
      * Get the total amount available for a meta-campaign, ensuring that shared fundings
      * are only counted once even if they're linked to multiple campaigns.
+     *
+     * @return array{totalAmount: Money, totalAmountAvailable: Money}
      */
-    public function getAmountAvailableForMetaCampaign(MetaCampaign $metaCampaign): Money
+    public function getAmountsForMetaCampaign(MetaCampaign $metaCampaign): array
     {
         // First, get all unique CampaignFunding IDs for the meta-campaign – campaigns we expect to go ahead only
         $idQuery = $this->getEntityManager()->createQuery(dql: <<<'DQL'
@@ -93,7 +95,7 @@ class CampaignFundingRepository extends EntityRepository
         $ids = $idQuery->getResult();
 
         if (empty($ids)) {
-            return Money::zero(currency: $metaCampaign->getCurrency());
+            return self::metaCampaignZeroes(Currency::GBP);
         }
 
         // Extract just the IDs into a flat array
@@ -101,7 +103,10 @@ class CampaignFundingRepository extends EntityRepository
 
         // Then, sum the amounts for these unique IDs
         $sumQuery = $this->getEntityManager()->createQuery(dql: <<<'DQL'
-            SELECT COALESCE(SUM(cf.amountAvailable), 0) as sum, cf.currencyCode 
+            SELECT
+                COALESCE(SUM(cf.amount), 0) as totalAmount,
+                COALESCE(SUM(cf.amountAvailable), 0) as totalAmountAvailable,
+                cf.currencyCode 
             FROM MatchBot\Domain\CampaignFunding cf
             WHERE cf.id IN (:ids)
             GROUP BY cf.currencyCode
@@ -109,16 +114,21 @@ class CampaignFundingRepository extends EntityRepository
         );
         $sumQuery->setParameter('ids', $fundingIds);
 
-        /** @var list<array{sum: numeric-string, currencyCode: string}> $result */
+        /** @var list<array{totalAmount: numeric-string, totalAmountAvailable: numeric-string, currencyCode: string}> $result */
         $result = $sumQuery->getResult();
 
         Assertion::maxCount($result, 1, 'Campaign Fundings in multiple currencies found for same metacampaign');
 
         if ($result === []) {
-            return Money::zero(currency: $metaCampaign->getCurrency());
+            return self::metaCampaignZeroes(Currency::GBP);
         }
 
-        return Money::fromNumericString($result[0]['sum'], Currency::fromIsoCode($result[0]['currencyCode']));
+        $currency = Currency::fromIsoCode($result[0]['currencyCode']);
+
+        return [
+            'totalAmount' => Money::fromNumericString($result[0]['totalAmount'], $currency),
+            'totalAmountAvailable' => Money::fromNumericString($result[0]['totalAmountAvailable'], $currency),
+        ];
     }
 
     public function getFunding(Fund $fund): ?CampaignFunding
@@ -151,5 +161,16 @@ class CampaignFundingRepository extends EntityRepository
         $result = $query->getOneOrNullResult();
 
         return $result;
+    }
+
+    /**
+     * @return array{totalAmount: Money, totalAmountAvailable: Money}
+     */
+    private static function metaCampaignZeroes(Currency $currency): array
+    {
+        return [
+            'totalAmount' => Money::zero($currency),
+            'totalAmountAvailable' => Money::zero($currency),
+        ];
     }
 }

@@ -7,6 +7,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\DonationRepository;
+use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
@@ -21,7 +22,7 @@ class MatchFundsRedistributor
         private Allocator $allocator,
         private ChatterInterface $chatter,
         private DonationRepository $donationRepository,
-        private \DateTimeImmutable $now,
+        private ClockInterface $clock,
         private CampaignFundingRepository $campaignFundingRepository,
         private LoggerInterface $logger,
         private EntityManagerInterface $entityManager,
@@ -41,11 +42,11 @@ class MatchFundsRedistributor
     public function redistributeMatchFunds(): array
     {
         $donationsToCheck = $this->donationRepository->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
-            campaignsClosedBefore: $this->now,
+            campaignsClosedBefore: $this->clock->now(),
             // Since very long campaigns usually only have one funding type, it's currently unlikely
             // that the combination of minimum & maximum dates will stop funds being redistributed when
             // we'd like them to.
-            donationsCollectedAfter: $this->now->sub(new \DateInterval('P8W')),
+            donationsCollectedAfter: $this->clock->now()->sub(new \DateInterval('P8W')),
         );
 
         $donationsAmended = 0;

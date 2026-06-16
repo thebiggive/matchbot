@@ -12,7 +12,6 @@ use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use UnexpectedValueException;
 
-#[ORM\Table]
 #[ORM\Index(name: 'uuid', columns: ['uuid'])]
 #[ORM\Index(name: 'donationsCreatedUpTo', columns: ['donationsCreatedUpTo'])]
 #[ORM\Entity(
@@ -90,7 +89,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Embedded(columnPrefix: false)]
     private DayOfMonth $dayOfMonth;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?\DateTimeImmutable $activeFrom = null;
 
     /**
@@ -99,7 +98,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
      *
      * @psalm-suppress UnusedProperty - used in DQL
      */
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?\DateTimeImmutable $donationsCreatedUpTo = null;
 
     #[ORM\Column]
@@ -119,7 +118,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $cancellationReason = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, type: 'datetime_immutable')]
     private ?\DateTimeImmutable $cancelledAt = null;
 
     /**
@@ -325,6 +324,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             charityComms: null,
             championComms: null,
             pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            psp: $campaign->getCharity()->psp,
             optInTbgEmail: null,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
@@ -332,12 +332,12 @@ class RegularGivingMandate extends SalesforceWriteProxy
             tipAmount: '0',
             mandate: $this,
             mandateSequenceNumber: $sequenceNumber,
+            donorId: $donor->id(),
             giftAid: $giftAidClaimable,
             tipGiftAid: null,
             homeAddress: $donor->getHomeAddressLine1(),
             homePostcode: $donor->getHomePostcode(),
             billingPostcode: null,
-            donorId: $donor->id(),
         );
 
         Assertion::true(
@@ -503,6 +503,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             charityComms: $this->charityComms,
             championComms: null,
             pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            psp: \MatchBot\Domain\PaymentServiceProvider::Stripe,
             optInTbgEmail: $this->tbgComms,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,

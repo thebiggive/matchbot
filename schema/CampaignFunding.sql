@@ -13,6 +13,7 @@ CREATE TABLE `CampaignFunding` (
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   `currencyCode` varchar(3) NOT NULL,
+  `adjustmentLog` json DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `IDX_B00548FA25A38F89` (`fund_id`),
   KEY `available_fundings` (`amountAvailable`,`id`),

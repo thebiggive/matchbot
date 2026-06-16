@@ -9,10 +9,12 @@ use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Client\Mailer;
+use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\DayOfMonth;
@@ -26,7 +28,6 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
-use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
@@ -229,6 +230,7 @@ class RegularGivingNotifierTest extends TestCase
             charityComms: false,
             championComms: false,
             pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            psp: \MatchBot\Domain\PaymentServiceProvider::Stripe,
             optInTbgEmail: false,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
@@ -236,12 +238,12 @@ class RegularGivingNotifierTest extends TestCase
             tipAmount: '0',
             mandate: $mandate,
             mandateSequenceNumber: DonationSequenceNumber::of(1),
+            donorId: $donor->id(),
             giftAid: true,
             tipGiftAid: null,
             homeAddress: null,
             homePostcode: null,
             billingPostcode: null,
-            donorId: $donor->id(),
         );
         $firstDonation->setTransactionId('[PSP Transaction ID]');
         $this->addFundingWithdrawal($firstDonation, '64');
@@ -328,11 +330,7 @@ class RegularGivingNotifierTest extends TestCase
 
         /** @psalm-suppress InvalidPropertyAssignmentValue */
         $paymentMethod->card = new StripeObject();
-
-        /** @psalm-suppress UndefinedMagicPropertyAssignment */
         $paymentMethod->card->brand = 'visa'; // @phpstan-ignore property.notFound
-
-        /** @psalm-suppress UndefinedMagicPropertyAssignment */
         $paymentMethod->card->country = 'gb'; // @phpstan-ignore property.notFound
 
 
@@ -357,10 +355,11 @@ class RegularGivingNotifierTest extends TestCase
             $this->donorAccountRepositoryProphecy->reveal(),
             $this->createStub(RoutableMessageBus::class),
             $this->createStub(DonationNotifier::class),
-            $this->createStub(FundRepository::class),
+            $this->createStub(CampaignService::class),
             $this->createStub(\Redis::class),
             $rateLimiterFactory,
             $this->sut,
+            $this->createStub(RyftClient::class),
         );
 
         $paymentIntent = new PaymentIntent();

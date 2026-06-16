@@ -12,9 +12,12 @@ return [
     ],
 
     'migrations_paths' => [
-        'MatchBot\Migrations' => '/src/Migrations',
+        'MatchBot\Migrations' => __DIR__ . '/src/Migrations',
     ],
 
+    // note that although all_or_nothing is useful to make sure migrations don't get left half-done,
+    // it also obscures errors by showing a syntax error to do with missing breakpoints instead of the underlying issue.
+    // Change to false if necessary in local to debug migration issues.
     'all_or_nothing' => true,
     'check_database_platform' => true,
 ];

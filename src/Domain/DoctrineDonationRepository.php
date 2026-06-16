@@ -15,6 +15,7 @@ use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
+use MatchBot\Tests\Domain\DonationServiceTest;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -41,7 +42,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
         // we only expire donations that were created before this point.
-        $expireBefore = $now->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
+        $expireBefore = $now->sub(self::expiryDateInterval());
 
         // and we only need to expire donations that were create AFTER this point, because if they were created at
         // before it we would have already expired them in a previous run.
@@ -66,6 +67,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             -- that longer than the timeout for matching, we still want to ensure matching can't be
             -- lost while 3DS is in progress.
             AND d.mandate is null
+            AND fw.releasedAt is null
             GROUP BY d.id
             DQL
         )
@@ -105,6 +107,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             AND d.collectedAt > :donationsCollectedAfter
             -- Only consider CampaignFundings with lower allocationOrder than `fw`'s.
             AND availableFund.allocationOrder < donationFund.allocationOrder
+            AND fw.releasedAt is null
             GROUP BY d.id
             ORDER BY d.id ASC
         DQL
@@ -119,6 +122,21 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $donations = $query
             ->disableResultCache()
             ->getResult();
+
+        return $donations;
+    }
+
+    #[\Override]
+    public function findByUuids(array $uuids): array
+    {
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT d FROM MatchBot\Domain\Donation d
+            WHERE d.uuid IN (:uuids)
+            ORDER BY d.createdAt ASC
+DQL);
+        $query->setParameter('uuids', $uuids);
+        /** @var Donation[] $donations */
+        $donations = $query->getResult();
 
         return $donations;
     }
@@ -166,7 +184,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     }
 
     #[\Override]
-    public function findNotFullyMatchedToCampaignsWhichClosedSince(DateTime $closedSinceDate): array
+    public function findNotFullyMatchedToCampaignsWhichClosedSince(\DateTimeImmutable $closedSinceDate): array
     {
         $now = (new DateTime('now'));
         $qb = $this->getEntityManager()->createQueryBuilder()
@@ -179,7 +197,10 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             ->andWhere('c.endDate < :now')
             ->andWhere('c.endDate > :campaignClosedSince')
             ->groupBy('d.id')
-            ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
+            ->having(
+                '(SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) IS NULL
+                      OR SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) < d.amount)'
+            ) // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter(
                 'completeStatuses',
@@ -201,7 +222,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
      * @psalm-suppress MixedReturnTypeCoercion
      */
     #[\Override]
-    public function findRecentNotFullyMatchedToMatchCampaigns(DateTime $sinceDate): array
+    public function findRecentNotFullyMatchedToMatchCampaigns(\DateTimeImmutable $sinceDate): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
@@ -212,7 +233,10 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             ->andWhere('c.isMatched = true')
             ->andWhere('d.createdAt >= :checkAfter')
             ->groupBy('d.id')
-            ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
+            ->having(
+                '(SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) IS NULL 
+                      OR SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END) < d.amount)'
+            ) // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter(
                 'completeStatuses',
@@ -259,7 +283,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             LEFT JOIN d.fundingWithdrawals fw
             WHERE d.createdAt >= :start
             AND d.createdAt < :end
-            HAVING SUM(fw.amount) > 0
+            HAVING (SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END )) > 0
         DQL
         );
         $query->setParameter('start', $sixteenMinutesPrior);
@@ -791,12 +815,40 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             SELECT d FROM MatchBot\Domain\Donation d
             LEFT JOIN d.fundingWithdrawals fw
             GROUP BY d.id
-            HAVING SUM(fw.amount) > d.amount
+            HAVING (SUM(CASE WHEN fw.releasedAt is null THEN fw.amount ELSE 0 END )) > d.amount
         DQL
         );
 
         /** @var list<Donation> $result */
         $result = $query->getResult();
         return $result;
+    }
+
+    #[\Override]
+    public function potentiallyCompetingDonations(Donation $donation): array
+    {
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT d FROM MatchBot\Domain\Donation d
+            WHERE d.createdAt > :earliest 
+           AND d.createdAt < :latest
+           and d.campaign = :campaign
+           AND d.donationStatus IN (:incompleteStatuses)
+        DQL
+        );
+
+        $query->setParameter('earliest', $donation->getCreatedDateImmutable()->sub(self::expiryDateInterval()));
+        $query->setParameter('latest', $donation->getCreatedDateImmutable());
+        $query->setParameter('incompleteStatuses', [DonationStatus::Pending, DonationStatus::PreAuthorized, DonationStatus::Cancelled, DonationStatus::Refunded]);
+        $query->setParameter('campaign', $donation->getCampaign());
+
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
+
+    private static function expiryDateInterval(): \DateInterval
+    {
+        return new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S');
     }
 }

@@ -5,13 +5,14 @@ namespace MatchBot\Domain;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Client\Mailer;
+use Psr\Clock\ClockInterface;
 
 class DonationNotifier
 {
     public function __construct(
         private Mailer $mailer,
         private EmailVerificationTokenRepository $emailVerificationTokenRepository,
-        private \DateTimeImmutable $now,
+        private ClockInterface $clock,
         private string $donateBaseUri,
     ) {
     }
@@ -82,6 +83,7 @@ class DonationNotifier
             'donationDatetime' => $collectedAt->format('c'),
             'donorFirstName' => $donation->getDonorFirstName(),
             'donorLastName' => $donation->getDonorLastName(),
+            'donorGreetingName' => $donation->getDonorFirstName() === '' ? $donation->getDonorLastName() : $donation->getDonorFirstName(), // org name is fallback
             'giftAidAmountClaimed' => (float) $donation->getGiftAidValue(),
 
             'matchedAmount' => $donation->matchedAmount()->toMajorUnitFloat(),
@@ -91,7 +93,8 @@ class DonationNotifier
             'totalChargedAmount' => (float) $donation->getTotalPaidByDonor(),
 
             'totalCharityValueAmount' => (float) $donation->totalCharityValueAmount(),
-            'transactionId' => $donation->getTransactionId(),
+            'transactionId' => $donation->getReferenceCode(), // @todo switch mailer to use referenceCode and delete this after line below is in prod
+            'referenceCode' => $donation->getReferenceCode(),
             'charityLogoUri' => $charity->getLogoUri()?->__toString(),
             'charityWebsite' => $charity->getWebsiteUri()?->__toString(),
 
@@ -123,7 +126,7 @@ class DonationNotifier
         if ($sendRegisterUri) {
             $emailVerificationToken = $this->emailVerificationTokenRepository->findRecentTokenForEmailAddress(
                 $emailAddress,
-                $this->now,
+                $this->clock->now(),
             );
         }
 

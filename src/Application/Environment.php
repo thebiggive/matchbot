@@ -14,7 +14,9 @@ enum Environment
     {
         $env = getenv('APP_ENV');
         if ($env === false) {
-            throw new \RuntimeException('APP_ENV environment variable required');
+            // should be safest to default to acting like production.
+            $env = 'production';
+            // throw new \RuntimeException('APP_ENV environment variable required');
         }
 
         return self::fromAppEnv($env);

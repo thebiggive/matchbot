@@ -26,13 +26,11 @@
         "beberlei/assert": "^3.3",
         "beberlei/doctrineextensions": "^1.5",
         "cweagans/composer-patches": "^1.7",
-        "doctrine/annotations": "^2.0",
-        "doctrine/cache": "^2.0",
         "doctrine/collections": "^2.2",
         "doctrine/common": "^3.4",
-        "doctrine/dbal": "^3.8",
-        "doctrine/migrations": "^3.7",
-        "doctrine/orm": "^2.14.0",
+        "doctrine/dbal": "^4.4.1",
+        "doctrine/migrations": "^3.9",
+        "doctrine/orm": "^3.6.2",
         "fig/http-message-util": "^1.1",
         "firebase/php-jwt": "^7.0",
         "guzzlehttp/guzzle": "^7.9",
@@ -43,7 +41,6 @@
         "middlewares/client-ip": "^2.0",
         "monolog/monolog": "^2.2",
         "php-di/php-di": "^7.0",
-        "phpdocumentor/reflection-docblock": "5.5.1",
         "prinsfrank/standards": "^3.3",
         "psr/container": "^2.0",
         "psr/http-message": "^1.1",
@@ -73,13 +70,14 @@
         "thebiggive/messages": "^3.4.0"
     },
     "require-dev": {
+        "carthage-software/mago": "^1.29.0",
         "doctrine/event-manager": "^2.0",
         "infection/infection": "^0.29.10",
         "jangregor/phpstan-prophecy": "^2.1",
         "phpspec/prophecy": "^1.19",
         "phpspec/prophecy-phpunit": "^v2.1.0",
         "phpstan/extension-installer": "^1.4",
-        "phpstan/phpstan": "^2.1.39",
+        "phpstan/phpstan": "^2.2.0",
         "phpstan/phpstan-beberlei-assert": "^2.0",
         "phpstan/phpstan-doctrine": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
@@ -89,9 +87,9 @@
         "psalm/plugin-phpunit": "^0.19.2",
         "roave/security-advisories": "dev-latest",
         "squizlabs/php_codesniffer": "^3.10",
-        "vimeo/psalm": "6.14.3",
+        "vimeo/psalm": "6.16.1",
         "weirdan/doctrine-psalm-plugin": "^2.10",
-        "zircote/swagger-php": "^5.2"
+        "zircote/swagger-php": "^6.0.6"
     },
     "repositories": [{
         "type": "vcs",
@@ -129,52 +127,53 @@
             "@docs:merge"
         ],
         "doctrine:cache:clear:live": [
-            "vendor/bin/doctrine orm:clear-cache:metadata",
-            "vendor/bin/doctrine orm:clear-cache:query",
-            "vendor/bin/doctrine orm:clear-cache:result"
+            "./doctrine orm:clear-cache:metadata",
+            "./doctrine orm:clear-cache:query",
+            "./doctrine orm:clear-cache:result"
         ],
         "doctrine:cache:clear": [
             "@doctrine:cache:clear:live",
 
             "@putenv MYSQL_SCHEMA=matchbot_test",
 
-            "vendor/bin/doctrine orm:clear-cache:metadata",
-            "vendor/bin/doctrine orm:clear-cache:query",
-            "vendor/bin/doctrine orm:clear-cache:result",
+            "./doctrine orm:clear-cache:metadata",
+            "./doctrine orm:clear-cache:query",
+            "./doctrine orm:clear-cache:result",
 
             "@putenv MYSQL_SCHEMA=matchbot"
         ],
         "doctrine:delete-and-recreate": [
             "@putenv MYSQL_SCHEMA=matchbot",
             "@doctrine:cache:clear",
-            "doctrine orm:schema-tool:drop --full-database --force",
+            "./doctrine orm:schema-tool:drop --full-database --force",
             "@doctrine:migrate:live",
             "./matchbot matchbot:write-schema-files",
-            "MYSQL_SCHEMA=matchbot_test vendor/bin/doctrine orm:schema-tool:drop --full-database --force",
-            "MYSQL_SCHEMA=matchbot_test vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration"
+            "MYSQL_SCHEMA=matchbot_test ./doctrine orm:schema-tool:drop --full-database --force",
+            "MYSQL_SCHEMA=matchbot_test doctrine-migrations migrate --no-interaction --allow-no-migration"
         ],
         "doctrine:update-schema": [
             "@doctrine:cache:clear",
-            "doctrine-migrations diff --allow-empty-diff",
+            "./vendor/bin/doctrine-migrations migrations:diff --allow-empty-diff",
             "@doctrine:migrate",
             "./matchbot matchbot:write-schema-files"
         ],
-        "doctrine:ensure-prod": "doctrine orm:ensure-production-settings",
-        "doctrine:generate-proxies": "doctrine orm:generate-proxies",
-        "doctrine:migrate:live": "vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration -vv",
+        "doctrine:migrate:live": "doctrine-migrations migrate --no-interaction --allow-no-migration -vv",
         "doctrine:migrate": [
             "@doctrine:migrate:live",
             "@putenv MYSQL_SCHEMA=matchbot_test",
-            "vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration",
+            "doctrine-migrations migrate --no-interaction --allow-no-migration",
             "@putenv MYSQL_SCHEMA=matchbot"
         ],
-        "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
-        "doctrine:migrate:generate": "doctrine-migrations generate",
+        "doctrine:migrate:diff": ["@doctrine:cache:clear", "./vendor/bin/doctrine-migrations migrations:diff"],
+        "doctrine:migrate:generate": "./vendor/bin/doctrine-migrations migrations:generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
-        "sa:check": "vendor/bin/phpstan # psalm skipped for now awaiting Psalm 7 with PHP 8.5 support.",
-        "sa:check-with-new-cache": "vendor/bin/psalm --clear-cache; vendor/bin/psalm",
-        "lint:check": "phpcs --standard=phpcs.xml -s . --ignore=reports",
+        "sa:check": "bash -c \"time vendor/bin/mago analyze && time vendor/bin/phpstan && time vendor/bin/psalm\"",
+        "sa:check-with-new-cache": "vendor/bin/phpstan && vendor/bin/psalm --clear-cache; vendor/bin/psalm",
+        "lint:check": "mago lint; phpcs --standard=phpcs.xml -s . --ignore=reports",
         "lint:fix": "phpcbf --standard=phpcs.xml -s . --ignore=reports",
+        "fmt:check": "mago fmt --check",
+        "fmt:fix": "mago fmt",
+        "guard": "mago guard",
         "matchbot:claim-gift-aid": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:claim-gift-aid"
@@ -227,14 +226,14 @@
         "matchbot:reset": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:reset-matching",
-          "@doctrine:delete-and-recreate",
-          "./matchbot matchbot:create-fictional-data --verbose"
+            "@doctrine:delete-and-recreate",
+            "./matchbot matchbot:create-fictional-data --verbose"
         ],
-      "matchbot:reset-no-fictional-data": [
-        "Composer\\Config::disableProcessTimeout",
-        "php matchbot-cli.php matchbot:reset-matching",
-        "@doctrine:delete-and-recreate"
-      ],
+        "matchbot:reset-no-fictional-data": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:reset-matching",
+            "@doctrine:delete-and-recreate"
+        ],
         "matchbot:retrospectively-match": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:retrospectively-match"
@@ -280,11 +279,10 @@
         "start": "php -S localhost:8080 -t public",
         "test": "XDEBUG_MODE=coverage phpunit --order-by=random --log-junit reports/unit-test.xml",
         "integration-test": [
-            "APP_ENV=test doctrine orm:clear-cache:metadata",
-            "APP_ENV=test doctrine orm:clear-cache:query",
-            "APP_ENV=test doctrine orm:clear-cache:result",
-            "APP_ENV=test doctrine-migrations migrate --no-interaction --allow-no-migration",
-            "APP_ENV=test doctrine orm:generate-proxies",
+            "APP_ENV=test ./doctrine orm:clear-cache:metadata",
+            "APP_ENV=test ./doctrine orm:clear-cache:query",
+            "APP_ENV=test ./doctrine orm:clear-cache:result",
+            "APP_ENV=test vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration",
             "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random --log-junit reports/integration-test.xml"
         ],
         "mutation-test": [

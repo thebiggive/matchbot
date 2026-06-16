@@ -102,12 +102,17 @@ class InMemoryDonationRepository implements DonationRepository
         throw new \Exception("Method not implemented in test double");
     }
 
-    #[\Override] public function findNotFullyMatchedToCampaignsWhichClosedSince(DateTime $closedSinceDate): array
+    #[\Override] public function findByUuids(array $uuids): array
     {
         throw new \Exception("Method not implemented in test double");
     }
 
-    #[\Override] public function findRecentNotFullyMatchedToMatchCampaigns(DateTime $sinceDate): array
+    #[\Override] public function findNotFullyMatchedToCampaignsWhichClosedSince(\DateTimeImmutable $closedSinceDate): array
+    {
+        throw new \Exception("Method not implemented in test double");
+    }
+
+    #[\Override] public function findRecentNotFullyMatchedToMatchCampaigns(\DateTimeImmutable $sinceDate): array
     {
         throw new \Exception("Method not implemented in test double");
     }
@@ -227,5 +232,11 @@ class InMemoryDonationRepository implements DonationRepository
             $this->donations,
             fn(Donation $d) => $d->getFundingWithdrawalTotalAsObject()->moreThan(Money::fromNumericString($d->getAmount(), $d->currency()))
         ));
+    }
+
+    #[\Override]
+    public function potentiallyCompetingDonations(Donation $donation): never
+    {
+        throw new \Exception("Method not implemented in test double");
     }
 }

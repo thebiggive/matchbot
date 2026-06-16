@@ -18,7 +18,7 @@ CREATE TABLE `DonorAccount` (
   `homeAddressLine1` varchar(255) DEFAULT NULL,
   `homePostcode` varchar(255) DEFAULT NULL,
   `billingPostcode` varchar(255) DEFAULT NULL,
-  `uuid` char(36) NOT NULL COMMENT '(DC2Type:uuid)',
+  `uuid` char(36) NOT NULL,
   `homeIsOutsideUK` tinyint(1) DEFAULT NULL,
   `organisationName` varchar(255) DEFAULT NULL,
   `isOrganisation` tinyint(1) NOT NULL,
