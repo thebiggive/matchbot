@@ -76,7 +76,6 @@ class TestCase extends PHPUnitTestCase
         'updates' => [],
         'solution' => 'do the saving',
         'bannerUri' => null,
-        'countries' => [0 => 'United Kingdom'],
         'locations' => [['countryName' => 'United Kingdom', 'regionCode' => null]],
         'isMatched' => true,
         'parentRef' => null,
@@ -86,7 +85,6 @@ class TestCase extends PHPUnitTestCase
         'amountRaised' => 0.0,
         'championName' => '',
         'currencyCode' => 'GBP',
-        'parentTarget' => null,
         'beneficiaries' => ['Animals'],
         'budgetDetails' => [
             ['amount' => 23.0, 'description' => 'Improve the code'],
@@ -162,7 +160,6 @@ class TestCase extends PHPUnitTestCase
         'bannerUri' => null,
         // These properties aren't actually used on MetaCampaign but it's only tests affected and
         // quicker to continue importing a shared type for now.
-        'countries' => [0 => 'United Kingdom',],
         'locations' => [['countryName' => 'United Kingdom', 'regionCode' => null]],
         'isMatched' => true,
         'parentRef' => null,
@@ -199,7 +196,6 @@ class TestCase extends PHPUnitTestCase
         'aims' => [],
         'budgetDetails' => [],
         'beneficiaries' => [],
-        'parentTarget' => null,
     ];
 
     /**
@@ -455,6 +451,7 @@ class TestCase extends PHPUnitTestCase
             amountRaised: Money::zero(),
             matchFundsUsed: Money::zero(),
             matchFundsTotal: $withMatchFundsTotal ?? Money::zero(),
+            target: Money::zero(),
         ));
 
         return $campaign;

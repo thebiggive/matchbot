@@ -280,7 +280,6 @@ class CreateFictionalData extends Command
             'solution' => 'do the saving',
             // in prod bannerUri is available in multiple sizes with a `width` param added by FE. Picsum will always send the image at 1700px wide.
             'bannerUri' => "https://picsum.photos/seed/$randomSeed/1700/500",
-            'countries' => [0 => 'United Kingdom'],
             'locations' => [['countryName' => 'United Kingdom', 'regionCode' => null]],
             'isMatched' => $isMatched,
             'parentRef' => $metaCampaign?->getSlug()?->slug,
@@ -290,7 +289,6 @@ class CreateFictionalData extends Command
             'amountRaised' => 0.0,
             'championName' => null,
             'currencyCode' => 'GBP',
-            'parentTarget' => null,
             'beneficiaries' => ['Animals'],
             'budgetDetails' => [
                 ['amount' => 23.0, 'description' => 'Improve the code'],

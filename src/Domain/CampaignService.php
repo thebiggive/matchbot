@@ -249,7 +249,6 @@ class CampaignService
             championOptInStatement: $sfCampaignData['championOptInStatement'],
             championRef: $sfCampaignData['championRef'],
             charity: $charityHttpModel,
-            countries: $sfCampaignData['countries'], // @todo-SO-78 remove
             currencyCode: $campaign->getCurrencyCode() ?? '',
             donationCount: $this->donationRepository->countCompleteDonationsToCampaign($campaign),
             endDate: $this->formatDate($campaign->getEndDate()),
@@ -438,6 +437,9 @@ class CampaignService
 
         $statistics = $campaign->getStatistics(); // New & zeroes if not done before.
 
+        $slug = $campaign->getMetaCampaignSlug();
+        $metaCampaign = $slug === null ? null : $this->metaCampaignRepository->getBySlug($slug);
+
         try {
             $changed = $statistics->setTotals(
                 at: $this->clock->now(),
@@ -446,6 +448,7 @@ class CampaignService
                 matchFundsUsed: $matchFundsUsed,
                 matchFundsTotal: $this->matchFundsService->getTotalFunds($campaign),
                 alwaysConsiderChanged: false,
+                target: $this->campaignTarget($campaign, $metaCampaign),
             );
         } catch (AssertionFailedException $exception) {
             $errorMessage = "Error updating statistics for campaign ID {$campaignId} ({$campaign->getSalesforceId()}): {$exception->getMessage()}";

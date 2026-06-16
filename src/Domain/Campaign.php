@@ -300,7 +300,8 @@ class Campaign extends SalesforceReadProxy
 
         $relatedApplicationStatusString = $campaignData['relatedApplicationStatus'] ?? null;
         $relatedApplicationCharityResponseToOfferString = $campaignData['relatedApplicationCharityResponseToOffer'] ?? null;
-        $campaign = new self(
+
+        return new self(
             sfId: $salesforceId,
             metaCampaignSlug: $campaignData['parentRef'],
             charity: $charity,
@@ -323,8 +324,6 @@ class Campaign extends SalesforceReadProxy
             locations: $campaignData['locations'],
             hidden: $campaignData['hidden'],
         );
-
-        return $campaign;
     }
 
     /**
