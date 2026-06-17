@@ -33,6 +33,7 @@ use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Random\Randomizer;
 use Stripe\StripeClient;
+use Symfony\Component\Clock\Clock;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -66,6 +67,7 @@ class CreateFictionalData extends Command
         private FundRepository $fundRepository,
         private Client $guzzleClient,
         private Settings $settings,
+        private Clock $clock,
     ) {
         parent::__construct(null);
     }
@@ -228,6 +230,9 @@ class CreateFictionalData extends Command
             }
         }
 
+        Assertion::notEmpty($this->campaignRepository->findCampaignsForCharityPage($charityOnRyft, $this->clock->now()));
+        Assertion::notEmpty($this->campaignRepository->findCampaignsForCharityPage($charityOnStripe, $this->clock->now()));
+
         return 0;
     }
 
@@ -319,8 +324,8 @@ class CreateFictionalData extends Command
             'championOptInStatement' => null,
             'parentMatchFundsRemaining' => null,
             'regularGivingCollectionEnd' => null,
-            'relatedApplicationStatus' => ApplicationStatus::Approved,
-            'relatedApplicationCharityResponseToOffer' => CharityResponseToOffer::Accepted,
+            'relatedApplicationStatus' => ApplicationStatus::Approved->value,
+            'relatedApplicationCharityResponseToOffer' => CharityResponseToOffer::Accepted->value,
         ];
     }
 
