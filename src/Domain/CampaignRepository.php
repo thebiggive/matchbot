@@ -653,7 +653,21 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @param array<string, string> $jsonMatchInListConditions Keyed on plural JSON key name. Value must exactly match
      *                                                         one of the items in the JSON array with the same key.
      *
+     * @param 'amountRaised'|'distanceToTarget'|'matchFundsRemaining'|'matchFundsUsed'|'relevance'|'location' $sortField
+     *
+     * @param list<string> $regions ONS codes of UK regions that contain a point of interest for the donor - expected to be
+     * nested regions that all contain one geographical point, ordered from most specific to least specific.
+     * e.g. [E09000014 ,E12000007, E92000001] for Haringey, London, England. Campaigns will be ordered by which
+     * of these they match, with priority to the earlier entries. So a campaign with stated impact in Haringey would
+     * go to the top of the list, one with impact in London as a whole or England as a whole would be boosted but not as
+     * much, and one with stated impact in e.g. the neigbhouring borough of Hackney for now will not be listed any higher
+     * than a campaign with no impact location specified or a location far away within the UK.
+     *
      * Warning - keys in $jsonMatchInListConditionsmust be literal strings otherwise there will be SQL injection vuulnerabilities.
+     *
+     * @psalm-suppress DocblockTypeContradiction
+     * @psalm-suppress InvalidCast - 'never' type is only true if we assume the docblock is respected fully.
+     * @psalm-suppress PossiblyUnusedParam - regions list will be used soon.
      *
      * @return list<Campaign>
      */
@@ -667,6 +681,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         array $jsonMatchInListConditions,
         ?string $term,
         ?string $country = null,
+        ?array $regions = [],
     ): array {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
@@ -676,7 +691,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             'matchFundsRemaining' => 'campaignStatistics.matchFundsRemaining.amountInPence',
             'matchFundsUsed' => 'campaignStatistics.matchFundsUsed.amountInPence',
             'relevance' => 'relevance',
-            default => throw new \InvalidArgumentException("Invalid sort field '$sortField'"),
+            'location' => 'campaignStatistics.amountRaised.amountInPence', //@mago-expect analysis:match-arm-always-true / todo - change to actually sort by location whhich is not really a field.
+            default => throw new \InvalidArgumentException("Invalid sort field '$sortField'"), // @mago-expect analysis:unreachable-match-default-arm
         };
 
         if ($term === null && $safeSortField === 'relevance') {

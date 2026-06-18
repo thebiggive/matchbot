@@ -71,8 +71,9 @@ class Search extends Action
         $limit = min(100, (int) ($params['limit'] ?? 20));
 
         try {
+            /** @psalm-suppress ArgumentTypeCoercion */
             $campaigns = $this->campaignRepository->search(
-                sortField: $sortField,
+                sortField: $sortField, // @mago-expect analysis:possibly-invalid-argument (search function will throw safely if given invalid arg)
                 sortDirection: $sortDirection,
                 offset: (int)($params['offset'] ?? 0),
                 limit: $limit,
