@@ -94,6 +94,27 @@ class CampaignRepositoryTest extends IntegrationTest
         $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
     }
 
+    public function testSearchWithInvalidJsonMatchFieldThrowsException(): void
+    {
+        $sut = $this->getService(CampaignRepository::class);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("Invalid JSON match field 'invalid-field!'");
+
+        $sut->search(
+            sortField: 'amountRaised',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 10,
+            metaCampaignSlug: null,
+            fundSlug: null,
+            jsonMatchInListConditions: [
+                'invalid-field!' => 'value'
+            ],
+            term: null,
+        );
+    }
+
     /**
      * @param string $query A user search query
      * @param list<array{0: string, 1: string}> $expectedResultsWithNewSearch The results that our new search system will give, as a list of campaign and charity names
@@ -215,6 +236,26 @@ class CampaignRepositoryTest extends IntegrationTest
         $em->persist($haringeyCampaign);
         $em->persist($stats);
 
+        $londonCampaign = $this->createCampaign(
+            charity: $charity,
+            name: 'Campaign For London',
+            status: CampaignStatus::Active,
+            withUniqueSalesforceId: true,
+            metaCampaignSlug: 'some-slug',
+            relatedApplicationStatus: ApplicationStatus::Approved,
+            relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted
+        );
+
+        $londonCampaign->replaceLocations([
+            ['countryName' => 'uk', 'regionCode' => null],
+            ['countryName' => null, 'regionCode' => 'E12000007'],
+            ['countryName' => null, 'regionCode' => 'E92000001'],
+        ]);
+        $stats = CampaignStatistics::zeroPlaceholder($londonCampaign, new \DateTimeImmutable('now'));
+
+        $em->persist($londonCampaign);
+        $em->persist($stats);
+
         $em->flush();
 
         $returnValue = $sut->search(
@@ -234,7 +275,7 @@ class CampaignRepositoryTest extends IntegrationTest
             $returnValue
         );
 
-        $this->assertSame(['Campaign For Haringey', 'Campaign For UK'], $returnCampaignNames);
+        $this->assertSame(['Campaign For Haringey', 'Campaign For London', 'Campaign For UK'], $returnCampaignNames);
     }
 
     private function getCharityAwaitingGiftAidApproval(): Charity
