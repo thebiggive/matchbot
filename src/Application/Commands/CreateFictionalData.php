@@ -33,6 +33,7 @@ use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Random\Randomizer;
 use Stripe\StripeClient;
+use Symfony\Component\Clock\Clock;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -46,6 +47,10 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * a payment intent. For now an account used for testing beyond that point will need to be fetched from Salesforce.
  *
  * @psalm-import-type SFCampaignApiResponse from CampaignClient
+ *
+ *
+ * @mago-expect lint:cyclomatic-complexity
+ * @mago-expect lint:no-else-clause
  */
 #[AsCommand(
     name: 'matchbot:create-fictional-data',
@@ -66,6 +71,7 @@ class CreateFictionalData extends Command
         private FundRepository $fundRepository,
         private Client $guzzleClient,
         private Settings $settings,
+        private Clock $clock,
     ) {
         parent::__construct(null);
     }
@@ -141,6 +147,11 @@ class CreateFictionalData extends Command
     #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        // seed random number genrators with fixed values so we get repeatable results:
+        \srand(0);
+        \mt_srand(0);
+
+
         Assertion::false(Environment::current()->isProduction());
 
         $io = new SymfonyStyle($input, $output);
@@ -228,6 +239,9 @@ class CreateFictionalData extends Command
             }
         }
 
+        Assertion::notEmpty($this->campaignRepository->findCampaignsForCharityPage($charityOnRyft, $this->clock->now()));
+        Assertion::notEmpty($this->campaignRepository->findCampaignsForCharityPage($charityOnStripe, $this->clock->now()));
+
         return 0;
     }
 
@@ -237,17 +251,21 @@ class CreateFictionalData extends Command
      */
     public function getFictionalCampaigns(MetaCampaign $metaCampaign): array
     {
-        return [
-            $this->getFictionalCampaignData('000000000000000001', 'Save Matchbot', true, true, $metaCampaign),
-            $this->getFictionalCampaignData('000000000000000002', 'Save Donate Frontend', true, false, $metaCampaign),
-            $this->getFictionalCampaignData('000000000000000003', 'Save Salesforce', false, true, $metaCampaign),
-            $this->getFictionalCampaignData('000000000000000004', 'Save Identity', false, false, $metaCampaign),
-            $this->getFictionalCampaignData('000000000000000005', 'Save Barney\'s Keyboard', false, true, $metaCampaign),
-            $this->getFictionalCampaignData('000000000000000006', 'Replace Barney\'s Keyboard with a silent one', false, false, $metaCampaign),
-            $this->getFictionalCampaignData('000000000000000007', 'Implement generics in PHP', false, true, $metaCampaign),
-            $this->getFictionalCampaignData('000000000000000008', 'Implement open source Apex compiler', false, false, $metaCampaign),
-            $this->getFictionalCampaignData('000000000000000009', 'Save Regtest', false, true, $metaCampaign),
-        ];
+        $campaigns = [];
+
+        foreach (range(1, 5) as $i) {
+                $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}1", 'Save Matchbot ' . $i, true, true, $metaCampaign);
+                $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}2", 'Save Donate Frontend ' . $i, true, false, $metaCampaign);
+                $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}3", 'Save Salesforce ' . $i, false, true, $metaCampaign);
+                $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}4", 'Save Identity ' . $i, false, false, $metaCampaign);
+                $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}5", 'Save Barney\'s Keyboard ' . $i, false, true, $metaCampaign);
+                $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}6", 'Replace Barney\'s Keyboard with a silent one ' . $i, false, false, $metaCampaign);
+                $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}7", 'Implement generics in PHP ' . $i, false, true, $metaCampaign);
+                $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}8", 'Implement open source Apex compiler ' . $i, false, false, $metaCampaign);
+                $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}9", 'Save Regtest ' . $i, false, true, $metaCampaign);
+        }
+
+        return $campaigns;
     }
 
     /**
@@ -259,6 +277,19 @@ class CreateFictionalData extends Command
     private function getFictionalCampaignData(string $sfId, string $name, bool $isRegularGiving, bool $isMatched, ?MetaCampaign $metaCampaign): array
     {
         $randomSeed = \random_int(1, 100);
+
+        $regions = [];
+        $regionRandomizer = \random_int(1, 100);
+
+        if ($regionRandomizer < 10) {
+            $regions[] = ['countryName' => null, 'regionCode' => 'E09000033']; // City of Westminister
+        } elseif ($regionRandomizer < 25) {
+            $regions[] = ['countryName' => null, 'regionCode' => 'E09000014']; // Haringey
+        } elseif ($regionRandomizer < 50) {
+            $regions[] = ['countryName' => null, 'regionCode' => 'E12000007']; // London
+        }
+        // for full list of possible UK regions see `ONS_wards_to_larger.csv` resource in Salesforce.
+
 
         // @mago-expect analysis:invalid-return-statement
         return [ // @phpstan-ignore return.type
@@ -280,7 +311,10 @@ class CreateFictionalData extends Command
             'solution' => 'do the saving',
             // in prod bannerUri is available in multiple sizes with a `width` param added by FE. Picsum will always send the image at 1700px wide.
             'bannerUri' => "https://picsum.photos/seed/$randomSeed/1700/500",
-            'locations' => [['countryName' => 'United Kingdom', 'regionCode' => null]],
+            'locations' => [
+                ['countryName' => 'United Kingdom', 'regionCode' => null],
+                ...$regions,
+            ],
             'isMatched' => $isMatched,
             'parentRef' => $metaCampaign?->getSlug()?->slug,
             'startDate' => '2015-08-01T00:00:00.000Z',
@@ -319,8 +353,8 @@ class CreateFictionalData extends Command
             'championOptInStatement' => null,
             'parentMatchFundsRemaining' => null,
             'regularGivingCollectionEnd' => null,
-            'relatedApplicationStatus' => ApplicationStatus::Approved,
-            'relatedApplicationCharityResponseToOffer' => CharityResponseToOffer::Accepted,
+            'relatedApplicationStatus' => ApplicationStatus::Approved->value,
+            'relatedApplicationCharityResponseToOffer' => CharityResponseToOffer::Accepted->value,
         ];
     }
 
