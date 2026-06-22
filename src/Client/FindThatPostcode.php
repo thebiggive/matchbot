@@ -5,8 +5,8 @@ namespace MatchBot\Client;
 use BcMath\Number;
 use MatchBot\Domain\PostCode;
 
-interface FindThatPostcode {
-
+interface FindThatPostcode
+{
     /**
      * Given a postcode, returns a list of ONS region details for the regions of the UK that contain this postcode, in
      * order from most specific to least specific.
@@ -17,12 +17,16 @@ interface FindThatPostcode {
      * E.g. for
      *
      * @param PostCode $postcode
-     * @return list<string>
+     * @return list<array{'code': string, 'name': string}>
+     *
+     * @psalm-suppress PossiblyUnusedMethod - to use soon
      */
-    public function getDataOnPostcode(Postcode $postcode): array;
+    public function getDataOnPostcode(PostCode $postcode): array;
 
     /**
-     * @return @return list<string>
+     * @return list<array{'code': string, 'name': string}>
+     *
+     * @psalm-suppress PossiblyUnusedMethod - to use soon
      */
     public function getDataOnPoint(Number $lattitude, Number $longitude): array;
 }
