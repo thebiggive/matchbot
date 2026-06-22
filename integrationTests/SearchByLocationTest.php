@@ -26,7 +26,7 @@ class SearchByLocationTest extends IntegrationTest
 
         $slug = self::randomSlug();
 
-        $campaign = $this->createCampaign(
+        $UKCampaign = $this->createCampaign(
             charity: $charity,
             name: 'Campaign For UK',
             status: CampaignStatus::Active,
@@ -36,13 +36,32 @@ class SearchByLocationTest extends IntegrationTest
             relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted
         );
 
-        $campaign->replaceLocations([
+        $UKCampaign->replaceLocations([
             ['countryName' => 'uk', 'regionCode' => null],
         ]);
-        $stats = CampaignStatistics::zeroPlaceholder($campaign, new \DateTimeImmutable('now'));
+        $stats = CampaignStatistics::zeroPlaceholder($UKCampaign, new \DateTimeImmutable('now'));
 
-        $em->persist($campaign);
+        $em->persist($UKCampaign);
         $em->persist($stats);
+
+        $londonCampaign = $this->createCampaign(
+            charity: $charity,
+            name: 'Campaign For London',
+            status: CampaignStatus::Active,
+            withUniqueSalesforceId: true,
+            metaCampaignSlug: $slug,
+            relatedApplicationStatus: ApplicationStatus::Approved,
+            relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted
+        );
+
+        $londonCampaign->replaceLocations([
+            ['countryName' => 'uk', 'regionCode' => null],
+            ['countryName' => null, 'regionCode' => 'E12000007'],
+        ]);
+        $stats = CampaignStatistics::zeroPlaceholder($londonCampaign, new \DateTimeImmutable('now'));
+        $em->persist($stats);
+
+        $em->persist($londonCampaign);
 
         $haringeyCampaign = $this->createCampaign(
             charity: $charity,
@@ -61,25 +80,7 @@ class SearchByLocationTest extends IntegrationTest
         $stats = CampaignStatistics::zeroPlaceholder($haringeyCampaign, new \DateTimeImmutable('now'));
 
         $em->persist($haringeyCampaign);
-        $em->persist($stats);
 
-        $londonCampaign = $this->createCampaign(
-            charity: $charity,
-            name: 'Campaign For London',
-            status: CampaignStatus::Active,
-            withUniqueSalesforceId: true,
-            metaCampaignSlug: $slug,
-            relatedApplicationStatus: ApplicationStatus::Approved,
-            relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted
-        );
-
-        $londonCampaign->replaceLocations([
-            ['countryName' => 'uk', 'regionCode' => null],
-            ['countryName' => null, 'regionCode' => 'E12000007'],
-        ]);
-        $stats = CampaignStatistics::zeroPlaceholder($londonCampaign, new \DateTimeImmutable('now'));
-
-        $em->persist($londonCampaign);
         $em->persist($stats);
 
         $em->flush();
