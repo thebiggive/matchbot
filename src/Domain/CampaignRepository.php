@@ -139,6 +139,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
+            forInternalUpdate: true, // Don't skip non-isPublished ones etc.
         );
 
         $campaignIds = array_map(function (Campaign $campaign) {
@@ -545,10 +546,15 @@ class CampaignRepository extends SalesforceReadProxyRepository
         bool $filterOutTargetMet,
         ?string $term,
         ?string $country,
+        bool $forInternalUpdate,
     ): array|null {
-        $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
-        $qb->andWhere($qb->expr()->eq('campaign.isPublished', '1'));
-        $qb->andWhere($qb->expr()->eq('campaign.isMatched', '1'));
+        // We need to be able to pull previously not-published campaigns in on demand, to tell when they're published
+        // and fix data drift if necessary.
+        if (!$forInternalUpdate) {
+            $qb->andWhere($qb->expr()->eq('campaign.isMatched', '1'));
+            $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
+            $qb->andWhere($qb->expr()->eq('campaign.isPublished', '1'));
+        }
 
         if ($metaCampaignSlug === null) {
             $qb->andWhere($qb->expr()->gt('campaign.endDate', ':now'));
@@ -718,6 +724,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $term,
         ?string $country = null,
         ?array $regions = [],
+        bool $forInternalUpdate = false,
     ): array {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
@@ -769,6 +776,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             filterOutTargetMet: $filterOutTargetMet,
             term: $term,
             country: $country,
+            forInternalUpdate: $forInternalUpdate,
         );
 
         $this->sortForSearch(
