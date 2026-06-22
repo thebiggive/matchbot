@@ -228,8 +228,6 @@ class CampaignRepositoryTest extends IntegrationTest
         $haringeyCampaign->replaceLocations([
             ['countryName' => 'uk', 'regionCode' => null],
             ['countryName' => null, 'regionCode' => 'E09000014'],
-            ['countryName' => null, 'regionCode' => 'E12000007'],
-            ['countryName' => null, 'regionCode' => 'E92000001'],
         ]);
         $stats = CampaignStatistics::zeroPlaceholder($haringeyCampaign, new \DateTimeImmutable('now'));
 
@@ -249,7 +247,6 @@ class CampaignRepositoryTest extends IntegrationTest
         $londonCampaign->replaceLocations([
             ['countryName' => 'uk', 'regionCode' => null],
             ['countryName' => null, 'regionCode' => 'E12000007'],
-            ['countryName' => null, 'regionCode' => 'E92000001'],
         ]);
         $stats = CampaignStatistics::zeroPlaceholder($londonCampaign, new \DateTimeImmutable('now'));
 
