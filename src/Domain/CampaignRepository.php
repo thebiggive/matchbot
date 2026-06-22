@@ -660,12 +660,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 // duplicate entries for the same location in campaign data.
                 $locationMatchCountSelect = '';
             foreach ($locationsOfInterest as $i => $regionCode) {
-                $locationMatchCountSelect .= "CASE WHEN (SUM(CASE WHEN campaignLocation.regionCode = :regionCode_$i THEN 1 ELSE 0 END) > 0) THEN 1 ELSE 0 END + ";
-                $qb->setParameter("regionCode_$i", $regionCode);
+                $locationMatchCountSelect .= "CASE WHEN (SUM(CASE WHEN campaignLocation.regionCode = :regionCode_{$i} THEN 1 ELSE 0 END) > 0) THEN 1 ELSE 0 END + ";
+                $qb->setParameter("regionCode_{$i}", $regionCode);
             }
                 $locationMatchCountSelect = rtrim($locationMatchCountSelect, ' + ');
 
-                $qb->addSelect("($locationMatchCountSelect) AS HIDDEN locationMatchCount");
+                $qb->addSelect("({$locationMatchCountSelect}) AS HIDDEN locationMatchCount");
                 $qb->addOrderBy('locationMatchCount', 'DESC');
         } else {
             $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
@@ -697,6 +697,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * Warning - keys in $jsonMatchInListConditionsmust be literal strings otherwise there will be SQL injection vuulnerabilities.
      *
      * @psalm-suppress DocblockTypeContradiction
+     * @mago-expect lint:excessive-parameter-list - consider reducing parameter list
      *
      * @return list<Campaign>
      */

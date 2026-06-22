@@ -15,7 +15,8 @@ use MatchBot\Tests\TestCase;
 /**
  * Test scenarios relating to searching for campaigns by location of impact
  */
-class SearchByLocationTest extends IntegrationTest {
+class SearchByLocationTest extends IntegrationTest
+{
     public function testSearchSortsByLocation(): void
     {
         $sut = $this->getService(CampaignRepository::class);
@@ -23,12 +24,14 @@ class SearchByLocationTest extends IntegrationTest {
 
         $charity = TestCase::someCharity();
 
+        $slug = self::randomSlug();
+
         $campaign = $this->createCampaign(
             charity: $charity,
             name: 'Campaign For UK',
             status: CampaignStatus::Active,
             withUniqueSalesforceId: true,
-            metaCampaignSlug: 'some-slug',
+            metaCampaignSlug: $slug,
             relatedApplicationStatus: ApplicationStatus::Approved,
             relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted
         );
@@ -46,7 +49,7 @@ class SearchByLocationTest extends IntegrationTest {
             name: 'Campaign For Haringey',
             status: CampaignStatus::Active,
             withUniqueSalesforceId: true,
-            metaCampaignSlug: 'some-slug',
+            metaCampaignSlug: $slug,
             relatedApplicationStatus: ApplicationStatus::Approved,
             relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted
         );
@@ -65,7 +68,7 @@ class SearchByLocationTest extends IntegrationTest {
             name: 'Campaign For London',
             status: CampaignStatus::Active,
             withUniqueSalesforceId: true,
-            metaCampaignSlug: 'some-slug',
+            metaCampaignSlug: $slug,
             relatedApplicationStatus: ApplicationStatus::Approved,
             relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted
         );
@@ -87,7 +90,7 @@ class SearchByLocationTest extends IntegrationTest {
             regions: ['E09000014','E12000007', 'E92000001'],
             offset: 0,
             limit: 6,
-            metaCampaignSlug: 'some-slug',
+            metaCampaignSlug: $slug,
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
@@ -100,5 +103,4 @@ class SearchByLocationTest extends IntegrationTest {
 
         $this->assertSame(['Campaign For Haringey', 'Campaign For London', 'Campaign For UK'], $returnCampaignNames);
     }
-
 }

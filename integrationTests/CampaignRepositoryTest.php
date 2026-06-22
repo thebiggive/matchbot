@@ -154,13 +154,15 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $charity = TestCase::someCharity();
 
+        $slug = self::randomSlug();
+
         foreach ([CampaignStatus::Expired, CampaignStatus::Active, CampaignStatus::Preview] as $status) {
             $campaign = $this->createCampaign(
                 charity: $charity,
                 name: 'Campaign ' . $status->value,
                 status: $status,
                 withUniqueSalesforceId: true,
-                metaCampaignSlug: 'some-slug',
+                metaCampaignSlug: $slug,
                 relatedApplicationStatus: ApplicationStatus::Approved,
                 relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted
             );
@@ -175,7 +177,7 @@ class CampaignRepositoryTest extends IntegrationTest
             sortDirection: 'desc',
             offset: 0,
             limit: 6,
-            metaCampaignSlug: 'some-slug',
+            metaCampaignSlug: $slug,
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
