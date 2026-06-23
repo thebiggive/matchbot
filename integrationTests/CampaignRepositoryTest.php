@@ -94,6 +94,27 @@ class CampaignRepositoryTest extends IntegrationTest
         $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
     }
 
+    public function testSearchWithInvalidJsonMatchFieldThrowsException(): void
+    {
+        $sut = $this->getService(CampaignRepository::class);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("Invalid JSON match field 'invalid-field!'");
+
+        $sut->search(
+            sortField: 'amountRaised',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 10,
+            metaCampaignSlug: null,
+            fundSlug: null,
+            jsonMatchInListConditions: [
+                'invalid-field!' => 'value'
+            ],
+            term: null,
+        );
+    }
+
     /**
      * @param string $query A user search query
      * @param list<array{0: string, 1: string}> $expectedResultsWithNewSearch The results that our new search system will give, as a list of campaign and charity names
@@ -133,13 +154,15 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $charity = TestCase::someCharity();
 
+        $slug = self::randomSlug();
+
         foreach ([CampaignStatus::Expired, CampaignStatus::Active, CampaignStatus::Preview] as $status) {
             $campaign = $this->createCampaign(
                 charity: $charity,
                 name: 'Campaign ' . $status->value,
                 status: $status,
                 withUniqueSalesforceId: true,
-                metaCampaignSlug: 'some-slug',
+                metaCampaignSlug: $slug,
                 relatedApplicationStatus: ApplicationStatus::Approved,
                 relatedApplicationCharityResponseToOffer: CharityResponseToOffer::Accepted
             );
@@ -154,7 +177,7 @@ class CampaignRepositoryTest extends IntegrationTest
             sortDirection: 'desc',
             offset: 0,
             limit: 6,
-            metaCampaignSlug: 'some-slug',
+            metaCampaignSlug: $slug,
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
