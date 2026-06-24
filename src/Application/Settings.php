@@ -89,7 +89,7 @@ class Settings
 
         $this->apiClient = [
             'global' => [
-                'timeout' => $this->getStringEnv($env, 'SALESFORCE_CLIENT_TIMEOUT', false), // in seconds
+                'timeout' => $this->getNumericStringEnv($env, 'SALESFORCE_CLIENT_TIMEOUT'), // in seconds
             ],
             'salesforce' => [
                 'baseUri' => $this->getStringEnv($env, 'SALESFORCE_API_BASE', false),
@@ -236,6 +236,20 @@ class Settings
             return "Env var $varName not set";
         }
 
+
+        return $value;
+    }
+
+    /**
+     * @param array<string, string> $env
+     */
+    private function getNumericStringEnv(array $env, string $varName): string
+    {
+        $value = $this->getStringEnv(env: $env, varName: $varName, throwIfMissing: true);
+
+        if (! is_numeric($value)) {
+            throw new \Exception("Required environment variable $varName is missing.");
+        }
 
         return $value;
     }
