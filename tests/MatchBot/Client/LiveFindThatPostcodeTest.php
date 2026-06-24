@@ -20,148 +20,23 @@ class LiveFindThatPostcodeTest extends TestCase
         // the sort of regions we'd be interested in, and hopefully somethign we can sort on to make sure they're ordered
         // from most to least specific.
 
-        self::assertEquals($processed, [
-        [
-        'name' => '',
-        'code' => 'E00023938',
-        ],
-        [
-        'name' => 'Inner London',
-        'code' => 'E13000001',
-        ],
-        [
-        'name' => 'Westminster',
-        'code' => 'E09000033',
-        ],
-        [
-        'name' => 'St James\'s',
-        'code' => 'E05013806',
-        ],
-        [
-        'name' => 'London',
-        'code' => 'E18000007',
-        ],
-        [
-        'name' => 'London',
-        'code' => 'E40000003',
-        ],
-        [
-        'name' => 'England',
-        'code' => 'E92000001',
-        ],
-        [
-        'name' => 'London',
-        'code' => 'E12000007',
-        ],
-        [
-        'name' => 'Cities of London and Westminster',
-        'code' => 'E14001172',
-        ],
-        [
-        'name' => 'London',
-        'code' => 'E15000007',
-        ],
-        [
-        'name' => 'London Central',
-        'code' => 'E24000014',
-        ],
-        [
-        'name' => 'London',
-        'code' => 'E30000234',
-        ],
-        [
-        'name' => 'Westminster',
-        'code' => 'E16000057',
-        ],
-        [
-        'name' => 'Westminster',
-        'code' => 'E09000033',
-        ],
-        [
-        'name' => 'England Non-National Park Area',
-        'code' => 'E65000001',
-        ],
-        [
-        'name' => 'Westminster 018C',
-        'code' => 'E01004736',
-        ],
-        [
-        'name' => 'Strand, St James & Mayfair',
-        'code' => 'E02000977',
-        ],
-        [
-        'name' => '',
-        'code' => 'E33031119',
-        ],
-        [
-        'name' => 'NHS North West London ICB - W2U3Z',
-        'code' => 'E38000256',
-        ],
-        [
-        'name' => 'Greater London BUA',
-        'code' => 'E34004707',
-        ],
-        [
-        'name' => 'City of Westminster BUASD',
-        'code' => 'E35000546',
-        ],
-        [
-        'name' => 'The London Economic Action Partnership',
-        'code' => 'E37000051',
-        ],
-        [
-        'name' => 'Metropolitan Police',
-        'code' => 'E23000001',
-        ],
-        [
-        'name' => 'North West and South West London',
-        'code' => 'E56000021',
-        ],
-        [
-        'name' => 'NHS North West London Integrated Care Board',
-        'code' => 'E54000027',
-        ],
-        [
-        'name' => 'Westminster 018C',
-        'code' => 'E01004736',
-        ],
-        [
-        'name' => '',
-        'code' => 'E00023938',
-        ],
-        [
-        'name' => 'Strand, St James & Mayfair',
-        'code' => 'E02000977',
-        ],
-        [
-        'name' => 'NHS North West London Integrated Care Board',
-        'code' => 'E54000027',
-        ],
-        [
-        'name' => 'NHS North West London ICB - W2U3Z',
-        'code' => 'E38000256',
-        ],
-        [
-        'name' => 'City of Westminster',
-        'code' => 'E63004916',
-        ],
-        [
-        'name' => 'England Non-National Park Area',
-        'code' => 'E65000001',
-        ],
-        [
-        'name' => 'City of Westminster',
-        'code' => 'E63012036',
-        ],
-        [
-        'name' => 'St James\'s',
-        'code' => 'E05013806',
-        ],
-        [
-        'name' => 'Westminster',
-        'code' => 'E09000033',
-        ],
-        ]);
+        self::assertEquals([
+                [
+                    'name' => 'St James\'s',
+                    'code' => 'E05013806',
+                ],
+                [
+                    'name' => 'Westminster',
+                    'code' => 'E09000033',
+                ],
+                [
+                    'name' => 'London',
+                    'code' => 'E12000007',
+                ],
+                [
+                    'name' => 'England',
+                    'code' => 'E92000001',
+                ]], $processed);
     }
 
     /** @var string
