@@ -14,6 +14,7 @@ class SettingsTest extends TestCase
         'MYSQL_USER' => '',
         'MYSQL_PASSWORD' => '',
         'REDIS_HOST' => 'x',
+        'SALESFORCE_CLIENT_TIMEOUT' => '5',
     ];
 
     public function testItInstantiatesWithMinmialRequiredEnvironmentSettings(): void

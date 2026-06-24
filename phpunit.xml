@@ -55,6 +55,7 @@
     <env name="MYSQL_SCHEMA" value="" force="false"/>
     <env name="MYSQL_USER" value="" force="false"/>
     <env name="MYSQL_PASSWORD" value="" force="false"/>
+    <env name="SALESFORCE_CLIENT_TIMEOUT" value="5" force="true"/>
     <env name="SLACK_CHANNEL" value="" force="false"/>
     <env name="SLACK_API_TOKEN" value="xoxb-**-test" />
     <env name="STRIPE_SECRET_KEY" value="sk_test_unitTestFakeKey" force="true"/>
