@@ -242,13 +242,14 @@ class Settings
 
     /**
      * @param array<string, string> $env
+     * @return numeric-string
      */
     private function getNumericStringEnv(array $env, string $varName): string
     {
         $value = $this->getStringEnv(env: $env, varName: $varName, throwIfMissing: true);
 
         if (! is_numeric($value)) {
-            throw new \Exception("Required environment variable $varName is missing.");
+            throw new \Exception("Required environment variable $varName is missing or not numeric.");
         }
 
         return $value;
