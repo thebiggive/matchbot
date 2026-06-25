@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
 namespace MatchBot\Client;
 
 use BcMath\Number;
 use MatchBot\Application\Assertion;
-use MatchBot\Client\FindThatPostcode;
 use MatchBot\Domain\PostCode;
 use Override;
 
@@ -98,18 +98,15 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
 
         // filter out areas that do not have three letter prefixes of interest to us.
         $areasToReturn = $areasToReturn
-            |> (fn($areas) => \array_filter($areas, callback: fn (array $area) => \in_array(needle: \mb_substr($area['code'], 0, 3), haystack: self::REGION_PREFIXES, strict: true)))
+            |> (static fn($areas) => \array_filter($areas, callback: static fn (array $area) => \in_array(needle: \mb_substr($area['code'], 0, 3), haystack: self::REGION_PREFIXES, strict: true)))
             ;
 
         // sort by specificity of region.
-        usort($areasToReturn, function (array $a, array $b) {
-            return \array_search(\mb_substr($a['code'], 0, 3), self::REGION_PREFIXES) <=> \array_search(\mb_substr($b['code'], 0, 3), self::REGION_PREFIXES);
-        });
+        usort($areasToReturn, static fn(array $a, array $b) =>
+            \array_search(\mb_substr($a['code'], 0, 3), self::REGION_PREFIXES, strict: true) <=> \array_search(\mb_substr($b['code'], 0, 3), self::REGION_PREFIXES, strict: true));
 
         // remove duplicates
-        $areasToReturn = self::uniqueMultidimArray($areasToReturn, 'code'); // not sure why there are duplicate values in the data I pulled from FTP.
-
-        return $areasToReturn;
+        return self::uniqueMultidimArray($areasToReturn, 'code'); // not sure why there are duplicate values in the data I pulled from FTP.
     }
 
 
@@ -124,7 +121,7 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
         $key_array = [];
 
         foreach ($array as $val) {
-            if (!in_array($val[$key], $key_array)) {
+            if (!in_array($val[$key], $key_array, strict: true)) {
                 $key_array[$i] = $val[$key];
                 $temp_array[$i] = $val;
             }
