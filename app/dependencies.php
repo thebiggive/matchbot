@@ -222,6 +222,10 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Donation($c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
+        Client\FindThatPostcode::class => function (ContainerInterface $c): Client\FindThatPostcode {
+            return $c->get(Client\LiveFindThatPostcode::class);
+        },
+
         Client\Mandate::class => function (ContainerInterface $c): Client\Mandate {
             return new Client\Mandate($c->get(Settings::class), $c->get(LoggerInterface::class));
         },

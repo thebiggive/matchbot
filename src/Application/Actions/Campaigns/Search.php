@@ -2,9 +2,11 @@
 
 namespace MatchBot\Application\Actions\Campaigns;
 
+use BcMath\Number;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
+use MatchBot\Client\FindThatPostcode;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
@@ -22,6 +24,7 @@ class Search extends Action
         LoggerInterface $logger,
         private CampaignRepository $campaignRepository,
         private CampaignService $campaignService,
+        private FindThatPostcode $findThatPostcode,
     ) {
         parent::__construct($logger);
     }
@@ -35,6 +38,24 @@ class Search extends Action
         $term = $params['term'] ?? null;
         /** @var ?string $country */
         $country = $params['country'] ?? null;
+
+        $lattitude = $params['lattitude'] ?? null;
+        $longitude = $params['longitude'] ?? null;
+
+        if ($sortField === 'location') {
+            Assertion::numeric($lattitude);
+            Assertion::numeric($longitude);
+            Assertion::string($lattitude);
+            Assertion::string($longitude);
+
+            $regions = $this->findThatPostcode->getDataOnPoint(new Number($lattitude), new Number($longitude))
+                |> (static fn(array $regions) => \array_map(static fn(array $region) => $region['code'], $regions));
+        } else {
+            $regions = [];
+        }
+
+        Assertion::same(\is_null($lattitude), \is_null($longitude));
+
         Assertion::string($sortDirection);
         Assertion::string($sortField);
         Assertion::nullOrString($term);
@@ -82,6 +103,7 @@ class Search extends Action
                 jsonMatchInListConditions: $jsonMatchInListConditions,
                 term: $term,
                 country: $country,
+                regions: $regions,
             );
         } catch (\InvalidArgumentException $exception) {
             throw new HttpBadRequestException($request, $exception->getMessage(), $exception);
