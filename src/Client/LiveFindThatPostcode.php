@@ -124,8 +124,7 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
 
 
     /**
-     * Based on comment at https://www.php.net/manual/en/function.array-unique.php by
-     * Ghanshyam Katriya
+     * Based on `array_unique()` {@link https://www.php.net/manual/en/function.array-unique.php#116302} comment by Ghanshyam Katriya}
      *
      * @psalm-suppress MixedAssignment
      *
