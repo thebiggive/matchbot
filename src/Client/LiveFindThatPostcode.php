@@ -22,13 +22,14 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
      * Based on table at  https://en.wikipedia.org/wiki/GSS_coding_system
      */
     public const array REGION_PREFIXES = [
-        'E05', // England Ward or Electoral Division
-        'W05', // Wales Ward or Electoral Division
-        'S13', // Scotland Ward or Electoral Division
-        'N08', // Northern Ireland Ward or Electoral Division
+        'E07', // England Non-Metropolitan District (two-tier)
+        'E08', // England Metropolitan Borough
+        'E10', // England County
+        'W06', // Wales Unitary Authority
+        'S12', // Scotland Unitary Authority
+        'N09', // Northern Local Government Districts
         'E06', // England Unitary Authority
         'E09', // London Borough
-        'E06', // England Unitary Authority
         'E12', // English Region
         'E92', // England Country
         'W92', // Wales Country

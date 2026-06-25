@@ -22,10 +22,6 @@ class LiveFindThatPostcodeTest extends TestCase
 
         self::assertEquals([
                 [
-                    'name' => 'St James\'s',
-                    'code' => 'E05013806',
-                ],
-                [
                     'name' => 'Westminster',
                     'code' => 'E09000033',
                 ],
