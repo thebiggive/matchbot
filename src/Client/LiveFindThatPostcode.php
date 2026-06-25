@@ -63,8 +63,17 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
     #[Override]
     public function getDataOnPoint(Number $lattitude, Number $longitude): array
     {
-        // TODO: Implement getDataOnPoint() method.
-        return [];
+        $uri = "https://findthatpostcode.uk/points/{$lattitude->value},{$longitude->value}.json";
+
+        $response = $this->getHttpClient()->request('GET', $uri);
+
+        $body = $response->getBody()->getContents();
+
+        $decoded = \json_decode($body, flags: \JSON_THROW_ON_ERROR, associative: true);
+
+        Assertion::isArray($decoded);
+
+        return self::parseFindThatPostcodeResponse($decoded);
     }
 
     /**
@@ -104,9 +113,9 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
 
         foreach ($included as $include) {
             $code = $include['attributes']['code'] ?? null; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
-            $name = $include['attributes']['name']; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
+            $name = $include['attributes']['name'] ?? null; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
 
-            if ($code === null) {
+            if ($code === null || $name === null) {
                 continue;
             }
 
