@@ -26,7 +26,6 @@ interface FindThatPostcode
     /**
      * @return list<array{'code': string, 'name': string}>
      *
-     * @psalm-suppress PossiblyUnusedMethod - to use soon
      */
     public function getDataOnPoint(Number $lattitude, Number $longitude): array;
 }

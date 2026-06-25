@@ -7,6 +7,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
 use MatchBot\Client\FindThatPostcode;
+use MatchBot\Client\PointOutsideUK;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
@@ -43,13 +44,20 @@ class Search extends Action
         $longitude = $params['longitude'] ?? null;
 
         if ($sortField === 'location') {
-            Assertion::numeric($lattitude);
-            Assertion::numeric($longitude);
-            Assertion::string($lattitude);
+            Assertion::numeric($lattitude, 'Numeric lattitude and longitude must be supplied for location-based search');
+            Assertion::numeric($longitude, 'Numeric lattitude and longitude must be supplied for location-based search');
             Assertion::string($longitude);
+            Assertion::string($lattitude);
 
-            $regions = $this->findThatPostcode->getDataOnPoint(new Number($lattitude), new Number($longitude))
-                |> (static fn(array $regions) => \array_map(static fn(array $region) => $region['code'], $regions));
+            try {
+                /** @var list<string> $regions
+                 * @mago-expect analysis:no-value,no-value,mixed-return-statement - mago seems to wrongly think the intersection of numeric and string is never.
+                 * @psalm-suppress MixedReturnStatement
+                 * */
+                $regions = $this->findThatPostcode->getDataOnPoint(new Number($lattitude), new Number($longitude)) |> (static fn(array $regions): array => \array_map(static fn(array $region): string => $region['code'], $regions));
+            } catch (PointOutsideUK $exception) {
+                throw new HttpBadRequestException($request, $exception->getMessage());
+            }
         } else {
             $regions = [];
         }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Client;
 
 use BcMath\Number;
+use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\PostCode;
 use Override;
@@ -59,17 +60,42 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
 
     /**
      * @inheritDoc
+     *
+     * @psalm-suppress MixedArrayAccess, MixedAssignment
      */
     #[Override]
     public function getDataOnPoint(Number $lattitude, Number $longitude): array
     {
         $uri = "https://findthatpostcode.uk/points/{$lattitude->value},{$longitude->value}.json";
 
-        $response = $this->getHttpClient()->request('GET', $uri);
+        try {
+            $response = $this->getHttpClient()->request('GET', $uri);
+        } catch (RequestException $requestException) {
+            $response = $requestException->getResponse();
+            if ($response === null) {
+                throw $requestException;
+            }
+
+            $content = $response->getBody()->getContents();
+            if (! \json_validate($content)) {
+                throw $requestException;
+            }
+
+            $responseData = \json_decode($content, associative: true, flags: \JSON_THROW_ON_ERROR);
+
+            $error = $responseData['message']['errors'][0] ?? []; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
+            $errorCode = $error['code'] ?? null; // @phpstan-ignore offsetAccess.nonOffsetAccessible
+
+            if ($errorCode === 'point_outside_uk') {
+                throw new PointOutsideUK((string)($error['title'] ?? '')); // @phpstan-ignore offsetAccess.nonOffsetAccessible, cast.string
+            }
+
+            throw $requestException;
+        }
 
         $body = $response->getBody()->getContents();
 
-        $decoded = \json_decode($body, flags: \JSON_THROW_ON_ERROR, associative: true);
+        $decoded = \json_decode($body, associative: true, flags: \JSON_THROW_ON_ERROR);
 
         Assertion::isArray($decoded);
 
