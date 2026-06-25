@@ -56,8 +56,10 @@ abstract class Common
     protected function getHttpClient(): Client
     {
         if ($this->httpClient === null) {
+            // Odd deprecation handling, at least in Staging, makes a string `timeout` break with Guzzle v7, even
+            // though is it only deprecated for removal in v8.
             $this->httpClient = new Client([
-                'timeout' => $this->clientSettings['global']['timeout'],
+                'timeout' => (int) $this->clientSettings['global']['timeout'],
             ]);
         }
 

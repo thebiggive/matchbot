@@ -601,4 +601,9 @@ abstract class IntegrationTest extends TestCase
     {
         return TestCaseAlias::randomString();
     }
+
+    protected static function randomSlug(): string
+    {
+        return (new Randomizer())->getBytesFromString('abcdef', 6) . '-' . \random_int(1000, 2050);
+    }
 }
