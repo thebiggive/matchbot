@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace MatchBot\Client;
 
 use BcMath\Number;
@@ -75,6 +76,8 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
      * @mago-expect analysis:invalid-return-statement
      * @mago-expect analysis:mixed-argument
      * @mago-expect analysis:possibly-false-operand
+     * @mago-expect analysis:less-specific-nested-argument-type
+     * @mago-expect analysis:template-constraint-violation
      *
      * @psalm-suppress MixedReturnTypeCoercion
      * @psalm-suppress MixedAssignment
@@ -115,7 +118,7 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
             ;
 
         // sort by specificity of region.
-        usort($areasToReturn, static fn(array $a, array $b) =>
+        usort($areasToReturn, static fn(array $a, array $b): int =>
             \array_search(\mb_substr($a['code'], 0, 3), self::REGION_PREFIXES, strict: true) <=> \array_search(\mb_substr($b['code'], 0, 3), self::REGION_PREFIXES, strict: true));
 
         // remove duplicates
