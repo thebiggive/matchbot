@@ -8,9 +8,15 @@ use MatchBot\Application\Assertion;
 use MatchBot\Domain\PostCode;
 use Override;
 
+/**
+ * Client for calling Find That Postcode. Returns a much simpler data structure than FTP itself.
+ *
+ * Contains many static analysis issue suppressions, which is hard to avoid when dealing with a complex external
+ * data source without a schema that static analysis tools will understand.
+ */
 class LiveFindThatPostcode extends Common implements FindThatPostcode
 {
-    /** @var array
+    /** @var list<string>
      * Prefixes used by ONS for region codes that we are interested in, ordered from most specific to least specific.
      * Based on table at  https://en.wikipedia.org/wiki/GSS_coding_system
      */
@@ -66,10 +72,17 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
      * @mago-expect analysis:less-specific-nested-return-statement
      * @mago-expect analysis:mixed-assignment
      * @mago-expect analysis:mixed-array-access
+     * @mago-expect analysis:invalid-return-statement
+     * @mago-expect analysis:mixed-argument
+     * @mago-expect analysis:possibly-false-operand
      *
      * @psalm-suppress MixedReturnTypeCoercion
      * @psalm-suppress MixedAssignment
      * @psalm-suppress MixedArrayAccess
+     * @psalm-suppress MixedArgumentTypeCoercion
+     * @psalm-suppress MixedArgument
+     *
+     * @psalm-suppress UnusedVariable - this looks like a psalm bug - afaik the $name variable is used.
      *
      * @param array<array-key, mixed> $jsonData
      *
@@ -98,7 +111,7 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
 
         // filter out areas that do not have three letter prefixes of interest to us.
         $areasToReturn = $areasToReturn
-            |> (static fn($areas) => \array_filter($areas, callback: static fn (array $area) => \in_array(needle: \mb_substr($area['code'], 0, 3), haystack: self::REGION_PREFIXES, strict: true)))
+            |> (static fn(array $areas): array => \array_filter($areas, callback: static fn (array $area) => \in_array(needle: \mb_substr($area['code'], 0, 3), haystack: self::REGION_PREFIXES, strict: true)))
             ;
 
         // sort by specificity of region.
@@ -113,6 +126,14 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
     /**
      * Based on comment at https://www.php.net/manual/en/function.array-unique.php by
      * Ghanshyam Katriya
+     *
+     * @psalm-suppress MixedAssignment
+     *
+     * @template T of array<mixed>
+     * @param array<T> $array
+     * @param string $key
+     *
+     * @return list<T>
      */
     private static function uniqueMultidimArray($array, $key)
     {
@@ -127,6 +148,7 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
             }
             $i++;
         }
+
         return array_values($temp_array);
     }
 }
