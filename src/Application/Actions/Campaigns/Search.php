@@ -40,21 +40,21 @@ class Search extends Action
         /** @var ?string $country */
         $country = $params['country'] ?? null;
 
-        $lattitude = $params['lattitude'] ?? null;
+        $latitude = $params['latitude'] ?? null;
         $longitude = $params['longitude'] ?? null;
 
         if ($sortField === 'location') {
-            Assertion::numeric($lattitude, 'Numeric lattitude and longitude must be supplied for location-based search');
-            Assertion::numeric($longitude, 'Numeric lattitude and longitude must be supplied for location-based search');
+            Assertion::numeric($latitude, 'Numeric latitude and longitude must be supplied for location-based search');
+            Assertion::numeric($longitude, 'Numeric latitude and longitude must be supplied for location-based search');
             Assertion::string($longitude);
-            Assertion::string($lattitude);
+            Assertion::string($latitude);
 
             try {
                 /** @var list<string> $regions
                  * @mago-expect analysis:no-value,no-value,mixed-return-statement - mago seems to wrongly think the intersection of numeric and string is never.
                  * @psalm-suppress MixedReturnStatement
                  * */
-                $regions = $this->findThatPostcode->getDataOnPoint(new Number($lattitude), new Number($longitude)) |> (static fn(array $regions): array => \array_map(static fn(array $region): string => $region['code'], $regions));
+                $regions = $this->findThatPostcode->getDataOnPoint(new Number($latitude), new Number($longitude)) |> (static fn(array $regions): array => \array_map(static fn(array $region): string => $region['code'], $regions));
             } catch (PointOutsideUK $exception) {
                 throw new HttpBadRequestException($request, $exception->getMessage());
             }
@@ -62,7 +62,7 @@ class Search extends Action
             $regions = [];
         }
 
-        Assertion::same(\is_null($lattitude), \is_null($longitude));
+        Assertion::same(\is_null($latitude), \is_null($longitude));
 
         Assertion::string($sortDirection);
         Assertion::string($sortField);

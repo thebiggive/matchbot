@@ -64,9 +64,9 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
      * @psalm-suppress MixedArrayAccess, MixedAssignment
      */
     #[Override]
-    public function getDataOnPoint(Number $lattitude, Number $longitude): array
+    public function getDataOnPoint(Number $latitude, Number $longitude): array
     {
-        $uri = "https://findthatpostcode.uk/points/{$lattitude->value},{$longitude->value}.json";
+        $uri = "https://findthatpostcode.uk/points/{$latitude->value},{$longitude->value}.json";
 
         try {
             $response = $this->getHttpClient()->request('GET', $uri);
