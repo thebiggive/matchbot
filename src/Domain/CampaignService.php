@@ -302,24 +302,6 @@ class CampaignService
             $campaignHttpModelArray['endDate'] = null;
         }
 
-        // We could just return $sfCampaignData to FE and not need to generate anything else with matchbot
-        // logic, but that would keep FE indirectly coupled to the SF service. By making sure matchbot is able to
-        // semi-independently regenerate the same thing we should be able to break the dependency and then later evolve
-        // the mathbot<->frontend interface without needing to change SF.
-
-        try {
-            CampaignRenderCompatibilityChecker::checkCampaignHttpModelMatchesModelFromSF($campaignHttpModelArray, $sfCampaignData);
-        } catch (LazyAssertionException $exception) {
-            $errorMessages = \array_map(
-                fn(InvalidArgumentException $e) => "{$e->getPropertyPath()}: {$e->getMessage()}",
-                $exception->getErrorExceptions()
-            );
-
-            \ksort($errorMessages);
-
-            $campaignHttpModelArray['errors'] = $errorMessages;
-        }
-
         return $campaignHttpModelArray;
     }
 

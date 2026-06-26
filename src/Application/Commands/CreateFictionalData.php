@@ -16,7 +16,6 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFamily;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\CampaignStatistics;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\CharityResponseToOffer;
@@ -66,7 +65,6 @@ class CreateFictionalData extends Command
         private CharityRepository $charityRepository,
         private MetaCampaignRepository $metaCampaignRepository,
         private CampaignRepository $campaignRepository,
-        private CampaignService $campaignService,
         private StripeClient $stripeClient,
         private FundRepository $fundRepository,
         private Client $guzzleClient,
@@ -226,17 +224,6 @@ class CreateFictionalData extends Command
 
 
             $this->em->flush();
-
-            $renderedCampaign = $this->campaignService->renderCampaign($campaign, metaCampaign: null);
-
-            $errors = $renderedCampaign['errors'] ?? [];
-            \assert(\is_array($errors));
-
-            if ($errors !== []) {
-                $io->error("Campaign has errors - may not match expectations of frontend:");
-                $io->listing($errors);
-                return 1;
-            }
         }
 
         Assertion::notEmpty($this->campaignRepository->findCampaignsForCharityPage($charityOnRyft, $this->clock->now()));
