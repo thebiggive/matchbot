@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Client;
 
 use BcMath\Number;
+use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\PostCode;
 use Override;
@@ -59,12 +60,46 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
 
     /**
      * @inheritDoc
+     *
+     * @psalm-suppress MixedArrayAccess, MixedAssignment
      */
     #[Override]
-    public function getDataOnPoint(Number $lattitude, Number $longitude): array
+    public function getDataOnPoint(Number $latitude, Number $longitude): array
     {
-        // TODO: Implement getDataOnPoint() method.
-        return [];
+        $uri = "https://findthatpostcode.uk/points/{$latitude->value},{$longitude->value}.json";
+
+        try {
+            $response = $this->getHttpClient()->request('GET', $uri);
+        } catch (RequestException $requestException) {
+            $response = $requestException->getResponse();
+            if ($response === null) {
+                throw $requestException;
+            }
+
+            $content = $response->getBody()->getContents();
+            if (! \json_validate($content)) {
+                throw $requestException;
+            }
+
+            $responseData = \json_decode($content, associative: true, flags: \JSON_THROW_ON_ERROR);
+
+            $error = $responseData['message']['errors'][0] ?? []; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
+            $errorCode = $error['code'] ?? null; // @phpstan-ignore offsetAccess.nonOffsetAccessible
+
+            if ($errorCode === 'point_outside_uk') {
+                throw new PointOutsideUK((string)($error['title'] ?? '')); // @phpstan-ignore offsetAccess.nonOffsetAccessible, cast.string
+            }
+
+            throw $requestException;
+        }
+
+        $body = $response->getBody()->getContents();
+
+        $decoded = \json_decode($body, associative: true, flags: \JSON_THROW_ON_ERROR);
+
+        Assertion::isArray($decoded);
+
+        return self::parseFindThatPostcodeResponse($decoded);
     }
 
     /**
@@ -104,9 +139,9 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
 
         foreach ($included as $include) {
             $code = $include['attributes']['code'] ?? null; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
-            $name = $include['attributes']['name']; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
+            $name = $include['attributes']['name'] ?? null; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
 
-            if ($code === null) {
+            if ($code === null || $name === null) {
                 continue;
             }
 
