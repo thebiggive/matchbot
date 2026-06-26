@@ -84,7 +84,6 @@ class CampaignRepositoryTest extends IntegrationTest
             jsonMatchInListConditions: [
                 'beneficiaries' => 'Lads',
                 'categories' => 'Food',
-                'countries' => 'United Kingdom'
             ],
             term: 'Porridge',
         );
