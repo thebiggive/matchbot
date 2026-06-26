@@ -830,9 +830,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaignData = $this->getClient()->getById($campaign->getSalesforceId(), $withCache);
 
         $this->updateCampaignFromSFData($campaign, $campaignData);
-
-        $campaign->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($campaign);
+
         try {
             $this->getEntityManager()->flush();
         } catch (\PDOException $e) {
