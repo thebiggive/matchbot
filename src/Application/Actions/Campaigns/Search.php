@@ -50,10 +50,9 @@ class Search extends Action
             Assertion::string($latitude);
 
             try {
-                /** @var list<string> $regions
+                /**
                  * @mago-expect analysis:no-value,no-value,mixed-return-statement - mago seems to wrongly think the intersection of numeric and string is never.
-                 * @psalm-suppress MixedReturnStatement
-                 * */
+                 */
                 $regions = $this->findThatPostcode->getDataOnPoint(new Number($latitude), new Number($longitude));
             } catch (PointOutsideUK $exception) {
                 throw new HttpBadRequestException($request, $exception->getMessage());
@@ -61,7 +60,6 @@ class Search extends Action
             // FtP client returns regions with codes and names, which are useful for debugging and possibly display
             // in future, but we just need the codes for the search:
             $regions = \array_map(static fn(array $region): string => $region['code'], $regions);
-
         } else {
             $regions = [];
         }
