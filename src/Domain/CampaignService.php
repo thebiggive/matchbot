@@ -113,6 +113,7 @@ class CampaignService
             // do anything more than this with them in matchbot for now.
             'beneficiaries' => $sfCampaignData['beneficiaries'],
             'categories' => $sfCampaignData['categories'],
+            'locations' => $campaign->getLocationsForApi(),
             'championName' => $sfCampaignData['championName'],
             'imageUri' => $sfCampaignData['bannerUri'],
             'target' => $this->campaignTarget($campaign, $metaCampaign)->toMajorUnitFloat(),
