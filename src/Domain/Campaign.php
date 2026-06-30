@@ -520,7 +520,6 @@ class Campaign extends SalesforceReadProxy
         Assertion::nullOrBetweenLength($metaCampaignSlug, 1, 64);
         Assertion::nullOrRegex($metaCampaignSlug, '/^[-A-Za-z0-9]+$/');
 
-
         if ($metaCampaignSlug !== null && \str_starts_with($metaCampaignSlug, 'a05')) {
             // needed because SF may send an ID if slug is not filled in - we don't want that in the matchbot DB.
             throw new \RuntimeException("$metaCampaignSlug appears to be an SF ID, should be a slug, processing campaign sfid: " . $this->getSalesforceId());
@@ -554,6 +553,8 @@ class Campaign extends SalesforceReadProxy
         $this->replaceLocations($locations);
 
         unset($sfData['charity']); // charity stores its own data, we don't need to keep a copy here.
+
+        $this->setSalesforceLastPull(new \DateTimeImmutable('now'));
         $this->salesforceData = $sfData;
     }
 
