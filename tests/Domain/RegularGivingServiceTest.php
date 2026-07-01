@@ -112,7 +112,7 @@ class RegularGivingServiceTest extends TestCase
         $this->campaignFunding = $this->createStub(CampaignFunding::class);
 
         $testCase = $this;
-        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class), true, false)
+        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class), true, false, true)
             ->will(/**
              * @param Donation[] $args
              */
@@ -551,7 +551,7 @@ class RegularGivingServiceTest extends TestCase
         $this->donorAccount->setHomeAddressLine1('Existing address');
 
         $regularGivingService = $this->makeSut(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
-        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class), true, false)->willThrow(CampaignNotOpen::class);
+        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class), true, false, true)->willThrow(CampaignNotOpen::class);
         $this->donationServiceProphecy->cancel(Argument::type(Donation::class))->shouldBeCalled();
 
         try {

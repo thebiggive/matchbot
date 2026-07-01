@@ -236,7 +236,7 @@ class SetupTestMandate extends LockingCommand
 
         $donation->preAuthorize($paymentDay);
 
-        $this->donationService->enrollNewDonation($donation, true);
+        $this->donationService->enrollNewDonation($donation, true, setReservationTime: true);
         $this->em->persist($donation);
     }
 }
