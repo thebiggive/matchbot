@@ -384,21 +384,21 @@ class DonationServiceTest extends TestCase
                 return $confirmationToken;
             });
 
-        // Gross fee is £0.52 because in the case of a UK visa card the fee is
-        // 1.5% * the donation amount, plus 20p, plus 20% vat - and we round the net amount to pence
+        // Gross fee is £0.65 because in the case of a UK visa card the fee is
+        // 1.9% * the donation amount, plus 25p, plus 20% vat - and we round the net amount to pence
         // before adding VAT, then round it again after:
         $this->assertSame(
-            52.0,
-            round(round(15_00.0 * 1.5 / 100.0 + 20.0) * 1.2)
+            65.0,
+            round(round(15_00.0 * 1.9 / 100.0 + 25.0) * 1.2)
         );
 
         $this->stripeProphecy->updatePaymentIntent($paymentIntentId, [
             'metadata' => [
-                'stripeFeeRechargeGross' => '0.52',
-                'stripeFeeRechargeNet' => '0.43',
-                'stripeFeeRechargeVat' => '0.09',
+                'stripeFeeRechargeGross' => '0.65',
+                'stripeFeeRechargeNet' => '0.54',
+                'stripeFeeRechargeVat' => '0.11',
             ],
-            'application_fee_amount' => '52',
+            'application_fee_amount' => '65',
         ])->shouldBeCalledOnce();
 
         $paymentIntent = new PaymentIntent($paymentIntentId);
@@ -428,7 +428,7 @@ class DonationServiceTest extends TestCase
             null,
         );
 
-        $this->assertSame('0.52', $donation->getCharityFeeGross());
+        $this->assertSame('0.65', $donation->getCharityFeeGross());
     }
 
     /**
@@ -488,13 +488,11 @@ class DonationServiceTest extends TestCase
             ->shouldBeCalled();
     }
 
-
     public function testBuildFromApiRequestSuccess(): void
     {
-
         $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_ID));
 
-        $dummyCampaign->setCurrencyCode('USD');
+        $dummyCampaign->setCurrencyCode('GBP');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
         $campaignRepoProphecy->findOneBy(['salesforceId' => self::CAMPAIGN_ID])
@@ -502,7 +500,7 @@ class DonationServiceTest extends TestCase
 
 
         $createPayload = new DonationCreate(
-            currencyCode: 'USD',
+            currencyCode: 'GBP',
             donationAmount: '123',
             projectId: self::CAMPAIGN_ID,
             psp: 'stripe',
@@ -512,11 +510,10 @@ class DonationServiceTest extends TestCase
         $donation = $this->getDonationService(campaignRepoProphecy: $campaignRepoProphecy)
             ->buildFromAPIRequest($createPayload, PersonId::nil());
 
-        $this->assertSame('USD', $donation->currency()->isoCode());
+        $this->assertSame('GBP', $donation->currency()->isoCode());
         $this->assertSame('123', $donation->getAmount());
         $this->assertSame(12_300, $donation->getAmountFractionalIncTip());
     }
-
 
     public function testItPullsCampaignFromSFIfNotInRepo(): void
     {

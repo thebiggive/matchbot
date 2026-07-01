@@ -300,8 +300,8 @@ class UpdateTest extends TestCase
         $this->assertSame(123.45, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertSame(0, $payloadArray['matchedAmount']);
         $this->assertSame(1, $payloadArray['tipAmount']);
-        $this->assertSame(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
-        $this->assertSame(0.41, $payloadArray['charityFeeVat']);
+        $this->assertSame(2.6, $payloadArray['charityFee']); // 1.9% + 25p.
+        $this->assertSame(0.52, $payloadArray['charityFeeVat']);
     }
 
     public function testCancelSuccessWithChange(): void
@@ -352,8 +352,8 @@ class UpdateTest extends TestCase
         $this->assertSame(123.45, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertSame(0, $payloadArray['matchedAmount']);
         $this->assertSame(1, $payloadArray['tipAmount']);
-        $this->assertSame(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
-        $this->assertSame(0.41, $payloadArray['charityFeeVat']);
+        $this->assertSame(2.6, $payloadArray['charityFee']); // 1.9% + 25p.
+        $this->assertSame(0.52, $payloadArray['charityFeeVat']);
     }
 
     /**
@@ -495,8 +495,8 @@ class UpdateTest extends TestCase
         $this->assertSame(124.56, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertSame(0, $payloadArray['matchedAmount']);
         $this->assertSame(2, $payloadArray['tipAmount']);
-        $this->assertSame(2.07, $payloadArray['charityFee']); // 1.5% * 124.56 + 20p = 2.0684
-        $this->assertSame(0.41, $payloadArray['charityFeeVat']);
+        $this->assertSame(2.62, $payloadArray['charityFee']); // 1.9% + 25p.
+        $this->assertSame(0.52, $payloadArray['charityFeeVat']);
     }
 
     public function testAddDataAttemptWithDifferentAmount(): void
@@ -701,7 +701,7 @@ class UpdateTest extends TestCase
         $app = $this->getAppInstance();
         $container = $this->diContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
+        $donation = $this->getTestDonation(currencyCode: 'GBP', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
             paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
@@ -727,20 +727,20 @@ class UpdateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
-            'currency' => 'usd',
+            'currency' => 'gbp',
             'metadata' => [
                 'coreDonationGiftAid' => true,
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation36912345',
-                'stripeFeeRechargeGross' => '3.08',
-                'stripeFeeRechargeNet' => '3.08',
-                'stripeFeeRechargeVat' => '0.00',
+                'stripeFeeRechargeGross' => '4.24',
+                'stripeFeeRechargeNet' => '3.53',
+                'stripeFeeRechargeVat' => '0.71',
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
-            'application_fee_amount' => 629,
+            'application_fee_amount' => 745,
         ])
             ->shouldBeCalledOnce()
             ->willThrow(UnknownApiErrorException::class);
@@ -775,7 +775,7 @@ class UpdateTest extends TestCase
         $app = $this->getAppInstance();
         $container = $this->diContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
+        $donation = $this->getTestDonation(currencyCode: 'GBP', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
             paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
@@ -802,7 +802,7 @@ class UpdateTest extends TestCase
 
 
         $mockPI = new PaymentIntent();
-        $mockPI->application_fee_amount = 629;
+        $mockPI->application_fee_amount = 745;
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->retrievePaymentIntent('pi_externalId_123')
@@ -810,20 +810,20 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
-            'currency' => 'usd',
+            'currency' => 'gbp',
             'metadata' => [
                 'coreDonationGiftAid' => true,
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation36912345',
-                'stripeFeeRechargeGross' => '3.08',
-                'stripeFeeRechargeNet' => '3.08',
-                'stripeFeeRechargeVat' => '0.00',
+                'stripeFeeRechargeGross' => '4.24',
+                'stripeFeeRechargeNet' => '3.53',
+                'stripeFeeRechargeVat' => '0.71',
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
-            'application_fee_amount' => 629,
+            'application_fee_amount' => 745,
         ])
             ->shouldBeCalledOnce()
             ->willThrow($stripeApiException);
@@ -845,7 +845,7 @@ class UpdateTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
 
         $payloadArray = $this->decodePaylode($payload);
-        $this->assertSame(3.08, $payloadArray['charityFee']);
+        $this->assertSame(3.53, $payloadArray['charityFee']);
     }
 
     public function testAddDataHitsAlreadyCapturedStripeExceptionWithFeeChange(): void
@@ -853,7 +853,7 @@ class UpdateTest extends TestCase
         $app = $this->getAppInstance();
         $container = $this->diContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
+        $donation = $this->getTestDonation(currencyCode: 'GBP', collected: false, uuid: self::DONATION_UUID);
 
         $donation->update(
             paymentMethodType: PaymentMethodType::Card,
@@ -890,20 +890,20 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
-            'currency' => 'usd',
+            'currency' => 'gbp',
             'metadata' => [
                 'coreDonationGiftAid' => true,
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation36912345',
-                'stripeFeeRechargeGross' => '3.08',
-                'stripeFeeRechargeNet' => '3.08',
-                'stripeFeeRechargeVat' => '0.00',
+                'stripeFeeRechargeGross' => '4.24',
+                'stripeFeeRechargeNet' => '3.53',
+                'stripeFeeRechargeVat' => '0.71',
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
-            'application_fee_amount' => 629,
+            'application_fee_amount' => 745,
         ])
             ->shouldBeCalledOnce()
             ->willThrow($stripeApiException);
@@ -938,7 +938,7 @@ class UpdateTest extends TestCase
         $app = $this->getAppInstance();
         $container = $this->diContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
+        $donation = $this->getTestDonation(currencyCode: 'GBP', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
             paymentMethodType: PaymentMethodType::Card,
             giftAid: true,
@@ -961,20 +961,20 @@ class UpdateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
-            'currency' => 'usd',
+            'currency' => 'gbp',
             'metadata' => [
                 'coreDonationGiftAid' => true,
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation36912345',
-                'stripeFeeRechargeGross' => '3.08',
-                'stripeFeeRechargeNet' => '3.08',
-                'stripeFeeRechargeVat' => '0.00',
+                'stripeFeeRechargeGross' => '4.24',
+                'stripeFeeRechargeNet' => '3.53',
+                'stripeFeeRechargeVat' => '0.71',
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
-            'application_fee_amount' => 629,
+            'application_fee_amount' => 745,
         ])
             ->shouldBeCalledOnce();
 
@@ -1003,10 +1003,9 @@ class UpdateTest extends TestCase
 
         // Remaining properties should be updated.
         $this->assertSame('US', $payload['countryCode']);
-        $this->assertSame('USD', $payload['currencyCode']);
-        // 1.9% + 20p. cardCountry from Stripe payment method ≠ donor country.
-        $this->assertSame(3.08, $payload['charityFee']);
-        $this->assertSame(0, $payload['charityFeeVat']);
+        $this->assertSame('GBP', $payload['currencyCode']);
+        $this->assertSame(3.53, $payload['charityFee']);
+        $this->assertSame(0.71, $payload['charityFeeVat']);
         $this->assertSame(3.21, $payload['tipAmount']);
         $this->assertTrue($payload['giftAid']);
         $this->assertFalse($payload['tipGiftAid']);

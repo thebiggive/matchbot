@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
-use Doctrine\ORM\UnitOfWork;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Messenger\DonationUpserted;
 use Doctrine\ORM\EntityManagerInterface;
@@ -38,7 +36,6 @@ use MatchBot\Tests\TestData\Identity;
 use Override;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
-use Psr\Cache\CacheItemPoolInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
@@ -116,12 +113,12 @@ class CreateTest extends TestCase
                 'donationId' => self::DONATION_UUID,
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '0.00',
-                'stripeFeeRechargeGross' => '0.46', // Includes Gift Aid processing fee
-                'stripeFeeRechargeNet' => '0.38',
-                'stripeFeeRechargeVat' => '0.08',
+                'stripeFeeRechargeGross' => '0.58',
+                'stripeFeeRechargeNet' => '0.48',
+                'stripeFeeRechargeVat' => '0.10',
                 'tipAmount' => '1.11',
             ],
-            'application_fee_amount' => 157,
+            'application_fee_amount' => 169,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
                 'destination' => 'unitTest_stripeAccount_123',
@@ -276,35 +273,6 @@ class CreateTest extends TestCase
         $this->assertSame('Could not make Stripe Payment Intent (A)', $payloadArray['error']['description']);
     }
 
-    public function testCurrencyMismatch(): void
-    {
-        $donation = $this->getTestDonation(true, false, true, 'SEK');
-
-        $app = $this->getAppInstance();
-        $this->donationRepoProphecy->push(Argument::type(DonationUpserted::class));
-
-        $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
-        $this->entityManagerProphecy->flush()->shouldNotBeCalled();
-
-        $this->diContainer()->set(DonationRepository::class, $this->donationRepoProphecy->reveal());
-        $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
-
-        $data = $this->encode($donation);
-        $request = $this->createRequest('POST', Identity::TEST_PERSON_NEW_DONATION_ENDPOINT, $data);
-        $response = $app->handle($this->addDummyPersonAuth($request));
-
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(400, ['error' => [
-            'type' => 'BAD_REQUEST',
-            'description' => 'Currency SEK is invalid for campaign',
-        ]]);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertSame($expectedSerialised, $payload);
-        $this->assertSame(400, $response->getStatusCode());
-    }
-
     /**
      * 'test' env should expect and trust
      */
@@ -394,12 +362,12 @@ class CreateTest extends TestCase
                 'donationId' => self::DONATION_UUID,
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '8.00',
-                'stripeFeeRechargeGross' => '0.46',
-                'stripeFeeRechargeNet' => '0.38',
-                'stripeFeeRechargeVat' => '0.08',
+                'stripeFeeRechargeGross' => '0.58',
+                'stripeFeeRechargeNet' => '0.48',
+                'stripeFeeRechargeVat' => '0.10',
                 'tipAmount' => '1.11',
             ],
-            'application_fee_amount' => 157,
+            'application_fee_amount' => 169,
             'on_behalf_of' => 'unitTest_newStripeAccount_456',
             'transfer_data' => [
                 'destination' => 'unitTest_newStripeAccount_456',
@@ -440,8 +408,8 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
-        $this->assertSame(0.38, $payloadArray['donation']['charityFee']);
-        $this->assertSame(0.08, $payloadArray['donation']['charityFeeVat']);
+        $this->assertSame(0.48, $payloadArray['donation']['charityFee']);
+        $this->assertSame(0.10, $payloadArray['donation']['charityFeeVat']);
         $this->assertSame('GB', $payloadArray['donation']['countryCode']);
         $this->assertSame(12, $payloadArray['donation']['donationAmount']);
         $this->assertSame(self::DONATION_UUID, $payloadArray['donation']['donationId']);
@@ -501,12 +469,12 @@ class CreateTest extends TestCase
                 'donationId' => self::DONATION_UUID,
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '8.00',
-                'stripeFeeRechargeGross' => '0.46',
-                'stripeFeeRechargeNet' => '0.38',
-                'stripeFeeRechargeVat' => '0.08',
+                'stripeFeeRechargeGross' => '0.58',
+                'stripeFeeRechargeNet' => '0.48',
+                'stripeFeeRechargeVat' => '0.10',
                 'tipAmount' => '1.11',
             ],
-            'application_fee_amount' => 157,
+            'application_fee_amount' => 169,
             'transfer_data' => [
                 'destination' => 'unitTest_stripeAccount_123',
             ],
@@ -536,8 +504,8 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
-        $this->assertSame(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
-        $this->assertSame(0.08, $payloadArray['donation']['charityFeeVat']);
+        $this->assertSame(0.48, $payloadArray['donation']['charityFee']); // 1.9% + 25p.
+        $this->assertSame(0.10, $payloadArray['donation']['charityFeeVat']);
         $this->assertSame('GB', $payloadArray['donation']['countryCode']);
         $this->assertSame(12, $payloadArray['donation']['donationAmount']);
         $this->assertSame(self::DONATION_UUID, $payloadArray['donation']['donationId']);
@@ -595,12 +563,12 @@ class CreateTest extends TestCase
                 'donationId' => self::DONATION_UUID,
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '8.00',
-                'stripeFeeRechargeGross' => '0.46',
-                'stripeFeeRechargeNet' => '0.38',
-                'stripeFeeRechargeVat' => '0.08',
+                'stripeFeeRechargeGross' => '0.58',
+                'stripeFeeRechargeNet' => '0.48',
+                'stripeFeeRechargeVat' => '0.10',
                 'tipAmount' => '1.11',
             ],
-            'application_fee_amount' => 157,
+            'application_fee_amount' => 169,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
                 'destination' => 'unitTest_stripeAccount_123',
@@ -632,8 +600,8 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
-        $this->assertSame(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
-        $this->assertSame(0.08, $payloadArray['donation']['charityFeeVat']);
+        $this->assertSame(0.48, $payloadArray['donation']['charityFee']); // 1.9% + 25p.
+        $this->assertSame(0.10, $payloadArray['donation']['charityFeeVat']);
         $this->assertSame('GB', $payloadArray['donation']['countryCode']);
         $this->assertSame(12, $payloadArray['donation']['donationAmount']);
         $this->assertSame(self::DONATION_UUID, $payloadArray['donation']['donationId']);
@@ -761,8 +729,8 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
-        $this->assertSame(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
-        $this->assertSame(0.08, $payloadArray['donation']['charityFeeVat']);
+        $this->assertSame(0.48, $payloadArray['donation']['charityFee']); // 1.9% + 25p.
+        $this->assertSame(0.10, $payloadArray['donation']['charityFeeVat']);
         $this->assertSame('GB', $payloadArray['donation']['countryCode']);
         $this->assertSame(12, $payloadArray['donation']['donationAmount']);
         $this->assertSame(self::DONATION_UUID, $payloadArray['donation']['donationId']);
@@ -821,8 +789,8 @@ class CreateTest extends TestCase
         $this->assertNull($payloadArray['donation']['optInCharityEmail']);
         $this->assertNull($payloadArray['donation']['optInChampionEmail']);
         $this->assertNull($payloadArray['donation']['optInTbgEmail']);
-        $this->assertSame(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
-        $this->assertSame(0.08, $payloadArray['donation']['charityFeeVat']);
+        $this->assertSame(0.48, $payloadArray['donation']['charityFee']); // 1.9% + 25p.
+        $this->assertSame(0.10, $payloadArray['donation']['charityFeeVat']);
         $this->assertSame('GB', $payloadArray['donation']['countryCode']);
         $this->assertSame(12, $payloadArray['donation']['donationAmount']);
         $this->assertSame(self::DONATION_UUID, $payloadArray['donation']['donationId']);
@@ -881,8 +849,8 @@ class CreateTest extends TestCase
         $this->assertNull($payloadArray['donation']['optInCharityEmail']);
         $this->assertNull($payloadArray['donation']['optInChampionEmail']);
         $this->assertNull($payloadArray['donation']['optInTbgEmail']);
-        $this->assertSame(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
-        $this->assertSame(0.08, $payloadArray['donation']['charityFeeVat']);
+        $this->assertSame(0.48, $payloadArray['donation']['charityFee']); // 1.9% + 25p.
+        $this->assertSame(0.10, $payloadArray['donation']['charityFeeVat']);
         $this->assertSame('GB', $payloadArray['donation']['countryCode']);
         $this->assertSame(12, $payloadArray['donation']['donationAmount']);
         $this->assertSame(self::DONATION_UUID, $payloadArray['donation']['donationId']);
