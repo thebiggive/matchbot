@@ -66,11 +66,11 @@ class ConfirmTest extends TestCase
 
     private const array TYPICAL_METADATA_UPDATE = [
         "metadata" => [
-            "stripeFeeRechargeGross" => "2.66",
-            "stripeFeeRechargeNet" => "2.22",
-            "stripeFeeRechargeVat" => "0.44",
+            "stripeFeeRechargeGross" => "2.72",
+            "stripeFeeRechargeNet" => "2.27",
+            "stripeFeeRechargeVat" => "0.45",
         ],
-        "application_fee_amount" => 266,
+        "application_fee_amount" => 272,
     ];
 
     #[\Override]
@@ -169,14 +169,14 @@ class ConfirmTest extends TestCase
                 'client_secret' => 'some_client_secret',
             ],
             paymentIntentId: self::PAYMENT_INTENT_ID,
-            // £63 donation incurs a fee of 20p + (1.5% == 0.945) == £1.15 (rounded), net.
+            // £63 donation incurs a fee of 25p + 1.9% == £1.45 (rounded), net.
             expectedMetadataUpdate: [
                 "metadata" => [
-                    "stripeFeeRechargeGross" => '1.38',
-                    "stripeFeeRechargeNet" => '1.15',
-                    "stripeFeeRechargeVat" => '0.23',
+                    "stripeFeeRechargeGross" => '1.74',
+                    "stripeFeeRechargeNet" => '1.45',
+                    "stripeFeeRechargeVat" => '0.29',
                 ],
-                "application_fee_amount" => 138,
+                "application_fee_amount" => 174,
             ],
             confirmFailsWithCardError: false,
             confirmFailsWithApiError: false,
@@ -298,11 +298,11 @@ class ConfirmTest extends TestCase
             paymentIntentId: self::PAYMENT_INTENT_ID,
             expectedMetadataUpdate: [
                 "metadata" => [
-                    "stripeFeeRechargeGross" => "2.66",
-                    "stripeFeeRechargeNet" => "2.22",
-                    "stripeFeeRechargeVat" => "0.44",
+                    "stripeFeeRechargeGross" => "2.72",
+                    "stripeFeeRechargeNet" => "2.27",
+                    "stripeFeeRechargeVat" => "0.45",
                 ],
-                "application_fee_amount" => 266,
+                "application_fee_amount" => 272,
             ],
             confirmFailsWithCardError: true,
             confirmFailsWithApiError: false,

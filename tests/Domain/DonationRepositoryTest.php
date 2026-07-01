@@ -111,15 +111,15 @@ class DonationRepositoryTest extends TestCase
         $donation->setPaymentCard(new PaymentCard(CardBrand::amex, Country::GB()));
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
-        // Fixed fee        = £  0.20
-        // Total fee ex vat = £ 31.80
-        // Total fee inc vat = £ 31.80 * 1.2
-        // Total fee inc vat = £ 38.16
-        // Amount after fee = £955.85
+        // Fixed fee        = £  0.25
+        // Total fee ex vat = £ 31.85
+        // Total fee inc vat = £ 31.85 * 1.2
+        // Total fee inc vat = £ 38.22
+        // Amount after fee = £949.43
 
         // Deduct tip + fee.
-        $this->assertSame(48_16, $donation->getAmountToDeductFractional());
-        $this->assertSame(949_49, $donation->getAmountForCharityFractional());
+        $this->assertSame(48_22, $donation->getAmountToDeductFractional());
+        $this->assertSame(949_43, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithTipUsingUSCard(): void
@@ -132,14 +132,14 @@ class DonationRepositoryTest extends TestCase
         $donation->setPaymentCard(new PaymentCard(CardBrand::visa, Country::fromAlpha2('US')));
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
-        // Fixed fee        = £  0.20
-        // Total fee        = £ 31.80
-        // Total fee inc vat = £ 38.16
-        // Amount after fee = £955.85
+        // Fixed fee        = £  0.25
+        // Total fee        = £ 31.85
+        // Total fee inc vat = £ 38.22
+        // Amount after fee = £949.43
 
         // Deduct tip + fee.
-        $this->assertSame(48_16, $donation->getAmountToDeductFractional());
-        $this->assertSame(949_49, $donation->getAmountForCharityFractional());
+        $this->assertSame(48_22, $donation->getAmountToDeductFractional());
+        $this->assertSame(949_43, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithTip(): void
@@ -150,15 +150,16 @@ class DonationRepositoryTest extends TestCase
 
         $donation->setTipAmount('10.00');
 
-        // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
-        // Fixed fee        = £  0.20
-        // Total fee        = £ 15.01
-        // Total fee inc vat = 18.012
-        // Amount after fee = £972.64
+        // £987.65 * 1.9%   = £ 18.77 (to 2 d.p.)
+        // Fixed fee        = £  0.25
+        // Total fee (net)  = £ 19.02
+        // 20% VAT on fee   = £  3.80 (2 d.p)
+        // Total fee (gross)= £ 22.82
+        // Amount after fee = £964.83
 
         // Deduct tip + fee.
-        $this->assertSame(28_01, $donation->getAmountToDeductFractional());
-        $this->assertSame(969_64, $donation->getAmountForCharityFractional());
+        $this->assertSame(32_82, $donation->getAmountToDeductFractional());
+        $this->assertSame(964_83, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityAndFeeVatWithTipAndVat(): void
@@ -169,17 +170,17 @@ class DonationRepositoryTest extends TestCase
 
         $donation->setTipAmount('10.00');
 
-        // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
-        // Fixed fee        = £  0.20
-        // Total fee (net)  = £ 15.01
-        // 20% VAT on fee   = £  3.00 (2 d.p)
-        // Amount after fee = £969.64
+        // £987.65 * 1.9%   = £ 18.77 (to 2 d.p.)
+        // Fixed fee        = £  0.25
+        // Total fee (net)  = £ 19.02
+        // 20% VAT on fee   = £  3.80 (2 d.p)
+        // Amount after fee = £964.83
 
-        $this->assertSame('15.01', $donation->getCharityFee());
-        $this->assertSame('3.00', $donation->getCharityFeeVat());
+        $this->assertSame('19.02', $donation->getCharityFee());
+        $this->assertSame('3.80', $donation->getCharityFeeVat());
         // Deduct tip + fee inc. VAT.
-        $this->assertSame(2_801, $donation->getAmountToDeductFractional());
-        $this->assertSame(96_964, $donation->getAmountForCharityFractional());
+        $this->assertSame(3_282, $donation->getAmountToDeductFractional());
+        $this->assertSame(96_483, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTip(): void
@@ -188,14 +189,13 @@ class DonationRepositoryTest extends TestCase
 
         $donation->setTipAmount('0.00');
 
-        // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
-        // Fixed fee        = £  0.20
-        // Total fee        = £ 15.01
-        // Total fee in vcat = 18.012
+        // £987.65 * 1.5%   = £ 18.77 (to 2 d.p.)
+        // Fixed fee        = £  0.25
+        // Total fee        = £ 19.02
         // Amount after fee = £972.64
 
-        $this->assertSame(18_01, $donation->getAmountToDeductFractional());
-        $this->assertSame(96_964, $donation->getAmountForCharityFractional());
+        $this->assertSame(22_82, $donation->getAmountToDeductFractional());
+        $this->assertSame(96_483, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTipWhenTbgClaimingGiftAid(): void
@@ -204,15 +204,16 @@ class DonationRepositoryTest extends TestCase
         $donation->setTbgShouldProcessGiftAid(true);
         $donation->setTipAmount('0.00');
 
-        // £987.65 *  1.5%  = £ 14.81 (to 2 d.p.)
-        // Fixed fee        = £  0.20
+        // £987.65 * 1.9%   = £ 18.77 (to 2 d.p.)
+        // Fixed fee        = £  0.25
         // £987.65 * 0.75%  = £  7.41 (3% of Gift Aid amount)
-        // Total fee        = £ 22.42
-        // Total fee inc vat = £ 26.904
-        // Amount after fee = £965.23
+        // Total fee (net)  = £ 26.43
+        // 20% VAT on fee   = £  5.29 (2 d.p)
+        // Total fee (gross)= £ 31.72
+        // Amount after fee = £955.93
 
-        $this->assertSame(26_90, $donation->getAmountToDeductFractional());
-        $this->assertSame(96_075, $donation->getAmountForCharityFractional());
+        $this->assertSame(31_72, $donation->getAmountToDeductFractional());
+        $this->assertSame(95_593, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
@@ -220,13 +221,13 @@ class DonationRepositoryTest extends TestCase
         $donation = $this->getTestDonation('6.25', collected: false);
         $donation->setTipAmount('0.00');
 
-        // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)
-        // Fixed fee    = £ 0.20
-        // Total fee    = £ 0.29
-        // Total fee inc vat = £ 0.348
-        // After fee    = £ 5.96
-        $this->assertSame(35, $donation->getAmountToDeductFractional());
-        $this->assertSame(5_90, $donation->getAmountForCharityFractional());
+        // £6.25 * 1.5% = £ 0.12 (to 2 d.p.)
+        // Fixed fee    = £ 0.25
+        // Total fee    = £ 0.37
+        // Total fee inc vat = £ 0.44
+        // After fee    = £ 5.81
+        $this->assertSame(44, $donation->getAmountToDeductFractional());
+        $this->assertSame(5_81, $donation->getAmountForCharityFractional());
     }
 
     public function testAbandonOldCancelled(): void

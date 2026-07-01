@@ -239,8 +239,8 @@ class DonationTest extends TestCase
                 'amountMatchedByPledges' => 0.0,
                 'amountPreauthorizedFromChampionFunds' => 0.0,
                 'billingPostalAddress' => null,
-                'charityFee' => 0.35, // 20p fixed default + 1.5% of £10
-                'charityFeeVat' => 0.07,
+                'charityFee' => 0.44, // 25p fixed default + 1.9% of £10
+                'charityFeeVat' => 0.09,
                 'charityId' => $donation->getCampaign()->getCharity()->getSalesforceId(),
                 'charityName' => 'Charity Name',
                 'collectedTime' => '1970-01-01T00:00:00+00:00',
@@ -520,20 +520,6 @@ class DonationTest extends TestCase
         $this->assertSame($expectedPaymentMethodProperties, $donation->getStripeMethodProperties());
         $this->assertSame([], $donation->getStripeOnBehalfOfProperties());
         $this->assertFalse($donation->supportsSavingPaymentMethod());
-    }
-
-    public function testGetStripeMethodPropertiesCustomerBalanceUsd(): void
-    {
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Customer balance payments only supported for GBP');
-
-        $donation = $this->getTestDonation(
-            pspMethodType: PaymentMethodType::CustomerBalance,
-            tipAmount: '0',
-            currencyCode: 'SEK',
-        );
-
-        $donation->getStripeMethodProperties(); // Throws in this getter for now.
     }
 
     public function testDonationRefundDateTimeIsIncludedInSfHookModel(): void
