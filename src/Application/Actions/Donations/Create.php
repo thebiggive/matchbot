@@ -78,6 +78,8 @@ class Create extends Action
 
         $body = (string) $request->getBody();
 
+        $setReservationTime = ($request->getQueryParams()['short-reservation'] ?? null) !== null;
+
         try {
             $donationData = $this->serializer->deserialize($body, DonationCreate::class, 'json');
         } catch (\TypeError | UnexpectedValueException | AssertionFailedException $exception) {
@@ -110,9 +112,10 @@ class Create extends Action
             \assert($donorId instanceof PersonId);
 
             $donation = $this->donationService->createDonation(
-                $donationData,
-                $pspCustomerId,
-                $donorId
+                donationData: $donationData,
+                pspCustomerId: $pspCustomerId,
+                donorId: $donorId,
+                setReservationTime: $setReservationTime
             );
         } catch (RateLimitExceededException $e) {
             $retryDelaySeconds = ($e->getRetryAfter()->getTimestamp() - time());

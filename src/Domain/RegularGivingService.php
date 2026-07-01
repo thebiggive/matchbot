@@ -380,6 +380,7 @@ readonly class RegularGivingService
                 donation: $donation,
                 attemptMatching: $mandate->isMatched(),
                 dispatchUpdateMessage: false,
+                setReservationTime: true
             );
             if (!$donation->isFullyMatched() && $mandate->isMatched()) {
                 /** @psalm-suppress RedundantCondition - not redundant for PHPStan */
