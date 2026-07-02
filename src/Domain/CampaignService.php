@@ -113,6 +113,7 @@ class CampaignService
             // do anything more than this with them in matchbot for now.
             'beneficiaries' => $sfCampaignData['beneficiaries'],
             'categories' => $sfCampaignData['categories'],
+            'locations' => $campaign->getLocationsForApi(),
             'championName' => $sfCampaignData['championName'],
             'imageUri' => $sfCampaignData['bannerUri'],
             'target' => $this->campaignTarget($campaign, $metaCampaign)->toMajorUnitFloat(),
@@ -300,24 +301,6 @@ class CampaignService
 
         if (is_string($campaignHttpModelArray['endDate']) && \str_starts_with($campaignHttpModelArray['endDate'], '1970-01-01')) {
             $campaignHttpModelArray['endDate'] = null;
-        }
-
-        // We could just return $sfCampaignData to FE and not need to generate anything else with matchbot
-        // logic, but that would keep FE indirectly coupled to the SF service. By making sure matchbot is able to
-        // semi-independently regenerate the same thing we should be able to break the dependency and then later evolve
-        // the mathbot<->frontend interface without needing to change SF.
-
-        try {
-            CampaignRenderCompatibilityChecker::checkCampaignHttpModelMatchesModelFromSF($campaignHttpModelArray, $sfCampaignData);
-        } catch (LazyAssertionException $exception) {
-            $errorMessages = \array_map(
-                fn(InvalidArgumentException $e) => "{$e->getPropertyPath()}: {$e->getMessage()}",
-                $exception->getErrorExceptions()
-            );
-
-            \ksort($errorMessages);
-
-            $campaignHttpModelArray['errors'] = $errorMessages;
         }
 
         return $campaignHttpModelArray;

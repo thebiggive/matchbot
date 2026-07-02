@@ -129,7 +129,7 @@ class GetTest extends TestCase
         $this->assertFalse($payloadArray['optInTbgEmail']);
         $this->assertSame(0, $payloadArray['matchedAmount']);
         $this->assertSame(1, $payloadArray['tipAmount']);
-        $this->assertSame(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
-        $this->assertSame(0.41, $payloadArray['charityFeeVat']);
+        $this->assertSame(2.6, $payloadArray['charityFee']); // 1.9% + 25p.
+        $this->assertSame(0.52, $payloadArray['charityFeeVat']);
     }
 }

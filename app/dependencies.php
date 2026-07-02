@@ -222,6 +222,10 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Donation($c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
+        Client\FindThatPostcode::class => function (ContainerInterface $c): Client\FindThatPostcode {
+            return $c->get(Client\LiveFindThatPostcode::class);
+        },
+
         Client\Mandate::class => function (ContainerInterface $c): Client\Mandate {
             return new Client\Mandate($c->get(Settings::class), $c->get(LoggerInterface::class));
         },
@@ -447,7 +451,7 @@ return function (ContainerBuilder $containerBuilder) {
             return $messageBus;
         },
 
-        'commit-id' => static fn(ContainerInterface $_c): string => require __DIR__ . "/../.build-commit-id.php",
+        'commit-id' => static fn(ContainerInterface $_c): string => require __DIR__ . "/../.build-commit-id.php", // @mago-expect analysis:mixed-return-statement
 
         RateLimiterStorage::class => function (ContainerInterface $c): RateLimiterStorage {
             return new CacheStorage(new RedisCacheAdapter($c->get(Redis::class)));

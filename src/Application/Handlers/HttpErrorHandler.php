@@ -82,7 +82,12 @@ class HttpErrorHandler extends SlimErrorHandler
                 /** @psalm-suppress PossiblyUndefinedArrayOffset
                  * Offsets defined at https://www.php.net/manual/en/exception.gettrace.php
                  */
-                fn(array $frame) => "{$frame['class']}::{$frame['function']} {$frame['file']}:{$frame['line']}",
+                function (array $frame) {
+                    $class = $frame['class'] ?? '';
+                    $function = $frame['function'] ?? '';
+
+                    return "{$class}::{$function} {$frame['file']}:{$frame['line']}";
+                },
                 $exception->getTrace()
             );
 

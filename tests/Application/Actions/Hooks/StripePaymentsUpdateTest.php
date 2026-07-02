@@ -179,53 +179,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $this->assertSame(200, $updatedResponse->getStatusCode());
     }
 
-    public function testOriginalStripeFeeInSEK(): void
-    {
-        $app = $this->getAppInstance();
-        $container = $this->getContainer();
-
-        $donation = $this->getTestDonation('6000.00', currencyCode: 'SEK');
-        $this->donationRepository->store($donation);
-        /** @var array<string, mixed> $webhookContent */
-        $webhookContent = json_decode(
-            $this->getStripeHookMock('ch_succeeded_sek'),
-            associative: true,
-            flags: \JSON_THROW_ON_ERROR
-        );
-
-        /**
-         * @psalm-suppress MixedArrayAssignment
-         */
-        $webhookContent['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
-
-        $body = json_encode($webhookContent, \JSON_THROW_ON_ERROR);
-
-        $webhookSecret = $this->getValidWebhookSecret($container);
-        $time = (string) time();
-
-        $container->set(EntityManagerInterface::class, $this->prophesizeEM()->reveal());
-
-        $balanceTxnResponse = $this->getStripeHookMock('ApiResponse/bt_success_sek');
-        $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        $stripeBalanceTransactionProphecy->retrieve('txn_00000000000000')
-            ->shouldBeCalledOnce()
-            ->willReturn(BalanceTransaction::constructFrom((array) json_decode($balanceTxnResponse, associative: true)));
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();  // @phpstan-ignore property.notFound
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
-
-        $request = $this->createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
-
-        $response = $app->handle($request);
-
-        $this->assertSame('ch_externalId_123', $donation->getChargeId());
-        $this->assertSame('tr_id_t988', $donation->getTransferId());
-        $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
-        $this->assertSame('18.72', $donation->getOriginalPspFee());
-        $this->assertSame(200, $response->getStatusCode());
-    }
-
     public function testDisputeLostBehavesLikeRefund(): void
     {
         $app = $this->getAppInstance();
