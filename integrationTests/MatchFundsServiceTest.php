@@ -115,7 +115,7 @@ class MatchFundsServiceTest extends IntegrationTest
             collected: true
         );
 
-        $this->donationService->enrollNewDonation($donation, attemptMatching: true, dispatchUpdateMessage: false);
+        $this->donationService->enrollNewDonation($donation, attemptMatching: true, dispatchUpdateMessage: false, setReservationTime: true);
 
         $fundsRemaining = $this->sut->getFundsRemainingForMetaCampaign($this->testMetaCampaign);
         $this->assertEquals(Money::fromPoundsGBP($expectedTotal), $fundsRemaining);
@@ -155,8 +155,8 @@ class MatchFundsServiceTest extends IntegrationTest
             collected: true
         );
 
-        $this->donationService->enrollNewDonation($donation1, attemptMatching: true, dispatchUpdateMessage: false);
-        $this->donationService->enrollNewDonation($donation2, attemptMatching: true, dispatchUpdateMessage: false);
+        $this->donationService->enrollNewDonation($donation1, attemptMatching: true, dispatchUpdateMessage: false, setReservationTime: true);
+        $this->donationService->enrollNewDonation($donation2, attemptMatching: true, dispatchUpdateMessage: false, setReservationTime: true);
 
         $fundsRemaining = $this->sut->getFundsRemainingForMetaCampaign($this->testMetaCampaign);
         $this->assertEquals(Money::fromPoundsGBP($expectedTotal), $fundsRemaining);

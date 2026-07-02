@@ -48,6 +48,7 @@ use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Lock\Exception\LockConflictedException;
+use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
@@ -132,16 +133,16 @@ class DonationService
      * @throws \MatchBot\Client\NotFoundException
      * @throws DbErrorPreventedMatch
      */
-    public function createDonation(DonationCreate $donationData, string $pspCustomerId, PersonId $donorId): Donation
+    public function createDonation(DonationCreate $donationData, string $pspCustomerId, PersonId $donorId, bool $setReservationTime): Donation
     {
         try {
-            return $this->doCreateDonation($pspCustomerId, $donationData, $donorId);
+            return $this->doCreateDonation($pspCustomerId, $donationData, $donorId, setReservationTime: $setReservationTime);
         } catch (RetryableException $exception) {
             /**
              * See notes on {@see self::enrollNewDonation} for EM side effect details.
              */
             $this->logger->warning("Error creating donation, will retry: " . $exception->getMessage());
-            return $this->doCreateDonation($pspCustomerId, $donationData, $donorId);
+            return $this->doCreateDonation($pspCustomerId, $donationData, $donorId, setReservationTime: $setReservationTime);
         }
     }
 
@@ -468,6 +469,9 @@ class DonationService
      *
      * @param bool $attemptMatching Whether to use match funds. Match funds will be withdrawn based on
      *                              availability or donation amount, which ever is smaller.
+     *
+     * @param bool $setReservationTime Whether to explicitly set how long to reserve funds for, expecting the client
+     *                                 to request an extension if required. Will always be true in future.
      * @throws CampaignNotOpen
      * @throws CharityAccountLacksNeededCapaiblities
      * @throws CouldNotMakeStripePaymentIntent
@@ -477,7 +481,7 @@ class DonationService
      * @throws WrongCampaignType
      * @throws NotFoundException
      */
-    public function enrollNewDonation(Donation $donation, bool $attemptMatching, bool $dispatchUpdateMessage = true): void
+    public function enrollNewDonation(Donation $donation, bool $attemptMatching, bool $dispatchUpdateMessage = true, bool $setReservationTime = true): void
     {
         $campaign = $donation->getCampaign();
 
@@ -504,6 +508,12 @@ class DonationService
         // here for them and we won't allow the donation to be confirmed if the total does not match the expectation later,
         // e.g. in case of a front end bug that stops them seeing the notification that the withdrawls expired.
         $donation->setExpectedMatchAmount($donation->getFundingWithdrawalTotalAsObject());
+
+        $fiveMinutes = new \DateInterval('PT5M');
+
+        if ($setReservationTime) {
+            $donation->reserveFundsUntil($this->clock->now()->add($fiveMinutes));
+        }
 
         $this->entityManager->commit();
 
@@ -1050,6 +1060,9 @@ class DonationService
      * @param string $pspCustomerId
      * @param DonationCreate $donationData
      * @param PersonId $donorId
+     * @param bool $setReservationTime Whether to explicitly set how long to reserve funds for, expecting the client
+     *                                  to request an extension if required. Will always be true in future.
+     *
      * @return Donation
      * @throws CampaignNotOpen
      * @throws CharityAccountLacksNeededCapaiblities
@@ -1061,7 +1074,7 @@ class DonationService
      * @throws StripeAccountIdNotSetForAccount
      * @throws WrongCampaignType
      */
-    public function doCreateDonation(string $pspCustomerId, DonationCreate $donationData, PersonId $donorId): Donation
+    public function doCreateDonation(string $pspCustomerId, DonationCreate $donationData, PersonId $donorId, bool $setReservationTime): Donation
     {
         $this->creationRateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
 
@@ -1086,7 +1099,7 @@ class DonationService
             throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
 
-        $this->enrollNewDonation($donation, attemptMatching: true);
+        $this->enrollNewDonation($donation, attemptMatching: true, setReservationTime: $setReservationTime);
 
         return $donation;
     }
