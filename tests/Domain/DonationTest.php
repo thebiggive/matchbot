@@ -1215,4 +1215,32 @@ class DonationTest extends TestCase
     {
         $donation->collectFromStripeCharge('charge_id', 100, 'transfer_id', null, null, '0', 0);
     }
+
+    public function testExtendsReservationByFiveMinutes(): void
+    {
+        $donation = $this->someDonation(createdAt: new \DateTimeImmutable('2026-01-01T12:00:00'));
+        $fivePastNoon = new \DateTimeImmutable('2026-01-01T12:05:00');
+        $tenPastNoon = new \DateTimeImmutable('2026-01-01T12:10:00');
+        $fifteenPastNoon = new \DateTimeImmutable('2026-01-01T12:15:00');
+
+        $donation->reserveFundsUntil($fivePastNoon);
+
+        $donation->extendReservationFrom($tenPastNoon);
+
+        $this->assertEquals($fifteenPastNoon, $donation->fundsReservedUntil);
+    }
+
+    public function testExtendsReservationOnlyUpToALimit(): void
+    {
+        $donation = $this->someDonation(createdAt: new \DateTimeImmutable('2026-01-01T12:00:00'));
+        $fivePastNoon = new \DateTimeImmutable('2026-01-01T12:05:00');
+        $thirtySixPastNoon = new \DateTimeImmutable('2026-01-01T12:37:00');
+        $thirtyTwoPastNoon = new \DateTimeImmutable('2026-01-01T12:32:00');
+
+        $donation->reserveFundsUntil($fivePastNoon);
+
+        $donation->extendReservationFrom($thirtySixPastNoon);
+
+        $this->assertEquals($thirtyTwoPastNoon, $donation->fundsReservedUntil);
+    }
 }
