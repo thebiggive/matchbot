@@ -62,6 +62,7 @@ CREATE TABLE `Donation` (
   `expectedMatchAmount_amountInPence` bigint NOT NULL,
   `expectedMatchAmount_currency` varchar(3) NOT NULL,
   `ryftPaymentSessionId` varchar(255) DEFAULT NULL,
+  `fundsReservedUntil` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_C893E3F6D17F50A6` (`uuid`),
   UNIQUE KEY `UNIQ_C893E3F6C2F43114` (`transactionId`),

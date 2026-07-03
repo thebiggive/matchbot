@@ -104,6 +104,7 @@ class DonationPersistenceTest extends IntegrationTest
             'expectedMatchAmount_amountInPence' => 0,
             'expectedMatchAmount_currency' => 'GBP',
             'ryftPaymentSessionId' => null,
+            'fundsReservedUntil' => null,
             'updatedAt' => '1970-01-01',
             'createdAt' => '1970-01-01'
         ];
