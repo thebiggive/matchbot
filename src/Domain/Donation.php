@@ -140,8 +140,8 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * Time until which match any reserved match funds should be kept, *even*
-     * if the donation client goes offline. If they are online they can be expected to ask
-     * to extend this periodically, and matchbot will comply up to a limit of about half an hour.
+     * if the donation client goes offline. If they are online and campaign has time left they can be expected to ask
+     * to extend this periodically, and matchbot will comply up to a limit of about 25 minutes.
      *
      * Initially only set if requested by the client at creation time, so that we know the client
      * is a version that knows how to request extensions.
