@@ -477,6 +477,7 @@ class TestCase extends PHPUnitTestCase
         ?int $mandateSequenceNumber = null,
         ?string $transactionId = null,
         PaymentServiceProvider $psp = \MatchBot\Domain\PaymentServiceProvider::Stripe,
+        \DateTimeImmutable|null $createdAt = null,
     ): Donation {
 
         $donation = new Donation(
@@ -514,6 +515,12 @@ class TestCase extends PHPUnitTestCase
                 $transferId,
                 (int) (100.0 * ((float) $amount + (float) $tipAmount))
             );
+        }
+
+        if ($createdAt) {
+            $reflection = new \ReflectionClass($donation);
+            $createdAtProperty = $reflection->getProperty('createdAt');
+            $createdAtProperty->setValue($donation, \DateTime::createFromInterface($createdAt));
         }
 
         return $donation;
