@@ -1234,12 +1234,12 @@ class DonationTest extends TestCase
     {
         $donation = $this->someDonation(createdAt: new \DateTimeImmutable('2026-01-01T12:00:00'));
         $fivePastNoon = new \DateTimeImmutable('2026-01-01T12:05:00');
-        $thirtySixPastNoon = new \DateTimeImmutable('2026-01-01T12:37:00');
+        $thirtySevenPastNoon = new \DateTimeImmutable('2026-01-01T12:37:00');
         $thirtyTwoPastNoon = new \DateTimeImmutable('2026-01-01T12:32:00');
 
         $donation->reserveFundsUntil($fivePastNoon);
 
-        $donation->extendReservationFrom($thirtySixPastNoon);
+        $donation->extendReservationFrom($thirtySevenPastNoon);
 
         $this->assertEquals($thirtyTwoPastNoon, $donation->fundsReservedUntil);
     }
