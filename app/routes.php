@@ -46,6 +46,7 @@ return function (App $app) {
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
             $group->get('', Donations\Get::class);
             $group->put('', Donations\Update::class); // Includes cancelling.
+            $group->post('/extend', Donations\ExtendFundsReservationTime::class);
             $group->post('/confirm', Donations\Confirm::class);
             $group->post('/remove-matching-expectation', Donations\RemoveMatchingExpecation::class);
         })

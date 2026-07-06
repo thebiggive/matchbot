@@ -127,7 +127,7 @@ class DonationServiceTest extends TestCase
 
         $this->expectException(CharityAccountLacksNeededCapaiblities::class);
 
-        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil());
+        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil(), true);
     }
 
     public function testInitialPersistRunsOutOfRetries(): void
@@ -148,7 +148,7 @@ class DonationServiceTest extends TestCase
             ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
 
         try {
-            $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil());
+            $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::nil(), true);
             $this->fail('Should have thrown LockWaitTimeoutException');
         } catch (LockWaitTimeoutException) {
             // pass – in app context, final exception will be surfaced as an error to Slack etc.
