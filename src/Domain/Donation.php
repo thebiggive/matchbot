@@ -716,6 +716,8 @@ class Donation extends SalesforceWriteProxy
             'lastName' => $this->getDonorLastName(true),
             'matchedAmount' => $this->matchedAmount()->toMajorUnitFloat(),
             'matchReservedAmount' => 0,
+            'fundsReservedUntil' => $this->fundsReservedUntil?->format(DateTimeInterface::ATOM),
+            'maxReservationTime' => $this->maxReservationTime()->format(DateTimeInterface::ATOM),
             'optInCharityEmail' => $this->getCharityComms(),
             'optInChampionEmail' => $this->getChampionComms(),
             'optInTbgEmail' => $this->getTbgComms(),
