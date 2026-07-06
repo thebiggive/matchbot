@@ -8,9 +8,11 @@ use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Settings;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -25,6 +27,8 @@ use Symfony\Component\Clock\ClockInterface;
  * Extends the reservation time of a donation, if permissible. Will be required soon as we will only issue
  * reservations for five-minute duration, so calling this action repeatedly acts like a heartbeat so we know
  * the FE hasn't gone away.
+ *
+ * @psalm-suppress UnusedProperty
  */
 class ExtendFundsReservationTime extends Action
 {
@@ -48,6 +52,9 @@ class ExtendFundsReservationTime extends Action
      * @throws DomainRecordNotFoundException on missing donation
      * @throws ApiErrorException if Stripe Payment Intent confirm() fails, other than because of a
      *                           missing payment method.
+     *
+     * Psalm suppress here (and above for UnusedProperty) because Psalm seems to be wrongly treating wrapInTransaction as returning never.
+     * @psalm-suppress UnevaluatedCode
      */
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
@@ -56,30 +63,37 @@ class ExtendFundsReservationTime extends Action
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
-        $donationUUID = $args['donationId'];
+        $donation = null;
 
-        try {
-            $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($donationUUID));
-        } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
-            $this->logger->warning(sprintf(
-                'Caught LockWaitTimeoutException in Extend for donation %s',
-                $donationUUID,
-            ));
+        $this->entityManager->wrapInTransaction(function () use ($args, $request, &$donation) {
+            $donationUUID = $args['donationId'];
 
-            throw new HttpBadRequestException(
-                request: $request,
-                message: 'Could not extend donation, locked by another request?',
-                previous: $lockWaitTimeoutException
-            );
-        }
+            try {
+                $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($donationUUID));
+            } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
+                $this->logger->warning(sprintf(
+                    'Caught LockWaitTimeoutException in Extend for donation %s',
+                    $donationUUID,
+                ));
 
-        if (! $donation) {
-            throw new HttpNotFoundException($request, "Donation $donationUUID not found");
-        }
+                throw new HttpBadRequestException(
+                    request: $request,
+                    message: 'Could not extend donation, locked by another request?',
+                    previous: $lockWaitTimeoutException
+                );
+            }
 
-        $donation->extendReservationFrom($this->clock->now());
+            if (! $donation) {
+                throw new HttpNotFoundException($request, "Donation $donationUUID not found");
+            }
 
-        $this->entityManager->flush();
+            $donation->extendReservationFrom($this->clock->now());
+
+            $this->entityManager->flush();
+        });
+
+        \assert($donation instanceof Donation);
+
 
         return $this->respondWithData($response, $donation->toFrontEndApiModel($this->enableNoReservationsMode));
     }
