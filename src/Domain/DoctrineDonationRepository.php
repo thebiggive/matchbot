@@ -9,13 +9,11 @@ use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Query;
 use GuzzleHttp\Exception\BadResponseException;
-use MatchBot\Application\Assertion;
+use GuzzleHttp\Exception\ConnectException;
 use MatchBot\Application\Environment;
-use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
-use MatchBot\Tests\Domain\DonationServiceTest;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -572,10 +570,11 @@ DQL);
             );
 
             return;
-        } catch (BadResponseException $exception) {
+        } catch (BadResponseException | ConnectException $exception) {
             $this->setSalesforceRePushNeeded($changeMessage->uuid);
+            $exceptionClass = get_class($exception);
             $this->logError(
-                "Pushing Salesforce donation {$changeMessage->uuid} got bad response: {$exception->getMessage()}"
+                "Pushing Salesforce donation {$changeMessage->uuid} got $exceptionClass: {$exception->getMessage()}"
             );
 
             return;
