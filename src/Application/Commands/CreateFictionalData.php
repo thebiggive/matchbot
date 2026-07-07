@@ -16,6 +16,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFamily;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignService;
 use MatchBot\Domain\CampaignStatistics;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\CharityResponseToOffer;
@@ -63,6 +64,7 @@ class CreateFictionalData extends Command
     public function __construct(
         private EntityManagerInterface $em,
         private CharityRepository $charityRepository,
+        private CampaignService $campaignService,
         private MetaCampaignRepository $metaCampaignRepository,
         private CampaignRepository $campaignRepository,
         private StripeClient $stripeClient,
@@ -212,6 +214,9 @@ class CreateFictionalData extends Command
                 $campaign->setSalesforceLastPull(new \DateTime());
                 $stats = CampaignStatistics::zeroPlaceholder($campaign, new \DateTimeImmutable('now'));
 
+                // otherwise we'd try to generate a new stats object later and the ORM Identity Map will complain that they both have the same ID.
+                $campaign->setTestStatistics($stats);
+
                 $io->writeln("Created fictional campaign {$campaign->getCampaignName()}, {$campaign->getSalesforceId()}");
                 $this->em->persist($campaign);
                 $this->em->persist($stats);
@@ -222,6 +227,10 @@ class CreateFictionalData extends Command
 
             $io->writeln("Donate at http://localhost:4200/donate/{$campaign->getSalesforceId()}");
 
+            $this->em->flush();
+
+            // have to do this afer flush above to ensure all campaigns have numeric IDs.
+            $this->campaignService->regenerateStats($campaign);
 
             $this->em->flush();
         }
