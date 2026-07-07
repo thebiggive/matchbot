@@ -229,7 +229,13 @@ class DonationTest extends TestCase
 
     public function testToSfAPIModel(): void
     {
-        $donation = self::someDonation(amount: '10', tipAmount: '1', collected: true, transactionId: 'some-transaction-id');
+        $donation = self::someDonation(
+            amount: '10',
+            tipAmount: '1',
+            collected: true,
+            transactionId: 'some-transaction-id',
+            createdAt: new \DateTimeImmutable('1970-01-01T00:00:00+00:00')
+        );
 
         $donation->recordPayout('po_some_payout_id', new \DateTimeImmutable('2025-05-21T02:17:46+01:00'));
 
@@ -281,6 +287,8 @@ class DonationTest extends TestCase
                 'isOffSession' => false,
                 'isOrganisationDonor' => true,
                 'referenceCode' => 'some-transaction-id',
+                'fundsReservedUntil' => null,
+                'maxReservationTime' => '1970-01-01T00:32:00+00:00'
             ],
             $donation->toSFApiModel()
         );
