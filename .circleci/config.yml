@@ -8,6 +8,18 @@ orbs:
   jira: circleci/jira@2.2.0
   slack: circleci/slack@5.1.1
 
+parameters:
+  run_command:
+    type: boolean
+    default: false
+  command_environment:
+    type: enum
+    enum: ["regression", "staging", "production"]
+    default: "regression"
+  command_string:
+    type: string
+    default: "matchbot:tick"
+
 jobs:
   test: # Also lints first
     # Working directory must match docker-compose mount / Docker `COPY` for real Doctrine proxy
@@ -156,7 +168,52 @@ jobs:
 
       - store_artifacts:
           path: reports
+  publish-command:
+    parameters:
+      environment:
+        type: string
+      command_string:
+        type: string
+    docker:
+      - image: cimg/aws:2026.07.1
+    steps:
+      - aws-cli/setup:
+          aws_access_key_id: AWS_ACCESS_KEY_ID
+          aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+      - run:
+          name: Publish Command to SQS
+          command: |
+            ENV="<< parameters.environment >>"
+            COMMAND="<< parameters.command_string >>"
+            COMMAND_LEN=${#COMMAND}
+
+            # High-priority queue has no suffix after `matchbot` apart from the `.fifo` which
+            # all first-in-first-out queues have.
+            # Name is defined in infrastructure repo but a real example is: tbg-staging-eu-west-1-matchbot.fifo
+            QUEUE_URL="https://sqs.${AWS_REGION}.amazonaws.com/${AWS_ACCOUNT_ID}/tbg-${ENV}-${AWS_REGION}-matchbot.fifo"
+
+            DEDUP_ID=$(date +%s)-$RANDOM
+
+            # Symfony Messenger PhpSerializer wraps the serialized PHP object in a JSON payload for SQS.
+            BODY="O:46:\"MatchBot\Application\Messenger\CommandRequest\":1:{s:7:\"command\";s:${COMMAND_LEN}:\"${COMMAND}\";}"
+            MESSAGE="{\"body\": \"$BODY\", \"headers\": {\"type\": \"MatchBot\\\\Application\\\\Messenger\\\\CommandRequest\"}}"
+
+            aws sqs send-message \
+              --queue-url "$QUEUE_URL" \
+              --message-body "$MESSAGE" \
+              --message-group-id "matchbot-cli" \
+              --message-deduplication-id "$DEDUP_ID"
+
 workflows:
+  run-command:
+    when: << pipeline.parameters.run_command >>
+    jobs:
+      - publish-command:
+          context:
+            - ecs-deploys
+          environment: << pipeline.parameters.command_environment >>
+          command_string: << pipeline.parameters.command_string >>
+
   build:
     jobs:
       - test:

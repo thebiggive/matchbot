@@ -3,8 +3,6 @@
 namespace MatchBot\Domain;
 
 use Assert\AssertionFailedException;
-use Assert\InvalidArgumentException;
-use Assert\LazyAssertionException;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Commands\UpdateCampaignDonationStats;
