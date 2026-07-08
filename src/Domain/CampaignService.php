@@ -235,7 +235,6 @@ class CampaignService
         $campaignHttpModel = new CampaignHttpModel(
             id: $campaign->getSalesforceId(),
             amountRaised: $stats->getAmountRaised()->toMajorUnitFloat(),
-            additionalImageUris: $sfCampaignData['additionalImageUris'], // @todo delete soon
             additionalImages: $sfCampaignData['additionalImages'] ?? [],
             aims: $sfCampaignData['aims'],
             alternativeFundUse: $sfCampaignData['alternativeFundUse'],
@@ -258,7 +257,6 @@ class CampaignService
             impactSummary: $sfCampaignData['impactSummary'],
             isMatched: $campaign->isMatched(),
             locations: $campaign->getLocationsForApi(),
-            logoUri: $sfCampaignData['logoUri'],
             matchFundsRemaining: $stats->getMatchFundsRemaining()->toMajorUnitFloat(),
             matchFundsTotal: $stats->getMatchFundsTotal()->toMajorUnitFloat(),
             parentMatchFundsRemaining: $parentMatchFundsRemaining,

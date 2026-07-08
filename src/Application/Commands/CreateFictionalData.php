@@ -300,7 +300,6 @@ class CreateFictionalData extends Command
             'status' => 'Active',
             'target' => 100.0,
             'endDate' => '2095-08-01T00:00:00.000Z',
-            'logoUri' => null,
             'problem' => 'Matchbot is threatened!',
             'summary' => "We can $name",
             'updates' => [],
@@ -334,7 +333,6 @@ class CreateFictionalData extends Command
             'usesSharedFunds' => false,
             'alternativeFundUse' => null,
             'parentAmountRaised' => null,
-            'additionalImageUris' => [],
             'additionalImages' => [
                 [
                     'uri' => 'https://picsum.photos/seed/' . \random_int(1, 100) . ' /1700/500',
