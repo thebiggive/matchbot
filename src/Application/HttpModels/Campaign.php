@@ -25,7 +25,6 @@ readonly class Campaign
     /**
      * @param 'Active'|'Expired'|'Preview'|null $status
      * @param list<array{altText: string, rank: int, uri: string}> $additionalImages
-     * @param list<array{uri: string, order: int}> $additionalImageUris (deprecated)
      * @param list<string> $aims
      * @param list<string> $beneficiaries
      * @param list<array{amount: float, description: string}> $budgetDetails
@@ -63,7 +62,6 @@ readonly class Campaign
             )
         )]
         public array $additionalImages,
-        public array $additionalImageUris,
         #[OA\Property(
             property: "aims",
             description: "List of campaign aims",
@@ -207,12 +205,6 @@ readonly class Campaign
             )
         )]
         public array $locations,
-        #[OA\Property(
-            property: "logoUri",
-            description: "URI for the campaign's logo",
-            example: "https://example.com/logo.png"
-        )]
-        public ?string $logoUri,
         #[OA\Property(
             property: "matchFundsRemaining",
             description: "Amount of match funds remaining for the campaign",
