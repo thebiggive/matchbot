@@ -3,7 +3,6 @@
 namespace MatchBot\Application\Messenger;
 
 use MatchBot\Application\Assertion;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\RegularGivingMandate;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;

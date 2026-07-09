@@ -20,9 +20,11 @@ use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityTokenService;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Messenger\CommandRequest;
 use MatchBot\Application\Messenger\DonationMatchingShouldBeChecked;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\FundTotalUpdated;
+use MatchBot\Application\Messenger\Handler\CommandRequestHandler;
 use MatchBot\Application\Messenger\Handler\DonationMatchCheckHandler;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\FundTotalUpdatedHandler;
@@ -405,6 +407,7 @@ return function (ContainerBuilder $containerBuilder) {
                     // Outbound, priority, for MatchBot worker; SQS queue in Production.
                     // `CharityUpdated` does call out to Salesforce, to read data, but it's rarer and
                     // occasionally more time-sensitive than the group below which push data.
+                    CommandRequest::class => [Transports::TRANSPORT_HIGH_PRIORITY],
                     DonationMatchingShouldBeChecked::class => [Transports::TRANSPORT_HIGH_PRIORITY],
 
                     // Outbound, payout processing and Salesforce pushes (lower priority). For MatchBot worker; SQS
@@ -429,6 +432,7 @@ return function (ContainerBuilder $containerBuilder) {
             $handleMiddleware = new HandleMessageMiddleware(new HandlersLocator(
                 /** We lazy-load the handlers from the container to avoid circular dependencies. */
                 [
+                    CommandRequest::class => [fn(CommandRequest $msg) => $c->get(CommandRequestHandler::class)($msg)],
                     DonationMatchingShouldBeChecked::class => [fn($msg) => $c->get(DonationMatchCheckHandler::class)($msg)],
                     Messages\Donation::class => [fn($msg) => $c->get(GiftAidResultHandler::class)($msg)],
                     Messages\Person::class => [fn($msg) => $c->get(PersonHandler::class)($msg)],
