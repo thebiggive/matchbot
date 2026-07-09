@@ -14,6 +14,8 @@ use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Messenger\CommandRequest;
 use MatchBot\Application\Messenger\Handler\CommandRequestHandler;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
+use MatchBot\Tests\TestLogger;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Exception\CommandNotFoundException;
 use Symfony\Component\Lock\LockFactory;
@@ -22,6 +24,7 @@ use Aws\CloudWatch\CloudWatchClient;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\Notifier\ChatterInterface;
 
 class RunConsoleCommandTest extends IntegrationTest
 {
@@ -35,7 +38,12 @@ class RunConsoleCommandTest extends IntegrationTest
         $tickCommand->setLockFactory($lockFactory);
         $app->add($tickCommand);
 
-        $handler = new CommandRequestHandler($app);
+        $handler = new CommandRequestHandler(
+            consoleApplication: $app,
+            chatter: $this->createStub(ChatterInterface::class),
+            environment: Environment::Test,
+            logger: new NullLogger()
+        );
 
         // 1. Check supported command runs ok
         $handler(new CommandRequest('matchbot:tick'));

@@ -432,7 +432,7 @@ return function (ContainerBuilder $containerBuilder) {
             $handleMiddleware = new HandleMessageMiddleware(new HandlersLocator(
                 /** We lazy-load the handlers from the container to avoid circular dependencies. */
                 [
-                    CommandRequest::class => [fn($msg) => $c->get(CommandRequestHandler::class)($msg)],
+                    CommandRequest::class => [fn(CommandRequest $msg) => $c->get(CommandRequestHandler::class)($msg)],
                     DonationMatchingShouldBeChecked::class => [fn($msg) => $c->get(DonationMatchCheckHandler::class)($msg)],
                     Messages\Donation::class => [fn($msg) => $c->get(GiftAidResultHandler::class)($msg)],
                     Messages\Person::class => [fn($msg) => $c->get(PersonHandler::class)($msg)],
