@@ -195,7 +195,7 @@ jobs:
             DEDUP_ID=$(date +%s)-$RANDOM
 
             # Symfony Messenger PhpSerializer wraps the serialized PHP object in a JSON payload for SQS.
-            BODY="O:46:\"MatchBot\Application\Messenger\CommandRequest\":1:{s:7:\"command\";s:${COMMAND_LEN}:\"${COMMAND}\";}"
+            BODY="O:45:\\\"MatchBot\\\\Application\\\\Messenger\\\\CommandRequest\\\":1:{s:7:\\\"command\\\";s:${COMMAND_LEN}:\\\"${COMMAND}\\\";}"
             MESSAGE="{\"body\": \"$BODY\", \"headers\": {\"type\": \"MatchBot\\\\Application\\\\Messenger\\\\CommandRequest\"}}"
 
             aws sqs send-message \
