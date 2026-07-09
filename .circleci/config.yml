@@ -197,7 +197,7 @@ jobs:
             # Symfony Messenger PhpSerializer wraps the serialized PHP message object in a PHP envelope object for SQS
             BODY="O:45:\\\"MatchBot\\\\Application\\\\Messenger\\\\CommandRequest\\\":1:{s:7:\\\"command\\\";s:${COMMAND_LEN}:\\\"${COMMAND}\\\";}"
             BODY_LEN=${#BODY}
-            MESSAGE="O:36:\\\"Symfony\\\\Component\\\\Messenger\\\\Envelope\\\":2:{a:0:{},s:${BODY_LEN}}:\\\${BODY}\\\";}"
+            MESSAGE="O:36:\\\"Symfony\\\\Component\\\\Messenger\\\\Envelope\\\":2:{a:0:{},s:${BODY_LEN}}:\\\"${BODY}\\\";}"
 
             aws sqs send-message \
               --queue-url "$QUEUE_URL" \
