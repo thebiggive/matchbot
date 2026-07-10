@@ -46,10 +46,20 @@ readonly class CommandRequestHandler
         $this->logger->info($startedLog);
         $this->sendToSlack($startedLog);
 
-        $exitCode = $this->consoleApplication->run(
-            new StringInput($message->command),
-            new ConsoleOutput()
-        );
+        try {
+            $exitCode = $this->consoleApplication->run(
+                new StringInput($message->command),
+                new ConsoleOutput()
+            );
+        } catch (\Throwable $throwable) {
+            $this->logger->error(sprintf(
+                'Command run %s failed with throwable code %s.',
+                $commandRunUuid,
+                $throwable->__toString()
+            ));
+
+            $exitCode = 1_000;
+        }
 
         if ($exitCode !== 0) {
             // Exception handler will also relay this one to Slack, to the env's alarms channel.
