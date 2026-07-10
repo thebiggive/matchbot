@@ -168,15 +168,34 @@ jobs:
 
       - store_artifacts:
           path: reports
+  serialize-command:
+    docker:
+      - image: thebiggive/php:dev-8.5
+        auth:
+          username: $DOCKER_HUB_USERNAME
+          password: $DOCKER_HUB_ACCESS_TOKEN
+    parameters:
+        environment:
+          type: string
+        command_string:
+          type: string
+    steps:
+      - run:
+          name: Serialize command to file
+          command: echo << parameters.command_string >> | ./serialize-command.php >  workspace/serialized-command.txt
+      - persist_to_workspace:
+          root: workspace
+          paths:
+            - serialized-command.txt
   publish-command:
     parameters:
       environment:
         type: string
-      command_string:
-        type: string
     docker:
       - image: cimg/aws:2026.07.1
     steps:
+      - attach_workspace:
+          at: /tmp/workspace
       - aws-cli/setup:
           aws_access_key_id: AWS_ACCESS_KEY_ID
           aws_secret_access_key: AWS_SECRET_ACCESS_KEY
@@ -184,8 +203,6 @@ jobs:
           name: Publish Command to SQS
           command: |
             ENV="<< parameters.environment >>"
-            COMMAND="<< parameters.command_string >>"
-            COMMAND_LEN=${#COMMAND}
 
             # High-priority queue has no suffix after `matchbot` apart from the `.fifo` which
             # all first-in-first-out queues have.
@@ -194,14 +211,9 @@ jobs:
 
             DEDUP_ID=$(date +%s)-$RANDOM
 
-            # Symfony Messenger PhpSerializer wraps the serialized PHP message object in a PHP envelope object for SQS
-            BODY="O:45:\\\"MatchBot\\\\Application\\\\Messenger\\\\CommandRequest\\\":1:{s:7:\\\"command\\\";s:${COMMAND_LEN}:\\\"${COMMAND}\\\";}"
-            BODY_LEN=${#BODY}
-            MESSAGE="O:36:\\\"Symfony\\\\Component\\\\Messenger\\\\Envelope\\\":2:{a:0:{},s:${BODY_LEN}}:\\\"${BODY}\\\";}"
-
             aws sqs send-message \
               --queue-url "$QUEUE_URL" \
-              --message-body "$MESSAGE" \
+              --message-body "$(</tmp/serialized-command.txt)" \
               --message-group-id "matchbot-cli" \
               --message-deduplication-id "$DEDUP_ID"
 
@@ -209,11 +221,15 @@ workflows:
   run-command:
     when: << pipeline.parameters.run_command >>
     jobs:
+      - serialize-command:
+          command_string: << pipeline.parameters.command_string >>
       - publish-command:
           context:
             - ecs-deploys
           environment: << pipeline.parameters.command_environment >>
           command_string: << pipeline.parameters.command_string >>
+          requires:
+            - serialize-command
 
   build:
     jobs:
