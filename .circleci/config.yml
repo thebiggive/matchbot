@@ -178,6 +178,7 @@ jobs:
         command_string:
           type: string
     steps:
+      - checkout
       - run:
           name: Make workspace dir
           command: mkdir workspace
