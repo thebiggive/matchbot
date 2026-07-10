@@ -184,7 +184,7 @@ jobs:
           command: mkdir workspace
       - run:
           name: Serialize command to file
-          command: echo << parameters.command_string >> | ./serialize-command.php >  workspace/serialized-command.txt
+          command: echo "<< parameters.command_string >>" | ./serialize-command.php > workspace/serialized-command.txt
       - persist_to_workspace:
           root: workspace
           paths:
