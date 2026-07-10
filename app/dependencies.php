@@ -415,7 +415,7 @@ return function (ContainerBuilder $containerBuilder) {
             $consoleApplication = $c->get(\Symfony\Component\Console\Application::class);
 
             // copied from `./matchbot` file - @todo remove duplication.
-            $commands = array_map($this->psr11App->get(...), [
+            $commands = array_map($c->get(...), [
                 // Alphabetical list:
                 CallFrequentTasks::class,
                 CancelStaleDonationFundTips::class,
@@ -444,6 +444,7 @@ return function (ContainerBuilder $containerBuilder) {
                 WriteSchemaFile::class,
             ]);
 
+            // @mago-expect analysis:less-specific-nested-argument-type
             $consoleApplication->addCommands($commands);
 
             return new CommandRequestHandler(
