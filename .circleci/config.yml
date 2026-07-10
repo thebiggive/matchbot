@@ -215,7 +215,7 @@ jobs:
 
             aws sqs send-message \
               --queue-url "$QUEUE_URL" \
-              --message-body "$(</tmp/serialized-command.txt)" \
+              --message-body "$(</tmp/workspace/serialized-command.txt)" \
               --message-group-id "matchbot-cli" \
               --message-deduplication-id "$DEDUP_ID"
 
