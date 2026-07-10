@@ -58,7 +58,7 @@ readonly class CommandRequestHandler
                 $throwable->__toString()
             ));
 
-            $exitCode = 1_000;
+            throw $throwable;
         }
 
         if ($exitCode !== 0) {
