@@ -18,6 +18,30 @@ use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityTokenService;
+use MatchBot\Application\Commands\CallFrequentTasks;
+use MatchBot\Application\Commands\CancelStaleDonationFundTips;
+use MatchBot\Application\Commands\ClaimGiftAid;
+use MatchBot\Application\Commands\CreateFictionalData;
+use MatchBot\Application\Commands\DeleteOldTestFunds;
+use MatchBot\Application\Commands\ExpireMatchFunds;
+use MatchBot\Application\Commands\ExpirePendingMandates;
+use MatchBot\Application\Commands\HandleOutOfSyncFunds;
+use MatchBot\Application\Commands\MergeOpenApiDocs;
+use MatchBot\Application\Commands\PullIndividualCampaignFromSF;
+use MatchBot\Application\Commands\PullMetaCampaignFromSF;
+use MatchBot\Application\Commands\PushDailyFundTotals;
+use MatchBot\Application\Commands\PushDonations;
+use MatchBot\Application\Commands\RedistributeMatchFunds;
+use MatchBot\Application\Commands\ResetMatching;
+use MatchBot\Application\Commands\RetrospectivelyMatch;
+use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
+use MatchBot\Application\Commands\SendStatistics;
+use MatchBot\Application\Commands\SetupTestMandate;
+use MatchBot\Application\Commands\TakeRegularGivingDonations;
+use MatchBot\Application\Commands\UpdateApproxCampaignStatus;
+use MatchBot\Application\Commands\UpdateCampaignDonationStats;
+use MatchBot\Application\Commands\UpdateCampaigns;
+use MatchBot\Application\Commands\WriteSchemaFile;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\CommandRequest;
@@ -385,6 +409,49 @@ return function (ContainerBuilder $containerBuilder) {
 
         RealTimeMatchingStorage::class => static function (ContainerInterface $c): RealTimeMatchingStorage {
             return new RedisMatchingStorage($c->get(Redis::class));
+        },
+
+        CommandRequestHandler::class => static function (ContainerInterface $c): CommandRequestHandler {
+            $consoleApplication = $c->get(\Symfony\Component\Console\Application::class);
+
+            // copied from `./matchbot` file - @todo remove duplication.
+            $commands = array_map($this->psr11App->get(...), [
+                // Alphabetical list:
+                CallFrequentTasks::class,
+                CancelStaleDonationFundTips::class,
+                ClaimGiftAid::class,
+                ConsumeMessagesCommand::class,
+                CreateFictionalData::class,
+                DeleteOldTestFunds::class,
+                ExpireMatchFunds::class,
+                ExpirePendingMandates::class,
+                HandleOutOfSyncFunds::class,
+                MergeOpenApiDocs::class,
+                PullIndividualCampaignFromSF::class,
+                PullMetaCampaignFromSF::class,
+                PushDailyFundTotals::class,
+                PushDonations::class,
+                RedistributeMatchFunds::class,
+                ResetMatching::class,
+                RetrospectivelyMatch::class,
+                ScheduledOutOfSyncFundsCheck::class,
+                SendStatistics::class,
+                SetupTestMandate::class,
+                TakeRegularGivingDonations::class,
+                UpdateApproxCampaignStatus::class,
+                UpdateCampaignDonationStats::class,
+                UpdateCampaigns::class,
+                WriteSchemaFile::class,
+            ]);
+
+            $consoleApplication->addCommands($commands);
+
+            return new CommandRequestHandler(
+                consoleApplication: $consoleApplication,
+                chatter: $c->get(Chatter::class),
+                environment: $c->get(Environment::class),
+                logger: $c->get(LoggerInterface::class)
+            );
         },
 
         Matching\Adapter::class =>
