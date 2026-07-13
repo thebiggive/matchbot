@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Messenger;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 
 class Base64PhpSerializer extends PhpSerializer
 {
+    public function __construct(private LoggerInterface | null $log  = null)
+    {
+    }
+
     /**
      * @param array<array-key, mixed> $encodedEnvelope
      */
@@ -32,6 +37,11 @@ class Base64PhpSerializer extends PhpSerializer
         // To counteract this, we addslashes() so the result of stripslashes() is our original data.
         $encodedEnvelope['body'] = addslashes($body);
 
-        return parent::decode($encodedEnvelope);
+        try {
+            return parent::decode($encodedEnvelope);
+        } catch (\Throwable $e) {
+            $this->log?->error("Error decoding message, encodedEnvelope body: {$encodedEnvelope['body']}, ");
+            throw $e;
+        }
     }
 }

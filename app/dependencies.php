@@ -236,8 +236,8 @@ return function (ContainerBuilder $containerBuilder) {
             );
         },
 
-        Transports::TRANSPORT_CLAIMBOT => static function (): TransportInterface {
-            return Transports::buildTransport(Transports::TRANSPORT_CLAIMBOT);
+        Transports::TRANSPORT_CLAIMBOT => static function (ContainerInterface $c): TransportInterface {
+            return Transports::buildTransport(Transports::TRANSPORT_CLAIMBOT, $c->get(LoggerInterface::class));
         },
 
         Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
@@ -704,8 +704,8 @@ return function (ContainerBuilder $containerBuilder) {
             return new RoutableMessageBus($busContainer, $bus);
         },
 
-        Transports::TRANSPORT_LOW_PRIORITY => static function (): TransportInterface {
-            return Transports::buildTransport(Transports::TRANSPORT_LOW_PRIORITY);
+        Transports::TRANSPORT_LOW_PRIORITY => static function (ContainerInterface $c): TransportInterface {
+            return Transports::buildTransport(Transports::TRANSPORT_LOW_PRIORITY, $c->get(LoggerInterface::class));
         },
 
         SerializerInterface::class => static function (): SerializerInterface {
@@ -745,8 +745,8 @@ return function (ContainerBuilder $containerBuilder) {
             );
         },
 
-        Transports::TRANSPORT_HIGH_PRIORITY => static function (): TransportInterface {
-            return Transports::buildTransport(Transports::TRANSPORT_HIGH_PRIORITY);
+        Transports::TRANSPORT_HIGH_PRIORITY => static function (ContainerInterface $c): TransportInterface {
+            return Transports::buildTransport(Transports::TRANSPORT_HIGH_PRIORITY, $c->get(LoggerInterface::class));
         },
 
         Connection::class => static function (ContainerInterface $c): Connection {

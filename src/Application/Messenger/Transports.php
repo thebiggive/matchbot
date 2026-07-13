@@ -2,6 +2,7 @@
 
 namespace MatchBot\Application\Messenger;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsTransportFactory;
 use Symfony\Component\Messenger\Bridge\Redis\Transport\RedisTransportFactory;
 use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransportFactory;
@@ -30,7 +31,7 @@ class Transports
         ],
     ];
 
-    public static function buildTransport(string $key): TransportInterface
+    public static function buildTransport(string $key, LoggerInterface | null $log  = null): TransportInterface
     {
         if (!isset(self::DEFINITIONS[$key])) {
             throw new \InvalidArgumentException("Transport key {$key} is not defined");
@@ -47,6 +48,6 @@ class Transports
             ...(self::DEFINITIONS[$key]['supports_sqs'] ? [new AmazonSqsTransportFactory()] : []),
         ]);
 
-        return $transportFactory->createTransport($dsn, [], new Base64PhpSerializer());
+        return $transportFactory->createTransport($dsn, [], new Base64PhpSerializer($log));
     }
 }
