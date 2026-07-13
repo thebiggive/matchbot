@@ -31,7 +31,7 @@ class Transports
         ],
     ];
 
-    public static function buildTransport(string $key, LoggerInterface | null $log  = null): TransportInterface
+    public static function buildTransport(string $key): TransportInterface
     {
         if (!isset(self::DEFINITIONS[$key])) {
             throw new \InvalidArgumentException("Transport key {$key} is not defined");
