@@ -113,7 +113,8 @@ class CampaignService
             'categories' => $sfCampaignData['categories'],
             'locations' => $campaign->getLocationsForApi(),
             'championName' => $sfCampaignData['championName'],
-            'imageUri' => $sfCampaignData['bannerUri'] ?? null,
+            'imageUri' => $sfCampaignData['bannerUri'] ?? $sfCampaignData['banner']['uri'] ?? null, // <- deprecated - FE should switch to using 'banner' instead once this is in prod..
+            'banner' => ['uri' => $sfCampaignData['banner']['uri'] ?? $sfCampaignData['bannerUri'] ?? null, 'alt_text' => $sfCampaignData['banner']['alt_text'] ?? null],
             'target' => $this->campaignTarget($campaign, $metaCampaign)->toMajorUnitFloat(),
             'parentUsesSharedFunds' => $metaCampaign && $metaCampaign->usesSharedFunds(),
             'parentRef' => $metaCampaign?->getSlug()->slug,
