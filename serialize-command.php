@@ -11,9 +11,8 @@ namespace MatchBot {
     $command = trim(fgets(STDIN));
 
     $envelope = new Envelope(new CommandRequest($command));
-    $serialized = \serialize($envelope);
 
-    echo \base64_encode($serialized);
+    echo \serialize($envelope);
     echo "\n";
 }
 

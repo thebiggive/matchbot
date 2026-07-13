@@ -48,6 +48,6 @@ class Transports
             ...(self::DEFINITIONS[$key]['supports_sqs'] ? [new AmazonSqsTransportFactory()] : []),
         ]);
 
-        return $transportFactory->createTransport($dsn, [], new Base64PhpSerializer($log));
+        return $transportFactory->createTransport($dsn, [], new PhpSerializer());
     }
 }
