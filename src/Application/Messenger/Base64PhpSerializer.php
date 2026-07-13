@@ -30,12 +30,14 @@ class Base64PhpSerializer extends PhpSerializer
             $decodedBody = base64_decode($body, true);
             if (is_string($decodedBody)) {
                 $body = $decodedBody;
+
+                // Symfony's PhpSerializer::decode does stripslashes() before unserializing.
+                // To counteract this, we addslashes() so the result of stripslashes() is our original data.
+                $body = addslashes($body);
             }
         }
 
-        // Symfony's PhpSerializer::decode does stripslashes() before unserializing.
-        // To counteract this, we addslashes() so the result of stripslashes() is our original data.
-        $encodedEnvelope['body'] = addslashes($body);
+        $encodedEnvelope['body'] = $body;
 
         try {
             return parent::decode($encodedEnvelope);
