@@ -113,7 +113,7 @@ class CampaignService
             'categories' => $sfCampaignData['categories'],
             'locations' => $campaign->getLocationsForApi(),
             'championName' => $sfCampaignData['championName'],
-            'imageUri' => $sfCampaignData['bannerUri'],
+            'imageUri' => $sfCampaignData['bannerUri'] ?? null,
             'target' => $this->campaignTarget($campaign, $metaCampaign)->toMajorUnitFloat(),
             'parentUsesSharedFunds' => $metaCampaign && $metaCampaign->usesSharedFunds(),
             'parentRef' => $metaCampaign?->getSlug()->slug,
