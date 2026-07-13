@@ -237,7 +237,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Transports::TRANSPORT_CLAIMBOT => static function (ContainerInterface $c): TransportInterface {
-            return Transports::buildTransport(Transports::TRANSPORT_CLAIMBOT, $c->get(LoggerInterface::class));
+            return Transports::buildTransport(Transports::TRANSPORT_CLAIMBOT);
         },
 
         Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
@@ -705,7 +705,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Transports::TRANSPORT_LOW_PRIORITY => static function (ContainerInterface $c): TransportInterface {
-            return Transports::buildTransport(Transports::TRANSPORT_LOW_PRIORITY, $c->get(LoggerInterface::class));
+            return Transports::buildTransport(Transports::TRANSPORT_LOW_PRIORITY);
         },
 
         SerializerInterface::class => static function (): SerializerInterface {
@@ -746,7 +746,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Transports::TRANSPORT_HIGH_PRIORITY => static function (ContainerInterface $c): TransportInterface {
-            return Transports::buildTransport(Transports::TRANSPORT_HIGH_PRIORITY, $c->get(LoggerInterface::class));
+            return Transports::buildTransport(Transports::TRANSPORT_HIGH_PRIORITY);
         },
 
         Connection::class => static function (ContainerInterface $c): Connection {
