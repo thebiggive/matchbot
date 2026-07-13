@@ -236,7 +236,7 @@ return function (ContainerBuilder $containerBuilder) {
             );
         },
 
-        Transports::TRANSPORT_CLAIMBOT => static function (ContainerInterface $c): TransportInterface {
+        Transports::TRANSPORT_CLAIMBOT => static function (): TransportInterface {
             return Transports::buildTransport(Transports::TRANSPORT_CLAIMBOT);
         },
 
@@ -704,7 +704,7 @@ return function (ContainerBuilder $containerBuilder) {
             return new RoutableMessageBus($busContainer, $bus);
         },
 
-        Transports::TRANSPORT_LOW_PRIORITY => static function (ContainerInterface $c): TransportInterface {
+        Transports::TRANSPORT_LOW_PRIORITY => static function (): TransportInterface {
             return Transports::buildTransport(Transports::TRANSPORT_LOW_PRIORITY);
         },
 
@@ -745,7 +745,7 @@ return function (ContainerBuilder $containerBuilder) {
             );
         },
 
-        Transports::TRANSPORT_HIGH_PRIORITY => static function (ContainerInterface $c): TransportInterface {
+        Transports::TRANSPORT_HIGH_PRIORITY => static function (): TransportInterface {
             return Transports::buildTransport(Transports::TRANSPORT_HIGH_PRIORITY);
         },
 
