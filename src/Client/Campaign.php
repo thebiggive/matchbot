@@ -53,7 +53,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     aims: list<string>,
  *     problem: ?string,
  *     solution: ?string,
- *     bannerUri: ?string,
+ *     bannerUri?: ?string,
  *     banner?: array{uri: string, alt_text: ?string}|null,
  *     amountRaised: float,
  *     summary: string,

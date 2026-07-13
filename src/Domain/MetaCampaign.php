@@ -190,7 +190,7 @@ class MetaCampaign extends SalesforceReadProxy
     {
         Assertion::true($data['isMetaCampaign'] ?? true);
 
-        $bannerUri = $data['bannerUri'];
+        $bannerUri = $data['bannerUri'] ?? null;
         $isRegularGiving = $data['isRegularGiving'] ?? null;
         Assertion::boolean($isRegularGiving);
 
