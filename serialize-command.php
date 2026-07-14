@@ -12,7 +12,7 @@ namespace MatchBot {
 
     $envelope = new Envelope(new CommandRequest($command));
 
-    echo \serialize($envelope);
+    echo addslashes(\serialize($envelope));
     echo "\n";
 }
 
