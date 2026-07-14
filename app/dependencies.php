@@ -455,9 +455,12 @@ return function (ContainerBuilder $containerBuilder) {
 
             $log->info('Added commands to console application...');
 
+            // seems to have fallen over between here and the next info somehow. Maybe the change
+            // bellow to request ChatterInterface instead of Chatter from the container will fix it.
+
             $commandRequestHandler = new CommandRequestHandler(
                 consoleApplication: $consoleApplication,
-                chatter: $c->get(Chatter::class),
+                chatter: $c->get(ChatterInterface::class),
                 environment: $c->get(Environment::class),
                 logger: $c->get(LoggerInterface::class)
             );
