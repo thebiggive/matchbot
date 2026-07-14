@@ -412,6 +412,10 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         CommandRequestHandler::class => static function (ContainerInterface $c): CommandRequestHandler {
+            $log = $c->get(LoggerInterface::class);
+
+            $log->info('In CommandRequestHandler factory function');
+
             $consoleApplication = $c->get(\Symfony\Component\Console\Application::class);
 
             // copied from `./matchbot` file - @todo remove duplication.
@@ -444,15 +448,23 @@ return function (ContainerBuilder $containerBuilder) {
                 WriteSchemaFile::class,
             ]);
 
+            $log->info('Loaded all commands from DI container...');
+
             // @mago-expect analysis:less-specific-nested-argument-type
             $consoleApplication->addCommands($commands);
 
-            return new CommandRequestHandler(
+            $log->info('Added commands to console application...');
+
+            $commandRequestHandler = new CommandRequestHandler(
                 consoleApplication: $consoleApplication,
                 chatter: $c->get(Chatter::class),
                 environment: $c->get(Environment::class),
                 logger: $c->get(LoggerInterface::class)
             );
+
+            $log->info('Constructed CommandRequestHandler instance');
+
+            return $commandRequestHandler;
         },
 
         Matching\Adapter::class =>
