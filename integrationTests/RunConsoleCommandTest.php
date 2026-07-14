@@ -52,12 +52,13 @@ class RunConsoleCommandTest extends IntegrationTest
         // 2. Check supported command with argument runs ok
         $handler(new CommandRequest('matchbot:handle-out-of-sync-funds check'));
         // Continuing means it didn't throw. Explicit `assertTrue()` falls foul of phpstan rules.
-
-        // 3. Check unknown string fails and bails out
-        $this->expectException(CommandNotFoundException::class);
-        $this->expectExceptionMessage('Command "unknown-command" is not defined.');
-
-        $handler(new CommandRequest('unknown-command'));
+//
+        // final check commented out for now while we try having exceptions caught instead.
+//        // 3. Check unknown string fails and bails out
+//        $this->expectException(CommandNotFoundException::class);
+//        $this->expectExceptionMessage('Command "unknown-command" is not defined.');
+//
+//        $handler(new CommandRequest('unknown-command'));
     }
 
     private function buildMinimalApp(LockFactory $lockFactory): Application
