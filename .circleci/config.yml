@@ -185,6 +185,9 @@ jobs:
       - run:
           name: Serialize command to file
           command: echo << parameters.command_string >> | ./serialize-command.php >  workspace/serialized-command.txt
+      - run:
+          name: Show serialized command including hidden characters
+          command: cat -v workspace/serialized-command.txt;
       - persist_to_workspace:
           root: workspace
           paths:
