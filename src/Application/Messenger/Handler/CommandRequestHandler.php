@@ -32,7 +32,7 @@ readonly class CommandRequestHandler
     public function __invoke(CommandRequest $message): void
     {
         $this->consoleApplication->setAutoExit(false);
-        $this->consoleApplication->setCatchExceptions(false);
+        $this->consoleApplication->setCatchExceptions(true);
 
         // No stamps because CircleCI handles the publish, so invent a UUID to uniquely identify
         // the task when it ends.
