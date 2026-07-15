@@ -19,8 +19,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(
     name: 'matchbot:pull-campaign-from-sf',
     description: 'Pulls an in individual campaigns) from Salesforce into the
-     matchbot db. Currently intended for manuual testing on dev machines, e.g. to load a regular giving campaign before
-     creating a mandate'
+     matchbot db. May be used for manual testing on dev machines, also to force an update in any environment in case the automatic push from SF failed or wasn\'t set to run when the last change happened'
 )]
 class PullIndividualCampaignFromSF extends LockingCommand
 {

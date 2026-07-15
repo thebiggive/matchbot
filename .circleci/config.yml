@@ -8,6 +8,18 @@ orbs:
   jira: circleci/jira@2.2.0
   slack: circleci/slack@5.1.1
 
+parameters:
+  run_command:
+    type: boolean
+    default: false
+  command_environment:
+    type: enum
+    enum: ["regression", "staging", "production"]
+    default: "regression"
+  command_string:
+    type: string
+    default: "matchbot:tick"
+
 jobs:
   test: # Also lints first
     # Working directory must match docker-compose mount / Docker `COPY` for real Doctrine proxy
@@ -156,8 +168,76 @@ jobs:
 
       - store_artifacts:
           path: reports
+  serialize-command:
+    docker:
+      - image: thebiggive/php:dev-8.5
+        auth:
+          username: $DOCKER_HUB_USERNAME
+          password: $DOCKER_HUB_ACCESS_TOKEN
+    parameters:
+        command_string:
+          type: string
+    steps:
+      - checkout
+      - run:
+          name: Make workspace dir
+          command: mkdir workspace
+      - run:
+          name: Serialize command to file
+          command: echo << parameters.command_string >> | ./serialize-command.php >  workspace/serialized-command.txt
+      - run:
+          name: Show serialized command including hidden characters
+          command: cat -v workspace/serialized-command.txt;
+      - persist_to_workspace:
+          root: workspace
+          paths:
+            - serialized-command.txt
+  publish-command:
+    parameters:
+      environment:
+        type: string
+    docker:
+      - image: cimg/aws:2026.07.1
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - aws-cli/setup:
+          aws_access_key_id: AWS_ACCESS_KEY_ID
+          aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+      - run:
+          name: Publish Command to SQS
+          command: |
+            ENV="<< parameters.environment >>"
+
+            # High-priority queue has no suffix after `matchbot` apart from the `.fifo` which
+            # all first-in-first-out queues have.
+            # Name is defined in infrastructure repo but a real example is: tbg-staging-eu-west-1-matchbot.fifo
+            QUEUE_URL="https://sqs.${AWS_REGION}.amazonaws.com/${AWS_ACCOUNT_ID}/tbg-${ENV}-${AWS_REGION}-matchbot.fifo"
+
+            DEDUP_ID=$(date +%s)-$RANDOM
+
+            aws sqs send-message \
+              --queue-url "$QUEUE_URL" \
+              --message-body "$(</tmp/workspace/serialized-command.txt)" \
+              --message-group-id "matchbot-cli" \
+              --message-deduplication-id "$DEDUP_ID"
+
 workflows:
+  run-command:
+    when: << pipeline.parameters.run_command >>
+    jobs:
+      - serialize-command:
+          command_string: << pipeline.parameters.command_string >>
+      - publish-command:
+          context:
+            - ecs-deploys
+          environment: << pipeline.parameters.command_environment >>
+          requires:
+            - serialize-command
+
   build:
+    when:
+      not: << pipeline.parameters.run_command >>
     jobs:
       - test:
           filters:
@@ -172,6 +252,8 @@ workflows:
           requires:
             - test
   build-and-notify:
+    when:
+      not: << pipeline.parameters.run_command >>
     jobs:
       - test:
           filters:
@@ -197,6 +279,8 @@ workflows:
             - test
 
   deploy-regression:
+    when:
+      not: << pipeline.parameters.run_command >>
     jobs:
       - test:
           filters:
@@ -293,6 +377,8 @@ workflows:
 
 
   deploy-staging:
+    when:
+      not: << pipeline.parameters.run_command >>
     jobs:
       - test:
           filters:
@@ -390,6 +476,8 @@ workflows:
                   }
 
   deploy-production:
+    when:
+      not: << pipeline.parameters.run_command >>
     jobs:
       - test:
           filters:

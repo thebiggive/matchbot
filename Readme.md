@@ -199,8 +199,6 @@ run
     docker compose exec app composer matchbot:list-commands
 ```
 
-for an overview of how all [`Commands`](./src/Application/Commands) in the app describe themselves.
-
 ### Running scripts locally
 
 To run a script in an already-running Docker `app` container, use:
@@ -208,6 +206,38 @@ To run a script in an already-running Docker `app` container, use:
 ```shell
     docker compose exec app composer {name:of:script:from:composer.json}
 ```
+
+for an overview of how all [`Commands`](./src/Application/Commands) in the app describe themselves.
+
+### Running commands in deployed environments
+
+If you have write-access to the repository, you can run any command in a deployed environment by sending a message to
+Matchbot from the CircleCI interface. This is an alternative to directly running the script through ECS.
+
+To do run a command via CircleCi.
+
+Your run and basic details of what you choose to run will be public, so **do not input any confidential
+information**. Output from the command will not be public.
+
+  1. Use the `list-commands` command as above from your local matchbot instance or otherwise find the code for the
+     the command you want, including any arguments and paramenters - for example `matchbot:pull-meta-campaign-from-sf earth-raise-2026`
+2. Go to https://app.circleci.com/pipelines/github/thebiggive/matchbot and click "Trigger pipeline"
+3. Fill in the form with: 
+   - Pipeline: **matchbot**, 
+   - Config source: **main** or **develop** or any other branch required,
+   - Checkout source (as config source)
+   - Paramenters:
+     - run_command: true
+     - command_environment: The environment you want the command to run in - regression, staging, or production
+     - command_string: The code you chose in step 1.
+
+![run-command.png](docs/run-command.png)
+
+Wait for the pipeline to run, and you should see notice of the start and end run in the **#matchbot** channel in slack. 
+The notice of the end of the run will tell you whether it was errored or apparently ran successfully. In case of error
+you should also see a message in the relevent **-alarms** Slack channel.  In either case for full output details read
+the matchbot logs from the environment. These are not sent to Slack here in case they may contain personally 
+identifiable information that we don't want there.
 
 #### Seeding with fictional data
 

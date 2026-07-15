@@ -18,11 +18,38 @@ use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityTokenService;
+use MatchBot\Application\Commands\CallFrequentTasks;
+use MatchBot\Application\Commands\CancelStaleDonationFundTips;
+use MatchBot\Application\Commands\ClaimGiftAid;
+use MatchBot\Application\Commands\Command;
+use MatchBot\Application\Commands\CreateFictionalData;
+use MatchBot\Application\Commands\DeleteOldTestFunds;
+use MatchBot\Application\Commands\ExpireMatchFunds;
+use MatchBot\Application\Commands\ExpirePendingMandates;
+use MatchBot\Application\Commands\HandleOutOfSyncFunds;
+use MatchBot\Application\Commands\MergeOpenApiDocs;
+use MatchBot\Application\Commands\PullIndividualCampaignFromSF;
+use MatchBot\Application\Commands\PullMetaCampaignFromSF;
+use MatchBot\Application\Commands\PushDailyFundTotals;
+use MatchBot\Application\Commands\PushDonations;
+use MatchBot\Application\Commands\RedistributeMatchFunds;
+use MatchBot\Application\Commands\ResetMatching;
+use MatchBot\Application\Commands\RetrospectivelyMatch;
+use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
+use MatchBot\Application\Commands\SendStatistics;
+use MatchBot\Application\Commands\SetupTestMandate;
+use MatchBot\Application\Commands\TakeRegularGivingDonations;
+use MatchBot\Application\Commands\UpdateApproxCampaignStatus;
+use MatchBot\Application\Commands\UpdateCampaignDonationStats;
+use MatchBot\Application\Commands\UpdateCampaigns;
+use MatchBot\Application\Commands\WriteSchemaFile;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Messenger\CommandRequest;
 use MatchBot\Application\Messenger\DonationMatchingShouldBeChecked;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\FundTotalUpdated;
+use MatchBot\Application\Messenger\Handler\CommandRequestHandler;
 use MatchBot\Application\Messenger\Handler\DonationMatchCheckHandler;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\FundTotalUpdatedHandler;
@@ -385,6 +412,18 @@ return function (ContainerBuilder $containerBuilder) {
             return new RedisMatchingStorage($c->get(Redis::class));
         },
 
+        CommandRequestHandler::class => static function (ContainerInterface $c): CommandRequestHandler {
+            $consoleApplication = $c->get(\Symfony\Component\Console\Application::class);
+            $consoleApplication->addCommands(Command::allCommands($c));
+
+            return new CommandRequestHandler(
+                consoleApplication: $consoleApplication,
+                chatter: $c->get(ChatterInterface::class),
+                environment: $c->get(Environment::class),
+                logger: $c->get(LoggerInterface::class)
+            );
+        },
+
         Matching\Adapter::class =>
             static function (ContainerInterface $c): Matching\Adapter {
                 return new Matching\Adapter(
@@ -405,6 +444,7 @@ return function (ContainerBuilder $containerBuilder) {
                     // Outbound, priority, for MatchBot worker; SQS queue in Production.
                     // `CharityUpdated` does call out to Salesforce, to read data, but it's rarer and
                     // occasionally more time-sensitive than the group below which push data.
+                    CommandRequest::class => [Transports::TRANSPORT_HIGH_PRIORITY],
                     DonationMatchingShouldBeChecked::class => [Transports::TRANSPORT_HIGH_PRIORITY],
 
                     // Outbound, payout processing and Salesforce pushes (lower priority). For MatchBot worker; SQS
@@ -429,6 +469,7 @@ return function (ContainerBuilder $containerBuilder) {
             $handleMiddleware = new HandleMessageMiddleware(new HandlersLocator(
                 /** We lazy-load the handlers from the container to avoid circular dependencies. */
                 [
+                    CommandRequest::class => [fn(CommandRequest $msg) => $c->get(CommandRequestHandler::class)($msg)],
                     DonationMatchingShouldBeChecked::class => [fn($msg) => $c->get(DonationMatchCheckHandler::class)($msg)],
                     Messages\Donation::class => [fn($msg) => $c->get(GiftAidResultHandler::class)($msg)],
                     Messages\Person::class => [fn($msg) => $c->get(PersonHandler::class)($msg)],

@@ -44,35 +44,6 @@ use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
 
 $psr11App = require __DIR__ . '/bootstrap.php';
 
-$commands = array_map($psr11App->get(...), [
-    // Alphabetical list:
-    CallFrequentTasks::class,
-    CancelStaleDonationFundTips::class,
-    ClaimGiftAid::class,
-    ConsumeMessagesCommand::class,
-    CreateFictionalData::class,
-    DeleteOldTestFunds::class,
-    ExpireMatchFunds::class,
-    ExpirePendingMandates::class,
-    HandleOutOfSyncFunds::class,
-    MergeOpenApiDocs::class,
-    PullIndividualCampaignFromSF::class,
-    PullMetaCampaignFromSF::class,
-    PushDailyFundTotals::class,
-    PushDonations::class,
-    RedistributeMatchFunds::class,
-    ResetMatching::class,
-    RetrospectivelyMatch::class,
-    ScheduledOutOfSyncFundsCheck::class,
-    SendStatistics::class,
-    SetupTestMandate::class,
-    TakeRegularGivingDonations::class,
-    UpdateApproxCampaignStatus::class,
-    UpdateCampaignDonationStats::class,
-    UpdateCampaigns::class,
-    WriteSchemaFile::class,
-]);
-
 $dispatcher = new EventDispatcher();
 $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleEvent $event) use ($psr11App) {
     $logger = $psr11App->get(Logger::class);
@@ -97,6 +68,7 @@ $cliApp->getDefinition()->addOption(
     )
 );
 
+$commands = Command::allCommands($psr11App);
 foreach ($commands as $command) {
     if ($command instanceof LockingCommand) { // i.e. not Symfony Messenger's built-in consumer.
         $command->setLockFactory($psr11App->get(LockFactory::class));
