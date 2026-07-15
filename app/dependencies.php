@@ -21,6 +21,7 @@ use MatchBot\Application\Auth\IdentityTokenService;
 use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\CancelStaleDonationFundTips;
 use MatchBot\Application\Commands\ClaimGiftAid;
+use MatchBot\Application\Commands\Command;
 use MatchBot\Application\Commands\CreateFictionalData;
 use MatchBot\Application\Commands\DeleteOldTestFunds;
 use MatchBot\Application\Commands\ExpireMatchFunds;
@@ -418,40 +419,9 @@ return function (ContainerBuilder $containerBuilder) {
 
             $consoleApplication = $c->get(\Symfony\Component\Console\Application::class);
 
-            // copied from `./matchbot` file - @todo remove duplication.
-            $commands = array_map($c->get(...), [
-                // Alphabetical list:
-                CallFrequentTasks::class,
-                CancelStaleDonationFundTips::class,
-                ClaimGiftAid::class,
-                ConsumeMessagesCommand::class,
-                CreateFictionalData::class,
-                DeleteOldTestFunds::class,
-                ExpireMatchFunds::class,
-                ExpirePendingMandates::class,
-                HandleOutOfSyncFunds::class,
-                MergeOpenApiDocs::class,
-                PullIndividualCampaignFromSF::class,
-                PullMetaCampaignFromSF::class,
-                PushDailyFundTotals::class,
-                PushDonations::class,
-                RedistributeMatchFunds::class,
-                ResetMatching::class,
-                RetrospectivelyMatch::class,
-                ScheduledOutOfSyncFundsCheck::class,
-                SendStatistics::class,
-                SetupTestMandate::class,
-                TakeRegularGivingDonations::class,
-                UpdateApproxCampaignStatus::class,
-                UpdateCampaignDonationStats::class,
-                UpdateCampaigns::class,
-                WriteSchemaFile::class,
-            ]);
-
             $log->info('Loaded all commands from DI container...');
 
-            // @mago-expect analysis:less-specific-nested-argument-type
-            $consoleApplication->addCommands($commands);
+            $consoleApplication->addCommands(Command::allCommands($c));
 
             $log->info('Added commands to console application...');
 
