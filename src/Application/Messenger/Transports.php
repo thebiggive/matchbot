@@ -2,7 +2,6 @@
 
 namespace MatchBot\Application\Messenger;
 
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsTransportFactory;
 use Symfony\Component\Messenger\Bridge\Redis\Transport\RedisTransportFactory;
 use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransportFactory;
