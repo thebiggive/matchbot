@@ -70,7 +70,7 @@ readonly class CommandRequestHandler
             ));
         }
 
-        $statusAdjective = $exitCode === 0 ? ' successfully' : ' with errors (see alarm)';
+        $statusAdjective = $exitCode === 0 ? 'successfully' : 'with errors (see alarm)';
         $finishedLog = sprintf(
             '%s finished %s with ID %s',
             __CLASS__,
