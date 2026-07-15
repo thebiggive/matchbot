@@ -413,31 +413,15 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         CommandRequestHandler::class => static function (ContainerInterface $c): CommandRequestHandler {
-            $log = $c->get(LoggerInterface::class);
-
-            $log->info('In CommandRequestHandler factory function');
-
             $consoleApplication = $c->get(\Symfony\Component\Console\Application::class);
-
-            $log->info('Loaded all commands from DI container...');
-
             $consoleApplication->addCommands(Command::allCommands($c));
 
-            $log->info('Added commands to console application...');
-
-            // seems to have fallen over between here and the next info somehow. Maybe the change
-            // bellow to request ChatterInterface instead of Chatter from the container will fix it.
-
-            $commandRequestHandler = new CommandRequestHandler(
+            return new CommandRequestHandler(
                 consoleApplication: $consoleApplication,
                 chatter: $c->get(ChatterInterface::class),
                 environment: $c->get(Environment::class),
                 logger: $c->get(LoggerInterface::class)
             );
-
-            $log->info('Constructed CommandRequestHandler instance');
-
-            return $commandRequestHandler;
         },
 
         Matching\Adapter::class =>
