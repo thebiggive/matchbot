@@ -92,6 +92,10 @@ class CampaignService
         $slug = $campaign->getMetaCampaignSlug();
         $metaCampaign = $slug ? $this->metaCampaignRepository->getBySlug($slug) : null;
 
+        if ($campaign->getCampaignName() === 'Save Barney\'s Keyboard 1') {
+            \trigger_error('Testing how we handle warnings', \E_USER_WARNING);
+        }
+
         return [
             'charity' => [
                 'id' => $campaign->getCharity()->getSalesforceId(),
