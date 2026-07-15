@@ -72,7 +72,7 @@ readonly class CommandRequestHandler
 
         $statusAdjective = $exitCode === 0 ? 'successfully' : 'with errors (see alarm)';
         $finishedLog = sprintf(
-            '%s finished %s with ID %s',
+            '%s finished %s with ID %s. See matchbot logs for details.',
             __CLASS__,
             $statusAdjective,
             $commandRunUuid,
