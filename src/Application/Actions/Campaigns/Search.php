@@ -6,6 +6,7 @@ use BcMath\Number;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use MatchBot\Client\FindThatPostcode;
 use MatchBot\Client\PointOutsideUK;
 use MatchBot\Domain\Campaign;
@@ -69,6 +70,15 @@ class Search extends Action
         Assertion::string($sortDirection);
         Assertion::string($sortField);
         Assertion::nullOrString($term);
+
+        if (! Environment::current()->isProduction() && is_string($term) && \str_contains($term, 'issue-warning-please')) {
+            // send a search query including issue-warning-please to see how we handle PHP warnings. You can include other
+            // terms as well to make it match a campaign.
+            \trigger_error(
+                message: 'Testing how we handle warnings, you asked to issue-warning-please',
+                error_level: \E_USER_WARNING
+            );
+        }
 
         if (!\in_array($sortDirection, ['asc', 'desc'], true)) {
             throw new HttpBadRequestException($request, 'Unrecognised sort direction');
