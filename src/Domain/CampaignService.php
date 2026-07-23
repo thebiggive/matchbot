@@ -194,7 +194,7 @@ class CampaignService
         $charityHttpModel = new \MatchBot\Application\HttpModels\Charity(
             id: $charity->getSalesforceId(),
             name: $charity->getName(),
-            optInStatement: $sfCharityData['optInStatement'] ?? null, // typed as `string` in ts, but also tested for truthiness.
+            optInStatement: $sfCharityData['optInStatement'] ?? '', // typed as `string` in ts, but also tested for truthiness.
             facebook: $sfCharityData['facebook'] ?? null,
             hmrcReferenceNumber: $charity->getHmrcReferenceNumber(),
             instagram: $sfCharityData['instagram'] ?? null,
