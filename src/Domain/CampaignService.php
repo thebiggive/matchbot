@@ -191,6 +191,12 @@ class CampaignService
             $websiteUri = null;
         }
 
+        if (!array_key_exists('giftAidOnboardingStatus', $sfCharityData)) {
+            $this->logger->error(
+                "Missing giftAidOnboardingStatus for {$charity->getName()} {$charity->getSalesforceId()} for campaign"
+                . " {$campaign->getCampaignName()} {$campaign->getSalesforceId()}");
+        }
+
         $charityHttpModel = new \MatchBot\Application\HttpModels\Charity(
             id: $charity->getSalesforceId(),
             name: $charity->getName(),
