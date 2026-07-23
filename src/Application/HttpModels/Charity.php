@@ -40,12 +40,6 @@ readonly class Charity
         )]
         public ?string $facebook,
         #[OA\Property(
-            property: "giftAidOnboardingStatus",
-            description: "Status of the charity's Gift Aid onboarding",
-            example: "Complete"
-        )]
-        public ?string $giftAidOnboardingStatus,
-        #[OA\Property(
             property: "hmrcReferenceNumber",
             description: "HMRC reference number for the charity",
             example: "AB12345"
