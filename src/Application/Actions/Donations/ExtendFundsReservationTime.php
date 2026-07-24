@@ -12,6 +12,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Settings;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
+use MatchBot\Domain\DomainException\ExpectedMatchFundsNotFound;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -53,8 +54,6 @@ class ExtendFundsReservationTime extends Action
      * @throws ApiErrorException if Stripe Payment Intent confirm() fails, other than because of a
      *                           missing payment method.
      *
-     * Psalm suppress here (and above for UnusedProperty) because Psalm seems to be wrongly treating wrapInTransaction as returning never.
-     * @psalm-suppress UnevaluatedCode
      */
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
@@ -65,7 +64,7 @@ class ExtendFundsReservationTime extends Action
 
         $donation = null;
 
-        $this->entityManager->wrapInTransaction(function () use ($args, $request, &$donation) {
+        $this->entityManager->wrapInTransaction(function () use ($response, $args, $request, &$donation) {
             $donationUUID = $args['donationId'];
 
             try {
@@ -87,7 +86,15 @@ class ExtendFundsReservationTime extends Action
                 throw new HttpNotFoundException($request, "Donation $donationUUID not found");
             }
 
-            $donation->extendReservationFrom($this->clock->now());
+            try {
+                $donation->extendReservationFrom($this->clock->now());
+            } catch (ExpectedMatchFundsNotFound $e) {
+                return $this->validationError(
+                    $response,
+                    logMessage: $e->getMessage(),
+                    publicMessage: "This donation does not have the expected match funds, so reservation cannot be extended",
+                );
+            }
 
             $this->entityManager->flush();
         });

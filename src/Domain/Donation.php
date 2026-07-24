@@ -20,6 +20,7 @@ use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\DomainException\CannotRemoveGiftAid;
+use MatchBot\Domain\DomainException\ExpectedMatchFundsNotFound;
 use MatchBot\Domain\DomainException\RegularGivingDonationTooOldToCollect;
 use Messages;
 use PrinsFrank\Standards\Country\CountryAlpha2;
@@ -2210,9 +2211,17 @@ class Donation extends SalesforceWriteProxy
     /**
      * Extends funds reservation based on a request received at the stated time.
      * @param DateTimeImmutable $at
+     *@throws ExpectedMatchFundsNotFound if there are already no reserved funds for this donation.
+     * Will happen if the client waits to long between requests to extend, e.g. because they went through a tunnel
+     * without an internet connection.
+     *
      */
     public function extendReservationFrom(DateTimeImmutable $at): void
     {
+        if (! $this->getFundingWithdrawalTotalAsObject()->equals($this->expectedMatchAmount)) {
+            throw new ExpectedMatchFundsNotFound('The expected funds for this donation are already not reserved');
+        }
+
         // allow the donor to keep the funds reserved until five minutes later or the donation has reached its
         // expiry time, whichever happens sooner:
         $this->fundsReservedUntil = min(
