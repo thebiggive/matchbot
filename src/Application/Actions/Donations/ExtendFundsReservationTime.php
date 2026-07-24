@@ -9,9 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
-use MatchBot\Application\Assertion;
 use MatchBot\Application\Settings;
-use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\DomainException\ExpectedMatchFundsNotFound;
 use MatchBot\Domain\Donation;
@@ -65,41 +63,41 @@ class ExtendFundsReservationTime extends Action
 
         $donation = null;
 
-        $this->entityManager->wrapInTransaction(function () use ($response, $args, $request, &$donation) {
-            $donationUUID = $args['donationId'];
+        try {
+            $this->entityManager->wrapInTransaction(function () use ($args, $request, &$donation) {
+                $donationUUID = $args['donationId'];
 
-            try {
-                $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($donationUUID));
-            } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
-                $this->logger->warning(sprintf(
-                    'Caught LockWaitTimeoutException in Extend for donation %s',
-                    $donationUUID,
-                ));
+                try {
+                    $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($donationUUID));
+                } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
+                    $this->logger->warning(sprintf(
+                        'Caught LockWaitTimeoutException in Extend for donation %s',
+                        $donationUUID,
+                    ));
 
-                throw new HttpBadRequestException(
-                    request: $request,
-                    message: 'Could not extend donation, locked by another request?',
-                    previous: $lockWaitTimeoutException
-                );
-            }
+                    throw new HttpBadRequestException(
+                        request: $request,
+                        message: 'Could not extend donation, locked by another request?',
+                        previous: $lockWaitTimeoutException
+                    );
+                }
 
-            if (! $donation) {
-                throw new HttpNotFoundException($request, "Donation $donationUUID not found");
-            }
+                if (!$donation) {
+                    throw new HttpNotFoundException($request, "Donation $donationUUID not found");
+                }
 
-            try {
                 $donation->extendReservationFrom($this->clock->now());
-            } catch (ExpectedMatchFundsNotFound $e) {
-                return $this->validationError(
-                    $response,
-                    logMessage: $e->getMessage(),
-                    publicMessage: "This donation does not have the expected match funds, so reservation cannot be extended",
-                    errorType: ActionError::EXPECTED_MATCH_FUNDS_NOT_FOUND
-                );
-            }
 
-            $this->entityManager->flush();
-        });
+                $this->entityManager->flush();
+            });
+        } catch (ExpectedMatchFundsNotFound $e) {
+            return $this->validationError(
+                $response,
+                logMessage: $e->getMessage(),
+                publicMessage: "This donation does not have the expected match funds, so reservation cannot be extended",
+                errorType: ActionError::EXPECTED_MATCH_FUNDS_NOT_FOUND
+            );
+        }
 
         \assert($donation instanceof Donation);
 
