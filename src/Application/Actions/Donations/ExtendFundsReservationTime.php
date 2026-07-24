@@ -8,6 +8,7 @@ use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Settings;
 use MatchBot\Client\BadRequestException;
@@ -93,6 +94,7 @@ class ExtendFundsReservationTime extends Action
                     $response,
                     logMessage: $e->getMessage(),
                     publicMessage: "This donation does not have the expected match funds, so reservation cannot be extended",
+                    errorType: ActionError::EXPECTED_MATCH_FUNDS_NOT_FOUND
                 );
             }
 
