@@ -99,9 +99,10 @@ class ExtendFundsReservationTime extends Action
             );
         }
 
+        /** @psalm-suppress UnevaluatedCode - psalm seems to wrongly treat wrapInTransaction as returning never here.*/
         \assert($donation instanceof Donation);
 
-
+        /** @psalm-suppress UnevaluatedCode - psalm seems to wrongly treat wrapInTransaction as returning never here.*/
         return $this->respondWithData($response, $donation->toFrontEndApiModel($this->enableNoReservationsMode));
     }
 }
