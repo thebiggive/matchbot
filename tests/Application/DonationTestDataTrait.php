@@ -9,6 +9,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
@@ -170,7 +171,7 @@ trait DonationTestDataTrait
     {
         $campaign = new Campaign(
             Salesforce18Id::ofCampaign('234567890pROjecTID'),
-            metaCampaignSlug: null,
+            metaCampaignSlug: 'placeholder-metacampaign-slug',
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable(),
             endDate: new \DateTimeImmutable(),

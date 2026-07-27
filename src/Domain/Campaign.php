@@ -629,7 +629,13 @@ class Campaign extends SalesforceReadProxy
 
     private function isOpenWithEffectiveEndDate(\DateTimeImmutable $at, \DateTimeImmutable $effectiveEndDate): bool
     {
-        return $this->isPublished && $this->startDate <= $at && $effectiveEndDate > $at;
+        return $this->isPublished
+            && $this->startDate <= $at
+            && $effectiveEndDate > $at
+            && (
+                !$this->isStandalone() ||
+                $this->getStatistics()->getMatchFundsTotal()->greaterThan(Money::zero($this->getCurrency()))
+            );
     }
 
     public function getStartDate(): \DateTimeImmutable
@@ -713,5 +719,14 @@ class Campaign extends SalesforceReadProxy
                 $this->locations->toArray()
             )
         );
+    }
+
+    /**
+     * True if this is a standalone charity campaign, i.e. not part of any meta-campaign.
+     * @return bool
+     */
+    private function isStandalone(): bool
+    {
+        return $this->metaCampaignSlug === null;
     }
 }
