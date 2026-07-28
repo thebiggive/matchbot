@@ -634,6 +634,7 @@ class Campaign extends SalesforceReadProxy
             && $effectiveEndDate > $at
             && (
                 !$this->isStandalone() ||
+                !$this->isMatched ||
                 $this->getStatistics()->getMatchFundsTotal()->greaterThan(Money::zero($this->getCurrency()))
             );
     }
