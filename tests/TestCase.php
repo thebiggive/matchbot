@@ -400,6 +400,7 @@ class TestCase extends PHPUnitTestCase
     }
 
     /**
+     * @param bool $standalone
      * @param ?Salesforce18Id<Campaign> $sfId
      */
     public static function someCampaign(
@@ -414,9 +415,14 @@ class TestCase extends PHPUnitTestCase
         ?bool $charityRejected = false,
         ?Money $totalFundraisingTarget = null,
         ?Money $withMatchFundsTotal = null,
+        bool $standalone = false,
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         $sfId ??= Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
+
+        if ($metaCampaignSlug === null && ! $standalone) {
+            $metaCampaignSlug = MetaCampaignSlug::of('dummy-metacampaign-slug');
+        }
 
         $campaign = new Campaign(
             $sfId,
@@ -480,7 +486,7 @@ class TestCase extends PHPUnitTestCase
             amount: $amount,
             currencyCode: $currencyCode,
             paymentMethodType: $paymentMethodType,
-            campaign: $campaign ?? self::someCampaign(),
+            campaign: $campaign ?? self::someCampaign(null, null, null, false, null, null, null, false, false, null, null, false),
             charityComms: null,
             championComms: null,
             pspCustomerId: null,
