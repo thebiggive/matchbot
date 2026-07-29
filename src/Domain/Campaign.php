@@ -447,10 +447,8 @@ class Campaign extends SalesforceReadProxy
      */
     public function isOpenForFinalising(\DateTimeImmutable $at): bool
     {
-        $halfAnHour = new \DateInterval('PT30M');
-
         $delayedEndDate = \DateTimeImmutable::createFromInterface($this->endDate)
-            ->add($halfAnHour);
+            ->add(Donation::expiryInterval());
 
         return $this->isOpenWithEffectiveEndDate(at: $at, effectiveEndDate: $delayedEndDate);
     }
