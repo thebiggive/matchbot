@@ -299,7 +299,8 @@ abstract class IntegrationTest extends TestCase
         bool $campaignOpen = true,
         ?string $charitySfId = null,
         string $charityName = 'Some Charity',
-        bool $isRegularGiving = false
+        bool $isRegularGiving = false,
+        bool $isStandalone = false
     ): array {
         $charityId = random_int(1000, 100000);
         $charitySfId ??= Salesforce18Id::ofCharity($this->randomString())->value;
@@ -325,13 +326,15 @@ abstract class IntegrationTest extends TestCase
 
         $matched =  1;
 
+        $slug = $isStandalone ? null : "'placeholder-metacampaign-slug'";
+
         $db->executeStatement(<<<SQL
             INSERT INTO Campaign (charity_id, name, summary, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
                                   createdAt, updatedAt, isPublished, currencyCode, isRegularGiving, salesforceData,
-                                  total_fundraising_target_amountInPence, total_fundraising_target_currency
+                                  total_fundraising_target_amountInPence, total_fundraising_target_currency, metaCampaignSlug
                                   )
             VALUES ('$charityId', 'some charity', 'campaign summary', '$nyd', '$closeDate', '$matched', '$campaignSfId',
-                    '$nyd', '$nyd', '$nyd', true, 'GBP',  '$isRegularGivingInt', '{}', 0, 'GBP')
+                    '$nyd', '$nyd', '$nyd', true, 'GBP',  '$isRegularGivingInt', '{}', 0, 'GBP', $slug)
             SQL
         );
 
@@ -358,6 +361,7 @@ abstract class IntegrationTest extends TestCase
         );
         ['fundId' => $fundId, 'campaignFundingId' => $campaignFundingId] =
             $this->addFunding($campaignId, $fundWithAmountInPounds, $fundType);
+
 
         $compacted = compact('charityId', 'campaignId', 'fundId', 'campaignFundingId');
         Assertion::allInteger($compacted);

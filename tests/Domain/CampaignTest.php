@@ -18,7 +18,7 @@ class CampaignTest extends TestCase
     {
         $campaign = new Campaign(
             sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
-            metaCampaignSlug: null,
+            metaCampaignSlug: 'placeholder-metacampaign-slug',
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
@@ -128,7 +128,7 @@ class CampaignTest extends TestCase
     public function testReadyToAcceptAdHocDonation(): void
     {
         $date = new \DateTimeImmutable('2025-08-01');
-        $campaign = self::someCampaign();
+        $campaign = self::someCampaign(null, null, null, false, null, null, null, false, false, null, null, false);
 
         $this->expectNotToPerformAssertions();
 
@@ -165,7 +165,7 @@ class CampaignTest extends TestCase
 
     public function testCampaignStatusIsBasedOnDate(): void
     {
-        $campaign = self::someCampaign();
+        $campaign = self::someCampaign(null, null, null, false, null, null, null, false, false, null, null, false);
         $campaign->setStartDate(new \DateTimeImmutable('2026-01-01T12:00:00'));
         $campaign->setEndDate(new \DateTimeImmutable('2027-01-01T12:00:00'));
 
@@ -173,5 +173,35 @@ class CampaignTest extends TestCase
         $this->assertSame(CampaignStatus::Active, $campaign->getStatus(new \DateTimeImmutable('2026-01-01T12:00:00')));
         $this->assertSame(CampaignStatus::Active, $campaign->getStatus(new \DateTimeImmutable('2027-01-01T12:00:00')));
         $this->assertSame(CampaignStatus::Expired, $campaign->getStatus(new \DateTimeImmutable('2027-01-01T12:00:01')));
+    }
+
+    public function testStandaloneCharityCampaignWithNoFundingCannotOpen(): void
+    {
+        $campaign = self::someCampaign(standalone: true, isMatched: true);
+
+        $campaign->setStartDate(new \DateTimeImmutable('2026-01-01T12:00:00'));
+        $campaign->setEndDate(new \DateTimeImmutable('2027-01-01T12:00:00'));
+
+        $this->assertFalse($campaign->isOpen(new \DateTimeImmutable('2026-06-01T12:00:00')));
+    }
+
+    public function testStandaloneUnMatchedCharityCampaignWithNoFundingCanOpen(): void
+    {
+        $campaign = self::someCampaign(standalone: true, isMatched: false);
+
+        $campaign->setStartDate(new \DateTimeImmutable('2026-01-01T12:00:00'));
+        $campaign->setEndDate(new \DateTimeImmutable('2027-01-01T12:00:00'));
+
+        $this->assertTrue($campaign->isOpen(new \DateTimeImmutable('2026-06-01T12:00:00')));
+    }
+
+    public function testStandaloneCharityCampaignWithFundingCanOpen(): void
+    {
+        $campaign = self::someCampaign(standalone: true, withMatchFundsTotal: Money::fromNumericStringGBP('1'));
+
+        $campaign->setStartDate(new \DateTimeImmutable('2026-01-01T12:00:00'));
+        $campaign->setEndDate(new \DateTimeImmutable('2027-01-01T12:00:00'));
+
+        $this->assertTrue($campaign->isOpen(new \DateTimeImmutable('2026-06-01T12:00:00')));
     }
 }

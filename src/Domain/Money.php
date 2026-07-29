@@ -225,4 +225,9 @@ class Money implements \JsonSerializable, \Stringable
 
         return $this->amountInPence > $that->amountInPence;
     }
+
+    public function equals(Money $that): bool
+    {
+        return $this->amountInPence === $that->amountInPence && $this->currency == $that->currency;
+    }
 }

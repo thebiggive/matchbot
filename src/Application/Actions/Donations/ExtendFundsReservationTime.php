@@ -8,10 +8,10 @@ use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\Assertion;
+use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Settings;
-use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
+use MatchBot\Domain\DomainException\ExpectedMatchFundsNotFound;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -53,8 +53,6 @@ class ExtendFundsReservationTime extends Action
      * @throws ApiErrorException if Stripe Payment Intent confirm() fails, other than because of a
      *                           missing payment method.
      *
-     * Psalm suppress here (and above for UnusedProperty) because Psalm seems to be wrongly treating wrapInTransaction as returning never.
-     * @psalm-suppress UnevaluatedCode
      */
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
@@ -65,36 +63,46 @@ class ExtendFundsReservationTime extends Action
 
         $donation = null;
 
-        $this->entityManager->wrapInTransaction(function () use ($args, $request, &$donation) {
-            $donationUUID = $args['donationId'];
+        try {
+            $this->entityManager->wrapInTransaction(function () use ($args, $request, &$donation) {
+                $donationUUID = $args['donationId'];
 
-            try {
-                $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($donationUUID));
-            } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
-                $this->logger->warning(sprintf(
-                    'Caught LockWaitTimeoutException in Extend for donation %s',
-                    $donationUUID,
-                ));
+                try {
+                    $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($donationUUID));
+                } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
+                    $this->logger->warning(sprintf(
+                        'Caught LockWaitTimeoutException in Extend for donation %s',
+                        $donationUUID,
+                    ));
 
-                throw new HttpBadRequestException(
-                    request: $request,
-                    message: 'Could not extend donation, locked by another request?',
-                    previous: $lockWaitTimeoutException
-                );
-            }
+                    throw new HttpBadRequestException(
+                        request: $request,
+                        message: 'Could not extend donation, locked by another request?',
+                        previous: $lockWaitTimeoutException
+                    );
+                }
 
-            if (! $donation) {
-                throw new HttpNotFoundException($request, "Donation $donationUUID not found");
-            }
+                if (!$donation) {
+                    throw new HttpNotFoundException($request, "Donation $donationUUID not found");
+                }
 
-            $donation->extendReservationFrom($this->clock->now());
+                $donation->extendReservationFrom($this->clock->now());
 
-            $this->entityManager->flush();
-        });
+                $this->entityManager->flush();
+            });
+        } catch (ExpectedMatchFundsNotFound $e) {
+            return $this->validationError(
+                $response,
+                logMessage: $e->getMessage(),
+                publicMessage: "This donation does not have the expected match funds, so reservation cannot be extended",
+                errorType: ActionError::EXPECTED_MATCH_FUNDS_NOT_FOUND
+            );
+        }
 
+        /** @psalm-suppress UnevaluatedCode - psalm seems to wrongly treat wrapInTransaction as returning never here.*/
         \assert($donation instanceof Donation);
 
-
+        /** @psalm-suppress UnevaluatedCode - psalm seems to wrongly treat wrapInTransaction as returning never here.*/
         return $this->respondWithData($response, $donation->toFrontEndApiModel($this->enableNoReservationsMode));
     }
 }

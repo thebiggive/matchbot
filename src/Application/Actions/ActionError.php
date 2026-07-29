@@ -20,6 +20,7 @@ class ActionError implements JsonSerializable
     public const string VALIDATION_ERROR = 'VALIDATION_ERROR';
     public const string VERIFICATION_ERROR = 'VERIFICATION_ERROR';
     public const string INSUFFICIENT_MATCH_FUNDS = 'INSUFFICIENT_MATCH_FUNDS';
+    public const string EXPECTED_MATCH_FUNDS_NOT_FOUND = 'EXPECTED_MATCH_FUNDS_NOT_FOUND';
 
     /**
      * @param array<string, mixed> $data
