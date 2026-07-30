@@ -288,7 +288,7 @@ class DonationTest extends TestCase
                 'isOrganisationDonor' => true,
                 'referenceCode' => 'some-transaction-id',
                 'fundsReservedUntil' => null,
-                'maxReservationTime' => '1970-01-01T00:25:00+00:00'
+                'maxReservationTime' => '1970-01-01T00:30:00+00:00'
             ],
             $donation->toSFApiModel()
         );
@@ -1243,12 +1243,12 @@ class DonationTest extends TestCase
         $donation = $this->someDonation(createdAt: new \DateTimeImmutable('2026-01-01T12:00:00'));
         $fivePastNoon = new \DateTimeImmutable('2026-01-01T12:05:00');
         $thirtySevenPastNoon = new \DateTimeImmutable('2026-01-01T12:37:00');
-        $twentyFivePastNoon = new \DateTimeImmutable('2026-01-01T12:25:00');
+        $thirtyTwoPastNoon = new \DateTimeImmutable('2026-01-01T12:32:00');
 
         $donation->reserveFundsUntil($fivePastNoon);
 
         $donation->extendReservationFrom($thirtySevenPastNoon);
 
-        $this->assertEquals($twentyFivePastNoon, $donation->fundsReservedUntil);
+        $this->assertEquals($thirtyTwoPastNoon, $donation->fundsReservedUntil);
     }
 }

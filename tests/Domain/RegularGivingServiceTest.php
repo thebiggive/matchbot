@@ -460,7 +460,7 @@ class RegularGivingServiceTest extends TestCase
         $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalled();
         $this->createRegularGivingMandate(
             campaignEndDate: '2024-11-29T12:00:00 GMT',
-            currentDate: '2024-11-29T12:24:59 GMT'
+            currentDate: '2024-11-29T12:29:59 GMT'
         );
     }
 
