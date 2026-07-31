@@ -10,6 +10,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Client\Campaign as CampaignClient;
@@ -633,7 +634,8 @@ class Campaign extends SalesforceReadProxy
             && (
                 !$this->isStandalone() ||
                 !$this->isMatched ||
-                $this->getStatistics()->getMatchFundsTotal()->greaterThan(Money::zero($this->getCurrency()))
+                $this->getStatistics()->getMatchFundsTotal()->greaterThan(Money::zero($this->getCurrency())) ||
+                Environment::current() === Environment::Regression // @todo-BG2-3342 - make the campaign used in regtest be non-matched or have funds available
             );
     }
 
