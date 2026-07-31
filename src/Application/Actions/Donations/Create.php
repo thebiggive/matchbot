@@ -119,6 +119,7 @@ class Create extends Action
             );
         } catch (RateLimitExceededException $e) {
             $retryDelaySeconds = ($e->getRetryAfter()->getTimestamp() - time());
+            $this->logger->warning('Donation create rate limit exceeded; Limit:' . $e->getRateLimit()->getLimit() . ", retry in " . $e->getRateLimit()->getRetryAfter()->format(\DATE_ATOM));
             return $this->respond(
                 $response,
                 new ActionPayload(
