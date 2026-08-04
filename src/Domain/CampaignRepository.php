@@ -26,7 +26,7 @@ use function trim;
 class CampaignRepository extends SalesforceReadProxyRepository
 {
     private ClockInterface $clock;  // @phpstan-ignore property.uninitialized
-    private string $appStatusWhereClause = <<<DQL
+    private string $statusAndFundingWhereClause = <<<DQL
         (
             (campaign.metaCampaignSlug IS NULL AND (campaign.isMatched = 0 OR campaignStatistics.matchFundsTotal.amountInPence > 0))
             OR
@@ -382,7 +382,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
              campaign.charity = :charity
              AND campaign.isPublished = true
              AND (campaignStatistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
-             AND {$this->appStatusWhereClause}
+             AND {$this->statusAndFundingWhereClause}
              ORDER BY approxStatusRank ASC, campaign.endDate ASC
             DQL
         );
@@ -404,7 +404,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             FROM MatchBot\Domain\Campaign campaign
             WHERE campaign.metaCampaignSlug = :slug
             AND campaign.isPublished = true
-            AND {$this->appStatusWhereClause}
+            AND {$this->statusAndFundingWhereClause}
         DQL
         );
 
@@ -563,7 +563,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('now', $this->clock->now());
         }
 
-        $qb->andWhere($this->appStatusWhereClause);
+        $qb->andWhere($this->statusAndFundingWhereClause);
 
         if ($metaCampaignSlug !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.metaCampaignSlug', ':metaCampaignSlug'));
