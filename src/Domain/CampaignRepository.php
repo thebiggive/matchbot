@@ -381,6 +381,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
              AND campaign.isPublished = true
              AND (statistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
              AND {$this->appStatusWhereClause}
+             AND (campaign.metaCampaignSlug IS NOT null OR campaign.isMatched = 0 OR statistics.matchFundsTotal.amountInPence > 0)
              ORDER BY approxStatusRank ASC, campaign.endDate ASC
             DQL
         );
