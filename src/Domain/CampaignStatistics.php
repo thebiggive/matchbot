@@ -66,7 +66,7 @@ class CampaignStatistics
     #[ORM\Embedded(columnPrefix: 'match_funds_used_')]
     private Money $matchFundsUsed;
 
-    /** Total of match funds still available ot use for donations to this campaign. Should be equal to
+    /** Total of match funds still available to use for donations to this campaign. Should be equal to
      * matchFundsTotal - matchFundsUsed.
      */
     #[ORM\Embedded(columnPrefix: 'match_funds_remaining_')]
