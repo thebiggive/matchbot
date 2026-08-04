@@ -67,7 +67,9 @@ class Campaign extends SalesforceReadProxy
     protected string $currencyCode;
 
     /**
-     * Has this campaign been published to the public? Currently, corrosponds to a status of any of 'Preview, 'Active', or 'Expired' in SF.
+     * Has this campaign been published to the public? Currently corresponds to a status of any of 'Preview, 'Active', or 'Expired' in SF.
+     * However, not all campaigns with isPublished=true should actually be listed publicly - specifically we exclude
+     * campaigns that are set to be match-funded but currently have zero match funds.
      */
     #[ORM\Column]
     private(set) bool $isPublished;

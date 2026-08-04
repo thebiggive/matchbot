@@ -55,20 +55,25 @@ class CampaignStatistics
     #[ORM\Embedded(columnPrefix: 'donation_sum_')]
     private Money $donationSum;
 
-    /** Set on construct only for now */
+    /*
+     * Total of all match funds allocated to the campaign, shared or not, including funds
+     * that have already been matched to a donation as well as available funds.
+     **/
     #[ORM\Embedded(columnPrefix: 'match_funds_total_')]
     private Money $matchFundsTotal;
 
-    /** Set on construct and updated when donations change. */
+    /** Total of match funds that have been withdrawn for donations to this campaign. */
     #[ORM\Embedded(columnPrefix: 'match_funds_used_')]
     private Money $matchFundsUsed;
 
-    /** Set on construct and updated when donations change. */
+    /** Total of match funds still available to use for donations to this campaign. Should be equal to
+     * matchFundsTotal - matchFundsUsed.
+     */
     #[ORM\Embedded(columnPrefix: 'match_funds_remaining_')]
     private Money $matchFundsRemaining;
 
     /**
-     * Set on construct and when donations change. Uses {@see Campaign::$totalFundraisingTarget} on each update.
+     * Uses {@see Campaign::$totalFundraisingTarget} on each update.
      * It's set to zero of the Campaign currency when the target is met, which also leads search to exclude the
      * Campaign when sorting by distance ascending.
      */

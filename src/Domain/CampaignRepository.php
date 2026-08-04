@@ -26,10 +26,12 @@ use function trim;
 class CampaignRepository extends SalesforceReadProxyRepository
 {
     private ClockInterface $clock;  // @phpstan-ignore property.uninitialized
-    private string $appStatusWhereClause = <<<DQL
+    private string $statusAndFundingWhereClause = <<<DQL
         (
-            campaign.metaCampaignSlug IS NULL OR
+            (campaign.metaCampaignSlug IS NULL AND (campaign.isMatched = 0 OR campaignStatistics.matchFundsTotal.amountInPence > 0))
+            OR
             (
+                campaign.metaCampaignSlug IS NOT NULL AND
                 campaign.relatedApplicationStatus = 'Approved' AND
                 campaign.relatedApplicationCharityResponseToOffer = 'Accepted'
             )
@@ -370,17 +372,17 @@ class CampaignRepository extends SalesforceReadProxyRepository
             <<<DQL
             SELECT campaign,
             CASE
-                WHEN statistics.approxStatus = 'Active' THEN 0 
-                WHEN statistics.approxStatus = 'Expired' THEN 1
-                WHEN statistics.approxStatus = 'Preview' THEN 2
+                WHEN campaignStatistics.approxStatus = 'Active' THEN 0
+                WHEN campaignStatistics.approxStatus = 'Expired' THEN 1
+                WHEN campaignStatistics.approxStatus = 'Preview' THEN 2
                 ELSE 2 END AS HIDDEN approxStatusRank
             FROM MatchBot\Domain\Campaign campaign
-            JOIN campaign.campaignStatistics statistics
+            JOIN campaign.campaignStatistics campaignStatistics
             WHERE 
              campaign.charity = :charity
              AND campaign.isPublished = true
-             AND (statistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
-             AND {$this->appStatusWhereClause}
+             AND (campaignStatistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
+             AND {$this->statusAndFundingWhereClause}
              ORDER BY approxStatusRank ASC, campaign.endDate ASC
             DQL
         );
@@ -402,7 +404,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             FROM MatchBot\Domain\Campaign campaign
             WHERE campaign.metaCampaignSlug = :slug
             AND campaign.isPublished = true
-            AND {$this->appStatusWhereClause}
+            AND {$this->statusAndFundingWhereClause}
         DQL
         );
 
@@ -561,7 +563,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('now', $this->clock->now());
         }
 
-        $qb->andWhere($this->appStatusWhereClause);
+        $qb->andWhere($this->statusAndFundingWhereClause);
 
         if ($metaCampaignSlug !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.metaCampaignSlug', ':metaCampaignSlug'));
