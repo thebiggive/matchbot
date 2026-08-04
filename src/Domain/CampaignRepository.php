@@ -28,8 +28,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
     private ClockInterface $clock;  // @phpstan-ignore property.uninitialized
     private string $appStatusWhereClause = <<<DQL
         (
-            campaign.metaCampaignSlug IS NULL OR
+            (campaign.metaCampaignSlug IS NULL AND (campaign.isMatched = 0 OR campaignStatistics.matchFundsTotal.amountInPence > 0))
+            OR
             (
+                campaign.metaCampaignSlug IS NOT NULL AND
                 campaign.relatedApplicationStatus = 'Approved' AND
                 campaign.relatedApplicationCharityResponseToOffer = 'Accepted'
             )
@@ -370,18 +372,17 @@ class CampaignRepository extends SalesforceReadProxyRepository
             <<<DQL
             SELECT campaign,
             CASE
-                WHEN statistics.approxStatus = 'Active' THEN 0 
-                WHEN statistics.approxStatus = 'Expired' THEN 1
-                WHEN statistics.approxStatus = 'Preview' THEN 2
+                WHEN campaignStatistics.approxStatus = 'Active' THEN 0
+                WHEN campaignStatistics.approxStatus = 'Expired' THEN 1
+                WHEN campaignStatistics.approxStatus = 'Preview' THEN 2
                 ELSE 2 END AS HIDDEN approxStatusRank
             FROM MatchBot\Domain\Campaign campaign
-            JOIN campaign.campaignStatistics statistics
+            JOIN campaign.campaignStatistics campaignStatistics
             WHERE 
              campaign.charity = :charity
              AND campaign.isPublished = true
-             AND (statistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
+             AND (campaignStatistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
              AND {$this->appStatusWhereClause}
-             AND (campaign.metaCampaignSlug IS NOT null OR campaign.isMatched = 0 OR statistics.matchFundsTotal.amountInPence > 0)
              ORDER BY approxStatusRank ASC, campaign.endDate ASC
             DQL
         );
