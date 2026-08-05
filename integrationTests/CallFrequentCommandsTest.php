@@ -33,18 +33,7 @@ class CallFrequentCommandsTest extends IntegrationTest
         $mockCloudWatchClient = $this->getMockCloudWatchClient();
         $this->getContainer()->set(CloudWatchClient::class, $mockCloudWatchClient);
 
-        $this->getContainer()->set(
-            SendStatistics::class,
-            new SendStatistics(
-                new NativeClock(),
-                $mockCloudWatchClient,
-                $this->getService(DonationRepository::class),
-                $this->getService(Environment::class),
-            ),
-        );
-
         $application = $this->buildMinimalApp($lockFactory);
-
 
         $command = $this->getServiceByName(CallFrequentTasks::class);
         \assert($command instanceof CallFrequentTasks);
