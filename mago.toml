@@ -71,6 +71,8 @@ permit = [
     "GuzzleHttp\\",
     "JetBrains\\PhpStorm\\",
     "Laminas\\Diactoros\\",
+    "MatchBot\\Application\\",
+    "MatchBot\\Client\\",
     "Messages\\",
     "OpenApi\\Attributes\\",
     "PrinsFrank\\Standards\\Country\\",
