@@ -16,7 +16,7 @@ class AlwaysAvailableLockStore implements BlockingStoreInterface
      * @return void
      */
     #[\Override]
-    public function save(Key $key)
+    public function save(Key $key): void
     {
         // Do nothing
     }
@@ -25,7 +25,7 @@ class AlwaysAvailableLockStore implements BlockingStoreInterface
      * @return void
      */
     #[\Override]
-    public function waitAndSave(Key $key)
+    public function waitAndSave(Key $key): void
     {
         // Do nothing
     }
@@ -34,7 +34,7 @@ class AlwaysAvailableLockStore implements BlockingStoreInterface
      * @return void
      */
     #[\Override]
-    public function putOffExpiration(Key $key, float $ttl)
+    public function putOffExpiration(Key $key, float $ttl): void
     {
         // Do nothing
     }
@@ -43,7 +43,7 @@ class AlwaysAvailableLockStore implements BlockingStoreInterface
      * @return void
      */
     #[\Override]
-    public function delete(Key $key)
+    public function delete(Key $key): void
     {
         // Do nothing
     }

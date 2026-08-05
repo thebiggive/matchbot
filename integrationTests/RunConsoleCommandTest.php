@@ -31,12 +31,14 @@ class RunConsoleCommandTest extends IntegrationTest
     public function testItRunsSupportedCommandAndFailsOnUnknown(): void
     {
         $lockFactory = new LockFactory(new AlwaysAvailableLockStore());
+        $this->getContainer()->set(CloudWatchClient::class, $this->getMockCloudWatchClient());
         $app = $this->buildMinimalApp($lockFactory);
 
-        $tickCommand = new CallFrequentTasks();
+        $tickCommand = $this->getServiceByName(CallFrequentTasks::class);
+        \assert($tickCommand instanceof CallFrequentTasks);
         $tickCommand->setApplication($app);
         $tickCommand->setLockFactory($lockFactory);
-        $app->add($tickCommand);
+        $app->addCommand($tickCommand);
 
         $handler = new CommandRequestHandler(
             consoleApplication: $app,
@@ -66,12 +68,7 @@ class RunConsoleCommandTest extends IntegrationTest
         $app = new Application();
 
         $commands = [
-            new SendStatistics(
-                new NativeClock(),
-                $this->getMockCloudWatchClient(),
-                $this->getService(DonationRepository::class),
-                $this->getService(Environment::class),
-            ),
+            $this->getService(SendStatistics::class),
             $this->getService(DeleteOldTestFunds::class),
             $this->getService(ExpireMatchFunds::class),
             $this->getService(CancelStaleDonationFundTips::class),
@@ -83,7 +80,7 @@ class RunConsoleCommandTest extends IntegrationTest
 
         foreach ($commands as $command) {
             $command->setLockFactory($lockFactory);
-            $app->add($command);
+            $app->addCommand($command);
         }
 
         return $app;

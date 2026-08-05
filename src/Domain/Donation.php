@@ -346,7 +346,7 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @var bool    Whether any Gift Aid claim should be made by the Big Give as an agent/nominee
-     *              *if* `$giftAid is true too. This field is set independently to allow for claim
+     *              *if* `$giftAid` is true too. This field is set independently to allow for claim
      *              status amendments so we must not assume a donation can actualy be claimed just
      *              because it's true.
      * @see Donation::$giftAid
@@ -673,6 +673,7 @@ class Donation extends SalesforceWriteProxy
 
         // As of mid 2024 only the actual donate frontend gets this value, to avoid
         // confusion around values that are too temporary to be useful in a CRM anyway.
+        // @mago-expect analysis:undefined-string-array-index
         unset($data['matchReservedAmount']);
 
         if ($this->mandate) {
@@ -1252,9 +1253,6 @@ class Donation extends SalesforceWriteProxy
         $this->originalPspFee = bcdiv($originalPspFeeFractional, '100', 2);
     }
 
-    /**
-     * @return bool
-     */
     public function hasTbgShouldProcessGiftAid(): ?bool
     {
         return $this->tbgShouldProcessGiftAid;

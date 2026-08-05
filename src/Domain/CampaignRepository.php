@@ -212,7 +212,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charityData = $campaignData['charity'];
         Assertion::notNull($charityData, 'Charity must not be null for charity campaign');
 
-        $emailString = $charityData['emailAddress'] ?? null;
+        $emailString = $charityData['emailAddress'];
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
         $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
 
@@ -220,7 +220,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             salesforceId: $charityData['id'],
             charityName: $charityData['name'],
             stripeAccountId: $charityData['stripeAccountId'],
-            ryftAccountId: is_string($charityData['ryftAccountId'] ?? null) ? RyftAccountId::of($charityData['ryftAccountId']) : null,
+            ryftAccountId: is_string($charityData['ryftAccountId']) ? RyftAccountId::of($charityData['ryftAccountId']) : null,
             psp: $psp,
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
@@ -230,7 +230,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             emailAddress: $emailAddress,
             websiteUri: $charityData['website'],
             logoUri: $charityData['logoUri'],
-            phoneNumber: $charityData['phoneNumber'] ?? null,
+            phoneNumber: $charityData['phoneNumber'],
             rawData: $charityData,
         );
     }
@@ -244,7 +244,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charityData = $campaignData['charity'];
         Assertion::notNull($charityData, 'Charity date should not be null for charity campaign');
 
-        $emailString = $charityData['emailAddress'] ?? null;
+        $emailString = $charityData['emailAddress'];
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
         $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
 
@@ -261,7 +261,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regulatorNumber: $charityData['regulatorNumber'],
             rawData: $charityData,
             time: new \DateTime('now'),
-            phoneNumber: $charityData['phoneNumber'] ?? null,
+            phoneNumber: $charityData['phoneNumber'],
             emailAddress: $emailAddress,
         );
     }

@@ -49,7 +49,7 @@ class PushDailyFundTotalsTest extends IntegrationTest
 
         $command = $this->getService(PushDailyFundTotals::class);
         $command->setLockFactory($lockFactory);
-        $app->add($command);
+        $app->addCommand($command);
 
         return $app;
     }

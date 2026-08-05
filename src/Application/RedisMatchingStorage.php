@@ -20,7 +20,7 @@ class RedisMatchingStorage implements RealTimeMatchingStorage
     }
 
     #[\Override]
-    public function set(string $key, string|int $value, array $options): bool|self
+    public function set(string $key, string|int $value, array $options): bool|self|string
     {
         $return = $this->redis->set($key, (string)$value, $options);
         if ($return instanceof \Redis) {

@@ -173,7 +173,7 @@ class CampaignStatsAfterDonationCollectedTest extends IntegrationTest
 
         $command = $this->getService(UpdateCampaignDonationStats::class);
         $command->setLockFactory($lockFactory);
-        $app->add($command);
+        $app->addCommand($command);
 
         return $app;
     }
