@@ -29,6 +29,20 @@ class CallFrequentCommandsTest extends IntegrationTest
         // arrange
         $lockFactory = new LockFactory(new AlwaysAvailableLockStore());
         $output = new BufferedOutput();
+
+        $mockCloudWatchClient = $this->getMockCloudWatchClient();
+        $this->getContainer()->set(CloudWatchClient::class, $mockCloudWatchClient);
+
+        $this->getContainer()->set(
+            SendStatistics::class,
+            new SendStatistics(
+                new NativeClock(),
+                $mockCloudWatchClient,
+                $this->getService(DonationRepository::class),
+                $this->getService(Environment::class),
+            ),
+        );
+
         $application = $this->buildMinimalApp($lockFactory);
 
 
@@ -81,12 +95,7 @@ class CallFrequentCommandsTest extends IntegrationTest
         $app = new Application();
 
         $commands = [
-            new SendStatistics(
-                new NativeClock(),
-                $this->getMockCloudWatchClient(),
-                $this->getService(DonationRepository::class),
-                $this->getService(Environment::class),
-            ),
+            $this->getService(SendStatistics::class),
             $this->getService(DeleteOldTestFunds::class),
             $this->getService(ExpireMatchFunds::class),
             $this->getService(CancelStaleDonationFundTips::class),
