@@ -402,6 +402,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT COUNT(campaign.id)
             FROM MatchBot\Domain\Campaign campaign
+            JOIN campaign.campaignStatistics campaignStatistics
             WHERE campaign.metaCampaignSlug = :slug
             AND campaign.isPublished = true
             AND {$this->statusAndFundingWhereClause}
