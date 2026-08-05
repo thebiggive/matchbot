@@ -32,7 +32,7 @@ class CallFrequentCommandsTest extends IntegrationTest
         $application = $this->buildMinimalApp($lockFactory);
 
 
-        $command = new CallFrequentTasks();
+        $command = $this->getServiceByName(CallFrequentTasks::class);
         $command->setApplication($application);
         $command->setLockFactory($lockFactory);
 

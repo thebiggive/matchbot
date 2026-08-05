@@ -18,38 +18,36 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class CallFrequentTasks extends LockingCommand
 {
-    public const array COMMAND_CLASSES = [
-        SendStatistics::class,
-        ExpireMatchFunds::class,
-        ExpirePendingMandates::class,
-        CancelStaleDonationFundTips::class,
-        UpdateCampaignDonationStats::class,
-        DeleteOldTestFunds::class,
-        UpdateApproxCampaignStatus::class,
-    ];
+    /** @var list<\MatchBot\Application\Commands\Command> */
+    private array $commands;
+
+    public function __construct(
+        SendStatistics $sendStatistics,
+        ExpireMatchFunds $expireMatchFunds,
+        ExpirePendingMandates $expirePendingMandates,
+        CancelStaleDonationFundTips $cancelStaleDonationFundTips,
+        UpdateCampaignDonationStats $updateCampaignDonationStats,
+        DeleteOldTestFunds $deleteOldTestFunds,
+        UpdateApproxCampaignStatus $updateApproxCampaignStatus,
+    ) {
+        parent::__construct();
+        $this->commands = [
+            $sendStatistics,
+            $expireMatchFunds,
+            $expirePendingMandates,
+            $cancelStaleDonationFundTips,
+            $updateCampaignDonationStats,
+            $deleteOldTestFunds,
+            $updateApproxCampaignStatus,
+        ];
+    }
 
     #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $app = $this->getApplication();
-        \assert($app instanceof Application);
-
-        $commands = array_map(/**
-         * @param class-string<Command> $commandClass
-         */
-            function (string $commandClass) use ($app) {
-                $name = $commandClass::getName();
-                \assert(is_string($name));
-
-                return $app->find($name);
-            },
-            self::COMMAND_CLASSES
-        );
-        Assertion::allIsInstanceOf($commands, Command::class);
-
-        foreach ($commands as $command) {
+        foreach ($this->commands as $command) {
             $return = $command->run(
-                new ArrayInput(['command' => $command->getName()]),
+                new ArrayInput([]),
                 $output
             );
 
