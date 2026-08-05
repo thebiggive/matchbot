@@ -34,6 +34,7 @@ class RunConsoleCommandTest extends IntegrationTest
         $app = $this->buildMinimalApp($lockFactory);
 
         $tickCommand = $this->getServiceByName(CallFrequentTasks::class);
+        \assert($tickCommand instanceof CallFrequentTasks);
         $tickCommand->setApplication($app);
         $tickCommand->setLockFactory($lockFactory);
         $app->addCommand($tickCommand);
