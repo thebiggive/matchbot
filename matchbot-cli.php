@@ -50,7 +50,7 @@ foreach ($commands as $command) {
         $command->setLogger($psr11App->get(LoggerInterface::class));
     }
 
-    $cliApp->add($command);
+    $cliApp->addCommand($command);
 }
 
 

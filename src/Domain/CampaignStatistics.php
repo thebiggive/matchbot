@@ -209,15 +209,17 @@ class CampaignStatistics
             ? Money::zero($this->campaign->getCurrency())
             : $target->minus($amountRaised);
 
-        $didRealUpdate = (
-            $alwaysConsiderChanged
-            || $previousStats?->getAmountRaised() != $amountRaised
-            || $previousStats?->getDonationSum() != $donationSum
-            || $previousStats?->getMatchFundsUsed() != $matchFundsUsed
-            || $previousStats?->getMatchFundsTotal() != $matchFundsTotal
-            || $previousStats?->getMatchFundsRemaining() != $this->matchFundsRemaining
-            || $previousStats?->getDistanceToTarget() != $this->distanceToTarget
-        );
+        $didRealUpdate = true;
+        if ($previousStats instanceof self) {
+            $didRealUpdate = (
+                $previousStats->getAmountRaised() != $amountRaised
+                || $previousStats->getDonationSum() != $donationSum
+                || $previousStats->getMatchFundsUsed() != $matchFundsUsed
+                || $previousStats->getMatchFundsTotal() != $matchFundsTotal
+                || $previousStats->getMatchFundsRemaining() != $this->matchFundsRemaining
+                || $previousStats->getDistanceToTarget() != $this->distanceToTarget
+            );
+        }
 
         $this->lastCheck = $at;
         if (!$didRealUpdate) {
