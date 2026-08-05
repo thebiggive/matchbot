@@ -20,20 +20,14 @@ class RedisMatchingStorage implements RealTimeMatchingStorage
     }
 
     #[\Override]
-    public function set(string $key, string|int $value, array $options): bool|self
+    public function set(string $key, string|int $value, array $options): bool|self|string
     {
         $return = $this->redis->set($key, (string)$value, $options);
-        if (is_bool($return)) {
-            return $return;
+        if ($return instanceof \Redis) {
+            return new self($return);
         }
 
-        // Seems like this probably never happens but the library return type is too broad
-        // for us not to handle it, without upsetting static analysis.
-        if (!($return instanceof \Redis)) {
-            throw new \LogicException('set() result not Redis or bool');
-        }
-
-        return new self($return);
+        return $return;
     }
 
     #[\Override]

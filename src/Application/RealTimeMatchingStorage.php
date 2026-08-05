@@ -9,7 +9,7 @@ interface RealTimeMatchingStorage
     /**
      * @param Adapter::REDIS_OPTIONS_FOR_LIMITED_DURATION_STORAGE $options
      */
-    public function set(string $key, string|int $value, array $options): bool|self;
+    public function set(string $key, string|int $value, array $options): bool|self|string;
 
     /**
      * @return  string|false|self $key
