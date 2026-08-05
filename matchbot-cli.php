@@ -3,32 +3,8 @@
 
 declare(strict_types=1);
 
-use MatchBot\Application\Commands\CallFrequentTasks;
-use MatchBot\Application\Commands\CancelStaleDonationFundTips;
-use MatchBot\Application\Commands\ClaimGiftAid;
 use MatchBot\Application\Commands\Command;
-use MatchBot\Application\Commands\CreateFictionalData;
-use MatchBot\Application\Commands\DeleteOldTestFunds;
-use MatchBot\Application\Commands\ExpireMatchFunds;
-use MatchBot\Application\Commands\ExpirePendingMandates;
-use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
-use MatchBot\Application\Commands\MergeOpenApiDocs;
-use MatchBot\Application\Commands\PullIndividualCampaignFromSF;
-use MatchBot\Application\Commands\PullMetaCampaignFromSF;
-use MatchBot\Application\Commands\PushDailyFundTotals;
-use MatchBot\Application\Commands\PushDonations;
-use MatchBot\Application\Commands\RedistributeMatchFunds;
-use MatchBot\Application\Commands\ResetMatching;
-use MatchBot\Application\Commands\RetrospectivelyMatch;
-use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
-use MatchBot\Application\Commands\SendStatistics;
-use MatchBot\Application\Commands\SetupTestMandate;
-use MatchBot\Application\Commands\TakeRegularGivingDonations;
-use MatchBot\Application\Commands\UpdateApproxCampaignStatus;
-use MatchBot\Application\Commands\UpdateCampaignDonationStats;
-use MatchBot\Application\Commands\UpdateCampaigns;
-use MatchBot\Application\Commands\WriteSchemaFile;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
@@ -40,7 +16,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Lock\LockFactory;
-use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
 
 $psr11App = require __DIR__ . '/bootstrap.php';
 

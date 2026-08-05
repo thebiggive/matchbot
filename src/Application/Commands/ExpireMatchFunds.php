@@ -6,7 +6,7 @@ namespace MatchBot\Application\Commands;
 
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
-use Ramsey\Uuid\Uuid;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Lock\Exception\LockConflictedException;
@@ -17,21 +17,17 @@ use Symfony\Component\Lock\Exception\LockConflictedException;
  *
  * Donations may still be completed after the expiry time but will not receive match funds.
  */
+#[AsCommand(
+    name: 'matchbot:expire-match-funds',
+    description: 'Frees up match funding from stale Pending donations'
+)]
 class ExpireMatchFunds extends LockingCommand
 {
-    protected static $defaultName = 'matchbot:expire-match-funds';
-
     public function __construct(
         private DonationRepository $donationRepository,
         private DonationService $donationService,
     ) {
         parent::__construct();
-    }
-
-    #[\Override]
-    protected function configure(): void
-    {
-        $this->setDescription('Frees up match funding from stale Pending donations');
     }
 
     #[\Override]

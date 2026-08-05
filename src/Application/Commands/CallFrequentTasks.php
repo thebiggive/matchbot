@@ -38,8 +38,8 @@ class CallFrequentTasks extends LockingCommand
          * @param class-string<Command> $commandClass
          */
             function (string $commandClass) use ($app) {
-                $name = $commandClass::getDefaultName();
-                \assert($name !== null);
+                $name = $commandClass::getName();
+                \assert(is_string($name));
 
                 return $app->find($name);
             },

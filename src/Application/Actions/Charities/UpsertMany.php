@@ -102,7 +102,7 @@ class UpsertMany extends Action
         $logoUri = self::nullOrStringValue($charityData, 'logoUri');
         $phoneNumber = self::nullOrStringValue($charityData, 'phoneNumber');
 
-        $emailRaw = $charityData['emailAddress'] ?? null;
+        $emailRaw = $charityData['emailAddress'];
         $emailString = is_string($emailRaw) ? $emailRaw : null;
         $emailAddress = $emailString !== null && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
 

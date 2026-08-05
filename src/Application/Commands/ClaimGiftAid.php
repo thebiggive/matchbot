@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -18,10 +18,12 @@ use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 /**
  * Send applicable donations to ClaimBot for HMRC Gift Aid claims.
  */
+#[AsCommand(
+    name: 'matchbot:claim-gift-aid',
+    description: 'Sends applicable donations to ClaimBot for HMRC Gift Aid claims'
+)]
 class ClaimGiftAid extends LockingCommand
 {
-    protected static $defaultName = 'matchbot:claim-gift-aid';
-
     public function __construct(
         private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
@@ -33,7 +35,6 @@ class ClaimGiftAid extends LockingCommand
     #[\Override]
     protected function configure(): void
     {
-        $this->setDescription('Sends applicable donations to ClaimBot for HMRC Gift Aid claims');
         $this->addOption(
             'with-resends',
             null,

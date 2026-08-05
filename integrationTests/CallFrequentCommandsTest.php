@@ -96,7 +96,7 @@ class CallFrequentCommandsTest extends IntegrationTest
 
         foreach ($commands as $command) {
             $command->setLockFactory($lockFactory);
-            $app->add($command);
+            $app->addCommand($command);
         }
 
         return $app;

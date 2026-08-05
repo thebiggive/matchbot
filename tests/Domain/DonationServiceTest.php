@@ -222,7 +222,8 @@ class DonationServiceTest extends TestCase
                 new LockWaitTimeoutException(new PDOException('EXCEPTION_MESSAGE'), null) // @phpstan-ignore new.internalClass
             );
         } else {
-            $this->entityManagerProphecy->persist(Argument::type(Donation::class))->willReturn(null);
+            // void. Tests may or may not call it.
+            $this->entityManagerProphecy->persist(Argument::type(Donation::class));
         }
 
         $logger = $logger ?? new NullLogger();

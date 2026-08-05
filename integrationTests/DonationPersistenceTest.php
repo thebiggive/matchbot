@@ -42,6 +42,7 @@ class DonationPersistenceTest extends IntegrationTest
     {
         $ignoredColumns = ['id' => 0, 'uuid' => 0, 'updatedAt' => 0, 'createdAt' => 0, 'campaign_id' => 0];
 
+        // @phpstan-ignore function.alreadyNarrowedType
         $this->assertSame($ignoredColumns + $expected, $ignoredColumns + $actual, $message);
     }
 

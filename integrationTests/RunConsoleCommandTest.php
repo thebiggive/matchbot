@@ -36,7 +36,7 @@ class RunConsoleCommandTest extends IntegrationTest
         $tickCommand = new CallFrequentTasks();
         $tickCommand->setApplication($app);
         $tickCommand->setLockFactory($lockFactory);
-        $app->add($tickCommand);
+        $app->addCommand($tickCommand);
 
         $handler = new CommandRequestHandler(
             consoleApplication: $app,
@@ -83,7 +83,7 @@ class RunConsoleCommandTest extends IntegrationTest
 
         foreach ($commands as $command) {
             $command->setLockFactory($lockFactory);
-            $app->add($command);
+            $app->addCommand($command);
         }
 
         return $app;
