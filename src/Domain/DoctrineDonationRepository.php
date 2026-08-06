@@ -789,6 +789,11 @@ DQL);
         DQL
         );
 
+        $query->setHint(
+            Query::HINT_CUSTOM_OUTPUT_WALKER,
+            ForceDonationPerCampaignIndexWalker::class
+        );
+
         $query->setParameter('campaign_id', $campaignId);
 
         $query->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES);

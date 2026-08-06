@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
@@ -306,6 +307,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
             'campaignId' => $campaign->getId(),
             'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
         ]);
+
+        $donationQuery->setHint(
+            Query::HINT_CUSTOM_OUTPUT_WALKER,
+            ForceDonationPerCampaignIndexWalker::class
+        );
 
         /** @var list<array{currencyCode: string, sum: numeric-string}> $donationResult */
         $donationResult =  $donationQuery->getResult();
