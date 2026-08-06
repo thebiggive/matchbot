@@ -77,6 +77,7 @@ CREATE TABLE `Donation` (
   KEY `updated_date_and_status` (`updatedAt`,`donationStatus`),
   KEY `pspCustomerId` (`pspCustomerId`),
   KEY `IDX_C893E3F66C1129CD` (`mandate_id`),
+  KEY `collectedAt` (`collectedAt`),
   CONSTRAINT `FK_C893E3F66C1129CD` FOREIGN KEY (`mandate_id`) REFERENCES `RegularGivingMandate` (`id`),
   CONSTRAINT `FK_C893E3F6F639F774` FOREIGN KEY (`campaign_id`) REFERENCES `Campaign` (`id`)
 )
