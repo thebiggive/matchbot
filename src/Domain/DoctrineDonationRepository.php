@@ -31,9 +31,6 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     #[\Override]
     public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
-        // we only expire donations that were created before this point.
-        $expireBefore = $now->sub(Donation::expiryInterval());
-
         // and we only need to expire donations that were create AFTER this point, because if they were created at
         // before it we would have already expired them in a previous run.
         $expireAfter = $now->sub(new \DateInterval('PT1H'));
@@ -50,7 +47,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             -- Only select donations with 1+ FWs. We don't need any further info about the FWs.
             INNER JOIN d.fundingWithdrawals fw
             WHERE d.donationStatus IN (:expireWithStatuses)
-            AND (d.createdAt < :expireBefore OR d.fundsReservedUntil is null OR d.fundsReservedUntil < :now)
+            AND (d.fundsReservedUntil is null OR d.fundsReservedUntil < :now)
             AND d.createdAt > :expireAfter
 
             -- First of a regular giving series is Pending during 3DS. If we ever make the timeout for
@@ -62,7 +59,6 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             DQL
         )
             ->setParameter('expireWithStatuses', [DonationStatus::Pending->value, DonationStatus::Cancelled->value])
-            ->setParameter('expireBefore', $expireBefore)
             ->setParameter('now', $now)
             ->setParameter('expireAfter', $expireAfter);
 
