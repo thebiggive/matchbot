@@ -122,10 +122,10 @@ class DonationRepositoryTest extends IntegrationTest
         $this->makeDonation($randomEmailAddress, $campaign, DonationStatus::Cancelled);
 
         $sut = $this->getService(DonationRepository::class);
-        $thirtyThreeMinsInFuture = (new \DateTimeImmutable('now'))->modify('+33 minute');
+        $sixMinsInFuture = (new \DateTimeImmutable('now'))->modify('+6 minute');
 
         // act
-        $expiredDonationsIDs = $sut->findWithExpiredMatching($thirtyThreeMinsInFuture);
+        $expiredDonationsIDs = $sut->findWithExpiredMatching($sixMinsInFuture);
         $expiredDonations = $sut->findBy(['uuid' => $expiredDonationsIDs]);
 
         // assert
@@ -196,6 +196,7 @@ class DonationRepositoryTest extends IntegrationTest
             campaign: $campaign,
             donorId: PersonId::nil()
         );
+        $oldPendingDonation->reserveFundsUntil(new \DateTimeImmutable()->add(new \DateInterval('PT5M')));
         if ($donationStatus === DonationStatus::Cancelled) {
             $oldPendingDonation->cancel();
         } else {

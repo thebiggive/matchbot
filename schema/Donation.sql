@@ -78,6 +78,7 @@ CREATE TABLE `Donation` (
   KEY `pspCustomerId` (`pspCustomerId`),
   KEY `IDX_C893E3F66C1129CD` (`mandate_id`),
   KEY `collectedAt` (`collectedAt`),
+  KEY `fundsReservedUntil` (`fundsReservedUntil`),
   CONSTRAINT `FK_C893E3F66C1129CD` FOREIGN KEY (`mandate_id`) REFERENCES `RegularGivingMandate` (`id`),
   CONSTRAINT `FK_C893E3F6F639F774` FOREIGN KEY (`campaign_id`) REFERENCES `Campaign` (`id`)
 )

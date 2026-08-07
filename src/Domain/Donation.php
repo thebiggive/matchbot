@@ -38,6 +38,7 @@ use function sprintf;
 #[ORM\Index(name: 'salesforcePushStatus', columns: ['salesforcePushStatus'])]
 #[ORM\Index(name: 'pspCustomerId', columns: ['pspCustomerId'])]
 #[ORM\Index(name: 'collectedAt', columns: ['collectedAt'])]
+#[ORM\Index(name: 'fundsReservedUntil', columns: ['fundsReservedUntil'])]
 #[ORM\Entity(repositoryClass: DoctrineDonationRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class Donation extends SalesforceWriteProxy
