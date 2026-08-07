@@ -191,15 +191,21 @@ class CampaignService
             $websiteUri = null;
         }
 
+        // ignoring some phpstan nullCoalesce.unnecessary issues below - I think if we believe these matched the type
+        // from SF it would be necessary but there are some old campaigns in the DB that don't have these array keys.
+        // which is not really a big problem. Although it does mean there's a risk of introducing the same bug
+        // in other places if we rely on the SFCharityApiResponse type representing not just what comes from SF but
+        // also what's in our DB.
+
         $charityHttpModel = new \MatchBot\Application\HttpModels\Charity(
             id: $charity->getSalesforceId(),
             name: $charity->getName(),
             optInStatement: $sfCharityData['optInStatement'] ?? '', // typed as `string` in ts, but also tested for truthiness.
-            facebook: $sfCharityData['facebook'],
+            facebook: $sfCharityData['facebook'] ?? null, // @phpstan-ignore nullCoalesce.unnecessary
             hmrcReferenceNumber: $charity->getHmrcReferenceNumber(),
-            instagram: $sfCharityData['instagram'],
-            linkedin: $sfCharityData['linkedin'],
-            twitter: $sfCharityData['twitter'],
+            instagram: $sfCharityData['instagram'] ?? null, // @phpstan-ignore nullCoalesce.unnecessary
+            linkedin: $sfCharityData['linkedin'] ?? null, // @phpstan-ignore nullCoalesce.unnecessary
+            twitter: $sfCharityData['twitter'] ?? null, // @phpstan-ignore nullCoalesce.unnecessary
             website: $websiteUri,
             phoneNumber: $charity->getPhoneNumber(),
             emailAddress: $charity->getEmailAddress()?->email,
