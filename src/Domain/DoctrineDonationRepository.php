@@ -31,24 +31,13 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     #[\Override]
     public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
-        // and we only need to expire donations that were create AFTER this point, because if they were created at
-        // before it we would have already expired them in a previous run.
-        $expireAfter = $now->sub(new \DateInterval('PT1H'));
-
-        if ((int) $now->format('i') % 30 === 0) {
-            // once every 30 minutes, try expiring any older donations just in case they were missed, but it shouldn't
-            // really be necassary unless this stopped running for some reason.
-            $expireAfter = new \DateTimeImmutable('2025-08-05T00:00:00z');
-        }
-
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
             SELECT d.uuid FROM MatchBot\Domain\Donation d
 
             -- Only select donations with 1+ FWs. We don't need any further info about the FWs.
             INNER JOIN d.fundingWithdrawals fw
             WHERE d.donationStatus IN (:expireWithStatuses)
-            AND (d.fundsReservedUntil is null OR d.fundsReservedUntil < :now)
-            AND d.createdAt > :expireAfter
+            AND d.fundsReservedUntil < :now
 
             -- First of a regular giving series is Pending during 3DS. If we ever make the timeout for
             -- that longer than the timeout for matching, we still want to ensure matching can't be
@@ -59,8 +48,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             DQL
         )
             ->setParameter('expireWithStatuses', [DonationStatus::Pending->value, DonationStatus::Cancelled->value])
-            ->setParameter('now', $now)
-            ->setParameter('expireAfter', $expireAfter);
+            ->setParameter('now', $now);
 
         // As this is used by the only regular task working with donations,
         // `ExpireMatchFunds`, it makes more sense to opt it out of result caching
