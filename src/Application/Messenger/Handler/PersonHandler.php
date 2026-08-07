@@ -98,6 +98,7 @@ readonly class PersonHandler
 
             return;
         } else {
+            // @phpstan-ignore identical.alwaysTrue
             \assert($donorAccount === null && $personMessage->deleted);
             // no need to do anything.
             return;

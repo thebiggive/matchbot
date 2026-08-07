@@ -2,7 +2,6 @@
 
 namespace MatchBot\Application\Commands;
 
-use OpenApi\Annotations\OpenApi;
 use OpenApi\Generator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

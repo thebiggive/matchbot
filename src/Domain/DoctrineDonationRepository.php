@@ -32,7 +32,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
         // we only expire donations that were created before this point.
-        $expireBefore = $now->sub(self::expiryDateInterval());
+        $expireBefore = $now->sub(Donation::expiryInterval());
 
         // and we only need to expire donations that were create AFTER this point, because if they were created at
         // before it we would have already expired them in a previous run.
@@ -789,6 +789,11 @@ DQL);
         DQL
         );
 
+        $query->setHint(
+            Query::HINT_CUSTOM_OUTPUT_WALKER,
+            ForceDonationPerCampaignIndexWalker::class
+        );
+
         $query->setParameter('campaign_id', $campaignId);
 
         $query->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES);
@@ -828,7 +833,7 @@ DQL);
         DQL
         );
 
-        $query->setParameter('earliest', $donation->getCreatedDateImmutable()->sub(self::expiryDateInterval()));
+        $query->setParameter('earliest', $donation->getCreatedDateImmutable()->sub(Donation::expiryInterval()));
         $query->setParameter('latest', $donation->getCreatedDateImmutable());
         $query->setParameter('incompleteStatuses', [DonationStatus::Pending, DonationStatus::PreAuthorized, DonationStatus::Cancelled, DonationStatus::Refunded]);
         $query->setParameter('campaign', $donation->getCampaign());
@@ -837,10 +842,5 @@ DQL);
         /** @var list<Donation> $result */
         $result = $query->getResult();
         return $result;
-    }
-
-    private static function expiryDateInterval(): \DateInterval
-    {
-        return new \DateInterval('PT' . Donation::EXPIRY_SECONDS . 'S');
     }
 }

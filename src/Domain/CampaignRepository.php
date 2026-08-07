@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
@@ -26,10 +27,12 @@ use function trim;
 class CampaignRepository extends SalesforceReadProxyRepository
 {
     private ClockInterface $clock;  // @phpstan-ignore property.uninitialized
-    private string $appStatusWhereClause = <<<DQL
+    private string $statusAndFundingWhereClause = <<<DQL
         (
-            campaign.metaCampaignSlug IS NULL OR
+            (campaign.metaCampaignSlug IS NULL AND (campaign.isMatched = 0 OR campaignStatistics.matchFundsTotal.amountInPence > 0))
+            OR
             (
+                campaign.metaCampaignSlug IS NOT NULL AND
                 campaign.relatedApplicationStatus = 'Approved' AND
                 campaign.relatedApplicationCharityResponseToOffer = 'Accepted'
             )
@@ -210,7 +213,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charityData = $campaignData['charity'];
         Assertion::notNull($charityData, 'Charity must not be null for charity campaign');
 
-        $emailString = $charityData['emailAddress'] ?? null;
+        $emailString = $charityData['emailAddress'];
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
         $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
 
@@ -218,7 +221,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             salesforceId: $charityData['id'],
             charityName: $charityData['name'],
             stripeAccountId: $charityData['stripeAccountId'],
-            ryftAccountId: is_string($charityData['ryftAccountId'] ?? null) ? RyftAccountId::of($charityData['ryftAccountId']) : null,
+            ryftAccountId: is_string($charityData['ryftAccountId']) ? RyftAccountId::of($charityData['ryftAccountId']) : null,
             psp: $psp,
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
@@ -228,7 +231,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             emailAddress: $emailAddress,
             websiteUri: $charityData['website'],
             logoUri: $charityData['logoUri'],
-            phoneNumber: $charityData['phoneNumber'] ?? null,
+            phoneNumber: $charityData['phoneNumber'],
             rawData: $charityData,
         );
     }
@@ -242,7 +245,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charityData = $campaignData['charity'];
         Assertion::notNull($charityData, 'Charity date should not be null for charity campaign');
 
-        $emailString = $charityData['emailAddress'] ?? null;
+        $emailString = $charityData['emailAddress'];
         $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
         $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
 
@@ -259,7 +262,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regulatorNumber: $charityData['regulatorNumber'],
             rawData: $charityData,
             time: new \DateTime('now'),
-            phoneNumber: $charityData['phoneNumber'] ?? null,
+            phoneNumber: $charityData['phoneNumber'],
             emailAddress: $emailAddress,
         );
     }
@@ -304,6 +307,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
             'campaignId' => $campaign->getId(),
             'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
         ]);
+
+        $donationQuery->setHint(
+            Query::HINT_CUSTOM_OUTPUT_WALKER,
+            ForceDonationPerCampaignIndexWalker::class
+        );
 
         /** @var list<array{currencyCode: string, sum: numeric-string}> $donationResult */
         $donationResult =  $donationQuery->getResult();
@@ -370,17 +378,17 @@ class CampaignRepository extends SalesforceReadProxyRepository
             <<<DQL
             SELECT campaign,
             CASE
-                WHEN statistics.approxStatus = 'Active' THEN 0 
-                WHEN statistics.approxStatus = 'Expired' THEN 1
-                WHEN statistics.approxStatus = 'Preview' THEN 2
+                WHEN campaignStatistics.approxStatus = 'Active' THEN 0
+                WHEN campaignStatistics.approxStatus = 'Expired' THEN 1
+                WHEN campaignStatistics.approxStatus = 'Preview' THEN 2
                 ELSE 2 END AS HIDDEN approxStatusRank
             FROM MatchBot\Domain\Campaign campaign
-            JOIN campaign.campaignStatistics statistics
+            JOIN campaign.campaignStatistics campaignStatistics
             WHERE 
              campaign.charity = :charity
              AND campaign.isPublished = true
-             AND (statistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
-             AND {$this->appStatusWhereClause}
+             AND (campaignStatistics.donationSum.amountInPence > 0 OR campaign.endDate > :at OR campaign.endDate IS NULL)
+             AND {$this->statusAndFundingWhereClause}
              ORDER BY approxStatusRank ASC, campaign.endDate ASC
             DQL
         );
@@ -400,9 +408,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT COUNT(campaign.id)
             FROM MatchBot\Domain\Campaign campaign
+            JOIN campaign.campaignStatistics campaignStatistics
             WHERE campaign.metaCampaignSlug = :slug
             AND campaign.isPublished = true
-            AND {$this->appStatusWhereClause}
+            AND {$this->statusAndFundingWhereClause}
         DQL
         );
 
@@ -561,7 +570,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('now', $this->clock->now());
         }
 
-        $qb->andWhere($this->appStatusWhereClause);
+        $qb->andWhere($this->statusAndFundingWhereClause);
 
         if ($metaCampaignSlug !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.metaCampaignSlug', ':metaCampaignSlug'));

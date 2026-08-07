@@ -24,9 +24,6 @@ abstract class SalesforceProxy extends Model
     #[ORM\Column(length: 18, unique: true, nullable: true)]
     protected ?string $salesforceId = null;
 
-    /**
-     * @return string
-     */
     public function getSalesforceId(): ?string
     {
         /** @psalm-suppress DeprecatedProperty */
