@@ -50,7 +50,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             -- Only select donations with 1+ FWs. We don't need any further info about the FWs.
             INNER JOIN d.fundingWithdrawals fw
             WHERE d.donationStatus IN (:expireWithStatuses)
-            AND (d.createdAt < :expireBefore OR (d.fundsReservedUntil is not null AND d.fundsReservedUntil < :now))
+            AND (d.createdAt < :expireBefore OR d.fundsReservedUntil is null OR d.fundsReservedUntil < :now)
             AND d.createdAt > :expireAfter
 
             -- First of a regular giving series is Pending during 3DS. If we ever make the timeout for
