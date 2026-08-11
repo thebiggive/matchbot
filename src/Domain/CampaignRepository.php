@@ -8,8 +8,10 @@ use DateTime;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\TransferException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
+use MatchBot\Application\Environment;
 use MatchBot\Client;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
@@ -836,7 +838,15 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $this->logInfo('Creating campaign ' . $salesforceId);
         }
 
-        $campaignData = $this->getClient()->getById($campaign->getSalesforceId(), $withCache);
+        try {
+            $campaignData = $this->getClient()->getById($campaign->getSalesforceId(), $withCache);
+        } catch (TransferException $exception) {
+            if (Environment::current() === Environment::Local) {
+                return; // fine to skip update in local, we probably have no SF available.
+            }
+
+            throw $exception;
+        }
 
         $this->updateCampaignFromSFData($campaign, $campaignData);
         $this->getEntityManager()->persist($campaign);
