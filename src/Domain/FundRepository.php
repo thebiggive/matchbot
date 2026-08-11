@@ -8,6 +8,8 @@ use DateInterval;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use GuzzleHttp\Exception\RequestException;
+use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Client;
 use MatchBot\Domain\DomainException\DisallowedFundTypeChange;
@@ -43,7 +45,16 @@ class FundRepository extends SalesforceReadProxyRepository
      */
     public function pullForCampaign(Campaign $campaign, DateTimeImmutable $at): bool
     {
-        $fundsData = $this->getClient()->getForCampaign($campaign->getSalesforceId());
+        try {
+            $fundsData = $this->getClient()->getForCampaign($campaign->getSalesforceId());
+        } catch (Client\NotFoundException $notFoundException) {
+            if (Environment::current() == Environment::Local) {
+                // it's expected that a campaign defined in local is not known in SF, so this is fine.
+                return false;
+            }
+
+            throw $notFoundException;
+        }
 
         $anyFundAmountsChanged = false;
         foreach ($fundsData as $fundData) {
