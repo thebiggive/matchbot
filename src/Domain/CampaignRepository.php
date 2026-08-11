@@ -308,11 +308,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             'succcessStatus' => DonationStatus::SUCCESS_STATUSES,
         ]);
 
-        $donationQuery->setHint(
-            Query::HINT_CUSTOM_OUTPUT_WALKER,
-            ForceDonationPerCampaignIndexWalker::class
-        );
-
         /** @var list<array{currencyCode: string, sum: numeric-string}> $donationResult */
         $donationResult =  $donationQuery->getResult();
 
