@@ -122,7 +122,7 @@ class CampaignRepositoryTest extends IntegrationTest
      *
      * @return void
      */
-    public function testSearchQueriesAgainstResults(string $query, array $expectedResultsWithNewSearch)
+    public function testSearchQueriesAgainstResults(string $query, array $expectedResultsWithNewSearch): void
     {
         $sut = $this->getService(CampaignRepository::class);
 
@@ -300,6 +300,10 @@ class CampaignRepositoryTest extends IntegrationTest
     public function searchQueriesAgainstResultsProvider(): array
     {
         return [
+            [
+                '*',
+                [], // No results but verify it doesn't crash.
+            ],
             [
                 'Porridge and Juice',
                 [['Charity Name', 'Campaign Two is for Porridge and Juice']],

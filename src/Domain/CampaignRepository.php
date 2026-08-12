@@ -600,6 +600,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
             // Charity.normalisedName
             $termWithoutApostrophes = preg_replace("/['`‘’]+/u", '', $term);
 
+            // MySQL FTS parser throws a syntax error if term has only asterisks.
+            // (They're also not wildcards with NATURAL LANGUAGE MODE.)
+            \assert($termWithoutApostrophes !== null);
+            $termWithoutApostrophes = str_replace('*', ' ', $termWithoutApostrophes);
+
             /** @var list<int> $ids */
             $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
                 'SELECT Campaign.id,
