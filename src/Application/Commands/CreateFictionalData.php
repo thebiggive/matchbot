@@ -255,7 +255,7 @@ class CreateFictionalData extends Command
                 $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}3", 'Save Salesforce ' . $i, false, true, $metaCampaign);
                 $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}4", 'Save Identity ' . $i, false, false, $metaCampaign);
                 $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}5", 'Save Barney\'s Keyboard ' . $i, false, true, $metaCampaign);
-                $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}6", 'Replace Barney\'s Keyboard with a silent one ' . $i, false, false, $metaCampaign);
+                $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}6", 'Integrate Angular with Typescript 7 ' . $i, false, false, $metaCampaign);
                 $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}7", 'Implement generics in PHP ' . $i, false, true, $metaCampaign);
                 $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}8", 'Implement open source Apex compiler ' . $i, false, false, $metaCampaign);
                 $campaigns[] = $this->getFictionalCampaignData("0000000000000000{$i}9", 'Save Regtest ' . $i, false, true, $metaCampaign);

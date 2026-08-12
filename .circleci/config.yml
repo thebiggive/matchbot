@@ -3,7 +3,7 @@ version: 2.1
 orbs:
   aws-ecr: circleci/aws-ecr@9.3.1
   aws-ecs: circleci/aws-ecs@4.1.0
-  aws-cli: circleci/aws-cli@5.0.0
+  aws-cli: circleci/aws-cli@5.4.2
   codecov: codecov/codecov@6.0.0
   jira: circleci/jira@2.2.0
   slack: circleci/slack@5.1.1
@@ -202,8 +202,8 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - aws-cli/setup:
-          aws_access_key_id: AWS_ACCESS_KEY_ID
-          aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+          role_arn: ${AWS_ROLE_ARN}
+          region: ${AWS_REGION}
       - run:
           name: Publish Command to SQS
           command: |
@@ -300,8 +300,8 @@ workflows:
           tag: 'regression,regression-${CIRCLE_SHA1}'
           auth:
             - aws-cli/setup:
-                aws_access_key_id: AWS_ACCESS_KEY_ID
-                aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+                role_arn: ${AWS_ROLE_ARN}
+                region: ${AWS_REGION}
       - aws-ecs/deploy_service_update:
           name: 'Deploy Regression MatchBot web'
           context:
@@ -315,8 +315,8 @@ workflows:
           container_image_name_updates: 'container=matchbot_web,tag=regression-${CIRCLE_SHA1}'
           auth:
             - aws-cli/setup:
-                aws_access_key_id: AWS_ACCESS_KEY_ID
-                aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+                role_arn: ${AWS_ROLE_ARN}
+                region: ${AWS_REGION}
           post-steps:
             - jira/notify:
                 pipeline_id: << pipeline.id >>
@@ -353,8 +353,8 @@ workflows:
           container_image_name_updates: 'container=matchbot_high_priority_queue,tag=regression-${CIRCLE_SHA1},container=matchbot_low_priority_queue,tag=regression-${CIRCLE_SHA1}'
           auth:
             - aws-cli/setup:
-                aws_access_key_id: AWS_ACCESS_KEY_ID
-                aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+                role_arn: ${AWS_ROLE_ARN}
+                region: ${AWS_REGION}
           post-steps:
             - slack/notify:
                 event: fail
@@ -398,8 +398,8 @@ workflows:
           tag: 'staging,staging-${CIRCLE_SHA1}'
           auth:
             - aws-cli/setup:
-                aws_access_key_id: AWS_ACCESS_KEY_ID
-                aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+                role_arn: ${AWS_ROLE_ARN}
+                region: ${AWS_REGION}
       - aws-ecs/deploy_service_update:
           name: 'Deploy Staging MatchBot web'
           context:
@@ -413,8 +413,8 @@ workflows:
           container_image_name_updates: 'container=matchbot_web,tag=staging-${CIRCLE_SHA1}'
           auth:
             - aws-cli/setup:
-                aws_access_key_id: AWS_ACCESS_KEY_ID
-                aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+                role_arn: ${AWS_ROLE_ARN}
+                region: ${AWS_REGION}
           post-steps:
             - slack/notify:
                 event: fail
@@ -453,8 +453,8 @@ workflows:
           container_image_name_updates: 'container=matchbot_high_priority_queue,tag=staging-${CIRCLE_SHA1},container=matchbot_low_priority_queue,tag=staging-${CIRCLE_SHA1}'
           auth:
             - aws-cli/setup:
-                aws_access_key_id: AWS_ACCESS_KEY_ID
-                aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+                role_arn: ${AWS_ROLE_ARN}
+                region: ${AWS_REGION}
           post-steps:
             - slack/notify:
                 event: fail
@@ -497,8 +497,8 @@ workflows:
           region: 'us-east-1'
           auth:
             - aws-cli/setup:
-                aws_access_key_id: AWS_ACCESS_KEY_ID
-                aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+                role_arn: ${AWS_ROLE_ARN}
+                region: ${AWS_REGION}
       - aws-ecs/deploy_service_update:
           name: 'Deploy Production MatchBot web'
           context:
@@ -512,8 +512,8 @@ workflows:
           container_image_name_updates: 'container=matchbot_web,tag=production-${CIRCLE_SHA1}'
           auth:
             - aws-cli/setup:
-                aws_access_key_id: AWS_ACCESS_KEY_ID
-                aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+                role_arn: ${AWS_ROLE_ARN}
+                region: ${AWS_REGION}
           post-steps:
             - slack/notify:
                 event: fail
@@ -552,8 +552,8 @@ workflows:
           container_image_name_updates: 'container=matchbot_high_priority_queue,tag=production-${CIRCLE_SHA1},container=matchbot_low_priority_queue,tag=production-${CIRCLE_SHA1}'
           auth:
             - aws-cli/setup:
-                aws_access_key_id: AWS_ACCESS_KEY_ID
-                aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+                role_arn: ${AWS_ROLE_ARN}
+                region: ${AWS_REGION}
           post-steps:
             - slack/notify:
                 event: fail

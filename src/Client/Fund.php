@@ -54,7 +54,10 @@ class Fund extends Common
     {
         $uri = $this->campaignsBaseURI() . "$campaignId/funds";
 
-        $response = $this->getHttpClient()->get($uri);
+        $response = $this->getHttpClient()->get(
+            uri: $uri,
+            options: ['http_errors' => false]
+        );
 
         if ($response->getStatusCode() !== 200) {
             throw new NotFoundException('Campaign not found');

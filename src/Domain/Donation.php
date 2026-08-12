@@ -33,11 +33,13 @@ use function sprintf;
 
 #[ORM\UniqueConstraint(fields: ['mandateSequenceNumber', 'mandate'])]
 #[ORM\Index(name: 'campaign_and_status', columns: ['campaign_id', 'donationStatus'])]
+#[ORM\Index(name: 'campaign_currency_status_amount', columns: ['campaign_id', 'currencyCode', 'donationStatus', 'amount'])]
 #[ORM\Index(name: 'date_and_status', columns: ['createdAt', 'donationStatus'])]
 #[ORM\Index(name: 'updated_date_and_status', columns: ['updatedAt', 'donationStatus'])]
 #[ORM\Index(name: 'salesforcePushStatus', columns: ['salesforcePushStatus'])]
 #[ORM\Index(name: 'pspCustomerId', columns: ['pspCustomerId'])]
 #[ORM\Index(name: 'collectedAt', columns: ['collectedAt'])]
+#[ORM\Index(name: 'fundsReservedUntil', columns: ['fundsReservedUntil'])]
 #[ORM\Entity(repositoryClass: DoctrineDonationRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class Donation extends SalesforceWriteProxy
