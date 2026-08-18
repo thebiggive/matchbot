@@ -50,7 +50,11 @@ readonly class Donation
             ? EmailAddress::of($emailAddress)
             : null;
 
-        $this->donorName = DonorName::maybeFromFirstAndLast($firstName, $lastName, $this->isOrganisationDonor);
+        $this->donorName = DonorName::maybeFromFirstAndLast(
+            firstName: \is_string($firstName) ? trim($firstName) : null,
+            lastName: \is_string($lastName) ? trim($lastName) : null,
+            isOrganisation: $this->isOrganisationDonor
+        );
 
         Assertion::nullOrBetweenLength($this->tipAmount, 1, 9);
         Assertion::nullOrRegex(
