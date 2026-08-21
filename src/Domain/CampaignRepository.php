@@ -145,7 +145,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             jsonMatchInListConditions: [],
             term: null,
             forInternalUpdate: true, // Don't skip non-isPublished ones etc.
-        );
+        )->campaigns;
 
         $campaignIds = array_map(function (Campaign $campaign) {
             return Salesforce18Id::ofCampaign($campaign->getSalesforceId());
@@ -722,7 +722,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @psalm-suppress DocblockTypeContradiction
      * @mago-expect lint:excessive-parameter-list - consider reducing parameter list
      *
-     * @return list<Campaign>
      */
     public function search(
         string $sortField,
@@ -736,7 +735,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $country = null,
         ?array $regions = [],
         bool $forInternalUpdate = false,
-    ): array {
+    ): CampaignSearchResult {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
         $safeSortField = match ($sortField) {
@@ -805,7 +804,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         /** @var list<Campaign> $result */
         $result = $query->getResult();
 
-        return $result;
+        return new CampaignSearchResult($result);
     }
 
     public static function getRegulatorHMRCIdentifier(string $regulatorName): ?string
