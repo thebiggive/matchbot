@@ -113,7 +113,7 @@ class Search extends Action
 
         try {
             /** @psalm-suppress ArgumentTypeCoercion */
-            $campaigns = $this->campaignRepository->search(
+            $searchResult = $this->campaignRepository->search(
                 sortField: $sortField, // @mago-expect analysis:possibly-invalid-argument (search function will throw safely if given invalid arg)
                 sortDirection: $sortDirection,
                 offset: (int)($params['offset'] ?? 0),
@@ -138,12 +138,15 @@ class Search extends Action
          *
          * @var list<array<string, mixed>>
          */
-        $campaignSummaries = \array_filter($campaigns->campaigns, static fn(Campaign $c) => !$c->isSfDataMissing())
+        $campaignSummaries = \array_filter($searchResult->campaigns, static fn(Campaign $c) => !$c->isSfDataMissing())
                 |> \array_values(...)
                 |> (fn(array $campaignsWithSfData): array => \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData));
 
         return new JsonResponse(
-            ['campaignSummaries' => $campaignSummaries],
+            [
+                'campaignSummaries' => $campaignSummaries,
+                'locationCounts' => $searchResult->locationCounts,
+            ],
             200
         );
     }
