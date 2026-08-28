@@ -180,13 +180,13 @@ class CampaignStatistics
         Assertion::greaterOrEqualThan(
             $matchFundsTotal->toNumericString(),
             $matchFundsUsed->toNumericString(),
-            'Match funds total must be greater than or equal to match funds used',
+            "Campaign {$this->campaignSalesforceId}: Match funds total {$matchFundsTotal->format()} must be greater than or equal to match funds used {$matchFundsUsed->format()}, ",
         );
 
         Assertion::eq(
             $amountRaised->toNumericString(),
             $donationSum->plus($matchFundsUsed)->toNumericString(),
-            'Amount raised must equal donation sum plus match funds used',
+            "Campaign {$this->campaignSalesforceId}: Amount raised {$amountRaised->format()} must equal donation sum {$donationSum->format()} plus match funds used {$matchFundsUsed->format()}",
         );
 
         /** @var ?CampaignStatistics $previousStats */
