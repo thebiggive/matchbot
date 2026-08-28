@@ -630,15 +630,18 @@ class Campaign extends SalesforceReadProxy
 
     private function isOpenWithEffectiveEndDate(\DateTimeImmutable $at, \DateTimeImmutable $effectiveEndDate): bool
     {
+        // Check for match funds below temporarily commented out to allow one campaign to launch. See BG2-3375
+
         return $this->isPublished
             && $this->startDate <= $at
             && $effectiveEndDate > $at
-            && (
-                !$this->isStandalone() ||
-                !$this->isMatched ||
-                $this->getStatistics()->getMatchFundsTotal()->greaterThan(Money::zero($this->getCurrency())) ||
-                Environment::current() === Environment::Regression // @todo-BG2-3342 - make the campaign used in regtest be non-matched or have funds available
-            );
+//            && (
+//                !$this->isStandalone() ||
+//                !$this->isMatched ||
+//                $this->getStatistics()->getMatchFundsTotal()->greaterThan(Money::zero($this->getCurrency())) ||
+//                Environment::current() === Environment::Regression // @todo-BG2-3342 - make the campaign used in regtest be non-matched or have funds available
+//            )
+        ;
     }
 
     public function getStartDate(): \DateTimeImmutable
@@ -724,12 +727,13 @@ class Campaign extends SalesforceReadProxy
         );
     }
 
-    /**
-     * True if this is a standalone charity campaign, i.e. not part of any meta-campaign.
-     * @return bool
-     */
-    private function isStandalone(): bool
-    {
-        return $this->metaCampaignSlug === null;
-    }
+//  Temporarily unused method commented out:
+//    /**
+//     * True if this is a standalone charity campaign, i.e. not part of any meta-campaign.
+//     * @return bool
+//     */
+//    private function isStandalone(): bool
+//    {
+//        return $this->metaCampaignSlug === null;
+//    }
 }
