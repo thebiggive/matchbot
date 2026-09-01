@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use GuzzleHttp\Exception\RequestException;
-use MatchBot\Application\Assertion;
-use MatchBot\Application\Environment;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
@@ -24,7 +22,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 class PullIndividualCampaignFromSF extends LockingCommand
 {
     public function __construct(
-        private Environment $environment,
         private CampaignRepository $campaignRepository,
         private CampaignService $campaignService,
     ) {
@@ -43,8 +40,6 @@ class PullIndividualCampaignFromSF extends LockingCommand
     #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        Assertion::notEq($this->environment, Environment::Production);
-
         // @phpstan-ignore cast.string
         $campaignId = Salesforce18Id::ofCampaign((string) $input->getArgument('CampaignSFID'));
 
