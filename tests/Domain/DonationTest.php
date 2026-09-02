@@ -129,6 +129,22 @@ class DonationTest extends TestCase
         $this->assertSame('200000', $donation->getAmount());
     }
 
+    public function testFirstAndLastNamesAreTrimmed(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '1',
+            projectId: 'projectid012345678',
+            psp: 'stripe',
+            firstName: ' Spacey ',
+            lastName: ' McSpace Face ',
+            pspMethodType: PaymentMethodType::Card
+        ), $this->getMinimalCampaign(), PersonId::nil());
+
+        $this->assertSame($donation->getDonorFirstName(), 'Spacey');
+        $this->assertSame($donation->getDonorLastName(), 'McSpace Face');
+    }
+
     public function test200k1CustomerBalanceDonationIsTooHigh(): void
     {
         $this->expectException(\UnexpectedValueException::class);

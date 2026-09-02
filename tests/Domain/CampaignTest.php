@@ -177,13 +177,12 @@ class CampaignTest extends TestCase
 
     public function testStandaloneCharityCampaignWithNoFundingCannotOpen(): void
     {
-        $this->markTestSkipped('See BG2-3375');
-//        $campaign = self::someCampaign(standalone: true, isMatched: true);
-//
-//        $campaign->setStartDate(new \DateTimeImmutable('2026-01-01T12:00:00'));
-//        $campaign->setEndDate(new \DateTimeImmutable('2027-01-01T12:00:00'));
-//
-//        $this->assertFalse($campaign->isOpen(new \DateTimeImmutable('2026-06-01T12:00:00')));
+        $campaign = self::someCampaign(standalone: true, isMatched: true);
+
+        $campaign->setStartDate(new \DateTimeImmutable('2026-01-01T12:00:00'));
+        $campaign->setEndDate(new \DateTimeImmutable('2027-01-01T12:00:00'));
+
+        $this->assertFalse($campaign->isOpen(new \DateTimeImmutable('2026-06-01T12:00:00')));
     }
 
     public function testStandaloneUnMatchedCharityCampaignWithNoFundingCanOpen(): void

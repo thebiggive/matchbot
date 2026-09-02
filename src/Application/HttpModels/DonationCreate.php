@@ -54,7 +54,11 @@ readonly class DonationCreate
             EmailAddress::of($emailAddress) :
             null;
 
-        $this->donorName = DonorName::maybeFromFirstAndLast($firstName, $lastName, $isOrganisationDonor);
+        $this->donorName = DonorName::maybeFromFirstAndLast(
+            firstName: \is_string($firstName) ? trim($firstName) : $firstName,
+            lastName: \is_string($lastName) ? trim($lastName) : $lastName,
+            isOrganisation: $isOrganisationDonor
+        );
 
         $this->projectId = Salesforce18Id::ofCampaign($projectId);
 
