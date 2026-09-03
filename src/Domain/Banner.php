@@ -5,11 +5,13 @@ namespace MatchBot\Domain;
 use Psr\Http\Message\UriInterface;
 
 /**
+ * Class is not yet in use.
+ * For now to be used in MetaCampaigns, later maybe also for Charity Campaigns.
+ *
  * @psalm-suppress PossiblyUnusedMethod
  * @psalm-suppress PossiblyUnusedProperty
- * Class is not yet in use
- * For now to be used in Metacampaigns, later maybe also for Charity Campaigns.
  */
+
 readonly class Banner
 {
     public function __construct(
