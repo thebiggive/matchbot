@@ -178,12 +178,12 @@ class Campaign extends SalesforceReadProxy
 
     // @mago-expect analysis:write-only-property
     /**
-     * Optional BG-defined default sort override for the metacampaign grid. Works as a rank value when set,
+     * Optional BG-defined default sort override for the metacampaign grid and /explore. Works as a rank value when set,
      * typically positive but not *required* to be positive or unique.
      *
      * Any value below 99,999,999 takes precedence over all nulls.
      *
-     * Pin position is used in the default metacampaign view. Applying certain filters (beneficiary, category,
+     * Pin position is used in the default metacampaign view and /explore. Applying certain filters (beneficiary, category,
      * country) or choosing a non-default sort order turns off pinning.
      */
     #[ORM\Column(nullable: true)]
