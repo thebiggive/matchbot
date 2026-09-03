@@ -60,6 +60,9 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Column(nullable: true)]
     private ?string $bannerURI;
 
+    #[ORM\Column(nullable: true)]
+    private(set) ?string $bannerAltText;
+
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $startDate;
 
@@ -123,6 +126,7 @@ class MetaCampaign extends SalesforceReadProxy
         bool $hidden,
         ?string $summary,
         ?UriInterface $bannerURI,
+        ?string $bannerAltText,
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
         bool $isRegularGiving,
@@ -141,6 +145,7 @@ class MetaCampaign extends SalesforceReadProxy
         $this->hidden = $hidden;
         $this->summary = $summary;
         $this->bannerURI = $bannerURI?->__toString();
+        $this->bannerAltText = $bannerAltText;
         $this->startDate = $startDate;
         $this->endDate = $endDate;
         $this->isRegularGiving = $isRegularGiving;
@@ -169,6 +174,7 @@ class MetaCampaign extends SalesforceReadProxy
             hidden: false,
             summary: '',
             bannerURI: null,
+            bannerAltText: null,
             startDate: new \DateTimeImmutable('1970-01-01'),
             endDate: new \DateTimeImmutable('1970-01-01'),
             isRegularGiving: false,
@@ -212,6 +218,7 @@ class MetaCampaign extends SalesforceReadProxy
         Assertion::numeric($totalAdjustment);
 
         $this->bannerURI = \is_string($bannerUri) ? (new Uri($bannerUri))->__toString() : null;
+        $this->bannerAltText = $data['banner']['alt_text'];
         $this->isRegularGiving = $isRegularGiving;
         $this->title = $title;
         $this->currency = $currency;

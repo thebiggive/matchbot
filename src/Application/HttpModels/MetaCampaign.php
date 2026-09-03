@@ -2,6 +2,7 @@
 
 namespace MatchBot\Application\HttpModels;
 
+use MatchBot\Domain\Banner;
 use MatchBot\Domain\BannerLayout;
 use OpenApi\Attributes as OA;
 
@@ -124,6 +125,7 @@ readonly class MetaCampaign
             ref: "#/components/schemas/BannerLayout"
         )]
         public ?BannerLayout $bannerLayout = null,
+        public ?Banner $banner = null,
     ) {
     }
 }
