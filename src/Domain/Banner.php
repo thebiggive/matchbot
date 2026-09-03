@@ -10,6 +10,7 @@ use Psr\Http\Message\UriInterface;
  *
  * @psalm-suppress PossiblyUnusedMethod
  * @psalm-suppress PossiblyUnusedProperty
+ * @psalm-api
  */
 
 readonly class Banner
