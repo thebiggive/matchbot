@@ -218,7 +218,7 @@ class MetaCampaign extends SalesforceReadProxy
         Assertion::numeric($totalAdjustment);
 
         $this->bannerURI = \is_string($bannerUri) ? (new Uri($bannerUri))->__toString() : null;
-        $this->bannerAltText = $data['banner']['alt_text'];
+        $this->bannerAltText = $data['banner']['alt_text'] ?? null;
         $this->isRegularGiving = $isRegularGiving;
         $this->title = $title;
         $this->currency = $currency;
