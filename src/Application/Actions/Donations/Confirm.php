@@ -88,8 +88,6 @@ class Confirm extends Action
             ConfirmationToken::SETUP_FUTURE_USAGE_ON_SESSION,
             null,
         ]);
-        $paymentAmount = $requestBody['amount'] ?? null;
-
         $psp = $requestBody['psp'] ?? 'stripe';
         Assertion::string($psp);
         Assertion::inArray($psp, PaymentServiceProvider::VALUES);
@@ -114,14 +112,6 @@ Donation Confirmation attempted with missing confirmation token id "$stripeConfi
 EOF
             );
             throw new HttpBadRequestException($request, "stripeConfirmationTokenId required");
-        }
-
-        if ($psp === PaymentServiceProvider::Ryft) {
-            Assertion::integer($paymentAmount);
-
-            // seams confusing that the amount Ryft tells us is just the amount for the charity
-            // (i.e. exclusive of tip & fees) but that's what tests so far show:
-            Assertion::same($paymentAmount, $donation->getAmountForCharityFractional());
         }
 
         \assert($paymentMethodId !== ""); // required to call updatePaymentMethodBillingDetail
