@@ -811,9 +811,9 @@ DQL);
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
             SELECT d FROM MatchBot\Domain\Donation d
             WHERE d.createdAt > :earliest 
-           AND d.createdAt < :latest
-           and d.campaign = :campaign
-           AND d.donationStatus IN (:incompleteStatuses)
+            AND d.createdAt < :latest
+            AND d.campaign = :campaign
+            AND d.donationStatus IN (:incompleteStatuses)
         DQL
         );
 

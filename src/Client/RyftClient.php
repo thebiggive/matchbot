@@ -8,6 +8,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Request;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
+use MatchBot\Domain\Donation as DonationModel;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\RyftAccountId;
 use MatchBot\Domain\RyftPaymentSessionId;
@@ -45,7 +46,7 @@ class RyftClient
      *
      * See https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionCreate
      */
-    public function createPaymentSession(RyftAccountId $ryftAccountId, Money $amount): array
+    public function createPaymentSession(RyftAccountId $ryftAccountId, Money $amount, DonationModel $donation): array
     {
         $request = new Request(
             method: 'POST',
@@ -53,9 +54,13 @@ class RyftClient
             headers: $this->headers($ryftAccountId),
             body: json_encode(
                 [
-                'amount' => $amount->amountInPence(),
-                'currency' => $amount->currency->isoCode(),
-                'captureFlow' => 'Manual', // should allow setting platform fee when we capture from matchbot code later.
+                    'amount' => $amount->amountInPence(),
+                    'currency' => $amount->currency->isoCode(),
+                    'captureFlow' => 'Manual', // allows setting platform fee when we capture from matchbot code later.
+                    'metadata' => [
+                        'donationId' => $donation->getUuid(),
+                        'tipAmount' => $donation->getTipAmount(),
+                    ]
                 ],
                 \JSON_THROW_ON_ERROR
             )
@@ -84,12 +89,13 @@ class RyftClient
      *
      * @return array{
      *     id: string,
+     *     amount: int,
      *     paymentMethod: array{
      *       card: array{
      *          scheme: string,
      *          binDetails: array{issuerCountry: string}
+     *       }
      *     }
-     *   }
      * }
      */
     public function fetchPaymentSession(RyftAccountId $ryftAccountId, string $ryftPaymentSessionId): array
@@ -103,19 +109,65 @@ class RyftClient
         $response = $this->client->send($request);
 
         $responseContents = $response->getBody()->getContents();
-        $responseData = json_decode($responseContents, associative: true, flags: \JSON_THROW_ON_ERROR);
-        $cardBrand = $responseData['paymentMethod']['card']['scheme']; // @phpstan-ignore-line
-        $cardCountryIso2 = $responseData['paymentMethod']['card']['binDetails']['issuerCountry']; // @phpstan-ignore-line
+        $decodedResponse = json_decode($responseContents, associative: true, flags: \JSON_THROW_ON_ERROR);
+        Assertion::isArray($decodedResponse);
+        /** @var array{
+         *     id: string,
+         *     amount: int,
+         *     paymentMethod: array{
+         *       card: array{
+         *          scheme: string,
+         *          binDetails: array{issuerCountry: string}
+         *       }
+         *     },
+         * } $responseData */
+        $responseData = $decodedResponse;
 
         return $responseData;
     }
 
+    /**
+     * Updates a payment session before payment has been approved.
+     *
+     * See https://developer.ryftpay.com/documentation/api/reference/openapi/payments/paymentsessionupdate
+     */
+    public function updatePaymentSession(
+        RyftAccountId $ryftAccountId,
+        string $ryftPaymentSessionId,
+        Money $amount,
+    ): void {
+        $request = new Request(
+            method: 'PATCH',
+            uri: $this->apiPrefix . 'payment-sessions/' . $ryftPaymentSessionId,
+            headers: $this->headers($ryftAccountId),
+            body: json_encode(
+                ['amount' => $amount->amountInPence()],
+                flags: \JSON_THROW_ON_ERROR,
+            ),
+        );
+
+        $response = $this->client->send($request);
+        $decodedResponse = json_decode(
+            $response->getBody()->getContents(),
+            associative: true,
+            flags: \JSON_THROW_ON_ERROR,
+        );
+        Assertion::isArray($decodedResponse);
+    }
 
     /**
      * see https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionCaptureById
      *
      * @param array{id: string, ...} $paymentSession
-     * @return array{id: string, amount: int, platformFee: int, currency: string, status: string, ...}
+     * @return array{
+     *     id: string,
+     *     amount: int,
+     *     platformFee: int,
+     *     currency: string,
+     *     status: string,
+     *     paymentMethod: array{tokenizedDetails: array{id: string}},
+     *     paymentMethodId: string
+     * }
      */
     public function capturePayment(RyftAccountId $ryftAccountId, array $paymentSession, Money $platformFee): array
     {
@@ -125,7 +177,7 @@ class RyftClient
             headers: $this->headers($ryftAccountId),
             body: json_encode(
                 [
-                // ammount not set hereto capture full amount
+                    // amount not set here, to capture full amount
                     'platformFee' => $platformFee->amountInPence(),
                 ],
                 flags: \JSON_THROW_ON_ERROR,
@@ -143,11 +195,29 @@ class RyftClient
         }
 
         $responseContents = $response->getBody()->getContents();
+        $decodedResponse = json_decode($responseContents, associative: true, flags: \JSON_THROW_ON_ERROR);
+        Assertion::isArray($decodedResponse);
 
-        /** @var array{id: string, amount: int, platformFee: int, currency: string, status: string} $responseData */
-        $responseData = json_decode($responseContents, associative: true, flags: \JSON_THROW_ON_ERROR);
+        /** @var array{
+         *     id: string,
+         *     amount: int,
+         *     platformFee: int,
+         *     currency: string,
+         *     status: string,
+         *     paymentMethod: array{
+         *       tokenizedDetails: array{id: string},
+         *     },
+         * } $responseData */
+        $responseData = $decodedResponse;
 
-        $this->log->info('Captured Ryft payment or ' . $responseData['amount'] . ' for payment session ' . $responseData['id']);
+        $responseData['paymentMethodId'] = $responseData['paymentMethod']['tokenizedDetails']['id'];
+
+        $this->log->info(sprintf(
+            'Captured Ryft payment of %.2f for payment session %s, used payment method id %s',
+            $responseData['amount'],
+            $responseData['id'],
+            $responseData['paymentMethodId'],
+        ));
 
         $status = $responseData['status'];
         if ($status !== 'Succeeded') {
