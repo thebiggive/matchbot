@@ -145,7 +145,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             jsonMatchInListConditions: [],
             term: null,
             forInternalUpdate: true, // Don't skip non-isPublished ones etc.
-        );
+        )->campaigns;
 
         $campaignIds = array_map(function (Campaign $campaign) {
             return Salesforce18Id::ofCampaign($campaign->getSalesforceId());
@@ -722,7 +722,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @psalm-suppress DocblockTypeContradiction
      * @mago-expect lint:excessive-parameter-list - consider reducing parameter list
      *
-     * @return list<Campaign>
      */
     public function search(
         string $sortField,
@@ -736,7 +735,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $country = null,
         ?array $regions = [],
         bool $forInternalUpdate = false,
-    ): array {
+    ): CampaignSearchResult {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
         $safeSortField = match ($sortField) {
@@ -790,6 +789,46 @@ class CampaignRepository extends SalesforceReadProxyRepository
             forInternalUpdate: $forInternalUpdate,
         );
 
+        if ($country === 'United Kingdom' && ! Environment::current()->isProduction()) {
+            // also fetch a count of how many relevent campaigns have
+            // locations each major part of the UK.
+//
+//            $locationCountQueryBuilder = $this->getEntityManager()->createQuery(
+//                <<<DQL
+//                    SELECT COUNT(cl), cl.regionCode FROM MatchBot\Domain\CampaignLocation cl
+//                    WHERE cl.campaign IN (
+//                        SELECT -- here we would need to repliacte the search logic of filterForSearch but keeping all that twice seems very risky.
+//                        -- I don't think we can just call it as-is even if we start using a querybuilder here since we're trying to get a list of
+//                        -- locations not a list of campaings.
+//                        -- Possibly we could keep it as a function that generates a string and include it in both queries.
+//                    )
+//                    GROUP BY cl.regionCode
+//                DQL
+//            );
+
+//            $locationCounts = $locationCountQueryBuilder->getResult();
+
+            // fpr now just returning dummy counts to allow developing the FE display and validating the HTTP API.
+            $locationCounts = [
+                /*
+                 * Leaving these and the other Eight major divisons of England out for now, although
+                 * potentially we could include them as if at the top level of UK since some of them have comparable
+                 * populations to the other entire nations.
+                 *
+                'E12000008' => 1000, // South East England
+                'E12000009' => 1001, // South West England
+                'E12000002' => 1002, // North West England
+                */
+                'E92000001' => 1003, // England
+                'S92000003' => 1004, // Scotland
+                'W92000004' => 1005, // Wales
+                'N92000002' => 1006 // Northern Ireland
+
+            ];
+        } else {
+            $locationCounts = [];
+        }
+
         $this->sortForSearch(
             qb: $qb,
             applyPinSort: $jsonMatchInListConditions === [],
@@ -805,7 +844,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         /** @var list<Campaign> $result */
         $result = $query->getResult();
 
-        return $result;
+        return new CampaignSearchResult(campaigns: $result, locationCounts: $locationCounts);
     }
 
     public static function getRegulatorHMRCIdentifier(string $regulatorName): ?string

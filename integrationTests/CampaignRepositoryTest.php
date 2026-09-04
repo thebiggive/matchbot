@@ -86,7 +86,7 @@ class CampaignRepositoryTest extends IntegrationTest
                 'categories' => 'Food',
             ],
             term: 'Porridge',
-        );
+        )->campaigns;
 
         // assert
         $this->assertCount(1, $result);
@@ -111,7 +111,7 @@ class CampaignRepositoryTest extends IntegrationTest
                 'invalid-field!' => 'value'
             ],
             term: null,
-        );
+        )->campaigns;
     }
 
     /**
@@ -138,7 +138,7 @@ class CampaignRepositoryTest extends IntegrationTest
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: $query,
-        );
+        )->campaigns;
 
         $newSearchNames = array_map(fn(Campaign $campaign) => [$campaign->getCharity()->getName(), $campaign->getCampaignName()], $resultsWithNewSearch);
 
@@ -180,7 +180,7 @@ class CampaignRepositoryTest extends IntegrationTest
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
-        );
+        )->campaigns;
 
         $returnCampaignNames = array_map(
             static fn(Campaign $campaign) => $campaign->getCampaignName(),
