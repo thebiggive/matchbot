@@ -460,7 +460,7 @@ class Donation extends SalesforceWriteProxy
     private ?CountryAlpha2 $paymentCardCountry;
 
     #[ORM\Column(nullable: true)]
-    private ?string $ryftPaymentSessionId = null;
+    private(set) ?string $ryftPaymentSessionId = null;
 
     /**
      * @param string|null $billingPostcode
@@ -2200,11 +2200,6 @@ class Donation extends SalesforceWriteProxy
     public function setRyftPaymentSessionId(RyftPaymentSessionId $id): void
     {
         $this->ryftPaymentSessionId = $id->id;
-    }
-
-    public function getRyftPaymentSessionId(): ?string
-    {
-        return $this->ryftPaymentSessionId;
     }
 
     public function reserveFundsUntil(DateTimeImmutable $until): void
