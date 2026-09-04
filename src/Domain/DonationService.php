@@ -396,6 +396,10 @@ class DonationService
     {
         $paymentSessionId = $donation->getRyftPaymentSessionId();
         if ($paymentSessionId === null) {
+            $this->logger->warning(sprintf(
+                'Cannot update Ryft payment session for donation %s: no payment session ID is recorded',
+                $donation->getUuid(),
+            ));
             return;
         }
 
