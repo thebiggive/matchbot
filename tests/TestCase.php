@@ -589,6 +589,7 @@ class TestCase extends PHPUnitTestCase
             hidden: false,
             summary: 'not relevant',
             bannerURI: null,
+            bannerAltText: null,
             startDate: $startDate ?? new \DateTimeImmutable('1970'),
             endDate: new \DateTimeImmutable('1970'),
             isRegularGiving: $isRegularGiving,
