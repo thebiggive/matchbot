@@ -165,8 +165,8 @@ class RyftClient
      *     platformFee: int,
      *     currency: string,
      *     status: string,
-     *     paymentMethod: array{tokenizedDetails: array{id: string}},
-     *     paymentMethodId: string
+     *     paymentMethod: array{tokenizedDetails: null|array{id: string}},
+     *     paymentMethodId: null|string
      * }
      */
     public function capturePayment(RyftAccountId $ryftAccountId, array $paymentSession, Money $platformFee): array
@@ -216,7 +216,7 @@ class RyftClient
             'Captured Ryft payment of %.2f for payment session %s, used payment method id %s',
             $responseData['amount'],
             $responseData['id'],
-            $responseData['paymentMethodId'],
+            $responseData['paymentMethodId'] ?? '[none]',
         ));
 
         $status = $responseData['status'];

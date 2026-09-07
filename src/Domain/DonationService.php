@@ -329,7 +329,9 @@ class DonationService
                 Money::fromPence($donation->getAmountToDeductFractional(), $donation->currency()),
             );
 
-            $donation->setTransactionId($capture['paymentMethodId']);
+            if ($capture['paymentMethodId'] !== null) {
+                $donation->setTransactionId($capture['paymentMethodId']);
+            }
 
             $donation->collectFromRyftPaymentSession(
                 netAmount: Money::fromPence($capture['amount'], Currency::fromIsoCode($capture['currency'])),
