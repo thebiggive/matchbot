@@ -57,7 +57,7 @@ class ExtendFundsReservationTime extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        if (empty($args['donationId']) || ! is_string($args['donationId'])) {
+        if (! is_string($args['donationId'] ?? null) || $args['donationId'] === '') {
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
