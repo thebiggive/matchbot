@@ -54,6 +54,12 @@ readonly class MetaCampaign
         )]
         public ?string $summary,
         #[OA\Property(
+            property: "bannerUri",
+            description: "URI for the meta campaign's banner image",
+            example: "https://example.com/banner.jpg"
+        )]
+        public ?string $bannerUri,
+        #[OA\Property(
             property: "amountRaised",
             description: "Total amount raised in the meta campaign",
             example: 1000000.50
