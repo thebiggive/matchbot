@@ -291,6 +291,18 @@ class MetaCampaign extends SalesforceReadProxy
         return new Uri($this->bannerURI);
     }
 
+    public function getBanner(): ?Banner
+    {
+        if ($this->bannerURI === null) {
+            return null;
+        }
+
+        return new Banner(
+            uri: new Uri($this->bannerURI),
+            altText: $this->bannerAltText,
+        );
+    }
+
     public function getStartDate(): \DateTimeImmutable
     {
         return $this->startDate;

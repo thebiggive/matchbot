@@ -137,7 +137,7 @@ class CampaignService
         $bannerLayout = MetaCampaignLayoutChoices::forSlug($metaCampaign);
         $banner = $metaCampaign->getBanner();
 
-        if ($bannerLayout?->imageUri !== null) {
+        if ($bannerLayout !== null && $bannerLayout->imageUri !== null) {
             $banner = new Banner(
                 uri: $bannerLayout->imageUri,
                 altText: $banner?->altText,
