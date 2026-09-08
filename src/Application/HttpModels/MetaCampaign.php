@@ -54,11 +54,11 @@ readonly class MetaCampaign
         )]
         public ?string $summary,
         #[OA\Property(
-            property: "bannerUri",
-            description: "URI for the meta campaign's banner image",
-            example: "https://example.com/banner.jpg"
+            property: "banner",
+            ref: "#/components/schemas/Banner",
+            description: "Banner image details"
         )]
-        public ?string $bannerUri,
+        public ?Banner $banner = null,
         #[OA\Property(
             property: "amountRaised",
             description: "Total amount raised in the meta campaign",
@@ -125,7 +125,6 @@ readonly class MetaCampaign
             ref: "#/components/schemas/BannerLayout"
         )]
         public ?BannerLayout $bannerLayout = null,
-        public ?Banner $banner = null,
     ) {
     }
 }
