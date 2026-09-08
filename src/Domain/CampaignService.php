@@ -1,6 +1,7 @@
 <?php
 
 namespace MatchBot\Domain;
+
 use Assert\AssertionFailedException;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
