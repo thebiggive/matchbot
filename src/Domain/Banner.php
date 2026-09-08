@@ -23,6 +23,7 @@ readonly class Banner implements \JsonSerializable
     /**
      * @return array{uri: string, altText: ?string}
      */
+    #[\Override]
     public function jsonSerialize(): array
     {
         return [
