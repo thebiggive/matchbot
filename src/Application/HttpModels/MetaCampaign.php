@@ -54,12 +54,6 @@ readonly class MetaCampaign
         )]
         public ?string $summary,
         #[OA\Property(
-            property: "banner",
-            ref: "#/components/schemas/Banner",
-            description: "Banner image details"
-        )]
-        public ?Banner $banner = null,
-        #[OA\Property(
             property: "amountRaised",
             description: "Total amount raised in the meta campaign",
             example: 1000000.50
@@ -121,10 +115,16 @@ readonly class MetaCampaign
         public bool $useDon1120Banner = false,
         #[OA\Property(
             property: "bannerLayout",
-            description: "Layout configuration for the campaign banner",
-            ref: "#/components/schemas/BannerLayout"
+            ref: "#/components/schemas/BannerLayout",
+            description: "Layout configuration for the campaign banner"
         )]
         public ?BannerLayout $bannerLayout = null,
+        #[OA\Property(
+            property: "banner",
+            ref: "#/components/schemas/Banner",
+            description: "Banner image details"
+        )]
+        public ?Banner $banner = null,
     ) {
     }
 }
