@@ -12,12 +12,23 @@ use Psr\Http\Message\UriInterface;
  * @psalm-suppress PossiblyUnusedProperty
  * @psalm-api
  */
-
-readonly class Banner
+readonly class Banner implements \JsonSerializable
 {
     public function __construct(
         public UriInterface $uri,
         public ?string $altText,
     ) {
+    }
+
+    /**
+     * @return array{uri: string, altText: ?string}
+     */
+    #[\Override]
+    public function jsonSerialize(): array
+    {
+        return [
+            'uri' => $this->uri->__toString(),
+            'altText' => $this->altText,
+        ];
     }
 }
