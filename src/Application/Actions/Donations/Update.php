@@ -466,6 +466,10 @@ class Update extends Action
             }
         }
 
+        if ($donation->getPsp() === PaymentServiceProvider::Ryft->value) {
+            $this->donationService->updateRyftPaymentSession($donation);
+        }
+
         $this->donationService->save($donation);
         $this->entityManager->commit();
 
