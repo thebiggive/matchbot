@@ -151,6 +151,7 @@ class CampaignService
             status: $metaCampaign->getStatusAt($this->clock->now()),
             hidden: $metaCampaign->isHidden(),
             summary: $metaCampaign->getSummary(),
+            bannerUri: $banner?->uri->__toString(),
             banner: $banner,
             amountRaised: $this->getAmountRaisedForMetaCampaign($metaCampaign)->toMajorUnitFloat(),
             matchFundsRemaining: $this->cachedMetaCampaignMatchFundsRemaining($metaCampaign)->toMajorUnitFloat(),
