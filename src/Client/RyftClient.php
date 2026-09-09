@@ -210,7 +210,11 @@ class RyftClient
          * } $responseData */
         $responseData = $decodedResponse;
 
-        $responseData['paymentMethodId'] = $responseData['paymentMethod']['tokenizedDetails']['id'];
+        if (isset($responseData['paymentMethod']['tokenizedDetails'])) {
+            $responseData['paymentMethodId'] = $responseData['paymentMethod']['tokenizedDetails']['id'];
+        } else {
+            $responseData['paymentMethodId'] = null;
+        }
 
         $this->log->info(sprintf(
             'Captured Ryft payment of %.2f for payment session %s, used payment method id %s',
