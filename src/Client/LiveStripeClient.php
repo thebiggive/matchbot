@@ -117,9 +117,11 @@ class LiveStripeClient implements Stripe
     {
         $components = self::SESSION_COMPONENTS;
         /**
-         * Note we *do not* set payment_method_save_usage because, for Regular Giving, it's not optional.
+         * For Regular Giving, `payment_method_save_usage` is not optional.
          * {@see RegularGivingService::setupNewMandate()} which enables off-session reuse.
          */
+        unset($components['payment_element']['features']['payment_method_save_usage']);
+
         $components['payment_element']['features']['payment_method_redisplay'] = 'disabled'; // Ensure method's not removed during non-RG checkout
         unset($components['payment_element']['features']['payment_method_allow_redisplay_filters']);
         unset($components['payment_element']['features']['payment_method_redisplay_limit']);
