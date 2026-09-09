@@ -42,11 +42,18 @@ class CampaignService
      * @return void
      * @throws \Doctrine\ORM\Exception\ORMException
      * @see UpdateCampaignDonationStats command.
+     *
+     * Flushes EntityManager, as a side effect.
      */
-    public function pullFundsAndUpdateStats(Campaign $campaign): void
+    public function pullFundsAndUpdateStats(Campaign $campaign, bool $flush = true): void
     {
         if ($this->fundRepository->pullForCampaign($campaign, $this->clock->now())) {
             $this->regenerateStats($campaign);
+            if ($flush) {
+                // Want to set lastCheck field on stats regardless of whether there was a change, so don't
+                // check `regenerateStats()` return value.
+                $this->entityManager->flush();
+            }
         }
     }
 

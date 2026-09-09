@@ -186,9 +186,8 @@ class DonationService
                 $this->logger->warning("Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed");
             }
 
-            $this->campaignService->pullFundsAndUpdateStats($campaign);
-
-            $this->entityManager->flush();
+            // pullNewFromSf() does an initial flush for Campaign. This one flushes stats.
+            $this->campaignService->pullFundsAndUpdateStats(campaign: $campaign, flush: true);
 
             // Because this case of campaigns being set up individually is relatively rare,
             // it is the one place outside of `UpdateCampaigns` where we clear the whole
