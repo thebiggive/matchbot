@@ -100,6 +100,9 @@ class UpdateCampaigns extends LockingCommand
             }
         }
 
+        // Ensure all written stats records get to the DB.
+        $this->entityManager->flush();
+
         // This task is expected to bulk change lots of campaigns + funds in some cases.
         // After the loop is the most efficient time to clear the result
         // cache so future processes see all the new data straight away.
@@ -116,7 +119,7 @@ class UpdateCampaigns extends LockingCommand
      */
     protected function pull(Campaign $campaign, OutputInterface $output): void
     {
-        $this->campaignService->pullFundsAndUpdateStats($campaign);
+        $this->campaignService->pullFundsAndUpdateStats(campaign: $campaign, flush: false); // We flush once after the campaigns loop.
         $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
     }
 }
