@@ -826,7 +826,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 jsonMatchInListConditions: $jsonMatchInListConditions,
                 filterOutTargetMet: $filterOutTargetMet,
                 term: $term,
-                country: $country,
+                country: null, // explicitly NOT filtering by country here because that would exclude
+                               // the locations we're looking for, which are not UN-member countries but
+                               // places within the UK.
                 forInternalUpdate: $forInternalUpdate,
             );
 
