@@ -438,6 +438,7 @@ class CreateFictionalData extends Command
             currency: Currency::GBP,
             hidden: false,
             summary: 'These campaigns exist in the local Matchbot Database, they are not real and not currently expected to exist in any Salesforce org',
+            bannerAltText: "Here's an alternative to the banner image",
             bannerURI: new Uri($bannerURI),
             startDate: new \DateTimeImmutable('1990-01-01'),
             endDate: new \DateTimeImmutable('2090-01-01'),

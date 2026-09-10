@@ -520,7 +520,6 @@ class DonationServiceTest extends TestCase
     {
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignServiceProphecy = $this->prophesize(CampaignService::class);
-        $this->entityManagerProphecy->flush()->shouldBeCalled();
 
         $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign(self::CAMPAIGN_ID));
         $dummyCampaign->setCurrencyCode('GBP');
@@ -531,7 +530,7 @@ class DonationServiceTest extends TestCase
         $campaignRepoProphecy->pullNewFromSf(Salesforce18Id::ofCampaign(self::CAMPAIGN_ID))
             ->willReturn($dummyCampaign);
 
-        $campaignServiceProphecy->pullFundsAndUpdateStats(Argument::type(Campaign::class))->shouldBeCalled();
+        $campaignServiceProphecy->pullFundsAndUpdateStats(Argument::type(Campaign::class), true)->shouldBeCalled();
 
         $createPayload = new DonationCreate(
             currencyCode: 'GBP',

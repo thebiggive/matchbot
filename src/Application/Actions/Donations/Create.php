@@ -10,7 +10,6 @@ use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Auth\DonationToken;
@@ -217,7 +216,10 @@ class Create extends Action
             Assertion::notNull($ryftAccountId, 'Ryft account ID cannot be null for ryft payment method');
             ['id' => $ryftPaymentSessionID, 'clientSecret' => $ryftClientSecret] = $this->ryftClient->createPaymentSession(
                 $ryftAccountId,
-                Money::fromPence($donation->getAmountForCharityFractional(), $donation->currency()),
+                // As with Stripe's PaymentIntent, the session amount is the amount paid by the donor.
+                // The platform fee is supplied separately when the session is captured.
+                Money::fromPence($donation->getAmountFractionalIncTip(), $donation->currency()),
+                $donation,
             );
 
             $donation->setRyftPaymentSessionId($ryftPaymentSessionID);
