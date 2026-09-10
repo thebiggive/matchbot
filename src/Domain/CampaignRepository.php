@@ -810,20 +810,20 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
             // fpr now just returning dummy counts to allow developing the FE display and validating the HTTP API.
             $locationCounts = [
-                /*
-                 * Leaving these and the other Eight major divisons of England out for now, although
-                 * potentially we could include them as if at the top level of UK since some of them have comparable
-                 * populations to the other entire nations.
-                 *
                 'E12000008' => 1000, // South East England
                 'E12000009' => 1001, // South West England
                 'E12000002' => 1002, // North West England
-                */
-                'E92000001' => 1003, // England
+                'E12000001' => 1000, // North East England
+
+                'E12000003' => 1000, // Yorkshire and The Humber
+                'E12000004' => 1000, // East Midlands
+                'E12000005' => 1000, // West Midlands
+                'E12000006' => 1000, // East of England
+                'E12000007' => 1000, // London
+
                 'S92000003' => 1004, // Scotland
                 'W92000004' => 1005, // Wales
                 'N92000002' => 1006 // Northern Ireland
-
             ];
         } else {
             $locationCounts = [];
