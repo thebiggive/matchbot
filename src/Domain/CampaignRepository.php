@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
-use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\TransferException;
@@ -793,29 +792,32 @@ class CampaignRepository extends SalesforceReadProxyRepository
             // also fetch a count of how many relevent campaigns have
             // locations each major part of the UK.
 
-            // todo - limit the regions returned below to the following. But I think we need to somehow
-            // include e.g. all campaigns listed for Haringey in the London count, and
-            //                 'E12000008' => 1000, // South East England
-            //                'E12000009' => 1001, // South West England
-            //                'E12000002' => 1002, // North West England
-            //                'E12000001' => 1000, // North East England
-            //
-            //                'E12000003' => 1000, // Yorkshire and The Humber
-            //                'E12000004' => 1000, // East Midlands
-            //                'E12000005' => 1000, // West Midlands
-            //                'E12000006' => 1000, // East of England
-            //                'E12000007' => 1000, // London
-            //
-            //                'S92000003' => 1004, // Scotland
-            //                'W92000004' => 1005, // Wales
-            //                'N92000002' => 1006 // Northern Ireland
+            // TODO-SO-78 I think later we'll want to decide this dynamically based on what is one level smaller in
+            // the regions hierarchy than the current search context. For now we only do it for each nation/English region.
+            $summaryRegionCodes = [
+                'E12000008', // South East England
+                'E12000009', // South West England
+                'E12000002', // North West England
+                'E12000001', // North East England
+                'E12000003', // Yorkshire and The Humber
+                'E12000004', // East Midlands
+                'E12000005', // West Midlands
+                'E12000006', // East of England
+                'E12000007', // London
+                'S92000003', // Scotland
+                'W92000004', // Wales
+                'N92000002', // Northern Ireland
+            ];
 
             $lq2 = $this->getEntityManager()->createQueryBuilder();
-            $lq2->select('campaignLocation.regionCode', 'count(campaignLocation.id) as count')
+            $lq2->select('campaignLocation.regionCode', 'COUNT(DISTINCT(campaign.id)) as numCampaigns')
                 ->from(CampaignLocation::class, 'campaignLocation')
                 ->join('campaignLocation.campaign', 'campaign')
+                ->join('campaign.charity', 'charity')
                 ->join('campaign.campaignStatistics', 'campaignStatistics')
-                ->groupBy('campaignLocation.regionCode');
+                ->where('campaignLocation.regionCode IN (:regionCodes)')
+                ->groupBy('campaignLocation.regionCode')
+                ->setParameter('regionCodes', $summaryRegionCodes);
 
             $this->filterForSearch(
                 $lq2,
@@ -828,22 +830,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 forInternalUpdate: $forInternalUpdate,
             );
 
-            /** @var list<array{count: int, regionCode: string}> $locationCounts */
+            /** @var list<array{numCampaigns: int, regionCode: string}> $locationCounts */
             $locationCounts = $lq2->getQuery()->getResult();
-
-            // placeholder for testing as otherwise returned $locationCounts is currently empty on my local.
-            $locationCounts[] = ['count' => 300_000, 'regionCode' => 'E12000006'];
-
-            $locationCountMap = [];
-            foreach ($locationCounts as $count) {
-                $regionCode = $count['regionCode'];
-                if ($regionCode === null) {
-                    continue;
-                }
-
-                $locationCountMap[$regionCode] = $count['count'];
-            }
-            $locationCounts = $locationCountMap;
         } else {
             $locationCounts = [];
         }
