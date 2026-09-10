@@ -279,8 +279,11 @@ class CreateFictionalData extends Command
 
         if ($regionRandomizer < 10) {
             $regions[] = ['countryName' => null, 'regionCode' => 'E09000033']; // City of Westminister
+            $regions[] = ['countryName' => null, 'regionCode' => 'E12000007']; // London
         } elseif ($regionRandomizer < 25) {
             $regions[] = ['countryName' => null, 'regionCode' => 'E09000014']; // Haringey
+            $regions[] = ['countryName' => null, 'regionCode' => 'E12000007']; // London
+            $regions[] = ['countryName' => null, 'regionCode' => 'E12000006']; // East of England (one campaign can work in two places)
         } elseif ($regionRandomizer < 50) {
             $regions[] = ['countryName' => null, 'regionCode' => 'E12000007']; // London
         }
