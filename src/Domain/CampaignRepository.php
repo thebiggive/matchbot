@@ -792,39 +792,58 @@ class CampaignRepository extends SalesforceReadProxyRepository
         if ($country === 'United Kingdom' && ! Environment::current()->isProduction()) {
             // also fetch a count of how many relevent campaigns have
             // locations each major part of the UK.
-//
-//            $locationCountQueryBuilder = $this->getEntityManager()->createQuery(
-//                <<<DQL
-//                    SELECT COUNT(cl), cl.regionCode FROM MatchBot\Domain\CampaignLocation cl
-//                    WHERE cl.campaign IN (
-//                        SELECT -- here we would need to repliacte the search logic of filterForSearch but keeping all that twice seems very risky.
-//                        -- I don't think we can just call it as-is even if we start using a querybuilder here since we're trying to get a list of
-//                        -- locations not a list of campaings.
-//                        -- Possibly we could keep it as a function that generates a string and include it in both queries.
-//                    )
-//                    GROUP BY cl.regionCode
-//                DQL
-//            );
 
-//            $locationCounts = $locationCountQueryBuilder->getResult();
+            // todo - limit the regions returned below to the following. But I think we need to somehow
+            // include e.g. all campaigns listed for Haringey in the London count, and
+            //                 'E12000008' => 1000, // South East England
+            //                'E12000009' => 1001, // South West England
+            //                'E12000002' => 1002, // North West England
+            //                'E12000001' => 1000, // North East England
+            //
+            //                'E12000003' => 1000, // Yorkshire and The Humber
+            //                'E12000004' => 1000, // East Midlands
+            //                'E12000005' => 1000, // West Midlands
+            //                'E12000006' => 1000, // East of England
+            //                'E12000007' => 1000, // London
+            //
+            //                'S92000003' => 1004, // Scotland
+            //                'W92000004' => 1005, // Wales
+            //                'N92000002' => 1006 // Northern Ireland
 
-            // fpr now just returning dummy counts to allow developing the FE display and validating the HTTP API.
-            $locationCounts = [
-                'E12000008' => 1000, // South East England
-                'E12000009' => 1001, // South West England
-                'E12000002' => 1002, // North West England
-                'E12000001' => 1000, // North East England
+            $lq2 = $this->getEntityManager()->createQueryBuilder();
+            $lq2->select('campaignLocation.regionCode', 'count(campaignLocation.id) as count')
+                ->from(CampaignLocation::class, 'campaignLocation')
+                ->join('campaignLocation.campaign', 'campaign')
+                ->join('campaign.campaignStatistics', 'campaignStatistics')
+                ->groupBy('campaignLocation.regionCode');
 
-                'E12000003' => 1000, // Yorkshire and The Humber
-                'E12000004' => 1000, // East Midlands
-                'E12000005' => 1000, // West Midlands
-                'E12000006' => 1000, // East of England
-                'E12000007' => 1000, // London
+            $this->filterForSearch(
+                $lq2,
+                metaCampaignSlug: $metaCampaignSlug,
+                fundSlug: $fundSlug,
+                jsonMatchInListConditions: $jsonMatchInListConditions,
+                filterOutTargetMet: $filterOutTargetMet,
+                term: $term,
+                country: $country,
+                forInternalUpdate: $forInternalUpdate,
+            );
 
-                'S92000003' => 1004, // Scotland
-                'W92000004' => 1005, // Wales
-                'N92000002' => 1006 // Northern Ireland
-            ];
+            /** @var list<array{count: int, regionCode: string}> $locationCounts */
+            $locationCounts = $lq2->getQuery()->getResult();
+
+            // placeholder for testing as otherwise returned $locationCounts is currently empty on my local.
+            $locationCounts[] = ['count' => 300_000, 'regionCode' => 'E12000006'];
+
+            $locationCountMap = [];
+            foreach ($locationCounts as $count) {
+                $regionCode = $count['regionCode'];
+                if ($regionCode === null) {
+                    continue;
+                }
+
+                $locationCountMap[$regionCode] = $count['count'];
+            }
+            $locationCounts = $locationCountMap;
         } else {
             $locationCounts = [];
         }
