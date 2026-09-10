@@ -827,13 +827,20 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 filterOutTargetMet: $filterOutTargetMet,
                 term: $term,
                 country: null, // explicitly NOT filtering by country here because that would exclude
-                               // the locations we're looking for, which are not UN-member countries but
+                // the locations we're looking for, which are not UN-member countries but
                                // places within the UK.
                 forInternalUpdate: $forInternalUpdate,
             );
 
             /** @var list<array{numCampaigns: int, regionCode: string}> $locationCounts */
             $locationCounts = $lq2->getQuery()->getResult();
+
+            foreach ($summaryRegionCodes as $code) {
+                if (! \array_any($locationCounts, fn(array $item): bool => $item['regionCode'] === $code)) {
+                    // it's not there, we can show a zero on the map (or FE could choose to hide zeroes)
+                    $locationCounts[] = ['regionCode' => $code, 'numCampaigns' => 0];
+                }
+            }
         } else {
             $locationCounts = [];
         }
