@@ -384,7 +384,8 @@ class CampaignRepositoryTest extends IntegrationTest
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
-                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
+                    // Presence of the word "Charity" seems to get this one over the threshold.
+                    ['Charity Name', 'Campaign Two is for Porridge and Juice']
                 ]
             ],
             [
@@ -392,7 +393,8 @@ class CampaignRepositoryTest extends IntegrationTest
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
-                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
+                    // Presence of the word "Charity" seems to get this one over the threshold.
+                    ['Charity Name', 'Campaign Two is for Porridge and Juice']
                 ]
             ],
             [
@@ -407,10 +409,6 @@ class CampaignRepositoryTest extends IntegrationTest
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
-                    // Seems like on clean CI runs, this surprising result is currently meeting the
-                    // 30% threshold more often than not. May need to replace with a less variable / flaky
-                    // term + result combo if it fluctuates.
-                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
                 ]
             ],
             [

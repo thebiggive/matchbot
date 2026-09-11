@@ -626,7 +626,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 )
                 SELECT id
                 FROM ranked
-                WHERE score >= max_score * 0.3
+                WHERE score >= max_score * 0.25
                 ORDER BY score DESC
                 SQL,
                 [
