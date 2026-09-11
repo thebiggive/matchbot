@@ -608,16 +608,27 @@ class CampaignRepository extends SalesforceReadProxyRepository
             // doesn't need to be in the WHERE.
             /** @var list<int> $ids */
             $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-                'SELECT Campaign.id,
-                        MATCH(Campaign.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 5 +
-                        MATCH(Charity.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 3 +
-                        MATCH(Campaign.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 1 +
-                        MATCH(Charity.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 1 as score
-                     FROM Campaign LEFT JOIN Charity ON Campaign.charity_id = Charity.id 
-                     WHERE ((MATCH (Campaign.searchable_text) AGAINST (:term_normalised IN NATURAL LANGUAGE MODE)) OR
-                         ( MATCH (Charity.searchable_text) AGAINST (:term_normalised IN NATURAL LANGUAGE MODE))
-                     )
-                     ORDER BY score DESC',
+                <<<'SQL'
+                WITH scored AS (
+                    SELECT Campaign.id,
+                           MATCH(Campaign.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 5 +
+                           MATCH(Charity.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 3 +
+                           MATCH(Campaign.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) +
+                           MATCH(Charity.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) AS score
+                    FROM Campaign
+                    LEFT JOIN Charity ON Campaign.charity_id = Charity.id
+                    WHERE MATCH(Campaign.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE)
+                       OR MATCH(Charity.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE)
+                ),
+                ranked AS (
+                    SELECT id, score, MAX(score) OVER () AS max_score
+                    FROM scored
+                )
+                SELECT id
+                FROM ranked
+                WHERE score >= max_score * 0.25
+                ORDER BY score DESC
+                SQL,
                 [
                     'term_normalised' => $termWithoutApostrophes,
                 ]

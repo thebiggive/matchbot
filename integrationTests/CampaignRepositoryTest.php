@@ -384,7 +384,8 @@ class CampaignRepositoryTest extends IntegrationTest
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
-                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
+                    // Presence of the word "Charity" seems to get this one over the threshold.
+                    ['Charity Name', 'Campaign Two is for Porridge and Juice']
                 ]
             ],
             [
@@ -392,7 +393,8 @@ class CampaignRepositoryTest extends IntegrationTest
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
-                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
+                    // Presence of the word "Charity" seems to get this one over the threshold.
+                    ['Charity Name', 'Campaign Two is for Porridge and Juice']
                 ]
             ],
             [
@@ -400,9 +402,6 @@ class CampaignRepositoryTest extends IntegrationTest
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
-                    // Not clear specifically why ngram matches this, but it's preumsbly a much lower score
-                    // match so not a major concern for now.
-                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
                 ]
             ],
             [
@@ -410,9 +409,6 @@ class CampaignRepositoryTest extends IntegrationTest
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
-                    // Not clear specifically why ngram matches this, but it's preumsbly a much lower score
-                    // match so not a major concern for now.
-                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
                 ]
             ],
             [
