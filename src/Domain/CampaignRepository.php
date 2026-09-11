@@ -708,7 +708,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @param array<string, string> $jsonMatchInListConditions Keyed on plural JSON key name. Value must exactly match
      *                                                         one of the items in the JSON array with the same key.
      *
-     * @param 'amountRaised'|'distanceToTarget'|'matchFundsRemaining'|'matchFundsUsed'|'relevance'|'location' $sortField
+     * @param 'amountRaised'|'distanceToTarget'|'matchFundsRemaining'|'matchFundsUsed'|'relevance'|'location'|string $sortField
      *
      * @param list<string> $regions ONS codes of UK regions that contain a point of interest for the donor - expected to be
      * nested regions that all contain one geographical point, ordered from most specific to least specific.
@@ -720,7 +720,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
      *
      * Warning - keys in $jsonMatchInListConditionsmust be literal strings otherwise there will be SQL injection vuulnerabilities.
      *
-     * @psalm-suppress DocblockTypeContradiction
      * @mago-expect lint:excessive-parameter-list - consider reducing parameter list
      *
      */
@@ -746,6 +745,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             'matchFundsUsed' => 'campaignStatistics.matchFundsUsed.amountInPence',
             'relevance' => 'relevance',
             'location' => 'location', // not an actual field, will be treated as a special case.
+            default => throw new \InvalidArgumentException('Please provide a supported sort field'),
         };
 
         $sortByLocation = $safeSortField === 'location';
