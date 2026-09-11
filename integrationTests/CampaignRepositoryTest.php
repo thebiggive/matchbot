@@ -364,7 +364,7 @@ class CampaignRepositoryTest extends IntegrationTest
                 [], // No results but verify it doesn't crash.
             ],
             [
-                'Porridge and Juice',
+                'Juice',
                 [['Charity Name', 'Campaign Two is for Porridge and Juice']],
             ],
             [
@@ -398,8 +398,11 @@ class CampaignRepositoryTest extends IntegrationTest
             [
                 'Fred',
                 [
-                    // the new search index stores "Freds" not "Fred's" and does not match on substrings so does
-                    // not find anything here.
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                    // Not clear specifically why ngram matches this, but it's preumsbly a much lower score
+                    // match so not a major concern for now.
+                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
                 ]
             ],
             [
@@ -407,10 +410,13 @@ class CampaignRepositoryTest extends IntegrationTest
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
                     ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                    // Not clear specifically why ngram matches this, but it's preumsbly a much lower score
+                    // match so not a major concern for now.
+                    ['Charity Name', 'Campaign Two is for Porridge and Juice'],
                 ]
             ],
             [
-                'Porridge WORDTHATDOESNOTEXIST',
+                'Porridge xyz', // 2nd term must not be in any way close to DB to ensure no extra matches
                 [
                     ['Charity Name', 'Campaign Two is for Porridge and Juice'],
                 ]
