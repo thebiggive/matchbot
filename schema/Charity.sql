@@ -32,7 +32,7 @@ CREATE TABLE `Charity` (
   UNIQUE KEY `UNIQ_4CC08E8293A8A818` (`stripeAccountId`),
   UNIQUE KEY `UNIQ_4CC08E829EF7853B` (`hmrcReferenceNumber`),
   KEY `IDX_4CC08E82D8961D21` (`salesforceId`),
-  FULLTEXT KEY `FULLTEXT_GLOBAL_SEARCH` (`searchable_text`),
-  FULLTEXT KEY `FULLTEXT_NAME` (`name`),
-  FULLTEXT KEY `FULLTEXT_NORMALISED_NAME` (`normalisedName`)
+  KEY `name` (`name`),
+  FULLTEXT KEY `FULLTEXT_NORMALISED_NAME` (`normalisedName`) /*!50100 WITH PARSER `ngram` */ ,
+  FULLTEXT KEY `FULLTEXT_GLOBAL_SEARCH` (`searchable_text`) /*!50100 WITH PARSER `ngram` */ 
 )

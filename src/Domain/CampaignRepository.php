@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
-use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\TransferException;
@@ -145,7 +144,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             jsonMatchInListConditions: [],
             term: null,
             forInternalUpdate: true, // Don't skip non-isPublished ones etc.
-        );
+        )->campaigns;
 
         $campaignIds = array_map(function (Campaign $campaign) {
             return Salesforce18Id::ofCampaign($campaign->getSalesforceId());
@@ -605,18 +604,31 @@ class CampaignRepository extends SalesforceReadProxyRepository
             \assert($termWithoutApostrophes !== null);
             $termWithoutApostrophes = str_replace('*', ' ', $termWithoutApostrophes);
 
+            // searchable_text includes normalisedName, so the latter is useful to weigh separately but
+            // doesn't need to be in the WHERE.
             /** @var list<int> $ids */
             $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-                'SELECT Campaign.id,
-                        MATCH(Campaign.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 5 +
-                        MATCH(Charity.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 3 +
-                        MATCH(Campaign.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 1 +
-                        MATCH(Charity.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 1 as score
-                     FROM Campaign LEFT JOIN Charity ON Campaign.charity_id = Charity.id 
-                     WHERE ((MATCH (Campaign.searchable_text) AGAINST (:term_normalised IN NATURAL LANGUAGE MODE)) OR
-                         ( MATCH (Charity.searchable_text) AGAINST (:term_normalised IN NATURAL LANGUAGE MODE))
-                     )
-                     ORDER BY score DESC',
+                <<<'SQL'
+                WITH scored AS (
+                    SELECT Campaign.id,
+                           MATCH(Campaign.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 5 +
+                           MATCH(Charity.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 3 +
+                           MATCH(Campaign.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) +
+                           MATCH(Charity.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) AS score
+                    FROM Campaign
+                    LEFT JOIN Charity ON Campaign.charity_id = Charity.id
+                    WHERE MATCH(Campaign.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE)
+                       OR MATCH(Charity.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE)
+                ),
+                ranked AS (
+                    SELECT id, score, MAX(score) OVER () AS max_score
+                    FROM scored
+                )
+                SELECT id
+                FROM ranked
+                WHERE score >= max_score * 0.25
+                ORDER BY score DESC
+                SQL,
                 [
                     'term_normalised' => $termWithoutApostrophes,
                 ]
@@ -707,7 +719,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @param array<string, string> $jsonMatchInListConditions Keyed on plural JSON key name. Value must exactly match
      *                                                         one of the items in the JSON array with the same key.
      *
-     * @param 'amountRaised'|'distanceToTarget'|'matchFundsRemaining'|'matchFundsUsed'|'relevance'|'location' $sortField
+     * @param 'amountRaised'|'distanceToTarget'|'matchFundsRemaining'|'matchFundsUsed'|'relevance'|'location'|string $sortField
      *
      * @param list<string> $regions ONS codes of UK regions that contain a point of interest for the donor - expected to be
      * nested regions that all contain one geographical point, ordered from most specific to least specific.
@@ -719,10 +731,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
      *
      * Warning - keys in $jsonMatchInListConditionsmust be literal strings otherwise there will be SQL injection vuulnerabilities.
      *
-     * @psalm-suppress DocblockTypeContradiction
      * @mago-expect lint:excessive-parameter-list - consider reducing parameter list
      *
-     * @return list<Campaign>
      */
     public function search(
         string $sortField,
@@ -736,7 +746,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $country = null,
         ?array $regions = [],
         bool $forInternalUpdate = false,
-    ): array {
+    ): CampaignSearchResult {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
         $safeSortField = match ($sortField) {
@@ -746,6 +756,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             'matchFundsUsed' => 'campaignStatistics.matchFundsUsed.amountInPence',
             'relevance' => 'relevance',
             'location' => 'location', // not an actual field, will be treated as a special case.
+            default => throw new \InvalidArgumentException('Please provide a supported sort field'),
         };
 
         $sortByLocation = $safeSortField === 'location';
@@ -790,6 +801,63 @@ class CampaignRepository extends SalesforceReadProxyRepository
             forInternalUpdate: $forInternalUpdate,
         );
 
+        if ($country === 'United Kingdom' && ! Environment::current()->isProduction()) {
+            // also fetch a count of how many relevent campaigns have
+            // locations each major part of the UK.
+
+            // TODO-SO-78 I think later we'll want to decide this dynamically based on what is one level smaller in
+            // the regions hierarchy than the current search context. For now we only do it for each nation/English region.
+            $summaryRegionCodes = [
+                'E12000008', // South East England
+                'E12000009', // South West England
+                'E12000002', // North West England
+                'E12000001', // North East England
+                'E12000003', // Yorkshire and The Humber
+                'E12000004', // East Midlands
+                'E12000005', // West Midlands
+                'E12000006', // East of England
+                'E12000007', // London
+                'S92000003', // Scotland
+                'W92000004', // Wales
+                'N92000002', // Northern Ireland
+            ];
+
+            $lq2 = $this->getEntityManager()->createQueryBuilder();
+            $lq2->select('campaignLocation.regionCode', 'COUNT(DISTINCT(campaign.id)) as numCampaigns')
+                ->from(CampaignLocation::class, 'campaignLocation')
+                ->join('campaignLocation.campaign', 'campaign')
+                ->join('campaign.charity', 'charity')
+                ->join('campaign.campaignStatistics', 'campaignStatistics')
+                ->where('campaignLocation.regionCode IN (:regionCodes)')
+                ->groupBy('campaignLocation.regionCode')
+                ->setParameter('regionCodes', $summaryRegionCodes);
+
+            $this->filterForSearch(
+                $lq2,
+                metaCampaignSlug: $metaCampaignSlug,
+                fundSlug: $fundSlug,
+                jsonMatchInListConditions: $jsonMatchInListConditions,
+                filterOutTargetMet: $filterOutTargetMet,
+                term: $term,
+                country: null, // explicitly NOT filtering by country here because that would exclude
+                // the locations we're looking for, which are not UN-member countries but
+                               // places within the UK.
+                forInternalUpdate: $forInternalUpdate,
+            );
+
+            /** @var list<array{numCampaigns: int, regionCode: string}> $locationCounts */
+            $locationCounts = $lq2->getQuery()->getResult();
+
+            foreach ($summaryRegionCodes as $code) {
+                if (! \array_any($locationCounts, fn(array $item): bool => $item['regionCode'] === $code)) {
+                    // it's not there, we can show a zero on the map (or FE could choose to hide zeroes)
+                    $locationCounts[] = ['regionCode' => $code, 'numCampaigns' => 0];
+                }
+            }
+        } else {
+            $locationCounts = [];
+        }
+
         $this->sortForSearch(
             qb: $qb,
             applyPinSort: $jsonMatchInListConditions === [],
@@ -805,7 +873,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         /** @var list<Campaign> $result */
         $result = $query->getResult();
 
-        return $result;
+        return new CampaignSearchResult(campaigns: $result, locationCounts: $locationCounts);
     }
 
     public static function getRegulatorHMRCIdentifier(string $regulatorName): ?string

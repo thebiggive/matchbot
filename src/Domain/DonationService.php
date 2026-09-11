@@ -186,9 +186,8 @@ class DonationService
                 $this->logger->warning("Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed");
             }
 
-            $this->campaignService->pullFundsAndUpdateStats($campaign);
-
-            $this->entityManager->flush();
+            // pullNewFromSf() does an initial flush for Campaign. This one flushes stats.
+            $this->campaignService->pullFundsAndUpdateStats(campaign: $campaign, flush: true);
 
             // Because this case of campaigns being set up individually is relatively rare,
             // it is the one place outside of `UpdateCampaigns` where we clear the whole
@@ -314,8 +313,13 @@ class DonationService
         $this->updateDonationFeesFromConfirmationTokenOrCard($donation, $confirmationToken, $card);
 
         if ($psp === PaymentServiceProvider::Ryft) {
-            \assert(isset($paymentSession)); // @phpstan-ignore isset.variable (psalm still needs this)
+            /** @var array{amount: int, id: string, paymentMethod: array{card: array{scheme: string, binDetails: array{issuerCountry: string}}}} $paymentSession */
             \assert(isset($ryftAccountId)); // @phpstan-ignore isset.variable (psalm still needs this)
+
+            // The session amount is independent of the fee and should match the donor's fixed payment amount.
+            // Fee calculation above may legitimately change after the session was created.
+            Assertion::same($paymentSession['amount'], $donation->getAmountFractionalIncTip());
+
             $donationWasPreviouslyCollected = $donation->getDonationStatus() === DonationStatus::Collected;
 
             $capture = $this->ryftClient->capturePayment(
@@ -324,9 +328,12 @@ class DonationService
                 Money::fromPence($donation->getAmountToDeductFractional(), $donation->currency()),
             );
 
+            if ($capture['paymentMethodId'] !== null) {
+                $donation->setTransactionId($capture['paymentMethodId']);
+            }
+
             $donation->collectFromRyftPaymentSession(
-                paymentSession: $paymentSession,
-                netAmount: Money::fromPence($capture['amount'], Currency::fromIsoCode($capture['currency'])),
+                amount: Money::fromPence($capture['amount'], Currency::fromIsoCode($capture['currency'])),
                 originalFeeFractional: Money::fromPence($capture['platformFee'], Currency::fromIsoCode($capture['currency'])),
                 at: $this->clock->now(),
             );
@@ -384,6 +391,33 @@ class DonationService
         }
 
         return $updatedIntent ?? null;
+    }
+
+    public function updateRyftPaymentSession(Donation $donation): void
+    {
+        $paymentSessionId = $donation->ryftPaymentSessionId;
+        if ($paymentSessionId === null) {
+            $this->logger->warning(sprintf(
+                'Cannot update Ryft payment session for donation %s: no payment session ID is recorded',
+                $donation->getUuid(),
+            ));
+            return;
+        }
+
+        $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
+        Assertion::notNull($ryftAccountId, 'Ryft account ID must be set for Ryft PSP');
+
+        $currentSession = $this->ryftClient->fetchPaymentSession($ryftAccountId, $paymentSessionId);
+        $amount = $donation->getAmountFractionalIncTip();
+        if ($currentSession['amount'] === $amount) {
+            return;
+        }
+
+        $this->ryftClient->updatePaymentSession(
+            ryftAccountId: $ryftAccountId,
+            ryftPaymentSessionId: $paymentSessionId,
+            amount: Money::fromPence($amount, $donation->currency()),
+        );
     }
 
     /**

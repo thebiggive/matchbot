@@ -124,7 +124,7 @@ class SearchByLocationTest extends IntegrationTest
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
-        );
+        )->campaigns;
 
         $returnCampaignNames = array_map(
             static fn(Campaign $campaign) => $campaign->getCampaignName(),
