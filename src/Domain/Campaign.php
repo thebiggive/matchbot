@@ -30,6 +30,7 @@ use MatchBot\Client\Campaign as CampaignClient;
 #[ORM\Index(name: 'metaCampaignSlug', columns: ['metaCampaignSlug'])]
 #[ORM\Index(name: 'relatedApplicationStatus', columns: ['relatedApplicationStatus'])]
 #[ORM\Index(name: 'relatedApplicationCharityResponseToOffer', columns: ['relatedApplicationCharityResponseToOffer'])]
+#[ORM\Index(name: 'name', columns: ['name'])]
 #[ORM\Entity(repositoryClass: CampaignRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\ChangeTrackingPolicy('DEFERRED_EXPLICIT')]

@@ -149,7 +149,7 @@
             "@doctrine:migrate:live",
             "php ./matchbot matchbot:write-schema-files",
             "MYSQL_SCHEMA=matchbot_test php ./doctrine orm:schema-tool:drop --full-database --force",
-            "MYSQL_SCHEMA=matchbot_test php doctrine-migrations migrate --no-interaction --allow-no-migration"
+            "MYSQL_SCHEMA=matchbot_test ./vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration"
         ],
         "doctrine:update-schema": [
             "@doctrine:cache:clear",

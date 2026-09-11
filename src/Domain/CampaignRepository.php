@@ -605,6 +605,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             \assert($termWithoutApostrophes !== null);
             $termWithoutApostrophes = str_replace('*', ' ', $termWithoutApostrophes);
 
+            // searchable_text includes normalisedName, so the latter is useful to weigh separately but
+            // doesn't need to be in the WHERE.
             /** @var list<int> $ids */
             $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
                 'SELECT Campaign.id,
