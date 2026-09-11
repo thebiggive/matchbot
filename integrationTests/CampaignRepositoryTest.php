@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignLocation;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignStatistics;
 use MatchBot\Domain\CampaignStatus;
@@ -88,9 +89,62 @@ class CampaignRepositoryTest extends IntegrationTest
             term: 'Porridge',
         );
 
+        $campaigns = $result->campaigns;
+
         // assert
-        $this->assertCount(1, $result);
-        $this->assertSame('Campaign Two is for Porridge and Juice', $result[0]->getCampaignName());
+        $this->assertCount(1, $campaigns);
+        $this->assertSame('Campaign Two is for Porridge and Juice', $campaigns[0]->getCampaignName());
+
+        // We only provide location counts for a UK specific search:
+        $this->assertEmpty($result->locationCounts);
+    }
+
+    public function testItProvidesLocationDataForUKSearch(): void
+    {
+        // arrange
+        $sut = $this->getService(CampaignRepository::class);
+
+        $this->insertCampaignsForSearchToFind();
+
+        // act
+        $result = $sut->search(
+            sortField: 'relevance',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 6,
+            metaCampaignSlug: 'the-family',
+            fundSlug: null,
+            jsonMatchInListConditions: [
+                'beneficiaries' => 'Lads',
+                'categories' => 'Food',
+            ],
+            term: 'Porridge',
+            country: 'United Kingdom',
+        );
+
+        $campaigns = $result->campaigns;
+
+        // assert
+        $this->assertCount(1, $campaigns);
+        $this->assertSame('Campaign Two is for Porridge and Juice', $campaigns[0]->getCampaignName());
+
+        $this->assertEqualsCanonicalizing(
+            [
+                ['regionCode' => 'E12000007', 'numCampaigns' => 1], // London
+                ['regionCode' => 'E12000008', 'numCampaigns' => 0], // South East England
+                ['regionCode' => 'E12000009', 'numCampaigns' => 0], // South West England
+                ['regionCode' => 'E12000002', 'numCampaigns' => 0], // North West England
+                ['regionCode' => 'E12000001', 'numCampaigns' => 0], // North East England
+                ['regionCode' => 'E12000003', 'numCampaigns' => 0], // Yorkshire and The Humber
+                ['regionCode' => 'E12000004', 'numCampaigns' => 0], // East Midlands
+                ['regionCode' => 'E12000005', 'numCampaigns' => 0], // West Midlands
+                ['regionCode' => 'E12000006', 'numCampaigns' => 0], // East of England
+                ['regionCode' => 'S92000003', 'numCampaigns' => 0], // Scotland
+                ['regionCode' => 'W92000004', 'numCampaigns' => 0], // Wales
+                ['regionCode' => 'N92000002', 'numCampaigns' => 0], // Northern Ireland
+            ],
+            $result->locationCounts
+        );
     }
 
     public function testSearchWithInvalidJsonMatchFieldThrowsException(): void
@@ -111,7 +165,7 @@ class CampaignRepositoryTest extends IntegrationTest
                 'invalid-field!' => 'value'
             ],
             term: null,
-        );
+        )->campaigns;
     }
 
     /**
@@ -138,7 +192,7 @@ class CampaignRepositoryTest extends IntegrationTest
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: $query,
-        );
+        )->campaigns;
 
         $newSearchNames = array_map(fn(Campaign $campaign) => [$campaign->getCharity()->getName(), $campaign->getCampaignName()], $resultsWithNewSearch);
 
@@ -180,7 +234,7 @@ class CampaignRepositoryTest extends IntegrationTest
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
-        );
+        )->campaigns;
 
         $returnCampaignNames = array_map(
             static fn(Campaign $campaign) => $campaign->getCampaignName(),
@@ -279,6 +333,11 @@ class CampaignRepositoryTest extends IntegrationTest
                 ],
                 hidden: false,
             );
+
+            $campaignLocation1 = new CampaignLocation($campaign, 'United Kingdom', null);
+            $campaignLocation2 = new CampaignLocation($campaign, null, 'E12000007'); // E12000007 = London
+            $em->persist($campaignLocation1);
+            $em->persist($campaignLocation2);
 
             // Add empty initial stats
             $stats2 = CampaignStatistics::zeroPlaceholder($campaign, new \DateTimeImmutable('now'));
