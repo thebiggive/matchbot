@@ -50,7 +50,7 @@ class Sitemap extends Action
             fundSlug: null,
             jsonMatchInListConditions: [],
             term:null,
-        );
+        )->campaigns;
 
         foreach ($campaigns as $campaign) {
             $endsInFuture = $campaign->getEndDate() > $this->clock->now();
