@@ -74,6 +74,7 @@ abstract class Command extends SymfonyCommand
             PushDailyFundTotals::class,
             PushDonations::class,
             RedistributeMatchFunds::class,
+            RegenerateStatsForCampaign::class,
             ResetMatching::class,
             RetrospectivelyMatch::class,
             ScheduledOutOfSyncFundsCheck::class,
