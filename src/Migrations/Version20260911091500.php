@@ -19,6 +19,12 @@ final class Version20260911091500 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
+        if (getenv('APP_ENV') === 'production') {
+            // Applying these changes, which aren't transaction-safe and are causing issues,
+            // manually in production.
+            return;
+        }
+
         // These 2 unused for search, delete entirely.
         $this->addSql('DROP INDEX FULLTEXT_NAME ON Campaign');
         $this->addSql('DROP INDEX FULLTEXT_NAME ON Charity');
