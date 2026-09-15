@@ -19,6 +19,10 @@ final class Version20260911153909 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
+        if (getenv('APP_ENV') !== 'regression') {
+            return;
+        }
+
         $this->addSql('DROP INDEX FULLTEXT_GLOBAL_SEARCH ON Campaign');
         $this->addSql('DROP INDEX FULLTEXT_NORMALISED_NAME ON Campaign');
         $this->addSql('DROP INDEX FULLTEXT_GLOBAL_SEARCH ON Charity');
