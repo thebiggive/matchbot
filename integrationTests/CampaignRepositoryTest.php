@@ -397,22 +397,20 @@ class CampaignRepositoryTest extends IntegrationTest
                     ['Charity Name', 'Campaign Two is for Porridge and Juice']
                 ]
             ],
-            // TODO reinstate 2 flaky cases once seed value fixed or data / scoring otherwise
-            // made more stable
-//            [
-//                'Fred',
-//                [
-//                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
-//                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
-//                ]
-//            ],
-//            [
-//                'Freds',
-//                [
-//                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
-//                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
-//                ]
-//            ],
+            [
+                'Fred',
+                [
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                ]
+            ],
+            [
+                'Freds',
+                [
+                    ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
+                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
+                ]
+            ],
             [
                 'Porridge xyz', // 2nd term must not be in any way close to DB to ensure no extra matches
                 [
