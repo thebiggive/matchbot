@@ -7,6 +7,7 @@ use Laminas\Diactoros\Response;
 use MatchBot\Application\Actions\Sitemap;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CampaignSearchResult;
 use MatchBot\Domain\MetaCampaignRepository;
 use MatchBot\Domain\MetaCampaignSlug;
 use MatchBot\Domain\Salesforce18Id;
@@ -33,9 +34,9 @@ class SitemapTest extends TestCase
             null,
             [],
             null,
-        )->willReturn([
+        )->willReturn(new CampaignSearchResult(campaigns: [
             self::someCampaign(sfId: Salesforce18Id::ofCampaign('000000000000000000')),
-        ]);
+        ]));
 
         $metaCampaignRepositoryProphecy->allToIncludeInSitemap($now)->willReturn([
             $this->someMetaCampaign(false, false, slug: MetaCampaignSlug::of('this-is-the-metacampaign-slug')),

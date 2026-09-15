@@ -14,6 +14,7 @@ use Psr\Http\Message\UriInterface;
 #[ORM\Entity(repositoryClass: CharityRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Index(columns: ["salesforceId"])]
+#[ORM\Index(name: 'name', columns: ["name"])]
 class Charity extends SalesforceReadProxy
 {
     use TimestampsTrait;

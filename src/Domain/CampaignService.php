@@ -42,11 +42,18 @@ class CampaignService
      * @return void
      * @throws \Doctrine\ORM\Exception\ORMException
      * @see UpdateCampaignDonationStats command.
+     *
+     * Flushes EntityManager, as a side effect.
      */
-    public function pullFundsAndUpdateStats(Campaign $campaign): void
+    public function pullFundsAndUpdateStats(Campaign $campaign, bool $flush = true): void
     {
         if ($this->fundRepository->pullForCampaign($campaign, $this->clock->now())) {
             $this->regenerateStats($campaign);
+            if ($flush) {
+                // Want to set lastCheck field on stats regardless of whether there was a change, so don't
+                // check `regenerateStats()` return value.
+                $this->entityManager->flush();
+            }
         }
     }
 
@@ -135,8 +142,14 @@ class CampaignService
         Assertion::notNull($salesforceId);
 
         $bannerLayout = MetaCampaignLayoutChoices::forSlug($metaCampaign);
+        $banner = $metaCampaign->getBanner();
 
-        $bannerUri = $bannerLayout->imageUri ?? $metaCampaign->getBannerUri();
+        if ($bannerLayout !== null && $bannerLayout->imageUri !== null) {
+            $banner = new Banner(
+                uri: $bannerLayout->imageUri,
+                altText: $banner?->altText,
+            );
+        }
 
         return new MetaCampaignHttpModel(
             id: $salesforceId,
@@ -145,7 +158,8 @@ class CampaignService
             status: $metaCampaign->getStatusAt($this->clock->now()),
             hidden: $metaCampaign->isHidden(),
             summary: $metaCampaign->getSummary(),
-            bannerUri: $bannerUri?->__toString(),
+            bannerUri: $banner?->uri->__toString(),
+            banner: $banner,
             amountRaised: $this->getAmountRaisedForMetaCampaign($metaCampaign)->toMajorUnitFloat(),
             matchFundsRemaining: $this->cachedMetaCampaignMatchFundsRemaining($metaCampaign)->toMajorUnitFloat(),
             donationCount: $this->metaCampaignRepository->countCompleteDonationsToMetaCampaign($metaCampaign),
@@ -155,7 +169,7 @@ class CampaignService
             campaignCount: $this->campaignRepository->countCampaignsInMetaCampaign($metaCampaign),
             usesSharedFunds: $metaCampaign->usesSharedFunds(),
             shouldBeIndexed: $metaCampaign->shouldBeIndexed($this->clock->now()),
-            useDon1120Banner: ! \is_null($bannerLayout),
+            useDon1120Banner: !\is_null($bannerLayout),
             bannerLayout: $bannerLayout,
         );
     }

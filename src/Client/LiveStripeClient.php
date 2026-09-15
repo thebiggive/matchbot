@@ -3,6 +3,7 @@
 namespace MatchBot\Client;
 
 use MatchBot\Domain\Money;
+use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
@@ -115,7 +116,13 @@ class LiveStripeClient implements Stripe
     public function createRegularGivingCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
     {
         $components = self::SESSION_COMPONENTS;
-        $components['payment_element']['features']['payment_method_save_usage'] = 'off_session';
+        /**
+         * For Regular Giving, `payment_method_save` is not optional.
+         * {@see RegularGivingService::setupNewMandate()} which enables off-session reuse.
+         */
+        $components['payment_element']['features']['payment_method_save'] = 'disabled';
+        unset($components['payment_element']['features']['payment_method_save_usage']);
+
         $components['payment_element']['features']['payment_method_redisplay'] = 'disabled'; // Ensure method's not removed during non-RG checkout
         unset($components['payment_element']['features']['payment_method_allow_redisplay_filters']);
         unset($components['payment_element']['features']['payment_method_redisplay_limit']);

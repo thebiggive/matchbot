@@ -112,9 +112,8 @@ class Search extends Action
         $limit = min(100, (int) ($params['limit'] ?? 20));
 
         try {
-            /** @psalm-suppress ArgumentTypeCoercion */
-            $campaigns = $this->campaignRepository->search(
-                sortField: $sortField, // @mago-expect analysis:possibly-invalid-argument (search function will throw safely if given invalid arg)
+            $searchResult = $this->campaignRepository->search(
+                sortField: $sortField,
                 sortDirection: $sortDirection,
                 offset: (int)($params['offset'] ?? 0),
                 limit: $limit,
@@ -135,11 +134,19 @@ class Search extends Action
          *
          * Have to then pass through array_values to make sure it produces a JSON array as needed by FE not a JSON
          * object - any missing keys (other than at the end of the list) will make PHP output it as an object.
+         *
+         * @var list<array<string, mixed>>
          */
-        return
-            \array_filter($campaigns, static fn(Campaign $c) => ! $c->isSfDataMissing())
-            |> \array_values(...)
-            |> (fn(array $campaignsWithSfData) => \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData))
-            |> (fn(array $campaignSummaries) => new JsonResponse(['campaignSummaries' => $campaignSummaries], 200));
+        $campaignSummaries = \array_filter($searchResult->campaigns, static fn(Campaign $c) => !$c->isSfDataMissing())
+                |> \array_values(...)
+                |> (fn(array $campaignsWithSfData): array => \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData));
+
+        return new JsonResponse(
+            [
+                'campaignSummaries' => $campaignSummaries,
+                'locationCounts' => $searchResult->locationCounts,
+            ],
+            200
+        );
     }
 }

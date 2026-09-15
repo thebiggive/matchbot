@@ -33,7 +33,7 @@ class UpdateCampaignsTest extends TestCase
             ->shouldBeCalledOnce();
 
         $campaignServiceProphecy = $this->prophesize(CampaignService::class);
-        $campaignServiceProphecy->pullFundsAndUpdateStats($campaign)->shouldBeCalledOnce();
+        $campaignServiceProphecy->pullFundsAndUpdateStats($campaign, false)->shouldBeCalledOnce();
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
@@ -69,7 +69,7 @@ class UpdateCampaignsTest extends TestCase
             ->shouldBeCalledOnce();
 
         $campaignServiceProphecy = $this->prophesize(CampaignService::class);
-        $campaignServiceProphecy->pullFundsAndUpdateStats($campaign)
+        $campaignServiceProphecy->pullFundsAndUpdateStats($campaign, false)
             ->willThrow(NotFoundException::class)
             ->shouldBeCalledOnce();
 
@@ -111,7 +111,7 @@ class UpdateCampaignsTest extends TestCase
         );
 
         $campaignServiceProphecy = $this->prophesize(CampaignService::class);
-        $campaignServiceProphecy->pullFundsAndUpdateStats($campaign)
+        $campaignServiceProphecy->pullFundsAndUpdateStats($campaign, false)
             ->willThrow($exception)
             ->shouldBeCalledTimes(2);
 
@@ -204,7 +204,7 @@ class UpdateCampaignsTest extends TestCase
             ->shouldBeCalledOnce();
 
         $campaignServiceProphecy = $this->prophesize(CampaignService::class);
-        $campaignServiceProphecy->pullFundsAndUpdateStats($campaign)->shouldBeCalledOnce();
+        $campaignServiceProphecy->pullFundsAndUpdateStats($campaign, false)->shouldBeCalledOnce();
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),

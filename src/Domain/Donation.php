@@ -459,9 +459,8 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(nullable: true, name: 'paymentCard_country')]
     private ?CountryAlpha2 $paymentCardCountry;
 
-    /** @psalm-suppress UnusedProperty - for now just recorded for internal reference */
     #[ORM\Column(nullable: true)]
-    private ?string $ryftPaymentSessionId = null;
+    private(set) ?string $ryftPaymentSessionId = null;
 
     /**
      * @param string|null $billingPostcode
@@ -1659,24 +1658,14 @@ class Donation extends SalesforceWriteProxy
         $this->totalPaidByDonor = bcdiv((string)$totalPaidFractional, '100', 2);
     }
 
-    /**
-     * @param array<string, mixed> $paymentSession
-     */
     public function collectFromRyftPaymentSession(
-        array $paymentSession,
-        Money $netAmount,
+        Money $amount,
         Money $originalFeeFractional,
         \DateTimeImmutable $at,
     ): void {
         $this->donationStatus = DonationStatus::Collected;
         $this->collectedAt = $at;
-        // We have to add `netAmount` which is net amount reported by Ryft after their equivalent of application fee,
-        // to the gross fee and tip that we asked to deduct.
-        $this->totalPaidByDonor = bcadd(
-            $netAmount->toNumericString(),
-            bcdiv((string) $this->getAmountToDeductFractional(), '100', 2),
-            2,
-        );
+        $this->totalPaidByDonor = $amount->toNumericString(); // Includes any tip
         $this->setOriginalPspFeeFractional((string) $originalFeeFractional->amountInPence());
     }
 

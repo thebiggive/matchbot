@@ -53,8 +53,10 @@ class PullMetaCampaignFromSF extends LockingCommand
         foreach ($campaigns as $campaign) {
             $i++;
             $output->writeln("Pulling funds for ($i of $total) '{$campaign->getCampaignName()}'");
-            $this->campaignService->pullFundsAndUpdateStats($campaign);
+            $this->campaignService->pullFundsAndUpdateStats(campaign: $campaign, flush: false); // We flush once for the whole loop below.
         }
+
+        $this->entityManager->flush();
 
         $output->writeln("Fetched $total campaigns total from Salesforce for '$metaCampaginSlug->slug'");
         $output->writeln("$newFetchCount new campaigns added to DB, $updatedCount campaigns updated");

@@ -41,8 +41,8 @@ CREATE TABLE `Campaign` (
   KEY `metaCampaignSlug` (`metaCampaignSlug`),
   KEY `relatedApplicationStatus` (`relatedApplicationStatus`),
   KEY `relatedApplicationCharityResponseToOffer` (`relatedApplicationCharityResponseToOffer`),
-  FULLTEXT KEY `FULLTEXT_GLOBAL_SEARCH` (`searchable_text`),
-  FULLTEXT KEY `FULLTEXT_NAME` (`name`),
-  FULLTEXT KEY `FULLTEXT_NORMALISED_NAME` (`normalisedName`),
+  KEY `name` (`name`),
+  FULLTEXT KEY `FULLTEXT_NORMALISED_NAME` (`normalisedName`) /*!50100 WITH PARSER `ngram` */ ,
+  FULLTEXT KEY `FULLTEXT_GLOBAL_SEARCH` (`searchable_text`) /*!50100 WITH PARSER `ngram` */ ,
   CONSTRAINT `FK_E663708BF5C97E37` FOREIGN KEY (`charity_id`) REFERENCES `Charity` (`id`)
 )

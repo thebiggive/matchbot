@@ -12,10 +12,8 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
 {
     private const array GENERATED_INDEXES = [
         ['Campaign', 'FULLTEXT_GLOBAL_SEARCH'],
-        ['Campaign', 'FULLTEXT_NAME'],
         ['Campaign', 'FULLTEXT_NORMALISED_NAME'],
         ['Charity', 'FULLTEXT_GLOBAL_SEARCH'],
-        ['Charity', 'FULLTEXT_NAME'],
         ['Charity', 'FULLTEXT_NORMALISED_NAME'],
     ];
 
