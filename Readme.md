@@ -358,6 +358,9 @@ pattern to ensure this remains true.
 
 The OpenAPI contract which the app fulfils (along with Salesforce) is mostly kept in this repo – via a mix of hard-coded schemas in [api.yaml](./api.yaml) and Openapi library attributes. We'll probably incrementally move to the latter so that definitions live near their code.
 
+The most reliable quick way to get an up-to-date complete OpenAPI spec is to check a recent CircleCI run's build artifacts, looking for the `docs`
+folder. (You can also repeat the same steps as CircleCI locally.)
+
 Operations covered in APIs we document largely map to the donor-facing responsibilities of MatchBot. They cover the most important calls relating to Donations and Campaigns.
 
 The app also implements a *client* for some endpoints including for Funds, with a hard-coded API doc online at [TBG-Funds](https://app.swaggerhub.com/apis/Noel/TBG-Funds). (Technically this is missing the most important endpoint, `/campaign/{id}/funds`, which returns a list of the Scheme defined here. SwaggerHub is currently unusable on a free plan and this didn't seem worth migrating away right now.)
