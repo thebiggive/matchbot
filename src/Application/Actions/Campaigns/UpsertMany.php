@@ -9,8 +9,6 @@ use JetBrains\PhpStorm\Pure;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Environment;
-use MatchBot\Application\HttpModels\Campaign as CampaignHTTPModel;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CharityRepository;

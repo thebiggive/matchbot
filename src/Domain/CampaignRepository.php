@@ -128,9 +128,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * Queries the local DB for charity campaigns and then loads them all from Salesforce.
+     *
      * @return array{newFetchCount: int, updatedCount: int, campaigns: list<Campaign>}
  *@throws NotFoundException
-     *
      */
     public function fetchAlreadyKnownChildrenForMetaCampaign(MetaCampaignSlug $metaCampaignSlug): array
     {
@@ -554,11 +555,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
         bool $forInternalUpdate,
     ): array|null {
         // We need to be able to pull previously not-published campaigns in on demand, to tell when they're published
-        // and fix data drift if necessary.
+        // and fix data drift if necessary. Includes checks for standalone campaign funding and application
+        // campaign status fields.
         if (!$forInternalUpdate) {
             $qb->andWhere($qb->expr()->eq('campaign.isMatched', '1'));
             $qb->andWhere($qb->expr()->eq('campaign.hidden', '0'));
             $qb->andWhere($qb->expr()->eq('campaign.isPublished', '1'));
+            $qb->andWhere($this->statusAndFundingWhereClause);
         }
 
         if ($metaCampaignSlug === null) {
@@ -566,7 +569,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('now', $this->clock->now());
         }
 
-        $qb->andWhere($this->statusAndFundingWhereClause);
+
 
         if ($metaCampaignSlug !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.metaCampaignSlug', ':metaCampaignSlug'));
