@@ -17,9 +17,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/**
- *
- */
 #[AsCommand(
     name: 'matchbot:pull-meta-campaign-from-sf',
     description: 'Pulls already-known children of meta-campaign from Salesforce into the matchbot DB.'
