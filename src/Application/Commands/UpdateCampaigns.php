@@ -19,6 +19,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * @see PullMetaCampaignFromSF which includes a permanent way to pull charity campaigns'
+ * core data on-demand, not just the funds, for a specific parent meta-campaign slug.
+ */
 #[AsCommand(
     name: 'matchbot:update-campaigns',
     description: 'Now just loads funds for campaigns; core data is pushed by Salesforce',

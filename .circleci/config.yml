@@ -94,9 +94,12 @@ jobs:
 
       - run: ./matchbot matchbot:write-schema-files --check
 
-      - run: ./matchbot matchbot:create-fictional-data
-
       - run: composer run integration-test
+
+      # We want to confirm this doesn't crash but we explicitly *don't* want it before integration
+      # tests, as this command is designed to help with manual testing and having unpredictable extra
+      # data ahead of integration tests changes the fuzzy search results.
+      - run: ./matchbot matchbot:create-fictional-data
 
       - run: composer run docs:all # Generate and merge OpenAPI documentation
 
