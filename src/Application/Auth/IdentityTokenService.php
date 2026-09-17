@@ -6,12 +6,11 @@ namespace MatchBot\Application\Auth;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use JetBrains\PhpStorm\Pure;
 use MatchBot\Domain\PersonId;
 use Psr\Log\LoggerInterface;
 
 /**
- * @psalm-type IdentityJWT object{sub: object{person_id: string, psp_id: ?string, complete?: boolean|null}}&\stdClass
+ * @psalm-type IdentityJWT object{iss: string, sub: object{person_id: string, psp_id: ?string, complete?: boolean|null}}&\stdClass
  */
 final class IdentityTokenService
 {
@@ -80,7 +79,8 @@ final class IdentityTokenService
             return false;
         }
 
-        if ($decodedJwtBody->iss !== $this->baseUri) {
+        // TODO INFRA-169 Remove temporary acceptance of old ID production host.
+        if ($decodedJwtBody->iss !== $this->baseUri && $decodedJwtBody->iss !== 'https://identity-production.thebiggive.org.uk') {
             $logger->error("JWT error: issued by wrong site {$decodedJwtBody->iss}");
 
             return false;
@@ -126,6 +126,7 @@ final class IdentityTokenService
             return false;
         }
 
+        // @mago-ignore analysis:invalid-property-access
         return $decodedJwtBody->sub->complete ?? false;
     }
 }

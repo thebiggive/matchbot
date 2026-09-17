@@ -12,7 +12,7 @@ use Symfony\Component\Lock\LockInterface;
 
 /**
  * Base class for Commands which should be protected against overlapping runs of the same Command
- * name, for 30 minutes.
+ * name, for 1 day.
  */
 abstract class LockingCommand extends Command
 {
@@ -35,7 +35,15 @@ abstract class LockingCommand extends Command
     {
         $this->start($input, $output);
         if ($this->getLock()) {
-            $return = $this->doExecute($input, $output);
+            try {
+                $return = $this->doExecute($input, $output);
+            } catch (\Throwable $exception) {
+                // Still release lock before exit if e.g. an assertion failed.
+                $this->releaseLock();
+
+                $exceptionCode = $exception->getCode();
+                return is_int($exceptionCode) ? $exceptionCode : 999;
+            }
             $this->releaseLock();
         } else {
             $message = $this->getName() ?? self::class . ' did nothing as another instance had the lock.';
