@@ -30,7 +30,7 @@ class Settings
     /** @var array{baseUri: string} */
     public array $donate;
 
-    /** @var array{baseUri: string} */
+    /** @var array{baseUri: string, internalBaseUri: string} */
     public array $identity;
 
     /** @var array{name: 'matchbot', path: "php://stdout", level: Logger::DEBUG|Logger::INFO} */
@@ -132,7 +132,12 @@ class Settings
         ];
 
         $this->identity = [
+            // Public one for e.g. JWT validation. (Donate also calls Identity directly.) Would work for callouts
+            // in theory, but that's slower and also subject to Cloudflare anti-bot measures so would additionally
+            // need a header workaround or similar.
             'baseUri' => $this->getStringEnv($env, 'ID_BASE_URI', false),
+            // Best callouts URI. For potential future server-to-server calls.
+            'internalBaseUri' => $this->getStringEnv($env, 'ID_INTERNAL_BASE_URI', false),
         ];
 
         $this->logger = [
