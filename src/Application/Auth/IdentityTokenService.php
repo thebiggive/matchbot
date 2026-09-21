@@ -79,8 +79,7 @@ final class IdentityTokenService
             return false;
         }
 
-        // TODO INFRA-169 Remove temporary acceptance of old ID production host.
-        if ($decodedJwtBody->iss !== $this->baseUri && $decodedJwtBody->iss !== 'https://identity-production.thebiggive.org.uk') {
+        if ($decodedJwtBody->iss !== $this->baseUri) {
             $logger->error("JWT error: issued by wrong site {$decodedJwtBody->iss}");
 
             return false;
