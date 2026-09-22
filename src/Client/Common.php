@@ -78,11 +78,9 @@ abstract class Common
     /**
      * @param array<mixed> $jsonSnapshot
      * @return Salesforce18Id<SalesforceProxy>
-     *@throws NotFoundException
-     * @throws GuzzleException
-     *
-     * @throws BadRequestException
-     * @throws BadResponseException
+     * @throws NotFoundException if e.g. record not in Salesforce
+     * @throws RequestException on e.g. Salesforce 503 outage, data refused by Salesforce with 400. BadResponseException
+     *                          (a subclass) is manually thrown if Salesforce JSON was invalid.
      */
     protected function postUpdateToSalesforce(string $uri, array $jsonSnapshot, string $uuid, string $entityType): Salesforce18Id
     {
@@ -159,7 +157,7 @@ abstract class Common
                 $exResponse ? $exResponse->getBody() : 'N/A',
             ));
 
-            throw new BadRequestException('not upserted');
+            throw $ex;
         }
 
         if (!in_array($response->getStatusCode(), [200, 201], true)) {
@@ -176,7 +174,7 @@ abstract class Common
             return Salesforce18Id::of($salesforceId);
         } catch (\JsonException $e) {
             throw new BadResponseException(
-                "JsonException trying to parse response from to push of $entityType $uuid SF '$contents': {$e->getMessage()}"
+                "JsonException trying to parse response from push of $entityType $uuid SF '$contents': {$e->getMessage()}"
             );
         }
     }
