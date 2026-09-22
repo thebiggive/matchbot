@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Client;
 
-use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Messenger\MandateUpserted;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
@@ -17,10 +17,8 @@ class Mandate extends Common
     use HashTrait;
 
     /**
-     * @throws BadRequestException
-     * @throws BadResponseException
      * @throws NotFoundException on missing campaign in a sandbox
-     * @throws GuzzleException
+     * @throws RequestException
      *
      * @psalm-suppress LessSpecificReturnStatement
      * @psalm-suppress MoreSpecificReturnType
