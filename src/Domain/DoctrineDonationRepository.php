@@ -8,8 +8,8 @@ use DateTime;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Query;
-use GuzzleHttp\Exception\BadResponseException;
-use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\TransferException;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
@@ -554,7 +554,7 @@ DQL);
             );
 
             return;
-        } catch (BadResponseException | ConnectException $exception) {
+        } catch (RequestException | TransferException $exception) { // Includes e.g. ServerException, such as Salesforce 503s.
             $this->setSalesforceRePushNeeded($changeMessage->uuid);
             $exceptionClass = get_class($exception);
             $this->logError(
