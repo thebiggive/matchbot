@@ -29,6 +29,7 @@ use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RyftAccountId;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\IntegrationTests\AcceptCampaignPushFromSFTest;
 use MatchBot\IntegrationTests\IntegrationTest;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
@@ -140,8 +141,10 @@ class TestCase extends PHPUnitTestCase
 
     /**
      * @var SFCampaignApiResponse
+     *
+     * Do not use directly - use @see randomizedMetaCampaign to avoid DB conflicts when inserting more than one.
      */
-    public const array META_CAMPAIGN_FROM_SALESFORCE = [
+    private const array META_CAMPAIGN_FROM_SALESFORCE = [
         'id' => 'a05xxxxxxxxxxxxxxx',
         'isMetaCampaign' => true,
         'isPublished' => true,
@@ -215,6 +218,24 @@ class TestCase extends PHPUnitTestCase
     public static function randomString(): string
     {
         return (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
+    }
+
+    /**
+     * @return SFCampaignApiResponse
+     *
+     */
+    public static function randomizedMetaCampaign(): array
+    {
+        $metaCampaignData = TestCase::META_CAMPAIGN_FROM_SALESFORCE;
+
+        // randomise ID & slug to prevent duplicate issues
+        $metaCampaignSfId = Salesforce18Id::ofCampaign(self::randomString());
+        $slug = 'random-slug-' . self::randomString();
+        $metaCampaignData['slug'] = $slug;
+
+        $metaCampaignData['id'] = $metaCampaignSfId->value;
+
+        return $metaCampaignData;
     }
 
     public function getContainer(): ContainerInterface
