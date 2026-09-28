@@ -87,6 +87,10 @@ class CampaignRepositoryTest extends IntegrationTest
                 'categories' => 'Food',
             ],
             term: 'Porridge',
+            country: null,
+            regions: null,
+            forInternalUpdate: false,
+            filterByRegions: false,
         );
 
         $campaigns = $result->campaigns;
@@ -120,6 +124,9 @@ class CampaignRepositoryTest extends IntegrationTest
             ],
             term: 'Porridge',
             country: 'United Kingdom',
+            regions: null,
+            forInternalUpdate: false,
+            filterByRegions: false,
         );
 
         $campaigns = $result->campaigns;
@@ -165,6 +172,10 @@ class CampaignRepositoryTest extends IntegrationTest
                 'invalid-field!' => 'value'
             ],
             term: null,
+            country: null,
+            regions: null,
+            forInternalUpdate: false,
+            filterByRegions: false,
         )->campaigns;
     }
 
@@ -192,6 +203,10 @@ class CampaignRepositoryTest extends IntegrationTest
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: $query,
+            country: null,
+            regions: null,
+            forInternalUpdate: false,
+            filterByRegions: false,
         )->campaigns;
 
         $newSearchNames = array_map(fn(Campaign $campaign) => [$campaign->getCharity()->getName(), $campaign->getCampaignName()], $resultsWithNewSearch);
@@ -234,6 +249,10 @@ class CampaignRepositoryTest extends IntegrationTest
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
+            country: null,
+            regions: null,
+            forInternalUpdate: false,
+            filterByRegions: false,
         )->campaigns;
 
         $returnCampaignNames = array_map(

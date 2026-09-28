@@ -43,13 +43,17 @@ class Sitemap extends Action
 
         $campaigns = $this->campaignRepository->search(
             sortField: 'amountRaised',
-            sortDirection:  'asc',
+            sortDirection: 'asc',
             offset: 0,
             limit: 100_000,
             metaCampaignSlug: null,
             fundSlug: null,
             jsonMatchInListConditions: [],
-            term:null,
+            term: null,
+            country: null,
+            regions: null,
+            forInternalUpdate: false,
+            filterByRegions: false,
         )->campaigns;
 
         foreach ($campaigns as $campaign) {
