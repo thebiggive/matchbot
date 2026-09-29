@@ -558,6 +558,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
         bool $forInternalUpdate,
         ?array $regions = null,
     ): array|null {
+        /** @psalm-suppress RedundantCondition */
+        \assert($regions !== [], 'Can\'t be empty if caller respects docblock param type');
+
         // We need to be able to pull previously not-published campaigns in on demand, to tell when they're published
         // and fix data drift if necessary. Includes checks for standalone campaign funding and application
         // campaign status fields.
