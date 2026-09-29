@@ -117,13 +117,16 @@ class SearchByLocationTest extends IntegrationTest
         $returnValue = $sut->search(
             sortField: 'location',
             sortDirection: 'desc',
-            regions: [self::REGION_CODE_HARINGEY, self::REGION_CODE_LONDON, self::REGION_CODE_ENGLAND],
             offset: 0,
             limit: 6,
             metaCampaignSlug: $slug,
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
+            country: null,
+            regions: [self::REGION_CODE_HARINGEY, self::REGION_CODE_LONDON, self::REGION_CODE_ENGLAND],
+            forInternalUpdate: false,
+            filterByRegions: false,
         )->campaigns;
 
         $returnCampaignNames = array_map(

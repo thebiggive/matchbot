@@ -34,6 +34,10 @@ class SitemapTest extends TestCase
             null,
             [],
             null,
+            null,
+            null,
+            false,
+            false,
         )->willReturn(new CampaignSearchResult(campaigns: [
             self::someCampaign(sfId: Salesforce18Id::ofCampaign('000000000000000000')),
         ]));

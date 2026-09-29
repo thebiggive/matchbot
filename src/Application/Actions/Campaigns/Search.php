@@ -43,8 +43,8 @@ class Search extends Action
 
         $latitude = $params['latitude'] ?? null;
         $longitude = $params['longitude'] ?? null;
-
-        if ($sortField === 'location') {
+        $filterByLatLong = (bool) ($params['filterByLatLong'] ?? false);
+        if ($sortField === 'location' || $filterByLatLong) {
             Assertion::numeric($latitude, 'Numeric latitude and longitude must be supplied for location-based search');
             Assertion::numeric($longitude, 'Numeric latitude and longitude must be supplied for location-based search');
             Assertion::string($longitude);
@@ -62,8 +62,10 @@ class Search extends Action
             // in future, but we just need the codes for the search:
             $regions = \array_map(static fn(array $region): string => $region['code'], $regions);
         } else {
-            $regions = [];
+            $regions = null;
         }
+
+        Assertion::nullOrNotEmpty($regions);
 
         Assertion::same(\is_null($latitude), \is_null($longitude));
 
@@ -111,6 +113,9 @@ class Search extends Action
         // Use limit 100 if a higher value requested.
         $limit = min(100, (int) ($params['limit'] ?? 20));
 
+        /**
+         * @psalm-suppress InvalidArgument (see below mago comment)
+         */
         try {
             $searchResult = $this->campaignRepository->search(
                 sortField: $sortField,
@@ -122,7 +127,9 @@ class Search extends Action
                 jsonMatchInListConditions: $jsonMatchInListConditions,
                 term: $term,
                 country: $country,
-                regions: $regions,
+                regions: $regions, // @mago-expect analysis:possibly-invalid-argument - assert above provides that it's null or not empty.
+                forInternalUpdate: false,
+                filterByRegions: false,
             );
         } catch (\InvalidArgumentException $exception) {
             throw new HttpBadRequestException($request, $exception->getMessage(), $exception);

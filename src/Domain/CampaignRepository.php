@@ -144,7 +144,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
             fundSlug: null,
             jsonMatchInListConditions: [],
             term: null,
-            forInternalUpdate: true, // Don't skip non-isPublished ones etc.
+            regions: null,
+            forInternalUpdate: true,
+            filterByRegions: false, // Don't skip non-isPublished ones etc.
         )->campaigns;
 
         $campaignIds = array_map(function (Campaign $campaign) {
@@ -541,6 +543,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /**
      * @param QueryBuilder $qb Builder with its select etc. already set up.
      * @param array<string, string> $jsonMatchInListConditions
+     * @param non-empty-list<string>|null $regions - list of ONS region codes. If provided only campaigns in matching regions will be returend.
      *
      * @return list<int>| null campaign IDs sorted by relavence if doing a full text search, otherwise null.
      */
@@ -553,7 +556,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $term,
         ?string $country,
         bool $forInternalUpdate,
+        ?array $regions = null,
     ): array|null {
+        /** @psalm-suppress RedundantCondition */
+        \assert($regions !== [], 'Can\'t be empty if caller respects docblock param type');
+
         // We need to be able to pull previously not-published campaigns in on demand, to tell when they're published
         // and fix data drift if necessary. Includes checks for standalone campaign funding and application
         // campaign status fields.
@@ -569,8 +576,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->setParameter('now', $this->clock->now());
         }
 
-
-
         if ($metaCampaignSlug !== null) {
             $qb->andWhere($qb->expr()->eq('campaign.metaCampaignSlug', ':metaCampaignSlug'));
             $qb->setParameter('metaCampaignSlug', $metaCampaignSlug);
@@ -585,6 +590,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
         if ($country !== null) {
             $qb->andWhere($qb->expr()->eq('campaignLocation.countryName', ':country'));
             $qb->setParameter('country', $country);
+        }
+
+        if ($regions !== null) {
+            $qb->andWhere($qb->expr()->in('campaignLocation.regionCode', ':regionCodes'));
+            $qb->setParameter('regionCodes', $regions);
         }
 
         foreach ($jsonMatchInListConditions as $field => $value) {
@@ -718,13 +728,16 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * @param bool $filterByRegions - if true then only campaigns that match one of the given regions within the UK will
+     * be returned. If false then campaigns may be sorted based on region matching (depending on given $sortField) but
+     * for now will not be filtered.
+     * @param 'amountRaised'|'distanceToTarget'|'matchFundsRemaining'|'matchFundsUsed'|'relevance'|'location'|string $sortField
      * @param 'asc'|'desc' $sortDirection
-     * @param array<string, string> $jsonMatchInListConditions Keyed on plural JSON key name. Value must exactly match
      *                                                         one of the items in the JSON array with the same key.
      *
-     * @param 'amountRaised'|'distanceToTarget'|'matchFundsRemaining'|'matchFundsUsed'|'relevance'|'location'|string $sortField
+     * @param array<string, string> $jsonMatchInListConditions Keyed on plural JSON key name. Value must exactly match
      *
-     * @param list<string> $regions ONS codes of UK regions that contain a point of interest for the donor - expected to be
+     * @param non-empty-list<string>|null $regions ONS codes of UK regions that contain a point of interest for the donor - expected to be
      * nested regions that all contain one geographical point, ordered from most specific to least specific.
      * e.g. [E09000014 ,E12000007, E92000001] for Haringey, London, England. Campaigns will be ordered by which
      * of these they match, with priority to the earlier entries. So a campaign with stated impact in Haringey would
@@ -735,7 +748,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * Warning - keys in $jsonMatchInListConditionsmust be literal strings otherwise there will be SQL injection vuulnerabilities.
      *
      * @mago-expect lint:excessive-parameter-list - consider reducing parameter list
-     *
+     **
      */
     public function search(
         string $sortField,
@@ -747,8 +760,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
         array $jsonMatchInListConditions,
         ?string $term,
         ?string $country = null,
-        ?array $regions = [],
+        ?array $regions = null,
         bool $forInternalUpdate = false,
+        bool $filterByRegions = false,
     ): CampaignSearchResult {
         $qb = $this->getEntityManager()->createQueryBuilder();
 
@@ -846,6 +860,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 // the locations we're looking for, which are not UN-member countries but
                                // places within the UK.
                 forInternalUpdate: $forInternalUpdate,
+                regions: $filterByRegions ? $regions : null,
             );
 
             /** @var list<array{numCampaigns: int, regionCode: string}> $locationCounts */
