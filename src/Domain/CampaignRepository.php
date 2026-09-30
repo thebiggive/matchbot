@@ -826,7 +826,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regions: $filterByRegions ? $regions : null,
         );
 
-        if ($country === 'United Kingdom' && ! Environment::current()->isProduction()) {
+        if (($country === 'United Kingdom' || $regions !== null) && ! Environment::current()->isProduction()) {
             // also fetch a count of how many relevent campaigns have
             // locations each major part of the UK.
 
