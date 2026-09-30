@@ -27,6 +27,7 @@ use function trim;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
+    public const string REGION_CODE_ENGLAND = 'E92000001';
     private ClockInterface $clock;  // @phpstan-ignore property.uninitialized
     private string $statusAndFundingWhereClause = <<<DQL
         (
@@ -559,7 +560,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?array $regions = null,
     ): array|null {
         /** @psalm-suppress RedundantCondition */
-        \assert($regions !== [], 'Can\'t be empty if caller respects docblock param type');
+        \assert($regions !== []);
+
+        if (is_array($regions) && \array_last($regions) === self::REGION_CODE_ENGLAND) {
+            // including campaigns for England as a whole in a search for a specific location within
+            // England is not useful
+            \array_pop($regions);
+        }
 
         // We need to be able to pull previously not-published campaigns in on demand, to tell when they're published
         // and fix data drift if necessary. Includes checks for standalone campaign funding and application
@@ -816,6 +823,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             term: $term,
             country: $country,
             forInternalUpdate: $forInternalUpdate,
+            regions: $filterByRegions ? $regions : null,
         );
 
         if ($country === 'United Kingdom' && ! Environment::current()->isProduction()) {
