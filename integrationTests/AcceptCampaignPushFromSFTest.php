@@ -4,6 +4,7 @@ namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Auth\SalesforceAuthMiddleware;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\MetaCampaignRepository;
@@ -19,14 +20,10 @@ class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\Integratio
 {
     public function testItAcceptsAPushOfANewMetaCampaignFromSf(): void
     {
-        $metaCampaignData = TestCase::META_CAMPAIGN_FROM_SALESFORCE;
+        $metaCampaignData = TestCase::randomizedMetaCampaign();
 
-        // randomise ID & slug to prevent duplicate issues
-        $metaCampaignSfId = Salesforce18Id::ofCampaign(self::randomString());
-        $slug = 'random-slug-' . self::randomString();
-        $metaCampaignData['slug'] = $slug;
-
-        $metaCampaignData['id'] = $metaCampaignSfId->value;
+        $slug = $metaCampaignData['slug'];
+        Assertion::notNull($slug);
 
         $body = \json_encode(['campaigns' => [$metaCampaignData]], JSON_THROW_ON_ERROR);
 
@@ -50,7 +47,7 @@ class AcceptCampaignPushFromSFTest extends \MatchBot\IntegrationTests\Integratio
     {
         $campaignData = ['campaigns' => [
             TestCase::CAMPAIGN_FROM_SALESFORCE,
-            TestCase::META_CAMPAIGN_FROM_SALESFORCE,
+            TestCase::randomizedMetaCampaign(),
         ]];
 
         // randomise IDs to prevent duplicate issues
