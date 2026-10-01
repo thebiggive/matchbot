@@ -562,11 +562,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         /** @psalm-suppress RedundantCondition */
         \assert($regions !== []);
 
-        if (is_array($regions) && \array_last($regions) === self::REGION_CODE_ENGLAND) {
-            // including campaigns for England as a whole in a search for a specific location within
-            // England is not useful
-            \array_pop($regions);
-        }
+        $regions = $this->popEngland($regions);
 
         // We need to be able to pull previously not-published campaigns in on demand, to tell when they're published
         // and fix data drift if necessary. Includes checks for standalone campaign funding and application
@@ -814,6 +810,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $safeSortField === 'campaignStatistics.distanceToTarget.amountInPence' &&
             $sortDirection === 'asc';
 
+        $regionsToFilterTo = $filterByRegions ? $this->popEngland($regions) : null;
+
         $idsOrderedByRelavence = $this->filterForSearch(
             qb: $qb,
             metaCampaignSlug: $metaCampaignSlug,
@@ -823,7 +821,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             term: $term,
             country: $country,
             forInternalUpdate: $forInternalUpdate,
-            regions: $filterByRegions ? $regions : null,
+            regions: $regionsToFilterTo,
         );
 
         if (($country === 'United Kingdom' || $regions !== null) && ! Environment::current()->isProduction()) {
@@ -868,7 +866,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 // the locations we're looking for, which are not UN-member countries but
                                // places within the UK.
                 forInternalUpdate: $forInternalUpdate,
-                regions: $filterByRegions ? $regions : null,
+                regions: $filterByRegions ? $this->popEngland($regions) : null,
             );
 
             /** @var list<array{numCampaigns: int, regionCode: string}> $locationCounts */
@@ -899,7 +897,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         /** @var list<Campaign> $result */
         $result = $query->getResult();
 
-        return new CampaignSearchResult(campaigns: $result, locationCounts: $locationCounts);
+        return new CampaignSearchResult(campaigns: $result, locationCounts: $locationCounts, ukFilterRegions: $regionsToFilterTo);
     }
 
     public static function getRegulatorHMRCIdentifier(string $regulatorName): ?string
@@ -965,5 +963,24 @@ class CampaignRepository extends SalesforceReadProxyRepository
         }
 
         return in_array($campaign->getId(), $excludedCampaignIds, true);
+    }
+
+    /**
+     * @param non-empty-list<string>|null $regions
+     * @return non-empty-list<string>|null
+     */
+    public function popEngland(?array $regions): ?array
+    {
+        if (is_array($regions) && \array_last($regions) === self::REGION_CODE_ENGLAND) {
+            // including campaigns for England as a whole in a search for a specific location within
+            // England is not useful
+            \array_pop($regions);
+        }
+
+        // England should never be given alone in the input as all points within are in specific areas so we return
+        // a non-empty list or null.
+        assert($regions !== []);
+
+        return $regions;
     }
 }
