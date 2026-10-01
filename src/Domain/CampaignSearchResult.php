@@ -13,8 +13,15 @@ readonly class CampaignSearchResult
      *
      * @param list<array{numCampaigns: int, regionCode: string}> $locationCounts Count of how many campaigns have impact in
      * each given region within the UK, for map display.
+     *
+     * @param list<string>|null $ukFilterRegions - if the search is filtered to a list of UK regions (e.g. because)
+     * the request specified a lat/long point within these regions then this is a list of their ONS codes ordered from
+     * smallest to largests o that the client can zoom to the largest one highlight one or more of them.
      */
-    public function __construct(public array $campaigns, public array $locationCounts = [])
-    {
+    public function __construct(
+        public array $campaigns,
+        public array $locationCounts,
+        public array|null $ukFilterRegions,
+    ) {
     }
 }

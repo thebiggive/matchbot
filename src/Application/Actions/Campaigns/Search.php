@@ -152,6 +152,7 @@ class Search extends Action
             [
                 'campaignSummaries' => $campaignSummaries,
                 'locationCounts' => $searchResult->locationCounts,
+                'UKFilterRegions' => $searchResult->ukFilterRegions
             ],
             200
         );
