@@ -24,10 +24,12 @@ use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\CommandRequest;
 use MatchBot\Application\Messenger\DonationMatchingShouldBeChecked;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Messenger\EmailRequest;
 use MatchBot\Application\Messenger\FundTotalUpdated;
 use MatchBot\Application\Messenger\Handler\CommandRequestHandler;
 use MatchBot\Application\Messenger\Handler\DonationMatchCheckHandler;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
+use MatchBot\Application\Messenger\Handler\EmailRequestHandler;
 use MatchBot\Application\Messenger\Handler\FundTotalUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\MandateUpsertedHandler;
@@ -266,7 +268,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         DonationFundsNotifier::class => function (ContainerInterface $c): DonationFundsNotifier {
-            return new DonationFundsNotifier($c->get(Client\Mailer::class));
+            return new DonationFundsNotifier($c->get(MessageBusInterface::class));
         },
 
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
@@ -418,10 +420,9 @@ return function (ContainerBuilder $containerBuilder) {
                     Messages\Donation::class => [Transports::TRANSPORT_CLAIMBOT],
 
                     // Outbound, priority, for MatchBot worker; SQS queue in Production.
-                    // `CharityUpdated` does call out to Salesforce, to read data, but it's rarer and
-                    // occasionally more time-sensitive than the group below which push data.
                     CommandRequest::class => [Transports::TRANSPORT_HIGH_PRIORITY],
                     DonationMatchingShouldBeChecked::class => [Transports::TRANSPORT_HIGH_PRIORITY],
+                    EmailRequest::class => [Transports::TRANSPORT_HIGH_PRIORITY],
 
                     // Outbound, payout processing and Salesforce pushes (lower priority). For MatchBot worker; SQS
                     // queue in Production. Payouts are low priority solely because they can be slow due to numerous
@@ -447,6 +448,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     CommandRequest::class => [fn(CommandRequest $msg) => $c->get(CommandRequestHandler::class)($msg)],
                     DonationMatchingShouldBeChecked::class => [fn($msg) => $c->get(DonationMatchCheckHandler::class)($msg)],
+                    EmailRequest::class => [fn(EmailRequest $msg) => $c->get(EmailRequestHandler::class)($msg)],
                     Messages\Donation::class => [fn($msg) => $c->get(GiftAidResultHandler::class)($msg)],
                     Messages\Person::class => [fn($msg) => $c->get(PersonHandler::class)($msg)],
                     Messages\EmailVerificationToken::class => [fn($msg) => $c->get(EmailVerificationTokenHandler::class)($msg)],
@@ -719,7 +721,7 @@ return function (ContainerBuilder $containerBuilder) {
                 $donateBaseUri = $donateSettings['baseUri'];
 
                 return new DonationNotifier(
-                    mailer: $c->get(Client\Mailer::class),
+                    bus: $c->get(MessageBusInterface::class),
                     emailVerificationTokenRepository: $c->get(EmailVerificationTokenRepository::class),
                     clock: $c->get(ClockInterface::class),
                     donateBaseUri: $donateBaseUri,

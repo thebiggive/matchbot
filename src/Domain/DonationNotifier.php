@@ -4,13 +4,14 @@ namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Email\EmailMessage;
-use MatchBot\Client\Mailer;
+use MatchBot\Application\Messenger\EmailRequest;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class DonationNotifier
 {
     public function __construct(
-        private Mailer $mailer,
+        private MessageBusInterface $bus,
         private EmailVerificationTokenRepository $emailVerificationTokenRepository,
         private ClockInterface $clock,
         private string $donateBaseUri,
@@ -136,6 +137,6 @@ class DonationNotifier
             $emailMessage = $emailMessage->withToAddress($to);
         }
 
-        $this->mailer->send($emailMessage);
+        $this->bus->dispatch(EmailRequest::fromMessageEnveloped($emailMessage));
     }
 }

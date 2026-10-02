@@ -4,9 +4,9 @@ namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Email\EmailMessage;
-use MatchBot\Application\Environment;
-use MatchBot\Client\Mailer;
+use MatchBot\Application\Messenger\EmailRequest;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class RegularGivingNotifier
 {
@@ -14,7 +14,7 @@ class RegularGivingNotifier
     public const string TIMESTAMP_FORMAT = 'j F Y, H:i T';
     private \DateTimeZone $tz;
     public function __construct(
-        private readonly Mailer $mailer,
+        private readonly MessageBusInterface $bus,
         private readonly DonorAccountRepository $donorAccountRepository,
         private readonly ClockInterface $clock
     ) {
@@ -36,7 +36,7 @@ class RegularGivingNotifier
         $signUpDate = $mandate->getActiveFrom();
         Assertion::notNull($signUpDate);
 
-        $this->mailer->send(EmailMessage::donorMandateConfirmation(
+        $this->bus->dispatch(EmailRequest::fromMessageEnveloped(EmailMessage::donorMandateConfirmation(
             $donorAccount->emailAddress,
             [
                 'donorName' => $donorAccount->donorName->fullName(),
@@ -57,7 +57,7 @@ class RegularGivingNotifier
                     $campaign
                 )
             ]
-        ));
+        )));
     }
 
 
@@ -80,7 +80,7 @@ class RegularGivingNotifier
         Assertion::notNull($preAuthDate);
         $preAuthDate = $preAuthDate->setTimezone($this->tz);
 
-        $this->mailer->send(EmailMessage::donorRegularDonationFailed(
+        $this->bus->dispatch(EmailRequest::fromMessageEnveloped(EmailMessage::donorRegularDonationFailed(
             $donor->emailAddress,
             [
                 'donorName' => $donor->donorName->fullName(),
@@ -89,7 +89,7 @@ class RegularGivingNotifier
                 'originalDonationPaymentDate' => $preAuthDate->format('j F Y'),
                 'collectionAttemptTime' => $at->setTimezone($this->tz)->format(self::TIMESTAMP_FORMAT),
             ],
-        ));
+        )));
     }
 
     /**

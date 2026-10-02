@@ -2,18 +2,20 @@
 
 namespace MatchBot\Tests\Domain;
 
-use MatchBot\Client\Mailer;
+use MatchBot\Application\Email\EmailMessage;
+use MatchBot\Application\Messenger\EmailRequest;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
-use MatchBot\Domain\PersonId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
-use Ramsey\Uuid\Uuid;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class DonationFundsNotifierTest extends TestCase
 {
@@ -34,19 +36,29 @@ class DonationFundsNotifierTest extends TestCase
         $transferAmount = Money::fromPence(52_35, Currency::GBP);
         $newBalance = Money::fromPence(17_000_00, Currency::GBP);
 
-        $mailerProphecy = $this->prophesize(Mailer::class);
-        $sut = new DonationFundsNotifier($mailerProphecy->reveal());
+        $busProphecy = $this->prophesize(MessageBusInterface::class);
+        $sut = new DonationFundsNotifier($busProphecy->reveal());
 
         // assert
-        $mailerProphecy->sendEmail([
-            'templateKey' => 'donor-funds-thanks',
-            'recipientEmailAddress' => 'foo@example.com',
-            'params' => [
-                'donorFirstName' => 'Fred',
-                'donorLastName' => 'Brooks',
-                'transferAmount' => "£52.35"
-            ],
-        ])->shouldBeCalledOnce();
+        $busProphecy->dispatch(Argument::type(Envelope::class))
+            ->shouldBeCalledOnce()
+            ->will(function (array $args) {
+                /** @var Envelope $envelope */
+                $envelope = $args[0];
+                $message = $envelope->getMessage();
+                \assert($message instanceof EmailRequest);
+
+                $emailRequest = $message;
+                $emailMessage = $emailRequest->emailMessage;
+
+                \assert($emailMessage->templateKey === 'donor-funds-thanks');
+                \assert($emailMessage->emailAddress->email === 'foo@example.com');
+                \assert($emailMessage->params['donorFirstName'] === 'Fred');
+                \assert($emailMessage->params['donorLastName'] === 'Brooks');
+                \assert($emailMessage->params['transferAmount'] === '£52.35');
+
+                return $envelope;
+            });
 
         //act
         $sut->notifyRecieptOfAccountFunds($donorAccount, $transferAmount, $newBalance);
