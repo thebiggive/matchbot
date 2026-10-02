@@ -8,9 +8,9 @@ use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Email\EmailMessage;
+use MatchBot\Application\Messenger\EmailRequest;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Settings;
-use MatchBot\Client\Mailer;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -23,6 +23,7 @@ use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Tests\Application\MakesDonationClient;
 use MatchBot\Tests\Domain\InMemoryDonationRepository;
+use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Clock\ClockInterface;
@@ -35,6 +36,8 @@ use Stripe\StripeClient;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\InMemoryStore;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
 use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
@@ -47,8 +50,8 @@ class StripePaymentsUpdateTest extends StripeTest
     private const string DONATION_UUID = '5cacc86a-b405-11ef-a4a5-9fcdb7039df1';
     private InMemoryDonationRepository $donationRepository;
 
-    /** @var ObjectProphecy<Mailer> */
-    private $mailerClientProphecy;
+    /** @var ObjectProphecy<MessageBusInterface> */
+    private $busProphecy;
 
     #[\Override]
     public function setUp(): void
@@ -65,8 +68,17 @@ class StripePaymentsUpdateTest extends StripeTest
         $this->donationRepository = new InMemoryDonationRepository();
         $container->set(DonationRepository::class, $this->donationRepository);
 
-        $this->mailerClientProphecy = $this->prophesize(Mailer::class);
-        $container->set(Mailer::class, $this->mailerClientProphecy->reveal());
+        $this->busProphecy = $this->prophesize(MessageBusInterface::class);
+        // Fallback for e.g. DonationUpserted calls which we don't explicitly assert anything about.
+        $this->busProphecy->dispatch(Argument::type(Envelope::class))
+            ->will(/**
+             * @param Envelope[] $args
+             */
+                function (array $args): Envelope {
+                    return $args[0];
+                }
+            );
+        $container->set(MessageBusInterface::class, $this->busProphecy->reveal());
     }
 
     public function testUnsupportedAction(): void
@@ -153,13 +165,48 @@ class StripePaymentsUpdateTest extends StripeTest
         $stripeClientMock = $stripeClientProphecy->reveal();
         @$stripeClientMock->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
 
-        $this->mailerClientProphecy->send(Argument::type(EmailMessage::class))->shouldBeCalledOnce();
+        $campaign = $donation->getCampaign();
+        $charity = $campaign->getCharity();
+        $emailAddress = $donation->getDonorEmailAddress();
+        \assert($emailAddress !== null);
+        $expectedEmail = EmailMessage::donorDonationSuccess($emailAddress, [
+            'campaignName' => $campaign->getCampaignName(),
+            'campaignThankYouMessage' => $campaign->getThankYouMessage(),
+            'charityName' => $charity->getName(),
+            'charityRegistrationAuthority' => $charity->getRegulatorName(),
+            'charityNumber' => $charity->getRegulatorNumber(),
+            'charityIsExempt' => $charity->isExempt(),
+            'createAccountUri' => null,
+            'accountAlreadyExistsForEmail' => false,
+            'currencyCode' => $donation->currency()->isoCode(),
+            'donationAmount' => (float)$donation->getAmount(),
+            'donationDatetime' => '2025-03-18T14:30:01+00:00',
+            'donorFirstName' => $donation->getDonorFirstName(),
+            'donorLastName' => $donation->getDonorLastName(),
+            'donorGreetingName' => $donation->getDonorFirstName() === '' ? $donation->getDonorLastName() : $donation->getDonorFirstName(),
+            'giftAidAmountClaimed' => (float) $donation->getGiftAidValue(),
+            'matchedAmount' => $donation->matchedAmount()->toMajorUnitFloat(),
+            'paymentMethodType' => 'card',
+            'statementReference' => $charity->getStatementDescriptor(),
+            'tipAmount' => (float) $donation->getTipAmount(),
+            // `totalPaidByDonor` is £0 in this test because we didn't actually collect from Stripe charge and set it.
+            // Use donation's overall amount £6 instead.
+            'totalChargedAmount' => (float) $donation->getAmount(),
+            'totalCharityValueAmount' => (float) $donation->totalCharityValueAmount(),
+            'transactionId' => $donation->getReferenceCode(),
+            'referenceCode' => $donation->getReferenceCode(),
+            'charityLogoUri' => $charity->getLogoUri()?->__toString(),
+            'charityWebsite' => $charity->getWebsiteUri()?->__toString(),
+            'charityPhoneNumber' => $charity->getPhoneNumber(),
+            'charityEmailAddress' => $charity->getEmailAddress()?->email,
+        ]);
+        $this->thenThisRequestShouldBeSentToMailer($expectedEmail);
 
         $container = $this->getContainer();
         $container->set(EntityManagerInterface::class, $this->prophesizeEM()->reveal());
         $container->set(EmailVerificationTokenRepository::class, $this->createStub(EmailVerificationTokenRepository::class));
         $container->set(StripeClient::class, $stripeClientMock);
-        $container->set(Mailer::class, $this->mailerClientProphecy->reveal());
+        $container->set(MessageBusInterface::class, $this->busProphecy->reveal());
         $container->set(ClockInterface::class, new MockClock());
 
         $chargeSucceededData = $this->getWebhookData('ch_succeeded');
@@ -591,5 +638,33 @@ class StripePaymentsUpdateTest extends StripeTest
             ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
 
         return $app->handle($request);
+    }
+
+    /**
+     * Only donation success does this directly from MatchBot, as far as this test's remit goes. Refund emails are via Salesforce -> Mailer.
+     */
+    private function thenThisRequestShouldBeSentToMailer(EmailMessage $emailMessage): void
+    {
+        $this->busProphecy->dispatch(Argument::that(function (mixed $arg) use ($emailMessage): bool {
+            if (!($arg instanceof Envelope)) {
+                return false;
+            }
+            $message = $arg->getMessage();
+            if (!($message instanceof EmailRequest)) {
+                return false;
+            }
+
+            TestCase::assertEquals($message->emailMessage, $emailMessage);
+
+            return true;
+        }))
+            ->shouldBeCalled()
+            ->will(/**
+             * @param Envelope[] $args
+             */
+                function (array $args): Envelope {
+                    return $args[0];
+                }
+            );
     }
 }

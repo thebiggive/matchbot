@@ -14,11 +14,9 @@ use MatchBot\Application\Environment;
 class Mailer extends Common
 {
     /**
-     * @deprecated for public use - use {@see self::send()} instead.
-     *
      * @param array{templateKey: string, recipientEmailAddress: string, params: array<string, mixed>, ...} $requestBody
      */
-    public function sendEmail(array $requestBody): void
+    private function sendEmail(array $requestBody): void
     {
         try {
             $uri = $this->baseUri() . '/v1/send';
@@ -85,9 +83,13 @@ class Mailer extends Common
         return $this->getMailerSetting('baseUri');
     }
 
+    /**
+     * @see EmailRequestHandler which calls this.
+     * @see EmailRequest which is what all other code should now dispatch instead of calling out directly (for
+     * compatibility with non-Service Connect runtime contexts).
+     */
     public function send(EmailMessage $command): void
     {
-        /** @psalm-suppress DeprecatedMethod */
         $this->sendEmail(
             [
                 'templateKey' => $command->templateKey,
