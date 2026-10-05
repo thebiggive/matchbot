@@ -878,6 +878,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
                     $locationCounts[] = ['regionCode' => $code, 'numCampaigns' => 0];
                 }
             }
+
+            if ($filterByRegions && $regionsToFilterTo) {
+                $locationCounts = array_values(
+                    \array_filter($locationCounts, fn(array $count) => \in_array($count['regionCode'], $regionsToFilterTo, true))
+                );
+            }
         } else {
             $locationCounts = [];
         }
