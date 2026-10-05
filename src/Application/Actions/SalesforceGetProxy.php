@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions;
 
 use Assert\Assertion;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\GuzzleException;
 use MatchBot\Client\GenericSalesforceGet;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -24,6 +26,10 @@ class SalesforceGetProxy extends Action
         parent::__construct($logger);
     }
 
+    /**
+     * @throws HttpNotFoundException on any 4xx from Salesforce (ClientException) – typically itself a 404.
+     * @throws GuzzleException on other errors retrieving from Salesforce.
+     */
     #[\Override] protected function action(Request $request, Response $response, array $args): Response
     {
         // :path from routes.php is passed without leading slash.
@@ -31,7 +37,11 @@ class SalesforceGetProxy extends Action
         Assertion::string($args['path']);
         $this->exitIfPathUnexpected($args['path'], $request);
 
-        $responseStream = $this->sfClient->get($args['path']);
+        try {
+            $responseStream = $this->sfClient->get($args['path']);
+        } catch (ClientException $ex) {
+            throw new HttpNotFoundException($request);
+        }
 
         return $response->withBody($responseStream);
     }
