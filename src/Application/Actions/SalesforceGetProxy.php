@@ -43,7 +43,9 @@ class SalesforceGetProxy extends Action
             throw new HttpNotFoundException($request);
         }
 
-        return $response->withBody($responseStream);
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withBody($responseStream);
     }
 
     private function exitIfPathUnexpected(string $path, Request $request): void
