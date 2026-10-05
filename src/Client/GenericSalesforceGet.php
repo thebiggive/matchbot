@@ -2,8 +2,10 @@
 
 namespace MatchBot\Client;
 
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Message\StreamInterface;
+use Psr\Log\LogLevel;
 
 /**
  * General client for the handful of endpoints where we simply give Donate JSON back verbatim.
@@ -34,13 +36,17 @@ class GenericSalesforceGet extends Common
 
             throw new NotFoundException('Callout got non-200');
         } catch (GuzzleException $ex) {
-            $this->logger->error(sprintf(
-                'GenericSalesforceGet exception %s with error code %s: %s. Request URI: %s',
-                get_class($ex),
-                $ex->getCode(),
-                $ex->getMessage(),
-                $uri,
-            ));
+            $level = $ex instanceof ClientException ? LogLevel::INFO : LogLevel::ERROR;
+            $this->logger->log(
+                $level,
+                sprintf(
+                    'GenericSalesforceGet exception %s with error code %s: %s. Request URI: %s',
+                    get_class($ex),
+                    $ex->getCode(),
+                    $ex->getMessage(),
+                    $uri,
+                ),
+            );
 
             throw $ex;
         }
