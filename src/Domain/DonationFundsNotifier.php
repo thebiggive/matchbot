@@ -2,12 +2,13 @@
 
 namespace MatchBot\Domain;
 
-use MatchBot\Application\Assertion;
-use MatchBot\Client\Mailer;
+use MatchBot\Application\Email\EmailMessage;
+use MatchBot\Application\Messenger\EmailRequest;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class DonationFundsNotifier
 {
-    public function __construct(private Mailer $mailer)
+    public function __construct(private MessageBusInterface $bus)
     {
     }
 
@@ -24,17 +25,8 @@ class DonationFundsNotifier
         Money $transferAmount,
         Money $_newBalance,
     ): void {
-        $donorName = $donorAccount->donorName;
-
-        /** @psalm-suppress DeprecatedMethod - method was deprecated after this was written. */
-        $this->mailer->sendEmail([
-            'templateKey' => 'donor-funds-thanks',
-            'recipientEmailAddress' => $donorAccount->emailAddress->email,
-            'params' => [
-                'donorFirstName' => $donorName->first,
-                'donorLastName' => $donorName->last,
-                'transferAmount' => $transferAmount->format(),
-            ],
-        ]);
+        $this->bus->dispatch(EmailRequest::fromMessageEnveloped(
+            EmailMessage::donationFundsConfirmation($donorAccount, $transferAmount)
+        ));
     }
 }

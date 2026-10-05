@@ -38,9 +38,13 @@ class SitemapTest extends TestCase
             null,
             false,
             false,
-        )->willReturn(new CampaignSearchResult(campaigns: [
+        )->willReturn(new CampaignSearchResult(
+            campaigns: [
             self::someCampaign(sfId: Salesforce18Id::ofCampaign('000000000000000000')),
-        ]));
+                ],
+            locationCounts: [],
+            ukFilterRegions: null,
+        ));
 
         $metaCampaignRepositoryProphecy->allToIncludeInSitemap($now)->willReturn([
             $this->someMetaCampaign(false, false, slug: MetaCampaignSlug::of('this-is-the-metacampaign-slug')),

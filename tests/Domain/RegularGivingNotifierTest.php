@@ -8,7 +8,6 @@ use MatchBot\Application\Actions\RegularGivingMandate\MandateCollectionRepeatedl
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Matching\Allocator;
 use MatchBot\Application\Notifier\StripeChatterInterface;
-use MatchBot\Client\Mailer;
 use MatchBot\Client\RyftClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
@@ -27,6 +26,7 @@ use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Application\Messenger\EmailRequest;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\Money;
@@ -49,14 +49,16 @@ use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 class RegularGivingNotifierTest extends TestCase
 {
-    /** @var ObjectProphecy<Mailer> */
-    private ObjectProphecy $mailerProphecy;
+    /** @var ObjectProphecy<MessageBusInterface> */
+    private ObjectProphecy $busProphecy;
 
     /** @var PersonId  */
     private PersonId $personId;
@@ -264,14 +266,20 @@ class RegularGivingNotifierTest extends TestCase
         return [$campaign, $mandate, $firstDonation, $clock, $secondDonation];
     }
 
-    /**
-     * @param EmailMessage|TypeToken $sendEmailCommand
-     */
-    private function thenThisRequestShouldBeSentToMailer(EmailMessage|TypeToken $sendEmailCommand): void
+    private function thenThisRequestShouldBeSentToMailer(EmailMessage|TypeToken $emailMessage): void
     {
-        $this->mailerProphecy->send(Argument::any())
+        $this->busProphecy->dispatch(Argument::any())
             ->shouldBeCalledOnce()
-            ->will(fn(array $args) => TestCase::assertEqualsCanonicalizing($args[0], $sendEmailCommand));
+            ->will(function (array $args) use ($emailMessage) {
+                \assert($args[0] instanceof Envelope || $args[0] instanceof EmailRequest);
+                $envelope = $args[0] instanceof Envelope ? $args[0] : new Envelope($args[0]);
+                $message = $envelope->getMessage();
+                TestCase::assertEqualsCanonicalizing(
+                    $message instanceof EmailRequest ? $message->emailMessage : $message,
+                    $emailMessage
+                );
+                return $envelope;
+            });
     }
 
     private function whenWeNotifyThemThatTheMandateWasCreated(
@@ -310,7 +318,7 @@ class RegularGivingNotifierTest extends TestCase
         $this->personId = self::randomPersonId();
 
         $this->clock = new MockClock('2024-12-01');
-        $this->mailerProphecy = $this->prophesize(Mailer::class);
+        $this->busProphecy = $this->prophesize(MessageBusInterface::class);
         $this->givenADonor();
 
         $this->donorAccountRepositoryProphecy = $this->prophesize(DonorAccountRepository::class);
@@ -320,7 +328,7 @@ class RegularGivingNotifierTest extends TestCase
 
 
         $this->sut = new RegularGivingNotifier(
-            $this->mailerProphecy->reveal(),
+            $this->busProphecy->reveal(),
             $this->donorAccountRepositoryProphecy->reveal(),
             $this->clock,
         );

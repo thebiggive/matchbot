@@ -129,7 +129,7 @@ class Search extends Action
                 country: $country,
                 regions: $regions, // @mago-expect analysis:possibly-invalid-argument - assert above provides that it's null or not empty.
                 forInternalUpdate: false,
-                filterByRegions: false,
+                filterByRegions: $filterByLatLong,
             );
         } catch (\InvalidArgumentException $exception) {
             throw new HttpBadRequestException($request, $exception->getMessage(), $exception);
@@ -152,6 +152,7 @@ class Search extends Action
             [
                 'campaignSummaries' => $campaignSummaries,
                 'locationCounts' => $searchResult->locationCounts,
+                'UKFilterRegions' => $searchResult->ukFilterRegions
             ],
             200
         );

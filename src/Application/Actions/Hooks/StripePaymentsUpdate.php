@@ -30,7 +30,7 @@ use Stripe\Charge;
 use Stripe\Dispute;
 use Stripe\Event;
 use Stripe\PaymentIntent;
-use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
@@ -53,7 +53,7 @@ class StripePaymentsUpdate extends Stripe
         private DonationFundsNotifier $donationFundsNotifier,
         ContainerInterface $container,
         LoggerInterface $logger,
-        private RoutableMessageBus $bus,
+        private MessageBusInterface $bus,
     ) {
         /**
          * @var ChatterInterface $chatter
