@@ -26,6 +26,7 @@ class SalesforceGetProxy extends Action
 
     #[\Override] protected function action(Request $request, Response $response, array $args): Response
     {
+        // :path from routes.php is passed without leading slash.
         Assertion::keyExists($args, 'path');
         Assertion::string($args['path']);
         $this->exitIfPathUnexpected($args['path'], $request);
