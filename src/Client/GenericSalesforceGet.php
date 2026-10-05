@@ -11,12 +11,13 @@ use Psr\Http\Message\StreamInterface;
 class GenericSalesforceGet extends Common
 {
     /**
+     * @param string $path without leading /
      * @throws GuzzleException on any request or response error.
      * @throws NotFoundException on non-200 response code.
      */
     public function get(string $path): StreamInterface
     {
-        $uri = $this->getUri(uri: $path, withCache: true);
+        $uri = $this->getUri(uri: "{$this->sfApiBaseUrlCached}/$path", withCache: true);
 
         try {
             $response = $this->getHttpClient()->get($uri);
