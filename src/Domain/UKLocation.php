@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-class UKLocation
+readonly class UKLocation
 {
     /**
      * List of all regions within the UK that may be used for filtering and sorting our search results.
@@ -336,15 +336,15 @@ class UKLocation
             ["E10000031", "County", "Warwickshire", "E12000005"],
             ["E10000032", "County", "West Sussex", "E12000008"],
             ["E10000034", "County", "Worcestershire", "E12000005"],
-            ["E12000001", "Region & Country", "North East, England", ""],
-            ["E12000002", "Region & Country", "North West, England", ""],
-            ["E12000003", "Region & Country", "Yorkshire and The Humber, England", ""],
-            ["E12000004", "Region & Country", "East Midlands, England", ""],
-            ["E12000005", "Region & Country", "West Midlands, England", ""],
-            ["E12000006", "Region & Country", "East of England, England", ""],
-            ["E12000007", "Region & Country", "London, England", ""],
-            ["E12000008", "Region & Country", "South East, England", ""],
-            ["E12000009", "Region & Country", "South West, England", ""],
+            ["E12000001", "Region & Country", "North East, England", null],
+            ["E12000002", "Region & Country", "North West, England", null],
+            ["E12000003", "Region & Country", "Yorkshire and The Humber, England", null],
+            ["E12000004", "Region & Country", "East Midlands, England", null],
+            ["E12000005", "Region & Country", "West Midlands, England", null],
+            ["E12000006", "Region & Country", "East of England, England", null],
+            ["E12000007", "Region & Country", "London, England", null],
+            ["E12000008", "Region & Country", "South East, England", null],
+            ["E12000009", "Region & Country", "South West, England", null],
             ["N09000001", "Unitary", "Antrim and Newtownabbey", "N92000002"],
             ["N09000002", "Unitary", "Armagh City, Banbridge and Craigavon", "N92000002"],
             ["N09000003", "Unitary", "Belfast", "N92000002"],
@@ -356,7 +356,7 @@ class UKLocation
             ["N09000009", "Unitary", "Mid Ulster", "N92000002"],
             ["N09000010", "Unitary", "Newry, Mourne and Down", "N92000002"],
             ["N09000011", "Unitary", "Ards and North Down", "N92000002"],
-            ["N92000002", "Region & Country", "Northern Ireland", ""],
+            ["N92000002", "Region & Country", "Northern Ireland", null],
             ["S12000005", "Unitary", "Clackmannanshire", "S92000003"],
             ["S12000006", "Unitary", "Dumfries and Galloway", "S92000003"],
             ["S12000008", "Unitary", "East Ayrshire", "S92000003"],
@@ -389,7 +389,7 @@ class UKLocation
             ["S12000048", "Unitary", "Perth and Kinross", "S92000003"],
             ["S12000049", "Unitary", "Glasgow City", "S92000003"],
             ["S12000050", "Unitary", "North Lanarkshire", "S92000003"],
-            ["S92000003", "Region & Country", "Scotland", ""],
+            ["S92000003", "Region & Country", "Scotland", null],
             ["W06000001", "Unitary", "Isle of Anglesey", "W92000004"],
             ["W06000002", "Unitary", "Gwynedd", "W92000004"],
             ["W06000003", "Unitary", "Conwy", "W92000004"],
@@ -412,6 +412,56 @@ class UKLocation
             ["W06000022", "Unitary", "Newport", "W92000004"],
             ["W06000023", "Unitary", "Powys", "W92000004"],
             ["W06000024", "Unitary", "Merthyr Tydfil", "W92000004"],
-            ["W92000004", "Region & Country", "Wales", ""],
+            ["W92000004", "Region & Country", "Wales", null],
         ];
+
+    private function __construct(
+        public string $code,
+        public string $name,
+        public string|null $parentCode,
+        public array $siblingCodes,
+        public array $childCodes,
+    ) {
+    }
+
+    public static function findByCode(string $ONSCode): self
+    {
+        $locationArray = \array_find(
+            self::LOCATIONS,
+            fn(array $l) => $l[0] === $ONSCode
+        );
+
+        $siblingCodes = \array_filter(
+            self::LOCATIONS,
+            fn(array $l) => $l[3] === $locationArray[3]
+        )
+            |> (fn(array $code) => \array_filter($code, fn($code) => $code[0] !== $ONSCode) )
+                |>
+                (fn(array $s) => \array_map(
+                    fn(array $l) => $l[0],
+                    $s
+                )
+                |> \array_values(...)
+        );
+
+        $childCodes = \array_filter(
+            self::LOCATIONS,
+            fn(array $l) => $l[3] === $ONSCode
+        )
+                |>
+                (fn(array $s) => \array_map(
+                    fn(array $l) => $l[0],
+                    $s
+                )
+                        |> \array_values(...)
+                );
+
+        return new self(
+            code: $locationArray[0],
+            name: $locationArray[2],
+            parentCode: $locationArray[3],
+            siblingCodes: $siblingCodes,
+            childCodes: $childCodes,
+        );
+    }
 }
