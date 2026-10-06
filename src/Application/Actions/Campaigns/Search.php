@@ -43,6 +43,20 @@ class Search extends Action
 
         $latitude = $params['latitude'] ?? null;
         $longitude = $params['longitude'] ?? null;
+
+        /**
+         * ONS code for a UK region or nation to filter to, e.g. S92000003
+         * for Scotland. If it's a smaller region such as S12000033 (Aberdeen
+         * City) then we may want to also automatically include Scotland
+         * campaigns in the results, not implemented yet.
+         *
+         * @var ?string $ukRegion
+         */
+        $ukRegion = $params['ukRegion'] ?? null;
+
+        Assertion::nullOrBetweenLength($ukRegion, 4, 64, 'UK region code should be between 4 and 64 bytes');
+        Assertion::nullOrAlnum($ukRegion, 'UK Region code should be alphanumeric');
+
         $filterByLatLong = (bool) ($params['filterByLatLong'] ?? false);
         if ($sortField === 'location' || $filterByLatLong) {
             Assertion::numeric($latitude, 'Numeric latitude and longitude must be supplied for location-based search');
@@ -61,6 +75,8 @@ class Search extends Action
             // FtP client returns regions with codes and names, which are useful for debugging and possibly display
             // in future, but we just need the codes for the search:
             $regions = \array_map(static fn(array $region): string => $region['code'], $regions);
+        } elseif ($ukRegion !== null) {
+            $regions = [$ukRegion];
         } else {
             $regions = null;
         }
@@ -129,7 +145,7 @@ class Search extends Action
                 country: $country,
                 regions: $regions, // @mago-expect analysis:possibly-invalid-argument - assert above provides that it's null or not empty.
                 forInternalUpdate: false,
-                filterByRegions: $filterByLatLong,
+                filterByRegions: $regions !== null,
             );
         } catch (\InvalidArgumentException $exception) {
             throw new HttpBadRequestException($request, $exception->getMessage(), $exception);
