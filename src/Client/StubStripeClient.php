@@ -2,7 +2,9 @@
 
 namespace MatchBot\Client;
 
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\RefundScope;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
@@ -14,6 +16,7 @@ use Stripe\Customer;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
+use Stripe\Refund;
 use Stripe\SetupIntent;
 use Stripe\StripeObject;
 
@@ -70,6 +73,13 @@ class StubStripeClient implements Stripe
     {
         $this->pause();
         return new PaymentIntent('pi_stub_' . self::randomString());
+    }
+
+    #[\Override]
+    public function createRefund(string $paymentIntentId, EmailAddress|null $donorEmailAddress, Money $amount, RefundScope $scope): Refund
+    {
+        $this->pause();
+        return new Refund('re_stub_' . self::randomString());
     }
 
     private static function randomString(): string

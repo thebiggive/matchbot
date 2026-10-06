@@ -393,6 +393,57 @@ class DonationService
         return $updatedIntent ?? null;
     }
 
+    /**
+     * @throws \UnexpectedValueException if PSP unexpected or scope not supported for PSP.
+     * @throws \LogicException if refund amount reported back is out of sync.
+     * @throws \Exception if refund fails.
+     */
+    public function refund(Donation $donation, RefundScope $scope): void
+    {
+        switch ($scope) {
+            case RefundScope::tip:
+                $amountToRefund = Money::fromNumericString($donation->getTipAmount(), $donation->currency());
+                break;
+            case RefundScope::full:
+                $totalPaid = $donation->getTotalPaidByDonor();
+                \assert($totalPaid !== null);
+                $amountToRefund = Money::fromNumericString($totalPaid, $donation->currency());
+                break;
+            default:
+                throw new \LogicException('Unexpected refund scope');
+        }
+
+        if ($donation->getPsp() === PaymentServiceProvider::Stripe->value) {
+            $paymentIntentId = $donation->getTransactionId();
+            \assert(isset($paymentIntentId));
+            $_refund = $this->stripe->createRefund(
+                paymentIntentId: $paymentIntentId,
+                donorEmailAddress: $donation->getDonorEmailAddress(),
+                amount: $amountToRefund,
+                // Scope passed to add metadata hint to help with any investigations. Does not change $amount.
+                scope: $scope,
+            );
+
+            return;
+        }
+
+        if ($donation->getPsp() === PaymentServiceProvider::Ryft->value) {
+            $ryftAccountId = $donation->getCampaign()->getCharity()->getRyftAccountId();
+            Assertion::notNull($ryftAccountId, 'Ryft account ID must be set for Ryft PSP');
+            Assertion::notNull($donation->ryftPaymentSessionId, 'Ryft session ID must be set');
+
+            $this->ryftClient->refundPayment(
+                $ryftAccountId,
+                $donation->ryftPaymentSessionId,
+                $amountToRefund,
+                // Scope passed to add free-text `reason` to help with any investigations. Does not change $amount.
+                $scope,
+            );
+        }
+
+        throw new \UnexpectedValueException('Unsupported PSP for refunds');
+    }
+
     public function updateRyftPaymentSession(Donation $donation): void
     {
         $paymentSessionId = $donation->ryftPaymentSessionId;

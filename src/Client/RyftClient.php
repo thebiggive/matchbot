@@ -10,6 +10,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\Donation as DonationModel;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\RefundScope;
 use MatchBot\Domain\RyftAccountId;
 use MatchBot\Domain\RyftPaymentSessionId;
 use Psr\Log\LoggerInterface;
@@ -229,6 +230,61 @@ class RyftClient
         }
 
         return $responseData;
+    }
+
+    public function refundPayment(
+        RyftAccountId $ryftAccountId,
+        string $paymentSessionId,
+        Money $amount,
+        RefundScope $scope,
+    ): void {
+        if ($scope->value === 'tip') {
+            throw new \UnexpectedValueException('Tip refunds are not supported for Ryft yet');
+        }
+
+        $reason = "Big Give {$scope->value} refund";
+        $request = new Request(
+            method: 'POST',
+            uri: $this->apiPrefix . 'payment-sessions/' . $paymentSessionId . '/refunds',
+            headers: $this->headers($ryftAccountId),
+            body: json_encode(
+                [
+                    'amount' => $amount->amountInPence(),
+                    'reason' => $reason,
+                    'refundPlatformFee' => true,
+                ],
+                flags: \JSON_THROW_ON_ERROR,
+            ),
+        );
+
+        try {
+            $response = $this->client->send($request);
+        } catch (GuzzleException $clientException) {
+            throw new \Exception('Could not refund Ryft payment: ' . $clientException->getMessage());
+        }
+
+        $responseContents = $response->getBody()->getContents();
+        $decodedResponse = json_decode($responseContents, associative: true, flags: \JSON_THROW_ON_ERROR);
+        Assertion::isArray($decodedResponse);
+
+        /** @var array{
+         *     id: string,
+         *     refundedAmount: int,
+         * } $responseData */
+        $responseData = $decodedResponse;
+
+        if ($responseData['refundedAmount'] !== $amount->amountInPence()) {
+            throw new \LogicException(sprintf(
+                "Refunded pence amount %d was not expected %d",
+                $responseData['refundedAmount'],
+                $amount->amountInPence(),
+            ));
+        }
+
+        $this->log->info(sprintf(
+            'Refunded Ryft payment for payment session %s',
+            $responseData['id'],
+        ));
     }
 
     /**
