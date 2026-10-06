@@ -434,26 +434,21 @@ readonly class UKLocation
         $siblingCodes = \array_filter(
             self::LOCATIONS,
             fn(array $l) => $l[3] === $locationArray[3] && $l[0] !== $ONSCode
-        )
-                |>
-                (fn(array $s) => \array_map(
-                    fn(array $l) => $l[0],
-                    $s
-                )
-                |> \array_values(...)
-        );
+        ) |> (fn(array $s) => \array_map(
+            fn(array $l) => $l[0],
+            $s
+        ))
+        |> \array_values(...);
 
         $childCodes = \array_filter(
             self::LOCATIONS,
             fn(array $l) => $l[3] === $ONSCode
         )
-                |>
-                (fn(array $s) => \array_map(
-                    fn(array $l) => $l[0],
-                    $s
-                )
-                        |> \array_values(...)
-                );
+        |> (fn(array $s) => \array_map(
+            fn(array $l) => $l[0],
+            $s
+        ))
+        |> \array_values(...);
 
         return new self(
             code: $locationArray[0],
