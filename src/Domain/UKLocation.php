@@ -11,8 +11,9 @@ readonly class UKLocation
      * Each one is given as an array of its ONS code, its type, its name, and the ONS code of its containing
      * region if a relevant containing region exists.
      *
-     * Based data exported from our SF org, which came via the resource there `ONS_wards_to_larger.csv`
-     * derived from the much larger file with data we don't need available at the ONS website by searching
+     * Data exported from our SF org having been imported from the resource
+     * there `ONS_wards_to_larger.csv` which is a larger file with extra data we don't need,
+     * available at the ONS website by searching:
      * Ward to Local Authority District to CTYUA to RGN to CTRY (May 2025) Lookup in the UK
      *
      * @var list<array{0: string, 1: string, 2: string, 3: string, ...}>
