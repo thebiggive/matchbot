@@ -14,6 +14,7 @@ class UKLocationTest extends TestCase
     public function testItFindsLondonAsParentOfHaringey(): void
     {
         $location = UKLocation::findByCode('E09000014'); // Haringey
+        self::assertSame('E09000014', $location->code);
 
         $this->assertSame($location->parentCode, 'E12000007'); // London
     }

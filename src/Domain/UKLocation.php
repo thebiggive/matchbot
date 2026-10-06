@@ -16,7 +16,7 @@ readonly class UKLocation
      * available at the ONS website by searching:
      * Ward to Local Authority District to CTYUA to RGN to CTRY (May 2025) Lookup in the UK
      *
-     * @var list<array{0: string, 1: string, 2: string, 3: string, ...}>
+     * @var list<array{0: string, 1: string, 2: string, 3: string|null, ...}>
      */
     public const array LOCATIONS =
         [
@@ -416,6 +416,10 @@ readonly class UKLocation
             ["W92000004", "Region & Country", "Wales", null],
         ];
 
+    /**
+     * @param list<string> $siblingCodes
+     * @param list<string> $childCodes
+     */
     private function __construct(
         public string $code,
         public string $name,
@@ -427,26 +431,35 @@ readonly class UKLocation
 
     public static function findByCode(string $ONSCode): self
     {
+        /** @var array{0: string, 1: string, 2: string, 3: string, ...} $locationArray @phpstan-ignore varTag.type */
         $locationArray = \array_find(
             self::LOCATIONS,
             fn(array $l) => $l[0] === $ONSCode
         );
 
+        /** @var list<string> $siblingCodes @phpstan-ignore varTag.type */
         $siblingCodes = \array_filter(
             self::LOCATIONS,
-            fn(array $l) => $l[3] === $locationArray[3] && $l[0] !== $ONSCode
-        ) |> (fn(array $s) => \array_map(
-            fn(array $l) => $l[0],
+            fn(array $l): bool => $l[3] === $locationArray[3] && $l[0] !== $ONSCode
+        ) |> (fn(array $s): array => \array_map(
+            /**
+             * @param array{0: string, ...} $l
+             */            fn(array $l): string => $l[0],
             $s
         ))
         |> \array_values(...);
 
+        /**
+         * @var list<string> $childCodes @phpstan-ignore varTag.type
+         */
         $childCodes = \array_filter(
             self::LOCATIONS,
-            fn(array $l) => $l[3] === $ONSCode
+            fn(array $l): bool => $l[3] === $ONSCode
         )
-        |> (fn(array $s) => \array_map(
-            fn(array $l) => $l[0],
+        |> (fn(array $s): array => \array_map(
+                /**
+                 * @param array{0: string, ...} $l
+                 */            fn(array $l): string => $l[0],
             $s
         ))
         |> \array_values(...);
