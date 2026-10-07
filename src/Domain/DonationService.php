@@ -439,6 +439,8 @@ class DonationService
                 // Scope passed to add free-text `reason` to help with any investigations. Does not change $amount.
                 $scope,
             );
+
+            return;
         }
 
         throw new \UnexpectedValueException('Unsupported PSP for refunds');
