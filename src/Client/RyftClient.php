@@ -238,7 +238,7 @@ class RyftClient
         Money $amount,
         RefundScope $scope,
     ): void {
-        if ($scope->value === 'tip') {
+        if ($scope === RefundScope::tip) {
             throw new \UnexpectedValueException('Tip refunds are not supported for Ryft yet');
         }
 
