@@ -44,6 +44,7 @@ class SitemapTest extends TestCase
                 ],
             locationCounts: [],
             ukFilterRegions: null,
+            childRegions: [],
             siblingRegions: [],
             parentRegion: null,
         ));

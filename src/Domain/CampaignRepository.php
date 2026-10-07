@@ -917,6 +917,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             campaigns: $result,
             locationCounts: $locationCounts,
             ukFilterRegions: $regionsToFilterTo,
+            childRegions: $location->childCodes ?? [],
             siblingRegions: $siblingRegions,
             parentRegion: $location?->parentCode,
         );
