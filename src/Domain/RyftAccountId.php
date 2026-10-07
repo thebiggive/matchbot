@@ -33,10 +33,10 @@ readonly class RyftAccountId
     }
 
     /**
-     * @param string $stripeID - must fit the pattern for a Ryft ID.
+     * @param string $ryftAccountId - must fit the pattern for a Ryft ID.
      */
-    public static function of(string $stripeID): self
+    public static function of(string $ryftAccountId): self
     {
-        return new self($stripeID);
+        return new self($ryftAccountId);
     }
 }

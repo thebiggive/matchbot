@@ -2,7 +2,9 @@
 
 namespace MatchBot\Client;
 
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\RefundScope;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
@@ -14,6 +16,7 @@ use Stripe\Customer;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
+use Stripe\Refund;
 use Stripe\SetupIntent;
 use Stripe\StripeClient;
 
@@ -92,6 +95,39 @@ class LiveStripeClient implements Stripe
     public function createPaymentIntent(array $createPayload): PaymentIntent
     {
         return $this->stripeClient->paymentIntents->create($createPayload);
+    }
+
+    /**
+     * @link https://docs.stripe.com/api/refunds/create
+     */
+    #[\Override]
+    public function createRefund(string $paymentIntentId, EmailAddress|null $donorEmailAddress, Money $amount, RefundScope $scope): Refund
+    {
+        $refundData = [
+            'amount' => $amount->amountInPence(),
+            'metadata' => [
+                'refundScope' => $scope->value, // 'tip' or 'full'.
+            ],
+            'payment_intent' => $paymentIntentId,
+            'refund_application_fee' => true,
+            'reverse_transfer' => true,
+        ];
+
+        if ($donorEmailAddress !== null) {
+            $refundData['instructions_email'] = $donorEmailAddress->email; // used for bank transfers
+        }
+
+        $refund = $this->stripeClient->refunds->create($refundData);
+
+        if ($refund->amount !== $amount->amountInPence()) {
+            throw new \LogicException(sprintf(
+                "Refunded pence amount %d was not expected %d",
+                $refund->amount,
+                $amount->amountInPence(),
+            ));
+        }
+
+        return $refund;
     }
 
     #[\Override]

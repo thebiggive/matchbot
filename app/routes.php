@@ -62,6 +62,10 @@ return function (App $app) {
             Donations\ResendDonorThanksNotification::class
         )->add(SalesforceAuthMiddleware::class);
 
+        $versionGroup->post(
+            '/donations/{donationId:[a-z0-9-]{36}}/refund',
+            Donations\Refund::class
+        )->add(SalesforceAuthMiddleware::class);
 
         $versionGroup->post(
             '/donations/{donationId:[a-z0-9-]{36}}/remove-gift-aid-declaration',

@@ -2,8 +2,9 @@
 
 namespace MatchBot\Client;
 
-use MatchBot\Domain\Donation;
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\RefundScope;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
@@ -17,7 +18,7 @@ use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
-use Stripe\SearchResult;
+use Stripe\Refund;
 use Stripe\SetupIntent;
 
 /**
@@ -61,6 +62,8 @@ interface Stripe
      * @throws InvalidRequestException - e.g. if the CVC wasn't collected, presumably due to bots accessing the system.
      */
     public function createPaymentIntent(array $createPayload): PaymentIntent;
+
+    public function createRefund(string $paymentIntentId, EmailAddress|null $donorEmailAddress, Money $amount, RefundScope $scope): Refund;
 
     public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession;
 
