@@ -416,7 +416,7 @@ class DonationService
         if ($donation->getPsp() === PaymentServiceProvider::Stripe->value) {
             $paymentIntentId = $donation->getTransactionId();
             \assert(isset($paymentIntentId));
-            $this->stripe->createRefund(
+            $_refund = $this->stripe->createRefund(
                 paymentIntentId: $paymentIntentId,
                 donorEmailAddress: $donation->getDonorEmailAddress(),
                 amount: $amountToRefund,
