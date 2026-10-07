@@ -416,6 +416,7 @@ class DonationService
         if ($donation->getPsp() === PaymentServiceProvider::Stripe->value) {
             $paymentIntentId = $donation->getTransactionId();
             \assert(isset($paymentIntentId));
+            // Psalm is insisting on return value use in CI and disallowing suppressing the same thing on local.
             $_refund = $this->stripe->createRefund(
                 paymentIntentId: $paymentIntentId,
                 donorEmailAddress: $donation->getDonorEmailAddress(),
