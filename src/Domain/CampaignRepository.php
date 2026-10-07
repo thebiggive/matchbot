@@ -819,7 +819,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             jsonMatchInListConditions: $jsonMatchInListConditions,
             filterOutTargetMet: $filterOutTargetMet,
             term: $term,
-            country: $regions == null ? $country : null,
+            country: ($regions === null) ? $country : null,
             forInternalUpdate: $forInternalUpdate,
             regions: $regionsToFilterTo,
         );
