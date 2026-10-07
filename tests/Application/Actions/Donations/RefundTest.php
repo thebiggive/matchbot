@@ -78,8 +78,8 @@ class RefundTest extends TestCase
         $donationServiceProphecy = $this->prophesize(DonationService::class);
         $donationServiceProphecy->refund(Argument::any())->shouldNotBeCalled();
 
-        $this->expectException(\AssertionError::class);
-        $this->expectExceptionMessage("assert(in_array(\$refundScope, ['tip', 'full'], true))");
+        $this->expectException(\ValueError::class);
+        $this->expectExceptionMessage('aboutHalf" is not a valid backing value for enum MatchBot\Domain\RefundScope');
 
         $this->buildAndInvokeAction($donationServiceProphecy, 'aboutHalf');
     }
