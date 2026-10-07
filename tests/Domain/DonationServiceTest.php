@@ -601,7 +601,7 @@ class DonationServiceTest extends TestCase
             Money::fromNumericStringGBP('1.00'), // Trait helper's default has £1 tip.
             RefundScope::tip,
         )
-            ->willReturn($this->prophesize(Refund::class)->reveal())
+            ->willReturn(new Refund())
             ->shouldBeCalledOnce();
 
         $this->sut = $this->getDonationService();
