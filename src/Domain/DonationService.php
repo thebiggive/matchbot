@@ -447,6 +447,7 @@ class DonationService
             // No Ryft webhooks yet. Any `RyftClient::refundPayment()` that didn't throw either succeeded or probably will async.
             $donation->recordRefundAt($this->clock->now());
             $this->entityManager->flush();
+            $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donation));
 
             return;
         }

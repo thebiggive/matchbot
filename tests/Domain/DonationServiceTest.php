@@ -55,6 +55,7 @@ use Stripe\PaymentMethod;
 use Stripe\Refund;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Message\ChatMessage;
 use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
@@ -78,6 +79,9 @@ class DonationServiceTest extends TestCase
     /** @var ObjectProphecy<DonationRepository> */
     private ObjectProphecy $donationRepoProphecy;
 
+    /** @var ObjectProphecy<RoutableMessageBus> */
+    private ObjectProphecy $busProphecy;
+
     /** @var ObjectProphecy<StripeChatterInterface> */
     private ObjectProphecy $chatterProphecy;
 
@@ -92,13 +96,13 @@ class DonationServiceTest extends TestCase
     #[\Override]
     public function setUp(): void
     {
+        $this->busProphecy = $this->prophesize(RoutableMessageBus::class);
+        $this->chatterProphecy = $this->prophesize(StripeChatterInterface::class);
         $this->donorAccountRepoProphecy = $this->prophesize(DonorAccountRepository::class);
         $this->donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $this->ryftProphecy = $this->prophesize(RyftClient::class);
         $this->stripeProphecy = $this->prophesize(Stripe::class);
-        $this->chatterProphecy = $this->prophesize(StripeChatterInterface::class);
-
-        $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $configurationProphecy = $this->prophesize(\Doctrine\ORM\Configuration::class);
         $config = $configurationProphecy->reveal();
@@ -261,7 +265,7 @@ class DonationServiceTest extends TestCase
             clock: new MockClock(new \DateTimeImmutable('2025-01-01')),
             creationRateLimiterFactory: $stubRateLimiter,
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
-            bus: $this->createStub(RoutableMessageBus::class),
+            bus: $this->busProphecy->reveal(),
             donationNotifier: $this->createStub(DonationNotifier::class),
             campaignService: $campaignServiceProphecy->reveal(),
             redis: $redisProphecy->reveal(),
@@ -306,7 +310,7 @@ class DonationServiceTest extends TestCase
             clock: new MockClock(new \DateTimeImmutable('2025-01-01')),
             creationRateLimiterFactory: $rateLimiterFactory,
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
-            bus: $this->createStub(RoutableMessageBus::class),
+            bus: $this->busProphecy->reveal(),
             donationNotifier: $this->createStub(DonationNotifier::class),
             campaignService: $campaignServiceProphecy->reveal(),
             redis: $redisProphecy->reveal(),
@@ -595,6 +599,10 @@ class DonationServiceTest extends TestCase
     {
         $donation = $this->getTestDonation(collected: true);
 
+        $this->busProphecy
+            ->dispatch(Argument::type(Envelope::class), Argument::cetera())
+            ->shouldNotBeCalled();
+
         $this->stripeProphecy->createRefund(
             'pi_externalId_123',
             EmailAddress::of('john.doe@example.com'),
@@ -626,6 +634,10 @@ class DonationServiceTest extends TestCase
         $totalPaid = $donation->getTotalPaidByDonor();
         \assert($totalPaid !== null);
 
+        $this->busProphecy
+            ->dispatch(Argument::type(Envelope::class), Argument::cetera())
+            ->willReturnArgument()
+            ->shouldBeCalledOnce();
         $this->entityManagerProphecy->flush()->shouldBeCalledOnce();
         $this->ryftProphecy->refundPayment(
             RyftAccountId::of('ac_aaaaaaaa-bbbb-aaaa-bbbb-aaaaaaaaaaaa'),
