@@ -626,6 +626,7 @@ class DonationServiceTest extends TestCase
         $totalPaid = $donation->getTotalPaidByDonor();
         \assert($totalPaid !== null);
 
+        $this->entityManagerProphecy->flush()->shouldBeCalledOnce();
         $this->ryftProphecy->refundPayment(
             RyftAccountId::of('ac_aaaaaaaa-bbbb-aaaa-bbbb-aaaaaaaaaaaa'),
             'ps_01FCTS1XMKH9FF43CAFA4CXT3P',

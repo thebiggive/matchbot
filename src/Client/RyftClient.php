@@ -232,6 +232,9 @@ class RyftClient
         return $responseData;
     }
 
+    /**
+     * @link https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionCreateRefund
+     */
     public function refundPayment(
         RyftAccountId $ryftAccountId,
         string $paymentSessionId,
@@ -270,6 +273,7 @@ class RyftClient
         /** @var array{
          *     id: string,
          *     refundedAmount: int,
+         *     status: 'Pending'|'Failed'|'Succeeded'
          * } $responseData */
         $responseData = $decodedResponse;
 
@@ -281,9 +285,17 @@ class RyftClient
             ));
         }
 
+        // No hook support for now so assume success for async processed ones – anything which is not status 'Failed'.
+        if ($responseData['status'] === 'Failed') {
+            throw new \Exception(sprintf('Ryft refund failed for payment session %s', $responseData['id']));
+        }
+
+        Assertion::inArray($responseData['status'], ['Succeeded', 'Pending']);
+
         $this->log->info(sprintf(
-            'Refunded Ryft payment for payment session %s',
+            'Refunded Ryft payment for payment session %s, status %s',
             $responseData['id'],
+            $responseData['status'], // Pending for async.
         ));
     }
 

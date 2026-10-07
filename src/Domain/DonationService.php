@@ -424,6 +424,9 @@ class DonationService
                 scope: $scope,
             );
 
+            // For Stripe we rely on payment intent hooks in StripePaymentsUpdate to set the new donation status, once
+            // the refund's fully processed.
+
             return;
         }
 
@@ -439,6 +442,10 @@ class DonationService
                 // Scope passed to add free-text `reason` to help with any investigations. Does not change $amount.
                 $scope,
             );
+
+            // No Ryft webhooks yet. Any `RyftClient::refundPayment()` that didn't throw either succeeded or probably will async.
+            $donation->recordRefundAt($this->clock->now());
+            $this->entityManager->flush();
 
             return;
         }
