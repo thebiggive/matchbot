@@ -170,6 +170,7 @@ class Search extends Action
                 'locationCounts' => $searchResult->locationCounts,
                 'UKFilterRegions' => $searchResult->ukFilterRegions,
                 'siblingRegions' => $searchResult->siblingRegions,
+                'parentRegion' => $searchResult->parentRegion,
                 // may also need to give the parent region code and possibly name.
             ],
             200

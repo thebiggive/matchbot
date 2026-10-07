@@ -909,6 +909,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $smallestRegion = $regionsToFilterTo[0];
             $location = UKLocation::findByCode($smallestRegion);
             $siblingRegions = $location->siblingCodes;
+        } else {
+            $location = null;
         }
 
         return new CampaignSearchResult(
@@ -916,6 +918,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             locationCounts: $locationCounts,
             ukFilterRegions: $regionsToFilterTo,
             siblingRegions: $siblingRegions,
+            parentRegion: $location?->parentCode,
         );
     }
 
