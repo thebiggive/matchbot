@@ -168,7 +168,9 @@ class Search extends Action
             [
                 'campaignSummaries' => $campaignSummaries,
                 'locationCounts' => $searchResult->locationCounts,
-                'UKFilterRegions' => $searchResult->ukFilterRegions
+                'UKFilterRegions' => $searchResult->ukFilterRegions,
+                'siblingRegions' => $searchResult->siblingRegions,
+                // may also need to give the parent region code and possibly name.
             ],
             200
         );

@@ -44,6 +44,7 @@ class SitemapTest extends TestCase
                 ],
             locationCounts: [],
             ukFilterRegions: null,
+            siblingRegions: [],
         ));
 
         $metaCampaignRepositoryProphecy->allToIncludeInSitemap($now)->willReturn([
