@@ -903,7 +903,23 @@ class CampaignRepository extends SalesforceReadProxyRepository
         /** @var list<Campaign> $result */
         $result = $query->getResult();
 
-        return new CampaignSearchResult(campaigns: $result, locationCounts: $locationCounts, ukFilterRegions: $regionsToFilterTo);
+        $siblingRegions = [];
+        if (is_array($regionsToFilterTo) && count($regionsToFilterTo) > 0) {
+            // smallest in $regionsToFilter should be the first one
+            $smallestRegion = $regionsToFilterTo[0];
+            $location = UKLocation::findByCode($smallestRegion);
+            $siblingRegions = $location->siblingCodes;
+        } else {
+            $location = null;
+        }
+
+        return new CampaignSearchResult(
+            campaigns: $result,
+            locationCounts: $locationCounts,
+            ukFilterRegions: $regionsToFilterTo,
+            siblingRegions: $siblingRegions,
+            parentRegion: $location?->parentCode,
+        );
     }
 
     public static function getRegulatorHMRCIdentifier(string $regulatorName): ?string
