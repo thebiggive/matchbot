@@ -60,7 +60,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - composer-v3-{{ checksum "composer.lock" }}
+            - composer-v4-{{ checksum "composer.lock" }}
 
       - run: composer install --no-interaction
 
