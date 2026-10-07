@@ -106,7 +106,7 @@ class LiveStripeClient implements Stripe
         $refundData = [
             'amount' => $amount->amountInPence(),
             'metadata' => [
-                'refund_scope' => $scope->value, // 'tip' or 'full'.
+                'refundScope' => $scope->value, // 'tip' or 'full'.
             ],
             'payment_intent' => $paymentIntentId,
             'refund_application_fee' => true,
