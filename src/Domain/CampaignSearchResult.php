@@ -18,6 +18,10 @@ readonly class CampaignSearchResult
      * the request specified a lat/long point within these regions then this is a list of their ONS codes ordered from
      * smallest to largests o that the client can zoom to the largest one highlight one or more of them.
      *
+     * @param list<string> $childRegions If filtered to UK regions then lists ONS codes of any relavent regions
+     * inside the smallest filter region selected, that the donor may want to search next, e.g. all the other boroughs
+     * + city of London as children if London is selected.
+     *
      * @param list<string> $siblingRegions If filtered to UK regions then lists ONS codes other regions within the same
      * wider region as the most specific selected one, e.g. all the other boroughs + city of London as siblings if
      * Haringey is selected.
@@ -34,8 +38,10 @@ readonly class CampaignSearchResult
         public array $campaigns,
         public array $locationCounts,
         public array|null $ukFilterRegions,
+        public array $childRegions,
         public array $siblingRegions,
         public ?string $parentRegion,
+        public ?string $parentRegionName,
     ) {
     }
 }

@@ -751,7 +751,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * Warning - keys in $jsonMatchInListConditionsmust be literal strings otherwise there will be SQL injection vuulnerabilities.
      *
      * @mago-expect lint:excessive-parameter-list - consider reducing parameter list
-     **
+     *
+     * (phpstan is fighting with mago hence ignored issues below)
+     *
      */
     public function search(
         string $sortField,
@@ -825,11 +827,23 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
 
         if (($country === 'United Kingdom' || $regions !== null) && ! Environment::current()->isProduction()) {
+            $siblingRegions = [];
+            if (is_array($regionsToFilterTo) && count($regionsToFilterTo) > 0) {
+                // smallest in $regionsToFilter should be the first one
+                $smallestRegion = $regionsToFilterTo[0];
+                $location = UKLocation::findByCode($smallestRegion);
+                $siblingRegions = $location->siblingCodes;
+                $parentRegionCode = $location->parentCode;
+                $parentRegion = is_string($parentRegionCode) ? UKLocation::findByCode($parentRegionCode) : null;
+            } else {
+                $location = null;
+                $parentRegion = null;
+                $siblingRegions = [];
+            }
+
             // also fetch a count of how many relevent campaigns have
             // locations each major part of the UK.
 
-            // TODO-SO-78 I think later we'll want to decide this dynamically based on what is one level smaller in
-            // the regions hierarchy than the current search context. For now we only do it for each nation/English region.
             $summaryRegionCodes = [
                 'E12000008', // South East England
                 'E12000009', // South West England
@@ -844,6 +858,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 'W92000004', // Wales
                 'N92000002', // Northern Ireland
             ];
+
+            $summaryRegionCodes = [...$summaryRegionCodes, ...($regionsToFilterTo ?? [])];
+            $summaryRegionCodes = [...$summaryRegionCodes,  ...$siblingRegions];
+            $childCodes = $location->childCodes ?? [];
+            $summaryRegionCodes = [...$summaryRegionCodes, ...$childCodes];
+
+            $summaryRegionCodes = \array_values(\array_unique($summaryRegionCodes));
 
             $lq2 = $this->getEntityManager()->createQueryBuilder();
             $lq2->select('campaignLocation.regionCode', 'COUNT(DISTINCT(campaign.id)) as numCampaigns')
@@ -866,7 +887,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 // the locations we're looking for, which are not UN-member countries but
                                // places within the UK.
                 forInternalUpdate: $forInternalUpdate,
-                regions: $filterByRegions ? $this->popEngland($regions) : null,
+                regions: $summaryRegionCodes,
             );
 
             /** @var list<array{numCampaigns: int, regionCode: string}> $locationCounts */
@@ -877,15 +898,14 @@ class CampaignRepository extends SalesforceReadProxyRepository
                     // it's not there, we can show a zero on the map (or FE could choose to hide zeroes)
                     $locationCounts[] = ['regionCode' => $code, 'numCampaigns' => 0];
                 }
-            }
-
-            if ($filterByRegions && $regionsToFilterTo) {
-                $locationCounts = array_values(
-                    \array_filter($locationCounts, fn(array $count) => \in_array($count['regionCode'], $regionsToFilterTo, true))
-                );
+                $childCodes = $location?->childCodes;
             }
         } else {
+            $parentRegion = null;
             $locationCounts = [];
+            $siblingRegions = [];
+            $childCodes = null;
+            $location = null;
         }
 
         $this->sortForSearch(
@@ -903,22 +923,17 @@ class CampaignRepository extends SalesforceReadProxyRepository
         /** @var list<Campaign> $result */
         $result = $query->getResult();
 
-        $siblingRegions = [];
-        if (is_array($regionsToFilterTo) && count($regionsToFilterTo) > 0) {
-            // smallest in $regionsToFilter should be the first one
-            $smallestRegion = $regionsToFilterTo[0];
-            $location = UKLocation::findByCode($smallestRegion);
-            $siblingRegions = $location->siblingCodes;
-        } else {
-            $location = null;
-        }
+        $parentRegionName = $parentRegion?->name;
+        $parentCode = $location?->parentCode;
 
         return new CampaignSearchResult(
             campaigns: $result,
             locationCounts: $locationCounts,
             ukFilterRegions: $regionsToFilterTo,
+            childRegions: $childCodes ?? [],
             siblingRegions: $siblingRegions,
-            parentRegion: $location?->parentCode,
+            parentRegion: $parentCode,
+            parentRegionName: $parentRegionName,
         );
     }
 

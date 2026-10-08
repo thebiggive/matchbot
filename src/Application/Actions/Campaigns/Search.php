@@ -12,6 +12,7 @@ use MatchBot\Client\PointOutsideUK;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CampaignService;
+use MatchBot\Domain\UKLocation;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -76,7 +77,12 @@ class Search extends Action
             // in future, but we just need the codes for the search:
             $regions = \array_map(static fn(array $region): string => $region['code'], $regions);
         } elseif ($ukRegion !== null) {
-            $regions = [$ukRegion];
+            $region = UKLocation::findByCode($ukRegion);
+            if (is_string($region->parentCode)) {
+                $regions = [$region->code, $region->parentCode];
+            } else {
+                $regions = [$region->code];
+            }
         } else {
             $regions = null;
         }
@@ -169,8 +175,10 @@ class Search extends Action
                 'campaignSummaries' => $campaignSummaries,
                 'locationCounts' => $searchResult->locationCounts,
                 'UKFilterRegions' => $searchResult->ukFilterRegions,
+                'childRegions' => $searchResult->childRegions,
                 'siblingRegions' => $searchResult->siblingRegions,
                 'parentRegion' => $searchResult->parentRegion,
+                'parentRegionName' => $searchResult->parentRegionName,
                 // may also need to give the parent region code and possibly name.
             ],
             200
