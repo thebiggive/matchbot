@@ -41,6 +41,7 @@ readonly class CampaignSearchResult
         public array $childRegions,
         public array $siblingRegions,
         public ?string $parentRegion,
+        public ?string $parentRegionName,
     ) {
     }
 }
