@@ -9,7 +9,10 @@ use Doctrine\ORM\Mapping as ORM;
 // @mago-expect analysis:write-only-property
 /**
  * @psalm-suppress UnusedProperty Various fields to be used soon.
+ *
  */
+#[ORM\Index(name: 'regionCode', columns: ['regionCode'])]
+#[ORM\Index(name: 'countryName', columns: ['countryName'])]
 #[ORM\Entity]
 class CampaignLocation extends Model
 {
