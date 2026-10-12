@@ -809,16 +809,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $safeSortField === 'campaignStatistics.distanceToTarget.amountInPence' &&
             $sortDirection === 'asc';
 
-        if ($filterByRegions) {
-            // todo - include all descendant regions:
-            $regionsToFilterToWithoutDescendants = $this->popEngland($regions);
-            $smallestRegion = UKLocation::findByCode($regionsToFilterToWithoutDescendants[0]);
-            $codesForSmallerRegions = \array_map(fn($region) => $region->code, UKLocation::allDescendantsOf($smallestRegion));
-            $regionsToFilterTo = [...$regionsToFilterToWithoutDescendants, ...$codesForSmallerRegions];
-        } else {
-            $regionsToFilterToWithoutDescendants = null;
-            $regionsToFilterTo = null;
-        }
+        $regionsToFilterTo = $filterByRegions ? $this->popEngland($regions) : null;
 
         $idsOrderedByRelavence = $this->filterForSearch(
             qb: $qb,
@@ -836,7 +827,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $siblingRegions = [];
             if (is_array($regionsToFilterTo) && count($regionsToFilterTo) > 0) {
                 // smallest in $regionsToFilter should be the first one
-                $smallestRegion = $regionsToFilterToWithoutDescendants[0];
+                $smallestRegion = $regionsToFilterTo[0];
                 $location = UKLocation::findByCode($smallestRegion);
                 $siblingRegions = $location->siblingCodes;
                 $parentRegionCode = $location->parentCode;
@@ -849,11 +840,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
             // also fetch a count of how many relevent campaigns have
             // locations each major part of the UK.
-
-            // for now these counts are not including the descendant regions, which is probably going to be too misleading
-            // on the map - so may need to either precomputer for each campaign that it is in each of its ancestor regions
-            // and store in the DB in advance, or find a cleverer way of querying. Just using the  $regionsToFilterTo here
-            // wouldn't work since we don't want a separate count for each one.
 
             $summaryRegionCodes = [
                 'E12000008', // South East England
@@ -870,7 +856,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 'N92000002', // Northern Ireland
             ];
 
-            $summaryRegionCodes = [...$summaryRegionCodes, ...($regionsToFilterToWithoutDescendants ?? [])];
+            $summaryRegionCodes = [...$summaryRegionCodes, ...($regionsToFilterTo ?? [])];
             $summaryRegionCodes = [...$summaryRegionCodes,  ...$siblingRegions];
             $childCodes = $location->childCodes ?? [];
             $summaryRegionCodes = [...$summaryRegionCodes, ...$childCodes];
