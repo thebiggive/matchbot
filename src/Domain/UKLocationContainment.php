@@ -11,6 +11,8 @@ use Doctrine\ORM\Mapping as ORM;
  * runs.
  *
  * @psalm-suppress UnusedClass
+ * @psalm-suppress PossiblyUnusedProperty
+ * @psalm-suppress PossiblyUnusedMethod
  */
 #[ORM\Index(name: 'regionCode', columns: ['regionCode'])]
 #[ORM\Index(name: 'ancestorRegionCode', columns: ['ancestorRegionCode'])]
@@ -19,6 +21,9 @@ class UKLocationContainment extends Model
 {
     use TimestampsTrait;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function __construct(string $regionCode, string $ancestorRegionCode)
     {
         $this->regionCode = $regionCode;
