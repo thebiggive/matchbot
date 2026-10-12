@@ -485,4 +485,13 @@ readonly class UKLocation
 
         return $descendants;
     }
+
+    /** @return list<self> */
+    public static function allLocations(): array
+    {
+        return \array_map(
+            fn(array $a) => self::findByCode($a[0]),
+            self::LOCATIONS,
+        );
+    }
 }
