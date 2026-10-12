@@ -472,4 +472,17 @@ readonly class UKLocation
             childCodes: $childCodes,
         );
     }
+
+    /** @return list<self> */
+    public static function allDescendantsOf(UKLocation $location): array
+    {
+        $descendants = [];
+
+        foreach ($location->childCodes as $childCode) {
+            $child = self::findByCode($childCode);
+            $descendants = [...$descendants, $child, ...self::allDescendantsOf($child)];
+        }
+
+        return $descendants;
+    }
 }

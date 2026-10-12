@@ -117,6 +117,74 @@ class UKLocationTest extends TestCase
         );
     }
 
+    /**
+     * We think when a user searches for a given region then we need to show not just campaigns that are directly linked
+     * that region but also any linked to the regions within it, which in the case of East of England are at three levels
+     * (e.g. East of England, Cambridgeshire, Huntingdonshire). Afaik none go deeper.
+     */
+    public function testItFindsAllDescendantsOfARegion(): void
+    {
+        $location = UKLocation::findByCode('E12000006'); // East of England
+
+        $allDescendantRegions = UKLocation::allDescendantsOf($location);
+
+        self::assertEqualsCanonicalizing(
+            [
+                'Babergh',
+                'Castle Point',
+                'Central Bedfordshire',
+                'Chelmsford',
+                'Colchester',
+                'Dacorum',
+                'East Cambridgeshire',
+                'East Hertfordshire',
+                'East Suffolk',
+                'Epping Forest',
+                'Essex',
+                'Fenland',
+                'Great Yarmouth',
+                'Harlow',
+                'Hertfordshire',
+                'Hertsmere',
+                'Huntingdonshire',
+                'Ipswich',
+                'King\'s Lynn and West Norfolk',
+                'Luton',
+                'Maldon',
+                'Mid Suffolk',
+                'Norfolk',
+                'North Hertfordshire',
+                'North Norfolk',
+                'Norwich',
+                'Peterborough',
+                'Rochford',
+                'South Cambridgeshire',
+                'South Norfolk',
+                'Southend-on-Sea',
+                'St Albans',
+                'Stevenage',
+                'Suffolk',
+                'Tendring',
+                'Three Rivers',
+                'Thurrock',
+                'Uttlesford',
+                'Watford',
+                'Welwyn Hatfield',
+                'West Suffolk',
+                'Basildon',
+                'Bedford',
+                'Braintree',
+                'Breckland',
+                'Brentwood',
+                'Broadland',
+                'Broxbourne',
+                'Cambridge',
+                'Cambridgeshire',
+            ],
+            \array_map(fn($l) => $l->name, $allDescendantRegions)
+        );
+    }
+
     public function testItFindsNoParentOfLondon(): void
     {
         $location = UKLocation::findByCode('E12000007'); // London
