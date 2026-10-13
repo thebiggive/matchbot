@@ -437,6 +437,7 @@ class TestCase extends PHPUnitTestCase
         ?Money $totalFundraisingTarget = null,
         ?Money $withMatchFundsTotal = null,
         bool $standalone = false,
+        PaymentServiceProvider $psp = PaymentServiceProvider::Stripe,
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         $sfId ??= Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
@@ -448,7 +449,7 @@ class TestCase extends PHPUnitTestCase
         $campaign = new Campaign(
             $sfId,
             metaCampaignSlug: $metaCampaignSlug?->slug,
-            charity: $charity ?? self::someCharity(stripeAccountId: $stripeAccountId),
+            charity: $charity ?? self::someCharity(stripeAccountId: $stripeAccountId, psp: $psp),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('3000-01-01'),
             isMatched: $isMatched,

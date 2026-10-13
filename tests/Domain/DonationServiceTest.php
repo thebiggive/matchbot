@@ -28,13 +28,19 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\MandateCancellationType;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PaymentServiceProvider;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RefundScope;
 use MatchBot\Domain\RegularGivingNotifier;
+use MatchBot\Domain\RyftAccountId;
+use MatchBot\Domain\RyftPaymentSessionId;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
+use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestLogger;
 use Prophecy\Argument;
@@ -46,8 +52,10 @@ use Stripe\ConfirmationToken;
 use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
+use Stripe\Refund;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Message\ChatMessage;
 use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
@@ -56,6 +64,8 @@ use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 class DonationServiceTest extends TestCase
 {
+    use DonationTestDataTrait;
+
     private const string CUSTOMER_ID = 'cus_CUSTOMERID';
     public const string CAMPAIGN_ID = 'PROjECTIdXXXXxXXXX';
     private DonationService $sut;
@@ -63,8 +73,14 @@ class DonationServiceTest extends TestCase
     /** @var ObjectProphecy<Stripe> */
     private ObjectProphecy $stripeProphecy;
 
+    /** @var ObjectProphecy<RyftClient> */
+    private ObjectProphecy $ryftProphecy;
+
     /** @var ObjectProphecy<DonationRepository> */
     private ObjectProphecy $donationRepoProphecy;
+
+    /** @var ObjectProphecy<RoutableMessageBus> */
+    private ObjectProphecy $busProphecy;
 
     /** @var ObjectProphecy<StripeChatterInterface> */
     private ObjectProphecy $chatterProphecy;
@@ -80,12 +96,13 @@ class DonationServiceTest extends TestCase
     #[\Override]
     public function setUp(): void
     {
+        $this->busProphecy = $this->prophesize(RoutableMessageBus::class);
+        $this->chatterProphecy = $this->prophesize(StripeChatterInterface::class);
         $this->donorAccountRepoProphecy = $this->prophesize(DonorAccountRepository::class);
         $this->donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $this->stripeProphecy = $this->prophesize(Stripe::class);
-        $this->chatterProphecy = $this->prophesize(StripeChatterInterface::class);
-
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $this->ryftProphecy = $this->prophesize(RyftClient::class);
+        $this->stripeProphecy = $this->prophesize(Stripe::class);
 
         $configurationProphecy = $this->prophesize(\Doctrine\ORM\Configuration::class);
         $config = $configurationProphecy->reveal();
@@ -248,13 +265,13 @@ class DonationServiceTest extends TestCase
             clock: new MockClock(new \DateTimeImmutable('2025-01-01')),
             creationRateLimiterFactory: $stubRateLimiter,
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
-            bus: $this->createStub(RoutableMessageBus::class),
+            bus: $this->busProphecy->reveal(),
             donationNotifier: $this->createStub(DonationNotifier::class),
             campaignService: $campaignServiceProphecy->reveal(),
             redis: $redisProphecy->reveal(),
             confirmRateLimitFactory: $stubRateLimiter,
             regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
-            ryftClient: $this->createStub(RyftClient::class),
+            ryftClient: $this->ryftProphecy->reveal(),
         );
     }
 
@@ -293,7 +310,7 @@ class DonationServiceTest extends TestCase
             clock: new MockClock(new \DateTimeImmutable('2025-01-01')),
             creationRateLimiterFactory: $rateLimiterFactory,
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
-            bus: $this->createStub(RoutableMessageBus::class),
+            bus: $this->busProphecy->reveal(),
             donationNotifier: $this->createStub(DonationNotifier::class),
             campaignService: $campaignServiceProphecy->reveal(),
             redis: $redisProphecy->reveal(),
@@ -332,13 +349,13 @@ class DonationServiceTest extends TestCase
         }
     }
 
-    private function getDonationCreate(): DonationCreate
+    private function getDonationCreate(string $psp = 'stripe'): DonationCreate
     {
         return new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '1',
             projectId: self::CAMPAIGN_ID,
-            psp: 'stripe',
+            psp: $psp,
             pspCustomerId: self::CUSTOMER_ID
         );
     }
@@ -576,5 +593,61 @@ class DonationServiceTest extends TestCase
 
         $this->getDonationService(campaignRepoProphecy: $campaignRepoProphecy)
             ->buildFromAPIRequest($createPayload, PersonId::nil());
+    }
+
+    public function testTipRefundStripe(): void
+    {
+        $donation = $this->getTestDonation(collected: true);
+
+        $this->busProphecy
+            ->dispatch(Argument::type(Envelope::class), Argument::cetera())
+            ->shouldNotBeCalled();
+
+        $this->stripeProphecy->createRefund(
+            'pi_externalId_123',
+            EmailAddress::of('john.doe@example.com'),
+            Money::fromNumericStringGBP('1.00'), // Trait helper's default has £1 tip.
+            RefundScope::tip,
+        )
+            ->willReturn(new Refund())
+            ->shouldBeCalledOnce();
+
+        $this->sut = $this->getDonationService();
+        $this->sut->refund($donation, RefundScope::tip);
+    }
+
+    public function testFullRefundRyft(): void
+    {
+        $donationCreateResponse = $this->getDonationCreate('ryft');
+
+        $donation = Donation::fromApiModel(
+            $donationCreateResponse,
+            TestCase::someCampaign(psp: PaymentServiceProvider::Ryft),
+            PersonId::nil()
+        );
+        $donation->setRyftPaymentSessionId(RyftPaymentSessionId::of('ps_01FCTS1XMKH9FF43CAFA4CXT3P'));
+        $donation->collectFromRyftPaymentSession(
+            amount: Money::fromNumericStringGBP($donation->getAmount()),
+            originalFeeFractional: Money::fromNumericStringGBP('0.10'),
+            at: new \DateTimeImmutable('now'),
+        );
+        $totalPaid = $donation->getTotalPaidByDonor();
+        \assert($totalPaid !== null);
+
+        $this->busProphecy
+            ->dispatch(Argument::type(Envelope::class), Argument::cetera())
+            ->willReturnArgument()
+            ->shouldBeCalledOnce();
+        $this->entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $this->ryftProphecy->refundPayment(
+            RyftAccountId::of('ac_aaaaaaaa-bbbb-aaaa-bbbb-aaaaaaaaaaaa'),
+            'ps_01FCTS1XMKH9FF43CAFA4CXT3P',
+            Money::fromNumericStringGBP($totalPaid),
+            RefundScope::full,
+        )
+            ->shouldBeCalledOnce();
+
+        $this->sut = $this->getDonationService();
+        $this->sut->refund($donation, RefundScope::full);
     }
 }

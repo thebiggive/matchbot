@@ -2,10 +2,7 @@
 
 namespace MatchBot\Domain;
 
-use Doctrine\ORM\Mapping\Embeddable;
-use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\AssertionFailedException;
 
 readonly class PostCode
 {
