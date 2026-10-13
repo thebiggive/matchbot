@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\TransferException;
@@ -596,7 +597,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         }
 
         if ($regions !== null) {
-            $qb->andWhere($qb->expr()->in('campaignLocation.regionCode', ':regionCodes'));
+            $qb->andWhere($qb->expr()->in('ukLocationContainment.ancestorRegionCode', ':regionCodes'));
             $qb->setParameter('regionCodes', $regions);
         }
 
@@ -801,6 +802,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             ->leftJoin('campaign.campaignFundings', 'campaignFunding')
             ->leftJoin('campaignFunding.fund', 'fund')
             ->leftJoin('campaign.locations', 'campaignLocation')
+            ->leftJoin(UKLocationContainment::class, 'ukLocationContainment', Join::WITH, 'ukLocationContainment.regionCode = campaignLocation.regionCode')
             ->groupBy('campaign.id')
             ->setFirstResult($offset)
             ->setMaxResults($limit);
@@ -864,13 +866,14 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $summaryRegionCodes = \array_values(\array_unique($summaryRegionCodes));
 
             $lq2 = $this->getEntityManager()->createQueryBuilder();
-            $lq2->select('campaignLocation.regionCode', 'COUNT(DISTINCT(campaign.id)) as numCampaigns')
+            $lq2->select('ukLocationContainment.ancestorRegionCode as regionCode', 'COUNT(DISTINCT campaign.id) as numCampaigns')
                 ->from(CampaignLocation::class, 'campaignLocation')
                 ->join('campaignLocation.campaign', 'campaign')
+                ->join(UKLocationContainment::class, 'ukLocationContainment', Join::WITH, 'ukLocationContainment.regionCode = campaignLocation.regionCode')
                 ->join('campaign.charity', 'charity')
                 ->join('campaign.campaignStatistics', 'campaignStatistics')
-                ->where('campaignLocation.regionCode IN (:regionCodes)')
-                ->groupBy('campaignLocation.regionCode')
+                ->where('ukLocationContainment.ancestorRegionCode IN (:regionCodes)')
+                ->groupBy('ukLocationContainment.ancestorRegionCode')
                 ->setParameter('regionCodes', $summaryRegionCodes);
 
             $this->filterForSearch(
@@ -884,7 +887,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 // the locations we're looking for, which are not UN-member countries but
                                // places within the UK.
                 forInternalUpdate: $forInternalUpdate,
-                regions: $summaryRegionCodes,
+                regions: null,
             );
 
             /** @var list<array{numCampaigns: int, regionCode: string}> $locationCounts */
