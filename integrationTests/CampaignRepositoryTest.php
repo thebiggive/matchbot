@@ -282,12 +282,8 @@ class CampaignRepositoryTest extends IntegrationTest
         return Salesforce18Id::ofCampaign($id);
     }
 
-    /**
-     * @return void
-     */
-    public function insertCampaignsForSearchToFind(): void
+    private function insertCampaignsForSearchToFind(): void
     {
-
         $campaign1 = new Campaign(
             self::someSalesForce18CampaignId(),
             metaCampaignSlug: null,
