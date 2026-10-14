@@ -59,6 +59,17 @@ class Search extends Action
         Assertion::nullOrAlnum($ukRegion, 'UK Region code should be alphanumeric');
 
         $filterByLatLong = (bool) ($params['filterByLatLong'] ?? false);
+
+        if ($filterByLatLong && (! \is_numeric($latitude) || ! \is_numeric($longitude))) {
+            $this->logger->warning("Location filter requested with no latitude or no longitude given, defaulting to distanceToTarget");
+            $filterByLatLong = false;
+        }
+
+        if ($sortField === 'location' && (! \is_numeric($latitude) || ! \is_numeric($longitude))) {
+            $this->logger->warning("Location search requested with no latitude or no longitude given, defaulting to distanceToTarget");
+            $sortField = 'distanceToTarget';
+        }
+
         if ($sortField === 'location' || $filterByLatLong) {
             Assertion::numeric($latitude, 'Numeric latitude and longitude must be supplied for location-based search');
             Assertion::numeric($longitude, 'Numeric latitude and longitude must be supplied for location-based search');
