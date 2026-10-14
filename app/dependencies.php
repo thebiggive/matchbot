@@ -14,6 +14,7 @@ use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\ORM;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Kevinrob\GuzzleCache\Storage\Psr6CacheStorage;
 use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
@@ -146,6 +147,11 @@ return function (ContainerBuilder $containerBuilder) {
             return $c->get(RedisCacheAdapter::class);
         },
 
+        // For `kevinrob/guzzle-cache-middleware`. See `MatchBot\Client\Common::getHttpClient()`.
+        Psr6CacheStorage::class => function (ContainerInterface $c): Psr6CacheStorage {
+            return new Psr6CacheStorage($c->get(RedisCacheAdapter::class));
+        },
+
         PSR16CacheInterface::class => function (ContainerInterface $c): PSR16CacheInterface {
             return new Psr16Cache($c->get(RedisCacheAdapter::class));
         },
@@ -220,11 +226,11 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
-            return new Client\Campaign($c->get(Settings::class), $c->get(LoggerInterface::class));
+            return new Client\Campaign($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
         Client\Donation::class => function (ContainerInterface $c): Client\Donation {
-            return new Client\Donation($c->get(Settings::class), $c->get(LoggerInterface::class));
+            return new Client\Donation($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
         Client\FindThatPostcode::class => function (ContainerInterface $c): Client\FindThatPostcode {
@@ -232,19 +238,19 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Client\Mandate::class => function (ContainerInterface $c): Client\Mandate {
-            return new Client\Mandate($c->get(Settings::class), $c->get(LoggerInterface::class));
+            return new Client\Mandate($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
         Client\Fund::class => function (ContainerInterface $c): Client\Fund {
-            return new Client\Fund($c->get(Settings::class), $c->get(LoggerInterface::class));
+            return new Client\Fund($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
         Client\Mailer::class => function (ContainerInterface $c): Client\Mailer {
-            return new Client\Mailer($c->get(Settings::class), $c->get(LoggerInterface::class));
+            return new Client\Mailer($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
         Client\MailingList::class => function (ContainerInterface $c): Client\MailingList {
-            return new Client\MailingList($c->get(Settings::class), $c->get(LoggerInterface::class));
+            return new Client\MailingList($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
         Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {
