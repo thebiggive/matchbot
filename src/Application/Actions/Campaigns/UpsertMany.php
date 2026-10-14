@@ -9,6 +9,7 @@ use JetBrains\PhpStorm\Pure;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CharityRepository;
@@ -19,6 +20,7 @@ use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
 use MatchBot\Client;
@@ -152,7 +154,8 @@ class UpsertMany extends Action
         if (!$metaCampaign) {
             /** @psalm-suppress DocblockTypeContradiction */
             if ($campaignData['campaignFamily'] === null) {
-                $this->logger->error('No campaign family on metacampaign ' . $campaignData['id']  . ' - ' . $slug->slug . ' skipping');
+                $level = Environment::current() === Environment::Production ? LogLevel::ERROR : LogLevel::WARNING;
+                $this->logger->log($level, 'No campaign family on metacampaign ' . $campaignData['id']  . ' - ' . $slug->slug . ' skipping');
                 return;
             }
             $metaCampaign = MetaCampaign::fromSfCampaignData($slug, $campaignData);
