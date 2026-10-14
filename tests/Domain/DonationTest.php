@@ -63,6 +63,18 @@ class DonationTest extends TestCase
         $this->assertSame($expectedGAAmount, $donation->getGiftAidValue());
     }
 
+    /**
+     * @dataProvider giftAidProvider
+     * @param numeric-string $tipAmount
+     * @param numeric-string $expectedGAAmount
+     */
+    public function testCalculatesGiftAidForTip(string $tipAmount, bool $hasGiftAid, string $expectedGAAmount): void
+    {
+        $donation = TestCase::someDonation(amount: '1', tipAmount: $tipAmount, giftAid: $hasGiftAid);
+
+        $this->assertSame($expectedGAAmount, $donation->getTipGiftAidValue()->toNumericString());
+    }
+
     public function testValidDataPersisted(): void
     {
         $donation = $this->getTestDonation('100.00');
@@ -304,7 +316,9 @@ class DonationTest extends TestCase
                 'isOrganisationDonor' => true,
                 'referenceCode' => 'some-transaction-id',
                 'fundsReservedUntil' => null,
-                'maxReservationTime' => '1970-01-01T00:25:00+00:00'
+                'maxReservationTime' => '1970-01-01T00:25:00+00:00',
+                'donationGiftAidAmount' => 0.0,
+                'tipGiftAidAmount' => 0.0,
             ],
             $donation->toSFApiModel()
         );

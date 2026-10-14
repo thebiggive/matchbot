@@ -91,6 +91,7 @@ class DonationNotifier
             'paymentMethodType' => $paymentMethodType->value,
             'statementReference' => $charity->getStatementDescriptor(),
             'tipAmount' => (float) $donation->getTipAmount(),
+            'tipGiftAidAmountClaimed' => $donation->getTipGiftAidValue()->toMajorUnitFloat(),
             'totalChargedAmount' => (float) $donation->getTotalPaidByDonor(),
 
             'totalCharityValueAmount' => (float) $donation->totalCharityValueAmount(),

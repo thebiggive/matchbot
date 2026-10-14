@@ -185,6 +185,7 @@ class StripePaymentsUpdateTest extends StripeTest
             'donorLastName' => $donation->getDonorLastName(),
             'donorGreetingName' => $donation->getDonorFirstName() === '' ? $donation->getDonorLastName() : $donation->getDonorFirstName(),
             'giftAidAmountClaimed' => (float) $donation->getGiftAidValue(),
+            'tipGiftAidAmountClaimed' => $donation->getTipGiftAidValue()->toMajorUnitFloat(),
             'matchedAmount' => $donation->matchedAmount()->toMajorUnitFloat(),
             'paymentMethodType' => 'card',
             'statementReference' => $charity->getStatementDescriptor(),
