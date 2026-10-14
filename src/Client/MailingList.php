@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\GuzzleException;
+use Kevinrob\GuzzleCache\Storage\Psr6CacheStorage;
 use Psr\Log\LoggerInterface;
 use MatchBot\Application\Settings;
 
@@ -16,10 +17,11 @@ class MailingList extends Common
     use HashTrait;
 
     public function __construct(
+        Psr6CacheStorage $cacheStorage,
         Settings $settings,
         LoggerInterface $logger
     ) {
-        parent::__construct($settings, $logger);
+        parent::__construct($cacheStorage, $settings, $logger);
     }
 
     /**
