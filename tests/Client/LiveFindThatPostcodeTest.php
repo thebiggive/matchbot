@@ -1,7 +1,8 @@
 <?php
 
-namespace MatchBot\Client;
+namespace MatchBot\Tests\Client;
 
+use MatchBot\Client\LiveFindThatPostcode;
 use PHPUnit\Framework\TestCase;
 
 class LiveFindThatPostcodeTest extends TestCase
