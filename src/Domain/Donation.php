@@ -716,6 +716,7 @@ class Donation extends SalesforceWriteProxy
             'createdTime' => $this->getCreatedDate()->format(DateTimeInterface::ATOM),
             'currencyCode' => $this->currency()->isoCode(),
             'donationAmount' => (float) $this->getAmount(),
+            'donationGiftAidAmount' => (float) $this->getGiftAidValue(),
             'totalPaid' => is_null($totalPaidByDonor) ? null : (float)$totalPaidByDonor,
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched() && ! $enableNoReservationsMode,
@@ -742,6 +743,7 @@ class Donation extends SalesforceWriteProxy
             'tbgGiftAidRequestConfirmedCompleteAt' =>
                 $this->tbgGiftAidRequestConfirmedCompleteAt?->format(DateTimeInterface::ATOM),
             'tipAmount' => (float) $this->getTipAmount(),
+            'tipGiftAidAmount' => $this->getTipGiftAidValue()->toMajorUnitFloat(),
             'tipGiftAid' => $this->hasTipGiftAid(),
             'transactionId' => $this->getTransactionId(),
             'referenceCode' => $this->getReferenceCode(),
@@ -1904,10 +1906,13 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return numeric-string The amount of gift aid claimable (or claimed) from HMRC to increase the gift aid value.
+     * @return numeric-string The amount of gift aid claimable (or claimed) from HMRC to increase the gift aid value
+     * of the core donation to the charity.
      *
      * Assumes that the Gift Aid percentage is unchanging and applies to all past donations. We need to
      * add more complexity if it does change.
+     *
+     * {@see self::getTipGiftAidValue() }
      */
     public function getGiftAidValue(): string
     {
@@ -1918,6 +1923,24 @@ class Donation extends SalesforceWriteProxy
         $amount = $this->amount;
 
         return self::donationAmountToGiftAidValue($amount);
+    }
+
+    /**
+     * @return Money The amount of gift aid claimable (or claimed) from HMRC to increase the gift aid value
+     *  of any tip for Big Give.
+     *
+     * {@see self::getTipGiftAidValue()}
+     */
+    public function getTipGiftAidValue(): Money
+    {
+        if (! $this->giftAid) {
+            return Money::zero($this->currency());
+        }
+
+        return Money::fromNumericString(
+            self::donationAmountToGiftAidValue($this->tipAmount),
+            $this->currency()
+        );
     }
 
     /**
