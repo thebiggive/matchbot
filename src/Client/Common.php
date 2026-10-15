@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace MatchBot\Client;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\HandlerStack;
+use Kevinrob\GuzzleCache\CacheMiddleware;
+use Kevinrob\GuzzleCache\Storage\Psr6CacheStorage;
+use Kevinrob\GuzzleCache\Strategy\PublicCacheStrategy;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Settings;
 use MatchBot\Domain\Salesforce18Id;
@@ -36,6 +39,7 @@ abstract class Common
      * rather than the type of the property, and its awkward to type the array based param.
      */
     public function __construct(
+        private Psr6CacheStorage $cacheStorage,
         Settings $settings,
         protected LoggerInterface $logger
     ) {
@@ -56,9 +60,14 @@ abstract class Common
     protected function getHttpClient(): Client
     {
         if ($this->httpClient === null) {
-            // Odd deprecation handling, at least in Staging, makes a string `timeout` break with Guzzle v7, even
-            // though is it only deprecated for removal in v8.
+            // Keeping a separate Guzzle for each of our own clients for now and not using DI,
+            // so as not to alter cache behaviour in e.g. vendor SDKs.
+            $stack = HandlerStack::create();
+            $stack->push(new CacheMiddleware(
+                new PublicCacheStrategy($this->cacheStorage)
+            ), 'cache');
             $this->httpClient = new Client([
+                'handler' => $stack,
                 'timeout' => (int) $this->clientSettings['global']['timeout'],
             ]);
         }
