@@ -4,6 +4,7 @@ namespace MatchBot\Client;
 
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\RefundScope;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
@@ -76,7 +77,7 @@ class StubStripeClient implements Stripe
     }
 
     #[\Override]
-    public function createRefund(string $paymentIntentId, EmailAddress|null $donorEmailAddress, Money $amount, RefundScope $scope): Refund
+    public function createRefund(string $paymentIntentId, PaymentMethodType $paymentMethodType, EmailAddress|null $donorEmailAddress, Money $amount, RefundScope $scope): Refund
     {
         $this->pause();
         return new Refund('re_stub_' . self::randomString());
