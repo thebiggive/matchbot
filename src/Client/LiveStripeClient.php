@@ -4,6 +4,7 @@ namespace MatchBot\Client;
 
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\RefundScope;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\StripeConfirmationTokenId;
@@ -101,8 +102,13 @@ class LiveStripeClient implements Stripe
      * @link https://docs.stripe.com/api/refunds/create
      */
     #[\Override]
-    public function createRefund(string $paymentIntentId, EmailAddress|null $donorEmailAddress, Money $amount, RefundScope $scope): Refund
-    {
+    public function createRefund(
+        string $paymentIntentId,
+        PaymentMethodType $paymentMethodType,
+        EmailAddress|null $donorEmailAddress,
+        Money $amount,
+        RefundScope $scope,
+    ): Refund {
         $refundData = [
             'amount' => $amount->amountInPence(),
             'metadata' => [
@@ -113,8 +119,10 @@ class LiveStripeClient implements Stripe
             'reverse_transfer' => true,
         ];
 
-        if ($donorEmailAddress !== null) {
-            $refundData['instructions_email'] = $donorEmailAddress->email; // used for bank transfers
+        if ($donorEmailAddress !== null && $paymentMethodType === PaymentMethodType::CustomerBalance) {
+            // used for customer_balance (bank transfers / donation funds) and causes request
+            // to bail with 'unknown parameter' otherwise.
+            $refundData['instructions_email'] = $donorEmailAddress->email;
         }
 
         $refund = $this->stripeClient->refunds->create($refundData);

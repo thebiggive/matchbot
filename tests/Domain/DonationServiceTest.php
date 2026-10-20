@@ -605,6 +605,7 @@ class DonationServiceTest extends TestCase
 
         $this->stripeProphecy->createRefund(
             'pi_externalId_123',
+            PaymentMethodType::Card,
             EmailAddress::of('john.doe@example.com'),
             Money::fromNumericStringGBP('1.00'), // Trait helper's default has £1 tip.
             RefundScope::tip,
