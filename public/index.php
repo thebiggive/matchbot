@@ -11,6 +11,10 @@ use Slim\Factory\AppFactory;
 use Slim\Factory\ServerRequestCreatorFactory;
 use Slim\ResponseEmitter;
 
+if (phpversion() < '8.5.12') {
+    throw new \Exception('Old PHP version');
+}
+
 $container = require __DIR__ . '/../bootstrap.php';
 
 // Instantiate the app
