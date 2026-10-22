@@ -75,7 +75,12 @@ class Refund extends Action
             throw new BadRequestException('Donation is already refunded or similar');
         }
 
-        $this->donationService->refund($donation, RefundScope::from($refundScope));
+        $scope = RefundScope::from($refundScope);
+        if ($scope === RefundScope::tip && $donation->getTipAmountFractional() === 0) {
+            throw new BadRequestException('Donation has no tip');
+        }
+
+        $this->donationService->refund($donation, $scope);
 
         $summary = sprintf("Refund (%s) processed for %s", $refundScope, $donation->__toString());
 
