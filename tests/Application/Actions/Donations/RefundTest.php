@@ -30,7 +30,8 @@ class RefundTest extends TestCase
     {
         $this->donation = self::someDonation(
             uuid: Uuid::fromString('8c09afe8-7cb0-4a5e-af90-d3709bc38793'),
-            collected: true
+            tipAmount: '0.10',
+            collected: true,
         );
 
         $this->donationRepoProphecy = $this->prophesize(DonationRepository::class);
