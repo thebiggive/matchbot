@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use DateInterval;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -87,7 +88,9 @@ class Fund extends SalesforceReadProxy
 
     /**
      * Change the type of an already-persisted Fund. Only allowed for pledges and only to go
-     * from non-topup to topup mode.
+     * from:
+     * * non-topup to topup (at any time), or
+     * * topup to non-topup (only 7 days or more before earliest associated campaign's start)
      */
     public function changeTypeIfNecessary(FundType $newType): void
     {
@@ -96,10 +99,28 @@ class Fund extends SalesforceReadProxy
             return;
         }
 
-        if (!$this->fundType->isPledge() || $newType !== FundType::TopupPledge) {
-            // Refuse to make any change except to TopupPledge
-            throw new DisallowedFundTypeChange('Only supported type change is Pledge (or already TopupPledge) funds to TopupPledge');
+        if (!$this->fundType->isPledge()) {
+            throw new DisallowedFundTypeChange('Only supported type changes are for [Topup]Pledges');
         }
+
+        if ($newType === FundType::Pledge) { // From TopupPledge.
+            $now = new \DateTimeImmutable('now');
+            $cutoff = $now->add(new DateInterval('P7D'));
+            $earliestStart = null;
+            foreach ($this->getCampaignFundings() as $funding) {
+                foreach ($funding->getCampaigns() as $campaign) {
+                    $startDate = $campaign->getStartDate();
+                    if ($earliestStart === null || $startDate < $earliestStart) {
+                        $earliestStart = $startDate;
+                    }
+                }
+            }
+
+            if ($earliestStart !== null && $earliestStart < $cutoff) {
+                throw new DisallowedFundTypeChange('TopupPledge to Pledge type amendment not allowed this late');
+            }
+        }
+
         $this->fundType = $newType;
         $this->setAllocationOrder($newType->allocationOrder());
     }
