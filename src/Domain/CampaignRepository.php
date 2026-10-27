@@ -991,7 +991,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             ->leftJoin('campaign.campaignFundings', 'campaignFunding')
             ->leftJoin('campaignFunding.fund', 'fund')
             ->where($countryQb->expr()->isNotNull('campaignLocation.countryName'))
-            ->andWhere($countryQb->expr()->neq('campaignLocation.countryName', "''"))
             ->groupBy('campaignLocation.countryName');
 
         $this->filterForSearch(
