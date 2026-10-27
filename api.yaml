@@ -489,6 +489,33 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/CampaignSummary'
+                  countries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        country:
+                          type: string
+                        numCampaigns:
+                          type: integer
+                  themes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        theme:
+                          type: string
+                        numCampaigns:
+                          type: integer
+                  locationCounts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        regionCode:
+                          type: string
+                        numCampaigns:
+                          type: integer
         '400':
           description: Invalid search parameters
 

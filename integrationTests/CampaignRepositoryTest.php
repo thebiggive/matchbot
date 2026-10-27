@@ -154,6 +154,54 @@ class CampaignRepositoryTest extends IntegrationTest
         );
     }
 
+    public function testItProvidesCountryAndThemeCountsAcrossFullResultSetAndRemovesRespectiveConstraints(): void
+    {
+        // arrange
+        $sut = $this->getService(CampaignRepository::class);
+
+        $this->insertCampaignsForSearchToFind();
+
+        // act: search page with limit 1, country filter United Kingdom, category filter Food
+        $result = $sut->search(
+            sortField: 'distanceToTarget',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 1,
+            metaCampaignSlug: 'the-family',
+            fundSlug: null,
+            jsonMatchInListConditions: [
+                'categories' => 'Food',
+            ],
+            term: null,
+            country: 'United Kingdom',
+            regions: null,
+            forInternalUpdate: false,
+            filterByRegions: false,
+        );
+
+        // assert: paginated campaigns only has 1 result (due to limit=1)
+        $this->assertCount(1, $result->campaigns);
+
+        // Country counts: country filter is removed, counts reflect all 3 campaigns matching metaCampaign 'the-family' & category 'Food'
+        $this->assertSame(
+            [
+                ['country' => 'United Kingdom', 'numCampaigns' => 3],
+            ],
+            $result->countries,
+        );
+
+        // Theme counts: theme filter is removed, counts reflect all 3 campaigns matching metaCampaign 'the-family' & country 'United Kingdom'
+        $this->assertSame(
+            [
+                ['theme' => 'Dads', 'numCampaigns' => 3],
+                ['theme' => 'Drink', 'numCampaigns' => 3],
+                ['theme' => 'Food', 'numCampaigns' => 3],
+                ['theme' => 'Lads', 'numCampaigns' => 3],
+            ],
+            $result->themes,
+        );
+    }
+
     public function testSearchWithInvalidJsonMatchFieldThrowsException(): void
     {
         $sut = $this->getService(CampaignRepository::class);

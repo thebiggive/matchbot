@@ -9,6 +9,16 @@ namespace MatchBot\Domain;
 readonly class CampaignSearchResult
 {
     /**
+     * @var list<array{country: string, numCampaigns: int}>
+     */
+    public array $countries;
+
+    /**
+     * @var list<array{theme: string, numCampaigns: int}>
+     */
+    public array $themes;
+
+    /**
      * @param list<Campaign> $campaigns List of campaigns in this page of search results.
      *
      * @param list<array{numCampaigns: int, regionCode: string}> $locationCounts Count of how many campaigns have impact in
@@ -30,18 +40,111 @@ readonly class CampaignSearchResult
      * London as parent of Haringey. Should generally match the entry in position 1 of $ukFilterRegions. Null if the
      * regions only have the UK as a whole as a parent.
      *
-     * ONS codes of other regions within the
-     * same parent region as the smallest region (first in $ukFilterRegions),
-     * e.g. if Harringey is selected will list all London Boroughs + City of London
+     * @param list<array{country: string, numCampaigns: int}>|null $countries Count of how many campaigns represent each
+     * country/location in the search results.
+     *
+     * @param list<array{theme: string, numCampaigns: int}>|null $themes Count of how many campaigns represent each
+     * theme (beneficiaries + categories) in the search results.
      */
     public function __construct(
         public array $campaigns,
         public array $locationCounts,
-        public array|null $ukFilterRegions,
+        public ?array $ukFilterRegions,
         public array $childRegions,
         public array $siblingRegions,
         public ?string $parentRegion,
         public ?string $parentRegionName,
+        ?array $countries = null,
+        ?array $themes = null,
     ) {
+        $this->countries = $countries ?? $this->deriveCountries($campaigns);
+        $this->themes = $themes ?? $this->deriveThemes($campaigns);
+    }
+
+    /**
+     * @param list<Campaign> $campaigns
+     * @return list<array{country: string, numCampaigns: int}>
+     */
+    private function deriveCountries(array $campaigns): array
+    {
+        $counts = [];
+        foreach ($campaigns as $campaign) {
+            $campaignCountries = [];
+            foreach ($campaign->getLocationsForApi() as $location) {
+                $countryName = $location['countryName'];
+                if (is_string($countryName) && trim($countryName) !== '') {
+                    $campaignCountries[trim($countryName)] = true;
+                }
+            }
+            foreach (array_keys($campaignCountries) as $country) {
+                $counts[$country] = ( $counts[$country] ?? 0 ) + 1;
+            }
+        }
+
+        $result = [];
+        foreach ($counts as $country => $numCampaigns) {
+            $result[] = [
+                'country' => $country,
+                'numCampaigns' => $numCampaigns,
+            ];
+        }
+
+        usort($result, static function (array $a, array $b): int {
+            if ($b['numCampaigns'] !== $a['numCampaigns']) {
+                return $b['numCampaigns'] <=> $a['numCampaigns'];
+            }
+            return strcasecmp((string) $a['country'], (string) $b['country']);
+        });
+
+        return $result;
+    }
+
+    /**
+     * @param list<Campaign> $campaigns
+     * @return list<array{theme: string, numCampaigns: int}>
+     */
+    private function deriveThemes(array $campaigns): array
+    {
+        $counts = [];
+        foreach ($campaigns as $campaign) {
+            if ($campaign->isSfDataMissing()) {
+                continue;
+            }
+            $sfData = $campaign->getSalesforceData();
+            $beneficiaries = $sfData['beneficiaries'];
+            $categories = $sfData['categories'];
+            $campaignThemes = [];
+            foreach ([...$beneficiaries, ...$categories] as $theme) {
+                if (trim($theme) === '') {
+                    continue;
+                }
+
+                if (\strtolower(trim($theme)) === 'other') {
+                    continue;
+                }
+
+                $campaignThemes[trim($theme)] = true;
+            }
+            foreach (array_keys($campaignThemes) as $theme) {
+                $counts[$theme] = ( $counts[$theme] ?? 0 ) + 1;
+            }
+        }
+
+        $result = [];
+        foreach ($counts as $theme => $numCampaigns) {
+            $result[] = [
+                'theme' => $theme,
+                'numCampaigns' => $numCampaigns,
+            ];
+        }
+
+        usort($result, static function (array $a, array $b): int {
+            if ($b['numCampaigns'] !== $a['numCampaigns']) {
+                return $b['numCampaigns'] <=> $a['numCampaigns'];
+            }
+            return strcasecmp((string) $a['theme'], (string) $b['theme']);
+        });
+
+        return $result;
     }
 }
