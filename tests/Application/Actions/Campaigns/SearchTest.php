@@ -42,6 +42,14 @@ class SearchTest extends TestCase
             siblingRegions: [],
             parentRegion: null,
             parentRegionName: null,
+            countries: [
+                ['country' => 'United Kingdom', 'numCampaigns' => 1],
+                ['country' => 'Yemen', 'numCampaigns' => 1],
+            ],
+            themes: [
+                ['theme' => 'Children', 'numCampaigns' => 1],
+                ['theme' => 'Minority ethnic', 'numCampaigns' => 1],
+            ],
         );
 
         $campaignRepositoryProphecy

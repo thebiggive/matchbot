@@ -546,6 +546,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @param QueryBuilder $qb Builder with its select etc. already set up.
      * @param array<string, string> $jsonMatchInListConditions
      * @param non-empty-list<string>|null $regions - list of ONS region codes. If provided only campaigns in matching regions will be returend.
+     * @param list<int>|null $knownTermMatchIds
      *
      * @return list<int>| null campaign IDs sorted by relavence if doing a full text search, otherwise null.
      */
@@ -559,6 +560,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $country,
         bool $forInternalUpdate,
         ?array $regions = null,
+        ?array $knownTermMatchIds = null,
     ): array|null {
         /** @psalm-suppress RedundantCondition */
         \assert($regions !== []);
@@ -612,44 +614,48 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $ids = null;
         if (is_string($term)) {
-            // we use the same regex in the database to define the generated columns Campaign.normalisedName and
-            // Charity.normalisedName
-            $termWithoutApostrophes = preg_replace("/['`‘’]+/u", '', $term);
+            if ($knownTermMatchIds !== null) {
+                $ids = $knownTermMatchIds;
+            } else {
+                // we use the same regex in the database to define the generated columns Campaign.normalisedName and
+                // Charity.normalisedName
+                $termWithoutApostrophes = preg_replace("/['`‘’]+/u", '', $term);
 
-            // MySQL FTS parser throws a syntax error if term has only asterisks.
-            // (They're also not wildcards with NATURAL LANGUAGE MODE.)
-            \assert($termWithoutApostrophes !== null);
-            $termWithoutApostrophes = str_replace('*', ' ', $termWithoutApostrophes);
+                // MySQL FTS parser throws a syntax error if term has only asterisks.
+                // (They're also not wildcards with NATURAL LANGUAGE MODE.)
+                \assert($termWithoutApostrophes !== null);
+                $termWithoutApostrophes = str_replace('*', ' ', $termWithoutApostrophes);
 
-            // searchable_text includes normalisedName, so the latter is useful to weigh separately but
-            // doesn't need to be in the WHERE.
-            /** @var list<int> $ids */
-            $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-                <<<'SQL'
-                WITH scored AS (
-                    SELECT Campaign.id,
-                           MATCH(Campaign.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 5 +
-                           MATCH(Charity.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 3 +
-                           MATCH(Campaign.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) +
-                           MATCH(Charity.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) AS score
-                    FROM Campaign
-                    LEFT JOIN Charity ON Campaign.charity_id = Charity.id
-                    WHERE MATCH(Campaign.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE)
-                       OR MATCH(Charity.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE)
-                ),
-                ranked AS (
-                    SELECT id, score, MAX(score) OVER () AS max_score
-                    FROM scored
-                )
-                SELECT id
-                FROM ranked
-                WHERE score >= max_score * 0.25
-                ORDER BY score DESC
-                SQL,
-                [
-                    'term_normalised' => $termWithoutApostrophes,
-                ]
-            );
+                // searchable_text includes normalisedName, so the latter is useful to weigh separately but
+                // doesn't need to be in the WHERE.
+                /** @var list<int> $ids */
+                $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+                    <<<'SQL'
+                    WITH scored AS (
+                        SELECT Campaign.id,
+                               MATCH(Campaign.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 5 +
+                               MATCH(Charity.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 3 +
+                               MATCH(Campaign.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) +
+                               MATCH(Charity.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) AS score
+                        FROM Campaign
+                        LEFT JOIN Charity ON Campaign.charity_id = Charity.id
+                        WHERE MATCH(Campaign.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE)
+                           OR MATCH(Charity.searchable_text) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE)
+                    ),
+                    ranked AS (
+                        SELECT id, score, MAX(score) OVER () AS max_score
+                        FROM scored
+                    )
+                    SELECT id
+                    FROM ranked
+                    WHERE score >= max_score * 0.25
+                    ORDER BY score DESC
+                    SQL,
+                    [
+                        'term_normalised' => $termWithoutApostrophes,
+                    ]
+                );
+            }
 
             $qb->andWhere('campaign.id IN (:ids)');
             $qb->setParameter('ids', $ids);
@@ -885,9 +891,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 term: $term,
                 country: null, // explicitly NOT filtering by country here because that would exclude
                 // the locations we're looking for, which are not UN-member countries but
-                               // places within the UK.
+                // places within the UK.
                 forInternalUpdate: $forInternalUpdate,
                 regions: null,
+                knownTermMatchIds: $idsOrderedByRelavence,
             );
 
             /** @var list<array{numCampaigns: int, regionCode: string}> $locationCounts */
@@ -907,6 +914,28 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $childCodes = null;
             $location = null;
         }
+
+        $countries = $this->getCountryCountsForSearch(
+            metaCampaignSlug: $metaCampaignSlug,
+            fundSlug: $fundSlug,
+            jsonMatchInListConditions: $jsonMatchInListConditions,
+            filterOutTargetMet: $filterOutTargetMet,
+            term: $term,
+            forInternalUpdate: $forInternalUpdate,
+            knownTermMatchIds: $idsOrderedByRelavence,
+        );
+
+        $themes = $this->getThemeCountsForSearch(
+            metaCampaignSlug: $metaCampaignSlug,
+            fundSlug: $fundSlug,
+            jsonMatchInListConditions: $jsonMatchInListConditions,
+            filterOutTargetMet: $filterOutTargetMet,
+            term: $term,
+            country: ($regions === null) ? $country : null,
+            forInternalUpdate: $forInternalUpdate,
+            regions: $regionsToFilterTo,
+            knownTermMatchIds: $idsOrderedByRelavence,
+        );
 
         $this->sortForSearch(
             qb: $qb,
@@ -934,7 +963,172 @@ class CampaignRepository extends SalesforceReadProxyRepository
             siblingRegions: $siblingRegions,
             parentRegion: $parentCode,
             parentRegionName: $parentRegionName,
+            countries: $countries,
+            themes: $themes,
         );
+    }
+
+    /**
+     * @param array<string, string> $jsonMatchInListConditions
+     * @param list<int>|null $knownTermMatchIds
+     * @return list<array{country: string, numCampaigns: int}>
+     */
+    private function getCountryCountsForSearch(
+        ?string $metaCampaignSlug,
+        ?string $fundSlug,
+        array $jsonMatchInListConditions,
+        bool $filterOutTargetMet,
+        ?string $term,
+        bool $forInternalUpdate,
+        ?array $knownTermMatchIds,
+    ): array {
+        $countryQb = $this->getEntityManager()->createQueryBuilder();
+        $countryQb->select('campaignLocation.countryName as country', 'COUNT(DISTINCT campaign.id) as numCampaigns')
+            ->from(CampaignLocation::class, 'campaignLocation')
+            ->join('campaignLocation.campaign', 'campaign')
+            ->join('campaign.charity', 'charity')
+            ->join('campaign.campaignStatistics', 'campaignStatistics')
+            ->leftJoin('campaign.campaignFundings', 'campaignFunding')
+            ->leftJoin('campaignFunding.fund', 'fund')
+            ->where($countryQb->expr()->isNotNull('campaignLocation.countryName'))
+            ->andWhere($countryQb->expr()->neq('campaignLocation.countryName', "''"))
+            ->groupBy('campaignLocation.countryName');
+
+        $this->filterForSearch(
+            qb: $countryQb,
+            metaCampaignSlug: $metaCampaignSlug,
+            fundSlug: $fundSlug,
+            jsonMatchInListConditions: $jsonMatchInListConditions,
+            filterOutTargetMet: $filterOutTargetMet,
+            term: $term,
+            country: null,
+            forInternalUpdate: $forInternalUpdate,
+            regions: null,
+            knownTermMatchIds: $knownTermMatchIds,
+        );
+
+        /** @var list<array{country: string, numCampaigns: int|string}> $countryResults */
+        $countryResults = $countryQb->getQuery()->getResult();
+
+        $countryCounts = [];
+        foreach ($countryResults as $row) {
+            $countryName = trim($row['country']);
+            if ($countryName === '') {
+                continue;
+            }
+            $countryCounts[$countryName] = ($countryCounts[$countryName] ?? 0) + (int) $row['numCampaigns'];
+        }
+
+        $countries = [];
+        foreach ($countryCounts as $country => $numCampaigns) {
+            $countries[] = [
+                'country' => $country,
+                'numCampaigns' => $numCampaigns,
+            ];
+        }
+
+        usort($countries, static function (array $a, array $b): int {
+            if ($b['numCampaigns'] !== $a['numCampaigns']) {
+                return $b['numCampaigns'] <=> $a['numCampaigns'];
+            }
+            return strcasecmp((string) $a['country'], (string) $b['country']);
+        });
+
+        return $countries;
+    }
+
+    /**
+     * @param array<string, string> $jsonMatchInListConditions
+     * @param non-empty-list<string>|null $regions
+     * @param list<int>|null $knownTermMatchIds
+     * @return list<array{theme: string, numCampaigns: int}>
+     *
+     * @psalm-suppress MixedAssignment
+     */
+    private function getThemeCountsForSearch(
+        ?string $metaCampaignSlug,
+        ?string $fundSlug,
+        array $jsonMatchInListConditions,
+        bool $filterOutTargetMet,
+        ?string $term,
+        ?string $country,
+        bool $forInternalUpdate,
+        ?array $regions,
+        ?array $knownTermMatchIds,
+    ): array {
+        $themeQb = $this->getEntityManager()->createQueryBuilder();
+        $themeQb->select('campaign.salesforceData')
+            ->from(Campaign::class, 'campaign')
+            ->join('campaign.charity', 'charity')
+            ->join('campaign.campaignStatistics', 'campaignStatistics')
+            ->leftJoin('campaign.campaignFundings', 'campaignFunding')
+            ->leftJoin('campaignFunding.fund', 'fund')
+            ->leftJoin('campaign.locations', 'campaignLocation')
+            ->leftJoin(UKLocationContainment::class, 'ukLocationContainment', Join::WITH, 'ukLocationContainment.regionCode = campaignLocation.regionCode')
+            ->groupBy('campaign.id');
+
+        // Remove any existing theme constraints (beneficiaries, categories)
+        $themeConditions = $jsonMatchInListConditions;
+        unset($themeConditions['beneficiaries'], $themeConditions['categories']);
+
+        $this->filterForSearch(
+            qb: $themeQb,
+            metaCampaignSlug: $metaCampaignSlug,
+            fundSlug: $fundSlug,
+            jsonMatchInListConditions: $themeConditions,
+            filterOutTargetMet: $filterOutTargetMet,
+            term: $term,
+            country: $country,
+            forInternalUpdate: $forInternalUpdate,
+            regions: $regions,
+            knownTermMatchIds: $knownTermMatchIds,
+        );
+
+        /** @var list<array{salesforceData: array<string, mixed>|string}> $themeResults */
+        $themeResults = $themeQb->getQuery()->getResult();
+
+        $themeCounts = [];
+        foreach ($themeResults as $row) {
+            $rawSfData = $row['salesforceData'];
+            /** @var array<string, mixed>|null $sfData */
+            $sfData = is_string($rawSfData) ? json_decode($rawSfData, true) : $rawSfData;
+            if (!is_array($sfData) || $sfData === []) {
+                continue;
+            }
+
+            $campaignThemes = [];
+            foreach (['beneficiaries', 'categories'] as $key) {
+                $values = $sfData[$key] ?? null;
+                if (is_array($values)) {
+                    foreach ($values as $theme) {
+                        if (is_string($theme) && trim($theme) !== '') {
+                            $campaignThemes[trim($theme)] = true;
+                        }
+                    }
+                }
+            }
+
+            foreach (array_keys($campaignThemes) as $theme) {
+                $themeCounts[$theme] = ($themeCounts[$theme] ?? 0) + 1;
+            }
+        }
+
+        $themes = [];
+        foreach ($themeCounts as $theme => $numCampaigns) {
+            $themes[] = [
+                'theme' => $theme,
+                'numCampaigns' => $numCampaigns,
+            ];
+        }
+
+        usort($themes, static function (array $a, array $b): int {
+            if ($b['numCampaigns'] !== $a['numCampaigns']) {
+                return $b['numCampaigns'] <=> $a['numCampaigns'];
+            }
+            return strcasecmp((string) $a['theme'], (string) $b['theme']);
+        });
+
+        return $themes;
     }
 
     public static function getRegulatorHMRCIdentifier(string $regulatorName): ?string
