@@ -103,7 +103,12 @@ class Fund extends SalesforceReadProxy
             throw new DisallowedFundTypeChange('Only supported type changes are for [Topup]Pledges');
         }
 
-        if ($newType === FundType::Pledge) { // From TopupPledge.
+        if ($newType === FundType::Pledge) {
+            Assertion::eq(
+                FundType::TopupPledge,
+                $this->fundType,
+                'Unexpected change from non-topupPledge to Pledge'
+            );
             $now = new \DateTimeImmutable('now');
             $cutoff = $now->add(new DateInterval('P7D'));
             $earliestStart = null;
