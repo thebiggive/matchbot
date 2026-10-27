@@ -111,18 +111,12 @@ class Fund extends SalesforceReadProxy
             );
             $now = new \DateTimeImmutable('now');
             $cutoff = $now->add(new DateInterval('P7D'));
-            $earliestStart = null;
             foreach ($this->getCampaignFundings() as $funding) {
                 foreach ($funding->getCampaigns() as $campaign) {
-                    $startDate = $campaign->getStartDate();
-                    if ($earliestStart === null || $startDate < $earliestStart) {
-                        $earliestStart = $startDate;
+                    if ($campaign->getStartDate() < $cutoff) {
+                        throw new DisallowedFundTypeChange('TopupPledge to Pledge type amendment not allowed this late');
                     }
                 }
-            }
-
-            if ($earliestStart !== null && $earliestStart < $cutoff) {
-                throw new DisallowedFundTypeChange('TopupPledge to Pledge type amendment not allowed this late');
             }
         }
 
