@@ -115,9 +115,15 @@ readonly class CampaignSearchResult
             $categories = $sfData['categories'];
             $campaignThemes = [];
             foreach ([...$beneficiaries, ...$categories] as $theme) {
-                if (trim($theme) !== '') {
-                    $campaignThemes[trim($theme)] = true;
+                if (trim($theme) === '') {
+                    continue;
                 }
+
+                if (\strtolower(trim($theme)) === 'other') {
+                    continue;
+                }
+
+                $campaignThemes[trim($theme)] = true;
             }
             foreach (array_keys($campaignThemes) as $theme) {
                 $counts[$theme] = ( $counts[$theme] ?? 0 ) + 1;
