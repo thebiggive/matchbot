@@ -47,7 +47,6 @@ class SitemapTest extends TestCase
             childRegions: [],
             siblingRegions: [],
             parentRegion: null,
-            parentRegionName: null,
         ));
 
         $metaCampaignRepositoryProphecy->allToIncludeInSitemap($now)->willReturn([

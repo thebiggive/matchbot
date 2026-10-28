@@ -15,6 +15,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityResponseToOffer;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\UKLocation;
 use MatchBot\Tests\TestCase;
 use Random\Randomizer;
 
@@ -135,22 +136,26 @@ class CampaignRepositoryTest extends IntegrationTest
         $this->assertCount(1, $campaigns);
         $this->assertSame('Campaign Two is for Porridge and Juice', $campaigns[0]->getCampaignName());
 
-        $this->assertEqualsCanonicalizing(
+        $locationCounts = $result->locationCounts;
+
+        \usort($locationCounts, fn(array $a, array $b) => ($a['regionCode'] <=> $b['regionCode']));
+
+        $this->assertEquals(
             [
-                ['regionCode' => 'E12000007', 'numCampaigns' => 1], // London
-                ['regionCode' => 'E12000008', 'numCampaigns' => 0], // South East England
-                ['regionCode' => 'E12000009', 'numCampaigns' => 0], // South West England
-                ['regionCode' => 'E12000002', 'numCampaigns' => 0], // North West England
-                ['regionCode' => 'E12000001', 'numCampaigns' => 0], // North East England
-                ['regionCode' => 'E12000003', 'numCampaigns' => 0], // Yorkshire and The Humber
-                ['regionCode' => 'E12000004', 'numCampaigns' => 0], // East Midlands
-                ['regionCode' => 'E12000005', 'numCampaigns' => 0], // West Midlands
-                ['regionCode' => 'E12000006', 'numCampaigns' => 0], // East of England
-                ['regionCode' => 'S92000003', 'numCampaigns' => 0], // Scotland
-                ['regionCode' => 'W92000004', 'numCampaigns' => 0], // Wales
-                ['regionCode' => 'N92000002', 'numCampaigns' => 0], // Northern Ireland
+                ['regionCode' => 'E12000001', 'numCampaigns' => 0, 'region' => UKLocation::findByCode('E12000001')],
+                ['regionCode' => 'E12000002', 'numCampaigns' => 0, 'region' => UKLocation::findByCode('E12000002')],
+                ['regionCode' => 'E12000003', 'numCampaigns' => 0, 'region' => UKLocation::findByCode('E12000003')],
+                ['regionCode' => 'E12000004', 'numCampaigns' => 0, 'region' => UKLocation::findByCode('E12000004')],
+                ['regionCode' => 'E12000005', 'numCampaigns' => 0, 'region' => UKLocation::findByCode('E12000005')],
+                ['regionCode' => 'E12000006', 'numCampaigns' => 0, 'region' => UKLocation::findByCode('E12000006')],
+                ['regionCode' => 'E12000007', 'numCampaigns' => 1, 'region' => UKLocation::findByCode('E12000007')],
+                ['regionCode' => 'E12000008', 'numCampaigns' => 0, 'region' => UKLocation::findByCode('E12000008')],
+                ['regionCode' => 'E12000009', 'numCampaigns' => 0, 'region' => UKLocation::findByCode('E12000009')],
+                ['regionCode' => 'N92000002', 'numCampaigns' => 0, 'region' => UKLocation::findByCode('N92000002')],
+                ['regionCode' => 'S92000003', 'numCampaigns' => 0, 'region' => UKLocation::findByCode('S92000003')],
+                ['regionCode' => 'W92000004', 'numCampaigns' => 0, 'region' => UKLocation::findByCode('W92000004')],
             ],
-            $result->locationCounts
+            $locationCounts
         );
     }
 

@@ -17,6 +17,7 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 use Symfony\Component\Clock\ClockInterface;
 
+use function array_map;
 use function is_string;
 use function trim;
 
@@ -912,7 +913,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $locationCounts = [];
             $siblingRegions = [];
             $childCodes = null;
-            $location = null;
         }
 
         $countries = $this->getCountryCountsForSearch(
@@ -952,17 +952,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
         /** @var list<Campaign> $result */
         $result = $query->getResult();
 
-        $parentRegionName = $parentRegion?->name;
-        $parentCode = $location?->parentCode;
-
         return new CampaignSearchResult(
             campaigns: $result,
-            locationCounts: $locationCounts,
-            ukFilterRegions: $regionsToFilterTo,
-            childRegions: $childCodes ?? [],
-            siblingRegions: $siblingRegions,
-            parentRegion: $parentCode,
-            parentRegionName: $parentRegionName,
+            locationCounts: array_map(fn(array $loc) => [...$loc, 'region' => UKLocation::findByCode($loc['regionCode'])], $locationCounts),
+            ukFilterRegions: $regionsToFilterTo !== null ? array_map(UKLocation::findByCode(...), $regionsToFilterTo) : null,
+            childRegions: array_map(UKLocation::findByCode(...), $childCodes ?? []),
+            siblingRegions: array_map(UKLocation::findByCode(...), $siblingRegions),
+            parentRegion: $parentRegion,
             countries: $countries,
             themes: $themes,
         );

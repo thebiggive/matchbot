@@ -41,7 +41,6 @@ class SearchTest extends TestCase
             childRegions: [],
             siblingRegions: [],
             parentRegion: null,
-            parentRegionName: null,
             countries: [
                 ['country' => 'United Kingdom', 'numCampaigns' => 1],
                 ['country' => 'Yemen', 'numCampaigns' => 1],
