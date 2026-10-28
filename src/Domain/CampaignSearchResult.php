@@ -49,7 +49,7 @@ readonly class CampaignSearchResult
     public function __construct(
         public array $campaigns,
         public array $locationCounts,
-        public ?array $ukFilterRegions, // here
+        public ?array $ukFilterRegions,
         public array $childRegions,
         public array $siblingRegions,
         public ?UKLocation $parentRegion,
