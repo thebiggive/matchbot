@@ -501,9 +501,6 @@ readonly class UKLocation implements \JsonSerializable
         return [
             'code' => $this->code,
             'name' => $this->name,
-            'parentCode' => $this->parentCode,
-            // todo - consider adding parent and sibling lists here too. Currently not needed as those are
-            // sent to FE separately, but might be possible to remove that and simplify.
         ];
     }
 }
