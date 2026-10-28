@@ -38,6 +38,9 @@ enum FundType: string
         return $order * 100;
     }
 
+    /**
+     * @returns bool Whether type is a pledge, including topup ones (used after champion funds).
+     */
     public function isPledge(): bool
     {
         return match ($this) {

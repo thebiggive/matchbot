@@ -32,7 +32,8 @@ class Search extends Action
         parent::__construct($logger);
     }
 
-    #[\Override] protected function action(Request $request, Response $response, array $args): Response
+    #[\Override]
+    protected function action(Request $request, Response $response, array $args): Response
     {
         $params = $request->getQueryParams();
         $sortField = $params['sortField'] ?? 'distanceToTarget';
@@ -106,12 +107,16 @@ class Search extends Action
         Assertion::string($sortField);
         Assertion::nullOrString($term);
 
-        if (! Environment::current()->isProduction() && is_string($term) && \str_contains($term, 'issue-warning-please')) {
+        if (
+            !Environment::current()->isProduction()
+            && is_string($term)
+            && \str_contains($term, 'issue-warning-please')
+        ) {
             // send a search query including issue-warning-please to see how we handle PHP warnings. You can include other
             // terms as well to make it match a campaign.
             \trigger_error(
                 message: 'Testing how we handle warnings, you asked to issue-warning-please',
-                error_level: \E_USER_WARNING
+                error_level: \E_USER_WARNING,
             );
         }
 
@@ -144,7 +149,7 @@ class Search extends Action
         Assertion::nullOrString($fundSlug);
 
         // Use limit 100 if a higher value requested.
-        $limit = min(100, (int) ($params['limit'] ?? 20));
+        $limit = min(100, (int) ( $params['limit'] ?? 20 ));
 
         /**
          * @psalm-suppress InvalidArgument (see below mago comment)
@@ -153,7 +158,7 @@ class Search extends Action
             $searchResult = $this->campaignRepository->search(
                 sortField: $sortField,
                 sortDirection: $sortDirection,
-                offset: (int)($params['offset'] ?? 0),
+                offset: (int) ( $params['offset'] ?? 0 ),
                 limit: $limit,
                 metaCampaignSlug: $parentSlug,
                 fundSlug: $fundSlug,
@@ -178,12 +183,17 @@ class Search extends Action
          * @var list<array<string, mixed>>
          */
         $campaignSummaries = \array_filter($searchResult->campaigns, static fn(Campaign $c) => !$c->isSfDataMissing())
-                |> \array_values(...)
-                |> (fn(array $campaignsWithSfData): array => \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData));
+            |> \array_values(...)
+            |> ( fn(array $campaignsWithSfData): array => \array_map(
+                $this->campaignService->renderCampaignSummary(...),
+                $campaignsWithSfData,
+            ) );
 
         return new JsonResponse(
             [
                 'campaignSummaries' => $campaignSummaries,
+                'countries' => $searchResult->countries,
+                'themes' => $searchResult->themes,
                 'locationCounts' => $searchResult->locationCounts,
                 'UKFilterRegions' => $searchResult->ukFilterRegions,
                 'childRegions' => $searchResult->childRegions,
@@ -192,7 +202,7 @@ class Search extends Action
                 'parentRegionName' => $searchResult->parentRegionName,
                 // may also need to give the parent region code and possibly name.
             ],
-            200
+            200,
         );
     }
 }
