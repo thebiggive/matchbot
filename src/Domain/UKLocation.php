@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-readonly class UKLocation
+readonly class UKLocation implements \JsonSerializable
 {
     /**
      * List of all regions within the UK that may be used for filtering and sorting our search results.
@@ -493,5 +493,17 @@ readonly class UKLocation
             fn(array $a) => self::findByCode($a[0]),
             self::LOCATIONS,
         );
+    }
+
+    #[\Override]
+    public function jsonSerialize(): mixed
+    {
+        return [
+            'code' => $this->code,
+            'name' => $this->name,
+            'parentCode' => $this->parentCode,
+            // todo - consider adding parent and sibling lists here too. Currently not needed as those are
+            // sent to FE separately, but might be possible to remove that and simplify.
+        ];
     }
 }

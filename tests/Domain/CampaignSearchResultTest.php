@@ -63,7 +63,6 @@ class CampaignSearchResultTest extends TestCase
             childRegions: [],
             siblingRegions: [],
             parentRegion: null,
-            parentRegionName: null,
         );
 
         // Expected countries:
@@ -110,7 +109,6 @@ class CampaignSearchResultTest extends TestCase
             childRegions: [],
             siblingRegions: [],
             parentRegion: null,
-            parentRegionName: null,
         );
 
         $this->assertSame([], $searchResult->countries);
@@ -129,7 +127,6 @@ class CampaignSearchResultTest extends TestCase
             childRegions: [],
             siblingRegions: [],
             parentRegion: null,
-            parentRegionName: null,
             countries: $customCountries,
             themes: $customThemes,
         );
