@@ -20,11 +20,8 @@ final class Version20261028103704 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        if (Environment::current() !== Environment::Regression) {
-            return;
-        }
-
-        $this->addSql("DELETE FROM Donation WHERE createdAt < '2026-10-27 01:00:00'");
+        // migration edited to be no-op - previously was only for regression environment but was to slow
+        // to run successfully.
     }
 
     public function down(Schema $schema): void
