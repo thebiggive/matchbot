@@ -29,6 +29,8 @@ use function trim;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
+    /** @var array<string, float> Start times as microtime floats for queries. */
+    private $timers = [];
     public const string REGION_CODE_ENGLAND = 'E92000001';
     private ClockInterface $clock;  // @phpstan-ignore property.uninitialized
     private string $statusAndFundingWhereClause = <<<DQL
@@ -629,6 +631,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
                 // searchable_text includes normalisedName, so the latter is useful to weigh separately but
                 // doesn't need to be in the WHERE.
+                $this->startTimer('search term score query');
                 /** @var list<int> $ids */
                 $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
                     <<<'SQL'
@@ -656,6 +659,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                         'term_normalised' => $termWithoutApostrophes,
                     ]
                 );
+                $this->stopTimer('search term score query');
             }
 
             $qb->andWhere('campaign.id IN (:ids)');
@@ -774,6 +778,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         bool $forInternalUpdate = false,
         bool $filterByRegions = false,
     ): CampaignSearchResult {
+        $this->startTimer('all search query prep and runs');
+
         $qb = $this->getEntityManager()->createQueryBuilder();
 
         $safeSortField = match ($sortField) {
@@ -833,7 +839,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
 
         if (($country === 'United Kingdom' || $regions !== null) && ! Environment::current()->isProduction()) {
-            $siblingRegions = [];
             if (is_array($regionsToFilterTo) && count($regionsToFilterTo) > 0) {
                 // smallest in $regionsToFilter should be the first one
                 $smallestRegion = $regionsToFilterTo[0];
@@ -872,8 +877,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
             $summaryRegionCodes = \array_values(\array_unique($summaryRegionCodes));
 
-            $lq2 = $this->getEntityManager()->createQueryBuilder();
-            $lq2->select('ukLocationContainment.ancestorRegionCode as regionCode', 'COUNT(DISTINCT campaign.id) as numCampaigns')
+            $lq = $this->getEntityManager()->createQueryBuilder();
+            $lq->select('ukLocationContainment.ancestorRegionCode as regionCode', 'COUNT(DISTINCT campaign.id) as numCampaigns')
                 ->from(CampaignLocation::class, 'campaignLocation')
                 ->join('campaignLocation.campaign', 'campaign')
                 ->join(UKLocationContainment::class, 'ukLocationContainment', Join::WITH, 'ukLocationContainment.regionCode = campaignLocation.regionCode')
@@ -884,7 +889,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 ->setParameter('regionCodes', $summaryRegionCodes);
 
             $this->filterForSearch(
-                $lq2,
+                $lq,
                 metaCampaignSlug: $metaCampaignSlug,
                 fundSlug: $fundSlug,
                 jsonMatchInListConditions: $jsonMatchInListConditions,
@@ -898,8 +903,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 knownTermMatchIds: $idsOrderedByRelavence,
             );
 
+            $this->startTimer('location count query');
             /** @var list<array{numCampaigns: int, regionCode: string}> $locationCounts */
-            $locationCounts = $lq2->getQuery()->getResult();
+            $locationCounts = $lq->getQuery()->getResult();
+            $this->stopTimer('location count query');
 
             foreach ($summaryRegionCodes as $code) {
                 if (! \array_any($locationCounts, fn(array $item): bool => $item['regionCode'] === $code)) {
@@ -915,6 +922,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $childCodes = null;
         }
 
+        $this->startTimer('getCountryCountsForSearch');
         $countries = $this->getCountryCountsForSearch(
             metaCampaignSlug: $metaCampaignSlug,
             fundSlug: $fundSlug,
@@ -924,7 +932,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
             forInternalUpdate: $forInternalUpdate,
             knownTermMatchIds: $idsOrderedByRelavence,
         );
+        $this->stopTimer('getCountryCountsForSearch');
 
+        $this->startTimer('getThemeCountsForSearch');
         $themes = $this->getThemeCountsForSearch(
             metaCampaignSlug: $metaCampaignSlug,
             fundSlug: $fundSlug,
@@ -936,6 +946,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regions: $regionsToFilterTo,
             knownTermMatchIds: $idsOrderedByRelavence,
         );
+        $this->stopTimer('getThemeCountsForSearch');
 
         $this->sortForSearch(
             qb: $qb,
@@ -949,8 +960,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $query = $qb->getQuery();
 
+        $this->startTimer('run main search query');
         /** @var list<Campaign> $result */
         $result = $query->getResult();
+        $this->stopTimer('run main search query');
+        $this->stopTimer('all search query prep and runs');
 
         return new CampaignSearchResult(
             campaigns: $result,
@@ -1208,5 +1222,20 @@ class CampaignRepository extends SalesforceReadProxyRepository
         assert($regions !== []);
 
         return $regions;
+    }
+
+    private function startTimer(string $name): void
+    {
+        $this->timers[$name] = microtime(as_float: true);
+    }
+
+    private function stopTimer(string $name): void
+    {
+        if (!isset($this->timers[$name])) {
+            return;
+        }
+
+        $elapsedSeconds = microtime(as_float: true) - $this->timers[$name];
+        $this->getLogger()->info(sprintf('timer: %s: %.4fs', $name, $elapsedSeconds));
     }
 }
