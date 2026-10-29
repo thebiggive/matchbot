@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
@@ -29,6 +30,9 @@ use function trim;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
+    private const int NEAR_REALTIME_RESULT_CACHE_SECONDS = 60;
+    private const int COUNTS_CACHE_SECONDS = 300;
+
     /** @var array<string, float> Start times as microtime floats for queries. */
     private $timers = [];
     public const string REGION_CODE_ENGLAND = 'E92000001';
@@ -629,12 +633,18 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 \assert($termWithoutApostrophes !== null);
                 $termWithoutApostrophes = str_replace('*', ' ', $termWithoutApostrophes);
 
+                // Not a count query technically, but scores for a given term change rarely compared to main
+                // results and can be relatively heavy, so using the longer lifetime makes the most sense.
+                $cacheProfile = new QueryCacheProfile(
+                    lifetime: self::COUNTS_CACHE_SECONDS,
+                    cacheKey: 'campaign_term_score_' . md5($termWithoutApostrophes),
+                );
                 // searchable_text includes normalisedName, so the latter is useful to weigh separately but
                 // doesn't need to be in the WHERE.
                 $this->startTimer('search term score query');
                 /** @var list<int> $ids */
-                $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-                    <<<'SQL'
+                $ids = $this->getEntityManager()->getConnection()->executeCacheQuery(
+                    sql: <<<'SQL'
                     WITH scored AS (
                         SELECT Campaign.id,
                                MATCH(Campaign.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 5 +
@@ -655,10 +665,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
                     WHERE score >= max_score * 0.25
                     ORDER BY score DESC
                     SQL,
-                    [
+                    params: [
                         'term_normalised' => $termWithoutApostrophes,
-                    ]
-                );
+                    ],
+                    types: [], // default string is fine
+                    qcp: $cacheProfile,
+                )->fetchFirstColumn();
                 $this->stopTimer('search term score query');
             }
 
@@ -904,8 +916,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
             );
 
             $this->startTimer('location count query');
+            $lqQuery = $lq->getQuery();
+            if (!$forInternalUpdate) {
+                $lqQuery->enableResultCache(lifetime: self::COUNTS_CACHE_SECONDS);
+            }
             /** @var list<array{numCampaigns: int, regionCode: string}> $locationCounts */
-            $locationCounts = $lq->getQuery()->getResult();
+            $locationCounts = $lqQuery->getResult();
             $this->stopTimer('location count query');
 
             foreach ($summaryRegionCodes as $code) {
@@ -959,6 +975,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
 
         $query = $qb->getQuery();
+        if (!$forInternalUpdate) {
+            $query->enableResultCache(lifetime: self::NEAR_REALTIME_RESULT_CACHE_SECONDS);
+        }
 
         $this->startTimer('run main search query');
         /** @var list<Campaign> $result */
@@ -1016,8 +1035,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
             knownTermMatchIds: $knownTermMatchIds,
         );
 
+        $countryQuery = $countryQb->getQuery();
+        if (!$forInternalUpdate) {
+            $countryQuery->enableResultCache(lifetime: self::COUNTS_CACHE_SECONDS);
+        }
         /** @var list<array{country: string, numCampaigns: int|string}> $countryResults */
-        $countryResults = $countryQb->getQuery()->getResult();
+        $countryResults = $countryQuery->getResult();
 
         $countryCounts = [];
         foreach ($countryResults as $row) {
@@ -1093,8 +1116,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
             knownTermMatchIds: $knownTermMatchIds,
         );
 
+        $themeQuery = $themeQb->getQuery();
+        if (!$forInternalUpdate) {
+            $themeQuery->enableResultCache(lifetime: self::COUNTS_CACHE_SECONDS);
+        }
         /** @var list<array{salesforceData: array<string, mixed>|string}> $themeResults */
-        $themeResults = $themeQb->getQuery()->getResult();
+        $themeResults = $themeQuery->getResult();
 
         $themeCounts = [];
         foreach ($themeResults as $row) {

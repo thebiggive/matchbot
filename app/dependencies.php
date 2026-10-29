@@ -74,6 +74,7 @@ use Slim\Psr7\Factory\ResponseFactory;
 use Stripe\Stripe;
 use Stripe\StripeClient;
 use Stripe\Util\ApiVersion;
+use Symfony\Component\Cache\Adapter\AdapterInterface as CacheAdapterInterface;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter as RedisCacheAdapter;
 use Symfony\Component\Cache\Psr16Cache;
@@ -141,6 +142,39 @@ return function (ContainerBuilder $containerBuilder) {
                 'matchbot-cache',
                 3600, // Allow Auto-clearing cache/rate limit data after an hour.
             );
+        },
+
+        // Used by Doctrine; both ORM (various caches) and DBAL (result cache) configs.
+        CacheAdapterInterface::class => function (ContainerInterface $c): CacheAdapterInterface {
+            $settings = $c->get(Settings::class);
+            $commitId = $c->get('commit-id');
+            \assert(is_string($commitId));
+
+            // Must be a distinct instance from the one used for fund allocation maths, as Doctrine's PHP serialisation
+            // is incompatible with that needed for Redis commands that modify integer values in place. This injected
+            // Configuration is never re-created even when the EntityManager is, so for now we can safely do this here
+            // on construct.
+            $redis = new Redis();
+            try {
+                $redis->connect($settings->redis['host']);
+                return new RedisCacheAdapter(
+                    redis: $redis,
+                    namespace: "matchbot-{$settings->appEnv}-{$commitId}"
+                );
+            } catch (RedisException $exception) {
+                // This essentially means Doctrine is not using a cache. `/ping` should fail separately based on
+                // Redis being down whenever this happens, so we should find out without relying on this warning log.
+                $logger = $c->get(LoggerInterface::class);
+                $logger->warning(
+                    'Doctrine falling back to array cache - Redis host ' . $c->get(Settings::class)->redis['host']
+                );
+                $logger->error(sprintf(
+                    'Doctrine bootstrap error %s: %s',
+                    get_class($exception),
+                    $exception->getMessage(),
+                ));
+                return new ArrayAdapter();
+            }
         },
 
         SymfonyCacheInterface::class => function (ContainerInterface $c): SymfonyCacheInterface {
@@ -304,7 +338,6 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Logger::class => function (ContainerInterface $c): Logger {
-
             $commitId = $c->get('commit-id');
             \assert(is_string($commitId));
 
@@ -484,35 +517,7 @@ return function (ContainerBuilder $containerBuilder) {
 
         ORM\Configuration::class => static function (ContainerInterface $c): ORM\Configuration {
             $settings = $c->get(Settings::class);
-            $commitId = $c->get('commit-id');
-            \assert(is_string($commitId));
-
-            // Must be a distinct instance from the one used for fund allocation maths, as Doctrine's PHP serialisation
-            // is incompatible with that needed for Redis commands that modify integer values in place. This injected
-            // Configuration is never re-created even when the EntityManager is, so for now we can safely do this here
-            // on construct.
-            $redis = new Redis();
-            try {
-                $redis->connect($settings->redis['host']);
-                $cacheAdapter = new RedisCacheAdapter(
-                    redis: $redis,
-                    namespace: "matchbot-{$settings->appEnv}-{$commitId}"
-                );
-            } catch (RedisException $exception) {
-                // This essentially means Doctrine is not using a cache. `/ping` should fail separately based on
-                // Redis being down whenever this happens, so we should find out without relying on this warning log.
-                $logger = $c->get(LoggerInterface::class);
-                $logger->warning(
-                    'Doctrine falling back to array cache - Redis host ' . $c->get(Settings::class)->redis['host']
-                );
-                $logger->error(sprintf(
-                    'Doctrine bootstrap error %s: %s',
-                    get_class($exception),
-                    $exception->getMessage(),
-                ));
-                $cacheAdapter = new ArrayAdapter();
-            }
-
+            $cacheAdapter = $c->get(CacheAdapterInterface::class);
             $config = ORM\ORMSetup::createAttributeMetadataConfiguration(
                 paths: $settings->doctrine['metadata_dirs'],
                 isDevMode: $settings->doctrine['dev_mode'],
@@ -550,6 +555,8 @@ return function (ContainerBuilder $containerBuilder) {
             });
 
             $config->setMetadataCache($cacheAdapter);
+            // This makes the adapter *available*. Queries must still opt in for any results to be cached.
+            $config->setResultCache($cacheAdapter);
 
             return $config;
         },
@@ -617,6 +624,7 @@ return function (ContainerBuilder $containerBuilder) {
                 }
             });
 
+            $dbalConfig->setResultCache($c->get(CacheAdapterInterface::class));
 
             $connection = DBALDriverManager::getConnection(
                 // @phpstan-ignore argument.type (DBAL docblock doesn't explicitly allow the platform key but it works for now)
