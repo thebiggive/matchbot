@@ -4,7 +4,7 @@ namespace MatchBot\IntegrationTests;
 
 use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\CancelStaleDonationFundTips;
-use MatchBot\Application\Commands\DeleteOldTestFunds;
+use MatchBot\Application\Commands\DeleteOldTestData;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\ExpirePendingMandates;
 use MatchBot\Application\Commands\SendStatistics;
@@ -69,7 +69,7 @@ class RunConsoleCommandTest extends IntegrationTest
 
         $commands = [
             $this->getService(SendStatistics::class),
-            $this->getService(DeleteOldTestFunds::class),
+            $this->getService(DeleteOldTestData::class),
             $this->getService(ExpireMatchFunds::class),
             $this->getService(CancelStaleDonationFundTips::class),
             $this->getService(ExpirePendingMandates::class),

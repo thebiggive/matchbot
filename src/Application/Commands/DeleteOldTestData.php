@@ -11,9 +11,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'matchbot:delete-old-test-funds',
-    description: 'In regression environment only, removes Funds & associated data older than 1st of last month'
+    description: 'In regression environment only, removes Funds & associated data older than 1st of last month, and old donations'
 )]
-class DeleteOldTestFunds extends LockingCommand
+class DeleteOldTestData extends LockingCommand
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
@@ -41,6 +41,12 @@ class DeleteOldTestFunds extends LockingCommand
 
         $this->entityManager->flush();
         $output->writeln(sprintf('Deleted %d old test pledges', count($pledges)));
+
+
+        // should just need to be run this week while we have extra donations here that don't match SF.
+        $this->entityManager->getConnection()->executeQuery(
+            "DELETE FROM Donation WHERE createdAt < '2026-10-27 01:00:00' LIMIT 2000"
+        );
 
         return 0;
     }

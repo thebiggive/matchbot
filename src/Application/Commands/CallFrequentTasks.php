@@ -28,7 +28,7 @@ class CallFrequentTasks extends LockingCommand
         ExpirePendingMandates $expirePendingMandates,
         CancelStaleDonationFundTips $cancelStaleDonationFundTips,
         UpdateCampaignDonationStats $updateCampaignDonationStats,
-        DeleteOldTestFunds $deleteOldTestFunds,
+        DeleteOldTestData $deleteOldTestFunds,
         UpdateApproxCampaignStatus $updateApproxCampaignStatus,
     ) {
         parent::__construct();
