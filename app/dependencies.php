@@ -550,6 +550,8 @@ return function (ContainerBuilder $containerBuilder) {
             });
 
             $config->setMetadataCache($cacheAdapter);
+            // This makes the adapter *available*. Queries must still opt in for any results to be cached.
+            $config->setResultCache($cacheAdapter);
 
             return $config;
         },

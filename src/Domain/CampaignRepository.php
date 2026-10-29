@@ -29,6 +29,9 @@ use function trim;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
+    private const int NEAR_REALTIME_RESULT_CACHE_SECONDS = 60;
+    private const int COUNTS_CACHE_SECONDS = 300;
+
     /** @var array<string, float> Start times as microtime floats for queries. */
     private $timers = [];
     public const string REGION_CODE_ENGLAND = 'E92000001';
@@ -904,8 +907,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
             );
 
             $this->startTimer('location count query');
+            $lqQuery = $lq->getQuery();
+            if (!$forInternalUpdate) {
+                $lqQuery->enableResultCache(lifetime: self::COUNTS_CACHE_SECONDS);
+            }
             /** @var list<array{numCampaigns: int, regionCode: string}> $locationCounts */
-            $locationCounts = $lq->getQuery()->getResult();
+            $locationCounts = $lqQuery->getResult();
             $this->stopTimer('location count query');
 
             foreach ($summaryRegionCodes as $code) {
@@ -959,6 +966,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
 
         $query = $qb->getQuery();
+        if (!$forInternalUpdate) {
+            $query->enableResultCache(lifetime: self::NEAR_REALTIME_RESULT_CACHE_SECONDS);
+        }
 
         $this->startTimer('run main search query');
         /** @var list<Campaign> $result */
@@ -1016,8 +1026,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
             knownTermMatchIds: $knownTermMatchIds,
         );
 
+        $countryQuery = $countryQb->getQuery();
+        if (!$forInternalUpdate) {
+            $countryQuery->enableResultCache(lifetime: self::COUNTS_CACHE_SECONDS);
+        }
         /** @var list<array{country: string, numCampaigns: int|string}> $countryResults */
-        $countryResults = $countryQb->getQuery()->getResult();
+        $countryResults = $countryQuery->getResult();
 
         $countryCounts = [];
         foreach ($countryResults as $row) {
@@ -1093,8 +1107,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
             knownTermMatchIds: $knownTermMatchIds,
         );
 
+        $themeQuery = $themeQb->getQuery();
+        if (!$forInternalUpdate) {
+            $themeQuery->enableResultCache(lifetime: self::COUNTS_CACHE_SECONDS);
+        }
         /** @var list<array{salesforceData: array<string, mixed>|string}> $themeResults */
-        $themeResults = $themeQb->getQuery()->getResult();
+        $themeResults = $themeQuery->getResult();
 
         $themeCounts = [];
         foreach ($themeResults as $row) {
