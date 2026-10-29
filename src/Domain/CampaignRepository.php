@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Exception\ClientException;
@@ -632,12 +633,18 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 \assert($termWithoutApostrophes !== null);
                 $termWithoutApostrophes = str_replace('*', ' ', $termWithoutApostrophes);
 
+                // Not a count query technically, but scores for a given term change rarely compared to main
+                // results and can be relatively heavy, so using the longer lifetime makes the most sense.
+                $cacheProfile = new QueryCacheProfile(
+                    lifetime: self::COUNTS_CACHE_SECONDS,
+                    cacheKey: 'campaign_term_score_' . md5($termWithoutApostrophes),
+                );
                 // searchable_text includes normalisedName, so the latter is useful to weigh separately but
                 // doesn't need to be in the WHERE.
                 $this->startTimer('search term score query');
                 /** @var list<int> $ids */
-                $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-                    <<<'SQL'
+                $ids = $this->getEntityManager()->getConnection()->executeCacheQuery(
+                    sql: <<<'SQL'
                     WITH scored AS (
                         SELECT Campaign.id,
                                MATCH(Campaign.normalisedName) AGAINST(:term_normalised IN NATURAL LANGUAGE MODE) * 5 +
@@ -658,10 +665,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
                     WHERE score >= max_score * 0.25
                     ORDER BY score DESC
                     SQL,
-                    [
+                    params: [
                         'term_normalised' => $termWithoutApostrophes,
-                    ]
-                );
+                    ],
+                    types: [], // default string is fine
+                    qcp: $cacheProfile,
+                )->fetchFirstColumn();
                 $this->stopTimer('search term score query');
             }
 
