@@ -37,14 +37,11 @@ abstract class LockingCommand extends Command
         if ($this->getLock()) {
             try {
                 $return = $this->doExecute($input, $output);
-            } catch (\Throwable $exception) {
-                // Still release lock before exit if e.g. an assertion failed.
+            } finally {
+                // Release lock before exit even if e.g. an assertion failed. We don't catch anything so we
+                // can see the error details.
                 $this->releaseLock();
-
-                $exceptionCode = $exception->getCode();
-                return is_int($exceptionCode) ? $exceptionCode : 999;
             }
-            $this->releaseLock();
         } else {
             $message = $this->getName() ?? self::class . ' did nothing as another instance had the lock.';
             $output->writeln($message);

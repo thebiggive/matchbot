@@ -45,6 +45,13 @@ class DeleteOldTestData extends LockingCommand
 
         // should just need to be run this week while we have extra donations here that don't match SF.
         $this->entityManager->getConnection()->executeQuery(
+            <<<SQL
+                DELETE fw FROM FundingWithdrawal fw
+                JOIN Donation d ON fw.donation_id = d.id
+                WHERE d.createdAt < '2026-10-27 01:00:00';
+            SQL
+        );
+        $this->entityManager->getConnection()->executeQuery(
             "DELETE FROM Donation WHERE createdAt < '2026-10-27 01:00:00' LIMIT 2000"
         );
 
