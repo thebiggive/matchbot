@@ -46,7 +46,7 @@ jobs:
         auth:
           username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_ACCESS_TOKEN
-        command: ["--ngram_token_size=3", "--innodb_ft_enable_stopword=OFF"]
+        command: ["--ngram_token_size=3", "--innodb_ft_enable_stopword=OFF", "--innodb-buffer-pool-size=256M", "--performance-schema=OFF"]
         environment:
           MYSQL_DATABASE: matchbot
           MYSQL_ROOT_PASSWORD: tbgCircle123
@@ -136,7 +136,7 @@ jobs:
         auth:
           username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_ACCESS_TOKEN
-        command: ["--ngram_token_size=3", "--innodb_ft_enable_stopword=OFF"]
+        command: ["--ngram_token_size=3", "--innodb_ft_enable_stopword=OFF", "--innodb-buffer-pool-size=256M", "--performance-schema=OFF"]
         environment:
           MYSQL_DATABASE: matchbot
           MYSQL_ROOT_PASSWORD: tbgCircle123
