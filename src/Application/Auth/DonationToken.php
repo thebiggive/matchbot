@@ -6,7 +6,6 @@ namespace MatchBot\Application\Auth;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use JetBrains\PhpStorm\Pure;
 use Psr\Log\LoggerInterface;
 
 final class DonationToken
@@ -80,7 +79,6 @@ final class DonationToken
         return true;
     }
 
-    #[Pure]
     private static function getSecret(): string
     {
         $secret = getenv('JWT_DONATION_SECRET');

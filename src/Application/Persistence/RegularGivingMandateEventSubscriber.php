@@ -16,6 +16,9 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 
+/**
+ * @psalm-suppress UnusedClass
+ */
 class RegularGivingMandateEventSubscriber implements EventSubscriber
 {
     private ?RoutableMessageBus $bus = null;
@@ -31,6 +34,9 @@ class RegularGivingMandateEventSubscriber implements EventSubscriber
     {
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - called by Doctrine ORM
+     */
     #[\Override]
     public function getSubscribedEvents()
     {
@@ -56,7 +62,7 @@ class RegularGivingMandateEventSubscriber implements EventSubscriber
         $this->handlePostPersistOrUpdate($args);
     }
 
-    public function handlePostPersistOrUpdate(PostPersistEventArgs|PostUpdateEventArgs $args): void
+    private function handlePostPersistOrUpdate(PostPersistEventArgs|PostUpdateEventArgs $args): void
     {
         $this->donorRepository ??= $this->container->get(DonorAccountRepository::class);
         $this->bus ??= $this->container->get(RoutableMessageBus::class);

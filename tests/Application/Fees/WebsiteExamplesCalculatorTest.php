@@ -15,8 +15,6 @@ use PrinsFrank\Standards\Country\CountryAlpha2;
  * using examples from draft new version of that page.
  *
  * Some Psalm issues are suppressed here to make avoid verbosity and hopefully make the worked examples easy to edit.
- *
- * @psalm-suppress MixedReturnStatement
  */
 class WebsiteExamplesCalculatorTest extends TestCase
 {

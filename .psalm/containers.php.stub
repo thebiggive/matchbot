@@ -30,11 +30,6 @@ namespace DI {
     // but those are not used in our code so not represented in stub. For PHPStan if we want to include those interfaces
     // in stub we have to copy them into the stub.
     {
-        /**
-         * @template T
-         * @psalm-param string|class-string<T> $name
-         * @psalm-param ($name is class-string ? T : mixed) $value
-         */
         public function set(string $name, mixed $value): void;
 
         /** @param string|class-string $name */

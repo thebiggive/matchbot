@@ -1,15 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files psalm-version="6.16.1@f1f5de594dc76faf8784e02d3dc4716c91c6f6ac">
+<files psalm-version="7.0.0@618ca49c75d3fd828e58ee76f166329bb56794e7">
   <file src="app/dependencies.php">
+    <ImplementedParamTypeMismatch>
+      <code><![CDATA[$record]]></code>
+    </ImplementedParamTypeMismatch>
     <InvalidArgument>
       <code><![CDATA[$c->get(Settings::class)->doctrine['connection'] +
                 [
                     'platform' => new \MatchBot\Application\CustomMysqlPlatform(),
                 ]]]></code>
     </InvalidArgument>
+    <InvalidArrayAssignment>
+      <code><![CDATA[$record['extra']]]></code>
+    </InvalidArrayAssignment>
     <InvalidPropertyAssignmentValue>
       <code><![CDATA[$c->get(Settings::class)->doctrine]]></code>
     </InvalidPropertyAssignmentValue>
+    <InvalidReturnStatement>
+      <code><![CDATA[$record]]></code>
+    </InvalidReturnStatement>
+    <InvalidReturnType>
+      <code><![CDATA[array]]></code>
+    </InvalidReturnType>
+    <MixedArrayAssignment>
+      <code><![CDATA[$record['extra']['commit']]]></code>
+    </MixedArrayAssignment>
     <PossiblyNullArgument>
       <code><![CDATA[$settings->ryft['publicKey']]]></code>
       <code><![CDATA[$settings->ryft['secretKey']]]></code>
@@ -18,11 +33,6 @@
       <code><![CDATA[$settings->ryft['publicKey']]]></code>
       <code><![CDATA[$settings->ryft['secretKey']]]></code>
     </PossiblyUndefinedArrayOffset>
-  </file>
-  <file src="integrationTests/AcceptCampaignPushFromSFTest.php">
-    <InvalidArgument>
-      <code><![CDATA[$campaignData['campaigns'][0]]]></code>
-    </InvalidArgument>
   </file>
   <file src="integrationTests/AllocatorTest.php">
     <InternalMethod>
@@ -39,32 +49,197 @@
       <code><![CDATA[randomCampaignId]]></code>
     </PossiblyUnusedMethod>
   </file>
+  <file src="integrationTests/IntegrationTest.php">
+    <TaintedSql>
+      <code><![CDATA[<<<EOF
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                                 psp,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
+                                 salesforceData)
+            VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    'stripe',
+                    null, 0, 0, null, null, '{}')
+            EOF]]></code>
+      <code><![CDATA[<<<EOF
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                                 psp,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
+                                 salesforceData)
+            VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    'stripe',
+                    null, 0, 0, null, null, '{}')
+            EOF]]></code>
+      <code><![CDATA[<<<EOF
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                                 psp,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
+                                 salesforceData)
+            VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    'stripe',
+                    null, 0, 0, null, null, '{}')
+            EOF]]></code>
+      <code><![CDATA[<<<EOF
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                                 psp,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
+                                 salesforceData)
+            VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    'stripe',
+                    null, 0, 0, null, null, '{}')
+            EOF]]></code>
+      <code><![CDATA[<<<EOF
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                                 psp,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
+                                 salesforceData)
+            VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    'stripe',
+                    null, 0, 0, null, null, '{}')
+            EOF]]></code>
+      <code><![CDATA[<<<EOF
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                                 psp,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
+                                 salesforceData)
+            VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    'stripe',
+                    null, 0, 0, null, null, '{}')
+            EOF]]></code>
+      <code><![CDATA[<<<EOF
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                                 psp,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
+                                 salesforceData)
+            VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    'stripe',
+                    null, 0, 0, null, null, '{}')
+            EOF]]></code>
+      <code><![CDATA[<<<EOF
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                                 psp,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
+                                 salesforceData)
+            VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    'stripe',
+                    null, 0, 0, null, null, '{}')
+            EOF]]></code>
+      <code><![CDATA[<<<EOF
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                                 psp,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
+                                 salesforceData)
+            VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    'stripe',
+                    null, 0, 0, null, null, '{}')
+            EOF]]></code>
+      <code><![CDATA[<<<EOF
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                                 psp,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
+                                 salesforceData)
+            VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    'stripe',
+                    null, 0, 0, null, null, '{}')
+            EOF]]></code>
+      <code><![CDATA[<<<EOF
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                                 psp,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
+                                 salesforceData)
+            VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    'stripe',
+                    null, 0, 0, null, null, '{}')
+            EOF]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Campaign (charity_id, name, summary, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
+                                  createdAt, updatedAt, isPublished, currencyCode, isRegularGiving, salesforceData,
+                                  total_fundraising_target_amountInPence, total_fundraising_target_currency, metaCampaignSlug
+                                  )
+            VALUES ('$charityId', 'some charity', 'campaign summary', '$nyd', '$closeDate', '$matched', '$campaignSfId',
+                    '$nyd', '$nyd', '$nyd', true, 'GBP',  '$isRegularGivingInt', '{}', 0, 'GBP', $slug)
+            SQL]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Campaign (charity_id, name, summary, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
+                                  createdAt, updatedAt, isPublished, currencyCode, isRegularGiving, salesforceData,
+                                  total_fundraising_target_amountInPence, total_fundraising_target_currency, metaCampaignSlug
+                                  )
+            VALUES ('$charityId', 'some charity', 'campaign summary', '$nyd', '$closeDate', '$matched', '$campaignSfId',
+                    '$nyd', '$nyd', '$nyd', true, 'GBP',  '$isRegularGivingInt', '{}', 0, 'GBP', $slug)
+            SQL]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Campaign (charity_id, name, summary, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
+                                  createdAt, updatedAt, isPublished, currencyCode, isRegularGiving, salesforceData,
+                                  total_fundraising_target_amountInPence, total_fundraising_target_currency, metaCampaignSlug
+                                  )
+            VALUES ('$charityId', 'some charity', 'campaign summary', '$nyd', '$closeDate', '$matched', '$campaignSfId',
+                    '$nyd', '$nyd', '$nyd', true, 'GBP',  '$isRegularGivingInt', '{}', 0, 'GBP', $slug)
+            SQL]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+                              currencyCode, allocationOrder) VALUES 
+                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
+                 'GBP', {$fundType->allocationOrder()})
+        SQL]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+                              currencyCode, allocationOrder) VALUES 
+                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
+                 'GBP', {$fundType->allocationOrder()})
+        SQL]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+                              currencyCode, allocationOrder) VALUES 
+                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
+                 'GBP', {$fundType->allocationOrder()})
+        SQL]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+                              currencyCode, allocationOrder) VALUES 
+                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
+                 'GBP', {$fundType->allocationOrder()})
+        SQL]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+                              currencyCode, allocationOrder) VALUES 
+                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
+                 'GBP', {$fundType->allocationOrder()})
+        SQL]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+                              currencyCode, allocationOrder) VALUES 
+                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
+                 'GBP', {$fundType->allocationOrder()})
+        SQL]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+                              currencyCode, allocationOrder) VALUES 
+                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
+                 'GBP', {$fundType->allocationOrder()})
+        SQL]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+                              currencyCode, allocationOrder) VALUES 
+                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
+                 'GBP', {$fundType->allocationOrder()})
+        SQL]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+                              currencyCode, allocationOrder) VALUES 
+                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
+                 'GBP', {$fundType->allocationOrder()})
+        SQL]]></code>
+      <code><![CDATA[<<<SQL
+            INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+                              currencyCode, allocationOrder) VALUES 
+                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
+                 'GBP', {$fundType->allocationOrder()})
+        SQL]]></code>
+    </TaintedSql>
+  </file>
   <file src="integrationTests/RetrospectivelyMatchCommandTest.php">
     <UnusedVariable>
       <code><![CDATA[$matchFundsRedistributor]]></code>
     </UnusedVariable>
-  </file>
-  <file src="src/Application/Actions/Campaigns/Get.php">
-    <MixedArgument>
-      <code><![CDATA[$campaign]]></code>
-      <code><![CDATA[$slug]]></code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code><![CDATA[$campaign]]></code>
-      <code><![CDATA[$slug]]></code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code><![CDATA[getMetaCampaignSlug]]></code>
-      <code><![CDATA[isSfDataMissing]]></code>
-    </MixedMethodCall>
-  </file>
-  <file src="src/Application/Actions/Campaigns/Search.php">
-    <MixedReturnStatement>
-      <code><![CDATA[\array_filter($campaigns, static fn(Campaign $c) => ! $c->isSfDataMissing())
-            |> \array_values(...)
-            |> (fn(array $campaignsWithSfData) => \array_map($this->campaignService->renderCampaignSummary(...), $campaignsWithSfData))
-            |> (fn(array $campaignSummaries) => new JsonResponse(['campaignSummaries' => $campaignSummaries], 200))]]></code>
-    </MixedReturnStatement>
   </file>
   <file src="src/Application/Actions/Charities/Put.php">
     <PossiblyInvalidArgument>
@@ -95,26 +270,14 @@
       <code><![CDATA[$paymentIntentId]]></code>
       <code><![CDATA[$paymentIntentId]]></code>
     </PossiblyNullArgument>
-    <PossiblyNullPropertyFetch>
-      <code><![CDATA[$updatedIntent->client_secret]]></code>
-    </PossiblyNullPropertyFetch>
   </file>
   <file src="src/Application/Actions/Donations/Explain.php">
-    <InvalidOperand>
-      <code><![CDATA[$key]]></code>
-    </InvalidOperand>
     <MissingClosureParamType>
       <code><![CDATA[$d]]></code>
       <code><![CDATA[$d]]></code>
       <code><![CDATA[$d]]></code>
       <code><![CDATA[$value]]></code>
     </MissingClosureParamType>
-    <MissingClosureReturnType>
-      <code><![CDATA[fn($d) => \array_filter($d, fn(string $key) => \in_array($key, $relevantFields, true), \ARRAY_FILTER_USE_KEY)]]></code>
-      <code><![CDATA[fn($d) => \array_map(function ($key, $value) use (&$i) {]]></code>
-      <code><![CDATA[fn(array $donations) => \array_map($this->renderOtherDonation(...), $donations)]]></code>
-      <code><![CDATA[fn(array $withdrawals) => \array_map($this->renderFundingWithdrawal(...), $withdrawals)]]></code>
-    </MissingClosureReturnType>
     <MixedArgument>
       <code><![CDATA[$d]]></code>
       <code><![CDATA[$d]]></code>
@@ -126,14 +289,6 @@
       <code><![CDATA[$d]]></code>
       <code><![CDATA[fn(string $key) => \in_array($key, $relevantFields, true)]]></code>
     </MixedArgumentTypeCoercion>
-    <MixedAssignment>
-      <code><![CDATA[$competingDonationText]]></code>
-      <code><![CDATA[$fundingWithdrawalText]]></code>
-    </MixedAssignment>
-    <MixedOperand>
-      <code><![CDATA[$competingDonations === [] ? 'None' : $competingDonationText]]></code>
-      <code><![CDATA[$fundingWithdrawals === []  ? 'None' : $fundingWithdrawalText]]></code>
-    </MixedOperand>
     <PossiblyFalseArgument>
       <code><![CDATA[$value]]></code>
     </PossiblyFalseArgument>
@@ -156,6 +311,17 @@
       <code><![CDATA[$enableNoReservationsMode]]></code>
     </UnusedProperty>
   </file>
+  <file src="src/Application/Actions/Donations/Update.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[(string) $donationData->donationAmount]]></code>
+    </ArgumentTypeCoercion>
+  </file>
+  <file src="src/Application/Commands/Command.php">
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$commands]]></code>
+      <code><![CDATA[list<\Symfony\Component\Console\Command\Command>]]></code>
+    </MixedReturnTypeCoercion>
+  </file>
   <file src="src/Application/Commands/CreateFictionalData.php">
     <MixedArrayAccess>
       <code><![CDATA[$ryftData['id']]]></code>
@@ -171,6 +337,9 @@
     </PossiblyUndefinedArrayOffset>
   </file>
   <file src="src/Application/Commands/SetupTestMandate.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[(string)($mandate->getDonationAmount()->amountInPence() / 100)]]></code>
+    </ArgumentTypeCoercion>
     <RedundantConditionGivenDocblockType>
       <code><![CDATA[\assert($campaign instanceof Campaign)]]></code>
     </RedundantConditionGivenDocblockType>
@@ -190,6 +359,28 @@
       <code><![CDATA[\Doctrine\DBAL\Platforms\MySQL84Platform]]></code>
     </DeprecatedClass>
   </file>
+  <file src="src/Application/Handlers/ShutdownHandler.php">
+    <UnusedProperty>
+      <code><![CDATA[$displayErrorDetails]]></code>
+      <code><![CDATA[$errorHandler]]></code>
+      <code><![CDATA[$log]]></code>
+      <code><![CDATA[$request]]></code>
+    </UnusedProperty>
+  </file>
+  <file src="src/Application/HttpModels/DonationCreate.php">
+    <ImpureMethodCall>
+      <code><![CDATA[Assertion::betweenLength($this->donationAmount, 1, 9)]]></code>
+      <code><![CDATA[Assertion::regex(
+            $this->donationAmount,
+            '/^[0-9]+(\.00?)?$/',
+            "Donation amount should be a whole number"
+        )]]></code>
+      <code><![CDATA[EmailAddress::of($emailAddress)]]></code>
+      <code><![CDATA[Salesforce18Id::ofCampaign($projectId)]]></code>
+      <code><![CDATA[nullOrBetweenLength]]></code>
+      <code><![CDATA[nullOrRegex]]></code>
+    </ImpureMethodCall>
+  </file>
   <file src="src/Application/Messenger/CharityUpdated.php">
     <UnusedClass>
       <code><![CDATA[CharityUpdated]]></code>
@@ -206,32 +397,51 @@
       <code><![CDATA[$message->getMessageDeduplicationId()]]></code>
     </PossiblyNullOperand>
   </file>
+  <file src="src/Application/Messenger/MandateUpserted.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+      <code><![CDATA[fromMandate]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="src/Application/Persistence/RegularGivingMandateEventSubscriber.php">
+    <UnusedMethod>
+      <code><![CDATA[handlePostPersistOrUpdate]]></code>
+    </UnusedMethod>
+    <UnusedProperty>
+      <code><![CDATA[$bus]]></code>
+      <code><![CDATA[$container]]></code>
+      <code><![CDATA[$donorRepository]]></code>
+    </UnusedProperty>
+    <UnusedPsalmSuppress>
+      <code><![CDATA[PossiblyUnusedMethod]]></code>
+      <code><![CDATA[UnusedClass]]></code>
+    </UnusedPsalmSuppress>
+  </file>
+  <file src="src/Client/Campaign.php">
+    <TaintedSSRF>
+      <code><![CDATA[$uri]]></code>
+      <code><![CDATA[$uri]]></code>
+    </TaintedSSRF>
+  </file>
+  <file src="src/Client/Fund.php">
+    <TaintedSSRF>
+      <code><![CDATA[$uri]]></code>
+      <code><![CDATA[$uri]]></code>
+      <code><![CDATA[$uri]]></code>
+    </TaintedSSRF>
+  </file>
   <file src="src/Client/RyftClient.php">
-    <MixedArrayAccess>
-      <code><![CDATA[$responseData['paymentMethod']]]></code>
-      <code><![CDATA[$responseData['paymentMethod']]]></code>
-      <code><![CDATA[$responseData['paymentMethod']['card']]]></code>
-      <code><![CDATA[$responseData['paymentMethod']['card']]]></code>
-      <code><![CDATA[$responseData['paymentMethod']['card']['binDetails']]]></code>
-      <code><![CDATA[$responseData['paymentMethod']['card']['binDetails']['issuerCountry']]]></code>
-      <code><![CDATA[$responseData['paymentMethod']['card']['scheme']]]></code>
-    </MixedArrayAccess>
     <MixedAssignment>
-      <code><![CDATA[$cardBrand]]></code>
-      <code><![CDATA[$cardCountryIso2]]></code>
       <code><![CDATA[$response]]></code>
-      <code><![CDATA[$responseData]]></code>
     </MixedAssignment>
-    <MixedReturnStatement>
-      <code><![CDATA[$responseData]]></code>
-    </MixedReturnStatement>
+    <TaintedSSRF>
+      <code><![CDATA[$this->apiPrefix . 'payment-sessions/' . $paymentSessionId . '/refunds']]></code>
+      <code><![CDATA[$this->apiPrefix . 'payment-sessions/' . $ryftPaymentSessionId]]></code>
+      <code><![CDATA[$this->apiPrefix . 'payment-sessions/' . $ryftPaymentSessionId]]></code>
+    </TaintedSSRF>
     <UnusedProperty>
       <code><![CDATA[$publicKey]]></code>
     </UnusedProperty>
-    <UnusedVariable>
-      <code><![CDATA[$cardBrand]]></code>
-      <code><![CDATA[$cardCountryIso2]]></code>
-    </UnusedVariable>
   </file>
   <file src="src/Domain/CampaignFunding.php">
     <PossiblyUnusedParam>
@@ -245,10 +455,11 @@
       <code><![CDATA[$adjustmentLog]]></code>
     </PossiblyUnusedProperty>
   </file>
-  <file src="src/Domain/CampaignRepository.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$charityData['ryftAccountId']]]></code>
-    </PossiblyNullArgument>
+  <file src="src/Domain/Currency.php">
+    <ImpureMethodCall>
+      <code><![CDATA[Assertion::alnum($isoCode)]]></code>
+      <code><![CDATA[Assertion::length($isoCode, 3)]]></code>
+    </ImpureMethodCall>
   </file>
   <file src="src/Domain/DoctrineDonationRepository.php">
     <InvalidArgument>
@@ -256,9 +467,6 @@
     </InvalidArgument>
   </file>
   <file src="src/Domain/Donation.php">
-    <PossiblyUnusedParam>
-      <code><![CDATA[$paymentSession]]></code>
-    </PossiblyUnusedParam>
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[$this->getDonorLastName(true)]]></code>
       <code><![CDATA[empty($this->donorFirstName)]]></code>
@@ -267,14 +475,8 @@
   <file src="src/Domain/DonationService.php">
     <MixedArgument>
       <code><![CDATA[$paymentMethodPreview]]></code>
-      <code><![CDATA[$paymentSession]]></code>
-      <code><![CDATA[$paymentSession]]></code>
-      <code><![CDATA[$ryftAccountId]]></code>
       <code><![CDATA[$ryftAccountId]]></code>
     </MixedArgument>
-    <MixedArgumentTypeCoercion>
-      <code><![CDATA[$paymentSession]]></code>
-    </MixedArgumentTypeCoercion>
     <MixedPropertyFetch>
       <code><![CDATA[$psp->name]]></code>
     </MixedPropertyFetch>
@@ -284,15 +486,17 @@
     </MixedReturnStatement>
     <RedundantConditionGivenDocblockType>
       <code><![CDATA[$psp === PaymentServiceProvider::Ryft]]></code>
-      <code><![CDATA[\assert($psp === PaymentServiceProvider::Ryft, 'Unexpected payment service provider')]]></code>
     </RedundantConditionGivenDocblockType>
     <UndefinedMagicPropertyFetch>
       <code><![CDATA[$fee->type]]></code>
     </UndefinedMagicPropertyFetch>
   </file>
   <file src="src/Domain/DonorName.php">
+    <ImpureMethodCall>
+      <code><![CDATA[Assertion::notBlank($lastName, 'Last name is required for organisation donors')]]></code>
+      <code><![CDATA[Assertion::same($hasFirstName, $hasLastName, "First and last names must be supplied together or not at all.")]]></code>
+    </ImpureMethodCall>
     <PossiblyNullArgument>
-      <code><![CDATA[$lastName]]></code>
       <code><![CDATA[$lastName]]></code>
     </PossiblyNullArgument>
   </file>
@@ -301,64 +505,85 @@
       <code><![CDATA[$status]]></code>
     </UnusedProperty>
   </file>
-  <file src="tests/TestCase.php">
-    <InvalidConstantAssignmentValue>
-      <code><![CDATA[META_CAMPAIGN_FROM_SALESFORCE = [
-        'id' => 'a05xxxxxxxxxxxxxxx',
-        'isMetaCampaign' => true,
-        'ready' => true,
-        'title' => 'This is a meta campaign',
-        'video' => null,
-        'hidden' => false,
-        'quotes' => [],
-        'status' => 'Active',
-        'target' => 100.0,
-        'endDate' => '2095-08-01T00:00:00.000Z',
-        'logoUri' => null,
-        'problem' => '',
-        'summary' => '',
-        'updates' => [],
-        'solution' => 'do the saving',
-        'bannerUri' => null,
-        'countries' => [0 => 'United Kingdom',],
-        'isMatched' => true,
-        'parentRef' => null,
-        'startDate' => '2015-08-01T00:00:00.000Z',
-        'categories' => ['Education/Training/Employment', 'Religious'],
-        'championRef' => null,
-        'amountRaised' => 0.0,
-        'championName' => '',
-        'currencyCode' => 'GBP',
-        'campaignCount' => null,
-        'donationCount' => 0,
-        'impactSummary' => null,
-        'impactReporting' => null,
-        'isRegularGiving' => false,
-        'isEmergencyIMF' => false,
-        'slug' => 'some-slug',
-        'campaignFamily' => 'summerGive',
-        'matchFundsTotal' => 50.0,
-        'thankYouMessage' => 'Thank you for helping us save matchbot! We will be able to match twice as many bots now!',
-        'usesSharedFunds' => false,
-        'alternativeFundUse' => null,
-        'parentAmountRaised' => null,
-        'additionalImages' => [],
-        'additionalImageUris' => [],
-        'matchFundsRemaining' => 50.0,
-        'parentDonationCount' => null,
-        'surplusDonationInfo' => '',
-        'parentUsesSharedFunds' => false,
-        'championOptInStatement' => '',
-        'parentMatchFundsRemaining' => null,
-        'regularGivingCollectionEnd' => null,
-        'totalAdjustment' => 0.0,
-        'charity' => null,
-        'aims' => [],
-        'budgetDetails' => [],
-        'beneficiaries' => [],
-        'parentTarget' => null,
-        'ryftAccountId' => null,
-    ]]]></code>
-    </InvalidConstantAssignmentValue>
+  <file src="src/Domain/MetaCampaignRepository.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[(string) $donationSum]]></code>
+      <code><![CDATA[(string) $matchedFundResult]]></code>
+    </ArgumentTypeCoercion>
+  </file>
+  <file src="src/Domain/Money.php">
+    <ImpureMethodCall>
+      <code><![CDATA[Assertion::between(
+            value: $this->amountInPence,
+            lowerLimit: 0,
+            upperLimit: 9_999_999_999_999_00,
+            message: "Cannot construct a negative or extremely large amount of money"
+        )]]></code>
+      <code><![CDATA[Assertion::integerish((float) $amountInPence)]]></code>
+      <code><![CDATA[Assertion::integerish((float) $amountInPence)]]></code>
+      <code><![CDATA[Assertion::regex($amountInPence, '/^-?\d+(?:\.00)?$/', 'Amount in pence must be an integer or have .00 decimal')]]></code>
+      <code><![CDATA[Assertion::same($this->currency, $that->currency)]]></code>
+      <code><![CDATA[Assertion::same($this->currency, $that->currency)]]></code>
+    </ImpureMethodCall>
+  </file>
+  <file src="src/Domain/UKLocation.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[list<string>]]></code>
+      <code><![CDATA[list<string>]]></code>
+    </UnnecessaryVarAnnotation>
+  </file>
+  <file src="src/Domain/UKLocationContainment.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="src/Monolog/Handler/SlackHandler.php">
+    <ImplementedParamTypeMismatch>
+      <code><![CDATA[$record]]></code>
+    </ImplementedParamTypeMismatch>
+    <InvalidArrayAccess>
+      <code><![CDATA[$record['level']]]></code>
+      <code><![CDATA[$record['level_name']]]></code>
+      <code><![CDATA[$record['message']]]></code>
+    </InvalidArrayAccess>
+  </file>
+  <file src="src/Monolog/Processor/AwsTraceIdProcessor.php">
+    <ImplementedParamTypeMismatch>
+      <code><![CDATA[$record]]></code>
+    </ImplementedParamTypeMismatch>
+    <InvalidArrayAssignment>
+      <code><![CDATA[$record['extra']]]></code>
+    </InvalidArrayAssignment>
+    <InvalidReturnStatement>
+      <code><![CDATA[$record]]></code>
+    </InvalidReturnStatement>
+    <InvalidReturnType>
+      <code><![CDATA[array]]></code>
+    </InvalidReturnType>
+    <MixedArrayAssignment>
+      <code><![CDATA[$record['extra']['x-amzn-trace-id']]]></code>
+    </MixedArrayAssignment>
+  </file>
+  <file src="tests/Monolog/Processor/AwsTraceIdProcessorTest.php">
+    <InvalidArrayAccess>
+      <code><![CDATA[$handler->getRecords()[0]['extra']]]></code>
+      <code><![CDATA[$handler->getRecords()[0]['extra']]]></code>
+      <code><![CDATA[$handler->getRecords()[0]['level']]]></code>
+      <code><![CDATA[$handler->getRecords()[0]['level']]]></code>
+      <code><![CDATA[$handler->getRecords()[0]['message']]]></code>
+      <code><![CDATA[$handler->getRecords()[0]['message']]]></code>
+    </InvalidArrayAccess>
+    <MixedArgument>
+      <code><![CDATA[$handler->getRecords()[0]['extra']]]></code>
+    </MixedArgument>
+    <MixedArrayAccess>
+      <code><![CDATA[$handler->getRecords()[0]['extra']['x-amzn-trace-id']]]></code>
+    </MixedArrayAccess>
+  </file>
+  <file src="tests/TestLogger.php">
+    <ImmutableDependency>
+      <code><![CDATA[#[\Override]]]></code>
+      <code><![CDATA[TestLogger]]></code>
+    </ImmutableDependency>
   </file>
 </files>
