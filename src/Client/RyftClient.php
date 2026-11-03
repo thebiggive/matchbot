@@ -242,7 +242,7 @@ class RyftClient
         RefundScope $scope,
     ): void {
         if ($scope === RefundScope::tip) {
-            throw new \UnexpectedValueException('Tip refunds are not supported for Ryft yet');
+            throw new BadRequestException('Tip refunds are not supported for Ryft yet');
         }
 
         $reason = "Big Give {$scope->value} refund";
@@ -262,8 +262,22 @@ class RyftClient
 
         try {
             $response = $this->client->send($request);
-        } catch (GuzzleException $clientException) {
-            throw new \Exception('Could not refund Ryft payment: ' . $clientException->getMessage());
+        } catch (\GuzzleHttp\Exception\BadResponseException $ex) {
+            $response = $ex->getResponse();
+            $rawBody = (string) $response->getBody();
+
+            $this->log->info('Ryft refund failed with full response body: ' . $rawBody, [
+                'paymentSessionId' => $paymentSessionId,
+                'statusCode' => $response->getStatusCode(),
+            ]);
+
+            throw new \Exception('Could not refund Ryft payment (a): ' . $rawBody, previous: $ex);
+        } catch (GuzzleException $e) {
+            $this->log->info('Ryft refund failed without response: ' . $e->getMessage(), [
+                'paymentSessionId' => $paymentSessionId,
+            ]);
+
+            throw new \Exception('Could not refund Ryft payment (b): ' . $e->getMessage(), previous: $e);
         }
 
         $responseContents = $response->getBody()->getContents();
@@ -277,13 +291,15 @@ class RyftClient
          * } $responseData */
         $responseData = $decodedResponse;
 
-        if ($responseData['refundedAmount'] !== $amount->amountInPence()) {
-            throw new \LogicException(sprintf(
-                "Refunded pence amount %d was not expected %d",
-                $responseData['refundedAmount'],
-                $amount->amountInPence(),
-            ));
-        }
+        // TODO Bring back equivalent of this guard once API behaviour clarified with Ryft.
+//        if ($responseData['refundedAmount'] !== $amount->amountInPence()) {
+//            throw new \LogicException(sprintf(
+//                "Refunded pence amount %d was not expected %d",
+//                $responseData['refundedAmount'],
+//                $amount->amountInPence(),
+//            ));
+//        }
+        $this->log->info('Full Ryft refund response JSON: ' . $responseContents);
 
         // No hook support for now so assume success for async processed ones – anything which is not status 'Failed'.
         if ($responseData['status'] === 'Failed') {
