@@ -66,12 +66,12 @@ class Search extends Action
             $filterByLatLong = false;
         }
 
-        if ($sortField === 'location' && (! \is_numeric($latitude) || ! \is_numeric($longitude))) {
+        if ($sortField === 'location' && (! \is_numeric($latitude) || ! \is_numeric($longitude)) && $ukRegion === null) {
             $this->logger->warning("Location search requested with no latitude or no longitude given, defaulting to distanceToTarget");
             $sortField = 'distanceToTarget';
         }
 
-        if ($sortField === 'location' || $filterByLatLong) {
+        if (($latitude !== null || $longitude !== null) && ($sortField === 'location' || $filterByLatLong)) {
             Assertion::numeric($latitude, 'Numeric latitude and longitude must be supplied for location-based search');
             Assertion::numeric($longitude, 'Numeric latitude and longitude must be supplied for location-based search');
             Assertion::string($longitude);
