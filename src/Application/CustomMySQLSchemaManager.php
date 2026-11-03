@@ -25,6 +25,9 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
         ['Charity', 'searchable_text'],
     ];
 
+    /**
+     * @psalm-suppress InternalMethod
+     */
     #[\Override]
     protected function _getPortableTableIndexesList(array $tableIndexes, ?string $tableName = null): array // phpcs:ignore
     {
@@ -33,13 +36,17 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
         return \array_filter(
             $indexes,
             static fn($index) => !in_array(
+                // @phpstan-ignore method.internalClass
                 needle: [$tableName, $index->getObjectName()->toString()],
                 haystack: self::GENERATED_INDEXES,
-                strict: true
+                strict: true,
             ),
         );
     }
 
+    /**
+     * @psalm-suppress InternalMethod
+     */
     #[\Override]
     protected function _getPortableTableColumnList(string $table, string $database, array $tableColumns): array // phpcs:ignore
     {
@@ -48,7 +55,8 @@ class CustomMySQLSchemaManager extends MySQLSchemaManager
         return array_filter(
             $columns,
             static fn($column) => !in_array(
-                needle: [$table, $column->getObjectName()->toString()], // @phpstan.ignore method.internalClass
+                // @phpstan-ignore method.internalClass
+                needle: [$table, $column->getObjectName()->toString()],
                 // releasedAt is new, want to wait until its in prod DB before we allow the ORM to rely on it.
                 haystack: self::IGNORED_COLUMNS,
                 strict: true,

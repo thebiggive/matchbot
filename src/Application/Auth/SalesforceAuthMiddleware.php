@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Application\Auth;
 
 use Fig\Http\Message\StatusCodeInterface;
-use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use Psr\Http\Message\ResponseInterface;
@@ -27,7 +26,6 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
 {
     public const string HEADER_NAME = 'x-send-verify-hash';
 
-    #[Pure]
     public function __construct(
         /** @var non-empty-string $sfApiKey */
         #[\SensitiveParameter]

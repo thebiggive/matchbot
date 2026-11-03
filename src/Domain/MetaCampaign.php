@@ -12,7 +12,6 @@ use Psr\Http\Message\UriInterface;
 
 /**
  * @psalm-import-type SFCampaignApiResponse from Client\Campaign
- * @psalm-suppress PossiblyUnusedProperty
  */
 #[ORM\Entity(
     repositoryClass: null // we construct our own repository

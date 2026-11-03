@@ -105,13 +105,8 @@ class StubStripeClient implements Stripe
         /** @psalm-suppress InvalidPropertyAssignmentValue */
         $confirmationToken->payment_method_preview = new StripeObject();
 
-        /** @psalm-suppress InvalidPropertyAssignmentValue */
         $confirmationToken->payment_method_preview['type'] = 'card';
-
-        /** @psalm-suppress InvalidPropertyAssignmentValue */
         $confirmationToken->payment_method_preview['card'] = ['brand' => 'discover', 'country' => 'GB'];
-
-        /** @psalm-suppress InvalidPropertyAssignmentValue */
         $confirmationToken->payment_method_preview['pay_by_bank'] = null;
 
         return $confirmationToken;

@@ -9,9 +9,6 @@ use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\NoResultException;
 use MatchBot\Application\Assertion;
 
-/**
- * @psalm-suppress UnusedProperty - likely to be used soon
-*/
 class MetaCampaignRepository
 {
     /** @var EntityRepository<MetaCampaign>  */

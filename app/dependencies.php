@@ -364,7 +364,7 @@ return function (ContainerBuilder $containerBuilder) {
                 {
                 }
                 #[\Override]
-                public function __invoke(array $record)
+                public function __invoke(array $record): array
                 {
                     $record['extra']['commit'] = substr($this->commit_id, offset: 0, length: 7);
                     return $record;
@@ -605,8 +605,10 @@ return function (ContainerBuilder $containerBuilder) {
             // Only set schema assets filter for ORM schema tool commands, not for migrations
             if (defined('RUNNING_DOCTRINE_ORM_SCHEMA_TOOL') && RUNNING_DOCTRINE_ORM_SCHEMA_TOOL) {
                 $dbalConfig->setSchemaAssetsFilter(
+                    /** @psalm-suppress InternalMethod */
+                    // @phpstan-ignore parameter.internalClass, parameter.internalClass
                     static fn (string|AbstractNamedObject|AbstractOptionallyNamedObject $asset): bool =>
-                        // shouldn't reference it.
+                        // @phpstan-ignore method.internalClass, method.internalClass
                         (is_string($asset) ? $asset : $asset->getObjectName()) !== 'doctrine_migration_versions'
                 );
             }
@@ -627,6 +629,7 @@ return function (ContainerBuilder $containerBuilder) {
             $dbalConfig->setResultCache($c->get(CacheAdapterInterface::class));
 
             $connection = DBALDriverManager::getConnection(
+                // @mago-expect analysis:possibly-invalid-argument
                 // @phpstan-ignore argument.type (DBAL docblock doesn't explicitly allow the platform key but it works for now)
                 $c->get(Settings::class)->doctrine['connection'] +
                 [
