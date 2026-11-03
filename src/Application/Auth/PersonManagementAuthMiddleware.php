@@ -31,7 +31,6 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
     /**
      * @psalm-suppress PossiblyUnusedMethod - called by Slim
      */
-    #[Pure]
     public function __construct(
         protected IdentityTokenService $token,
         protected LoggerInterface $logger,
@@ -39,9 +38,6 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
     ) {
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedReturnValue - presumably used by Slim
-     */
     #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {

@@ -174,7 +174,6 @@ class Money implements \JsonSerializable, \Stringable
 
     public function plus(self $that): self
     {
-        /** @psalm-suppress ImpureMethodCall */
         Assertion::same($this->currency, $that->currency);
 
         return new self(bcadd($this->amountInPence, $that->amountInPence, 0), $this->currency);
@@ -182,7 +181,6 @@ class Money implements \JsonSerializable, \Stringable
 
     public function minus(self $that): self
     {
-        /** @psalm-suppress ImpureMethodCall */
         Assertion::same($this->currency, $that->currency);
 
         return new self(bcsub($this->amountInPence, $that->amountInPence, 0), $this->currency);

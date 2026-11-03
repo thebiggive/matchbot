@@ -9,6 +9,7 @@
     findUnusedCode="true"
     findUnusedPsalmSuppress="true"
     errorBaseline=".psalm/baseline.xml"
+    threads="1"
 >
     <stubs>
         <file name=".psalm/containers.php.stub" preloadClasses="true"/>

@@ -17,7 +17,6 @@ readonly class AddOrLogMessageId implements MiddlewareInterface
     {
     }
 
-    /** @psalm-suppress PossiblyUnusedReturnValue Messenger uses value; our test doesn't */
     #[\Override]
     public function handle(Envelope $envelope, StackInterface $stack): Envelope
     {

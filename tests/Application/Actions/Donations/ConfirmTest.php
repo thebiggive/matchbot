@@ -394,13 +394,8 @@ class ConfirmTest extends TestCase
             /** @psalm-suppress InvalidPropertyAssignmentValue */
             $confirmationToken->payment_method_preview = new StripeObject();
 
-            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $confirmationToken->payment_method_preview['type'] = 'card';
-
-            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $confirmationToken->payment_method_preview['card'] = $cardDetails;
-
-            /** @psalm-suppress InvalidPropertyAssignmentValue */
             $confirmationToken->payment_method_preview['pay_by_bank'] = null;
 
             $confirmationToken->setup_future_usage = ConfirmationToken::SETUP_FUTURE_USAGE_ON_SESSION; // Simulate box checked in Donate on 1st attempt

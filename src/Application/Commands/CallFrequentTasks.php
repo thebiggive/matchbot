@@ -28,7 +28,7 @@ class CallFrequentTasks extends LockingCommand
         ExpirePendingMandates $expirePendingMandates,
         CancelStaleDonationFundTips $cancelStaleDonationFundTips,
         UpdateCampaignDonationStats $updateCampaignDonationStats,
-        DeleteOldTestFunds $deleteOldTestFunds,
+        DeleteOldTestData $deleteOldTestFunds,
         UpdateApproxCampaignStatus $updateApproxCampaignStatus,
     ) {
         parent::__construct();
@@ -58,7 +58,7 @@ class CallFrequentTasks extends LockingCommand
             );
 
             if ($return !== 0) {
-                $output->writeln("Failed run {$command->getName()}");
+                $output->writeln("Failed to run {$command->getName()} with code $return");
                 return $return;
             }
         }

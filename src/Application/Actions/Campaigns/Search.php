@@ -199,7 +199,6 @@ class Search extends Action
                 'childRegions' => $searchResult->childRegions,
                 'siblingRegions' => $searchResult->siblingRegions,
                 'parentRegion' => $searchResult->parentRegion,
-                'parentRegionName' => $searchResult->parentRegionName,
                 // may also need to give the parent region code and possibly name.
             ],
             200,

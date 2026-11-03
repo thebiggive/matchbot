@@ -64,7 +64,7 @@ abstract class Command extends SymfonyCommand
             ClaimGiftAid::class,
             ConsumeMessagesCommand::class,
             CreateFictionalData::class,
-            DeleteOldTestFunds::class,
+            DeleteOldTestData::class,
             ExpireMatchFunds::class,
             ExpirePendingMandates::class,
             HandleOutOfSyncFunds::class,

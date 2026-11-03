@@ -11,7 +11,6 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
-use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
@@ -928,7 +927,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return numeric-string
      */
-    #[Pure] public function getCharityFeeGross(): string
+    public function getCharityFeeGross(): string
     {
         return bcadd($this->getCharityFee(), $this->getCharityFeeVat(), 2);
     }

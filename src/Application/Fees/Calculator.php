@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Fees;
 
-use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
@@ -13,8 +12,6 @@ use MatchBot\Domain\PaymentServiceProvider;
 /**
  * Calculates fees to charge charities per donation. For public facing explanation of fee structure see
  * https://biggive.org/our-fees/
- *
- * @psalm-immutable
  */
 class Calculator
 {
@@ -184,7 +181,7 @@ class Calculator
      *                          fixed scale and only positive inputs.
      * @return numeric-string
      */
-    #[Pure] private static function roundAmount(string $amount): string
+    private static function roundAmount(string $amount): string
     {
         $e = '1000'; // Base 10 ^ 3
 

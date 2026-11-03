@@ -8,8 +8,6 @@ use Psr\Http\Message\UriInterface;
  * Class is not yet in use.
  * For now to be used in MetaCampaigns, later maybe also for Charity Campaigns.
  *
- * @psalm-suppress PossiblyUnusedMethod
- * @psalm-suppress PossiblyUnusedProperty
  * @psalm-api
  */
 readonly class Banner implements \JsonSerializable

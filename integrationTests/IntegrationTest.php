@@ -35,7 +35,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Psr\Log\LoggerInterface;
 use Random\Randomizer;
 use Slim\App;
 use Slim\Factory\AppFactory;
@@ -46,6 +45,7 @@ use Stripe\Service\CustomerSessionService;
 use Stripe\Service\PaymentIntentService;
 use Stripe\Service\PaymentMethodService;
 use Stripe\StripeClient;
+use Symfony\Component\Cache\Adapter\AdapterInterface as CacheAdapterInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
@@ -249,6 +249,8 @@ abstract class IntegrationTest extends TestCase
 
     public function clearPreviousCampaignsCharitiesAndRelated(): void
     {
+        $this->getService(CacheAdapterInterface::class)->clear();
+
         $this->db()->executeStatement('DELETE FROM CampaignStatistics');
         $this->db()->executeStatement('DELETE FROM FundingWithdrawal');
         $this->db()->executeStatement('DELETE FROM Donation');

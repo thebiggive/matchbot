@@ -14,12 +14,6 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 
 /**
  * Sends error messages to our slack alarm channel so we deal with the errors without unnecessary delay.
- *
- * @phpstan-import-type Record from \Monolog\Logger
- * @phpstan-import-type Level from \Monolog\Logger
- * @psalm-import-type Record from \Monolog\Logger
- * @psalm-import-type Level from \Monolog\Logger
- *
  */
 class SlackHandler implements HandlerInterface
 {
@@ -33,12 +27,8 @@ class SlackHandler implements HandlerInterface
         return $record['level'] >= Logger::ERROR;
     }
 
-    /**
-     * @param array<string, mixed>|\ArrayAccess<string,mixed> $record
-     * @psalm-suppress PossiblyUnusedReturnValue - used by Monolog.
-     */
     #[\Override]
-    public function handle(array|\ArrayAccess $record): bool
+    public function handle(array $record): bool
     {
         if ($record['level'] < Logger::ERROR) {
             return false; // allows another handle to handle this.

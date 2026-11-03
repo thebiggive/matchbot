@@ -121,8 +121,6 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
      * @psalm-suppress MixedArgumentTypeCoercion
      * @psalm-suppress MixedArgument
      *
-     * @psalm-suppress UnusedVariable - this looks like a psalm bug - afaik the $name variable is used.
-     *
      * @param array<array-key, mixed> $jsonData
      *
      *

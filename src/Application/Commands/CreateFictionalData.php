@@ -321,7 +321,7 @@ class CreateFictionalData extends Command
             'amountRaised' => 0.0,
             'championName' => null,
             'currencyCode' => 'GBP',
-            'beneficiaries' => ['Animals'],
+            'beneficiaries' => ['Older People'],
             'budgetDetails' => [
                 ['amount' => 23.0, 'description' => 'Improve the code'],
                 ['amount' => 27.0, 'description' => 'Invent a new programing paradigm'],

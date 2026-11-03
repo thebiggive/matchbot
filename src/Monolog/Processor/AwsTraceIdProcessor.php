@@ -8,12 +8,12 @@ use Monolog\Processor\ProcessorInterface;
 
 class AwsTraceIdProcessor implements ProcessorInterface
 {
-    #[\Override] // @phpstan-ignore missingType.generics
-    public function __invoke(array|\ArrayAccess $record): array
+    #[\Override]
+    public function __invoke(array $record): array
     {
         $traceId = $_SERVER['HTTP_X_AMZN_TRACE_ID'] ?? null;
         if (is_string($traceId)) {
-            $record['extra']['x-amzn-trace-id'] = $traceId; // @phpstan-ignore offsetAccess.nonOffsetAccessible
+            $record['extra']['x-amzn-trace-id'] = $traceId;
         }
 
         return $record;

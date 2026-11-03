@@ -64,10 +64,6 @@ class HandleOutOfSyncFunds extends LockingCommand
         );
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedReturnValue - return value is used by
-     * \MatchBot\Application\Commands\Command::execute . Not sure why Psalm thinks its unused.
-     */
     #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {

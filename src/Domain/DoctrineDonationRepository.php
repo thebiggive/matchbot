@@ -19,7 +19,6 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * @template-extends SalesforceProxyRepository<Donation, \MatchBot\Client\Donation>
- * @psalm-suppress MissingConstructor Doctrine get repo DI isn't very friendly to custom constructors.
  */
 class DoctrineDonationRepository extends SalesforceProxyRepository implements DonationRepository
 {
@@ -365,9 +364,6 @@ DQL);
         return $donation;
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedReturnValue Psalm bug? Value is used in \MatchBot\Application\Commands\PushDonations::doExecute
-     */
     #[\Override]
     public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus): int
     {

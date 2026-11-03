@@ -32,6 +32,9 @@ trait TimestampsTrait
         $this->updatedAt = new \DateTime('now');
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - called by Doctrine ORM
+     */
     #[ORM\PreUpdate]
     public function updatedNow(): void
     {
