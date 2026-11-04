@@ -175,7 +175,14 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $campaign = $this->findOneBySalesforceId($id);
 
             if ($campaign) {
-                $this->updateFromSf($campaign, withCache: false);
+                try {
+                    $this->updateFromSf($campaign, withCache: false);
+                } catch (NotFoundException $e) {
+                    $this->getLogger()->info(
+                        "Skipping campaign $i of $count, '{$campaign->getCampaignName()}: " . $e->getMessage() . " \n"
+                    );
+                    continue;
+                }
                 $updatedCount++;
             } else {
                 $campaign = $this->pullNewFromSf($id);
