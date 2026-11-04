@@ -42,12 +42,6 @@ class DeleteOldTestData extends LockingCommand
         $this->entityManager->flush();
         $output->writeln(sprintf('Deleted %d old test pledges', count($pledges)));
 
-
-        // should just need to be run until ~4/11/26 while we have extra data.
-        $this->entityManager->getConnection()->executeQuery(
-            "DELETE FROM RegularGivingMandate WHERE createdAt < '2026-10-27 01:00:00' LIMIT 2000"
-        );
-
         return 0;
     }
 }
