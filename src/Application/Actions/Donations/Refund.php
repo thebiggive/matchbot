@@ -39,6 +39,7 @@ class Refund extends Action
      * @param array<string, mixed> $args
      * @return Response
      * @throws DomainRecordNotFoundException on missing donation
+     * @throws HttpBadRequestException on unsuitable donation, unsupported refund scope etc.
      * @throws ApiErrorException if Stripe Payment Intent confirm() fails, other than because of a
      *                           missing payment method.
      */
@@ -68,19 +69,23 @@ class Refund extends Action
         }
 
         if (!$donation->getDonationStatus()->isSuccessful()) {
-            throw new BadRequestException('Donation status is not successful');
+            throw new HttpBadRequestException($request, 'Donation status is not successful');
         }
 
         if ($donation->getDonationStatus()->isReversed()) {
-            throw new BadRequestException('Donation is already refunded or similar');
+            throw new HttpBadRequestException($request, 'Donation is already refunded or similar');
         }
 
         $scope = RefundScope::from($refundScope);
         if ($scope === RefundScope::tip && $donation->getTipAmountFractional() === 0) {
-            throw new BadRequestException('Donation has no tip');
+            throw new HttpBadRequestException($request, 'Donation has no tip');
         }
 
-        $this->donationService->refund($donation, $scope);
+        try {
+            $this->donationService->refund($donation, $scope);
+        } catch (BadRequestException $matchbotException) {
+            throw new HttpBadRequestException($request, $matchbotException->getMessage());
+        }
 
         $summary = sprintf("Refund (%s) processed for %s", $refundScope, $donation->__toString());
 
