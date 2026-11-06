@@ -509,8 +509,44 @@ class CampaignRepository extends SalesforceReadProxyRepository
         Assertion::notNull($endDateString, "Null end date supplied when attempting to update campaign {$campaign->getSalesforceId()}");
         Assertion::notNull($title, "Null title supplied when attempting to updated campaign {$campaign->getSalesforceId()}");
 
-        if ($alsoUpdateCharity) {
-            $this->updateCharityFromCampaignData($campaign->getCharity(), $campaignData);
+        $charityData = $campaignData['charity'];
+        Assertion::notNull($charityData, 'Charity data must not be null for charity campaign');
+
+        $currentCharity = $campaign->getCharity();
+        if ($currentCharity->getSalesforceId() !== $charityData['id']) {
+            if ($alsoUpdateCharity) {
+                $charity = $this->pullCharity($campaignData);
+                $this->logWarning(sprintf(
+                    'Campaign %s charity changed from Salesforce ID %s to %s',
+                    $campaign->getSalesforceId(),
+                    $currentCharity->getSalesforceId(),
+                    $charityData['id'],
+                ));
+                $campaign->setCharity($charity);
+            } else {
+                $charity = $this->getEntityManager()
+                    ->getRepository(Charity::class)
+                    ->findOneBy(['salesforceId' => $charityData['id']]);
+
+                if ($charity instanceof Charity) {
+                    $this->logWarning(sprintf(
+                        'Campaign %s charity changed from Salesforce ID %s to %s',
+                        $campaign->getSalesforceId(),
+                        $currentCharity->getSalesforceId(),
+                        $charityData['id'],
+                    ));
+                    $campaign->setCharity($charity);
+                } else {
+                    $this->logWarning(sprintf(
+                        'Campaign %s references unknown Salesforce charity ID %s; keeping existing charity %s',
+                        $campaign->getSalesforceId(),
+                        $charityData['id'],
+                        $currentCharity->getSalesforceId(),
+                    ));
+                }
+            }
+        } elseif ($alsoUpdateCharity) {
+            $this->updateCharityFromCampaignData($currentCharity, $campaignData);
         }
 
         if ($campaign->hasBeenPersisted() && $campaign->getCurrencyCode() !== $campaignData['currencyCode']) {
