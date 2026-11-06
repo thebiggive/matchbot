@@ -429,6 +429,11 @@ class Campaign extends SalesforceReadProxy
         return $this->charity;
     }
 
+    public function setCharity(Charity $charity): void
+    {
+        $this->charity = $charity;
+    }
+
     /**
      * @return string
      */
