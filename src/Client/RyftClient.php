@@ -234,6 +234,7 @@ class RyftClient
 
     /**
      * @link https://api-reference.ryftpay.com/#tag/Payments/operation/paymentSessionCreateRefund
+     * @throws BadRequestException on unsupported scope (tip refund).
      */
     public function refundPayment(
         RyftAccountId $ryftAccountId,
@@ -291,16 +292,9 @@ class RyftClient
          * } $responseData */
         $responseData = $decodedResponse;
 
-        // TODO Bring back equivalent of this guard once API behaviour clarified with Ryft.
-//        if ($responseData['refundedAmount'] !== $amount->amountInPence()) {
-//            throw new \LogicException(sprintf(
-//                "Refunded pence amount %d was not expected %d",
-//                $responseData['refundedAmount'],
-//                $amount->amountInPence(),
-//            ));
-//        }
         $this->log->info('Full Ryft refund response JSON: ' . $responseContents);
 
+        // Cannot synchronously cross check amounts, which are only set when refund is fully processed.
         // No hook support for now so assume success for async processed ones – anything which is not status 'Failed'.
         if ($responseData['status'] === 'Failed') {
             throw new \Exception(sprintf('Ryft refund failed for payment session %s', $responseData['id']));

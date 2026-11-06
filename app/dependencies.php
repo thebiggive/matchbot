@@ -288,7 +288,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {
-            $isLoadTest = getenv('APP_ENV') !== 'production' && isset($_SERVER['HTTP_X_IS_LOAD_TEST']);
+            $isLoadTest = getenv('APP_ENV') !== 'production' && isset($_SERVER['HTTP_X_IS_LOAD_TEST']) && $_SERVER['HTTP_X_IS_LOAD_TEST'] === '1';
             if ($isLoadTest) {
                 return new Client\StubStripeClient();
             }

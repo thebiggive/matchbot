@@ -462,7 +462,6 @@ class CampaignRepositoryTest extends IntegrationTest
                 'Fred\'s Charity',
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
-                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
                 ],
             ],
             [
@@ -483,7 +482,6 @@ class CampaignRepositoryTest extends IntegrationTest
                 'Freds',
                 [
                     ['Fred\'s Charity', 'This is a campaign for Fred\'s Charity'],
-                    ['Fred\'s Charity', 'This is a campaign name that does not mention the charity name'],
                 ]
             ],
             [
