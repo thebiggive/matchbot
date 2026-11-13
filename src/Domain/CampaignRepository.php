@@ -893,7 +893,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regions: $regionsToFilterTo,
         );
 
-        if (($country === 'United Kingdom' || $regions !== null) && ! Environment::current()->isProduction()) {
+        if ($country === 'United Kingdom' || $regions !== null) {
             if (is_array($regionsToFilterTo) && count($regionsToFilterTo) > 0) {
                 // smallest in $regionsToFilter should be the first one
                 $smallestRegion = $regionsToFilterTo[0];
