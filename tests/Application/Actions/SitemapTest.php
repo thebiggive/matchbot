@@ -17,6 +17,64 @@ use Symfony\Component\Clock\MockClock;
 
 class SitemapTest extends TestCase
 {
+    public function testItExcludesInviteOnlyMetaCampaignWithFutureStartDate(): void
+    {
+        // arrange
+        $now = new \DateTimeImmutable('2025-01-01');
+        $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
+        $metaCampaignRepositoryProphecy = $this->prophesize(MetaCampaignRepository::class);
+
+        // No campaigns returned
+        $campaignRepositoryProphecy->search(
+            'amountRaised',
+            'asc',
+            0,
+            100_000,
+            null,
+            null,
+            [],
+            null,
+            null,
+            null,
+            false,
+            false,
+        )->willReturn(new CampaignSearchResult(
+            campaigns: [],
+            locationCounts: [],
+            ukFilterRegions: null,
+            childRegions: [],
+            siblingRegions: [],
+            parentRegion: null,
+        ));
+
+        // allToIncludeInSitemap should not return invite-only meta-campaigns with future start dates
+        // because the repository query filters them out
+        $metaCampaignRepositoryProphecy->allToIncludeInSitemap($now)->willReturn([]);
+
+        $sut = new Sitemap(
+            $campaignRepositoryProphecy->reveal(),
+            $metaCampaignRepositoryProphecy->reveal(),
+            Environment::Test,
+            new MockClock($now),
+            new NullLogger(),
+        );
+
+        // act
+        $response = $sut(new ServerRequest('GET', 'url'), new Response(), []);
+
+        // assert — sitemap should contain no URLs
+        $response->getBody()->rewind();
+        $content = $response->getBody()->getContents();
+
+        $this->assertXmlStringEqualsXmlString(
+            <<<'XML'
+            <?xml version="1.0"?>
+            <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>
+            XML,
+            $content
+        );
+    }
+
     public function testItGeneratesASitemap(): void
     {
         // arrange

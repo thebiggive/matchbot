@@ -26,6 +26,7 @@ CREATE TABLE `MetaCampaign` (
   `updatedAt` datetime NOT NULL,
   `campaignFamily` varchar(255) DEFAULT NULL,
   `bannerAltText` varchar(255) DEFAULT NULL,
+  `inviteOnly` tinyint NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_C36155EC989D9B62` (`slug`),
   UNIQUE KEY `UNIQ_C36155ECD8961D21` (`salesforceId`),

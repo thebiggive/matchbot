@@ -97,6 +97,7 @@ class TestCase extends PHPUnitTestCase
         'impactReporting' => null,
         'isRegularGiving' => false,
         'isEmergencyIMF' => false,
+        'inviteOnly' => false,
         'slug' => null,
         'campaignFamily' => 'summerGive',
         'matchFundsTotal' => 50.0,
@@ -175,6 +176,7 @@ class TestCase extends PHPUnitTestCase
         'impactReporting' => null,
         'isRegularGiving' => false,
         'isEmergencyIMF' => false,
+        'inviteOnly' => false,
         'slug' => 'some-slug',
         'campaignFamily' => 'summerGive',
         'matchFundsTotal' => 50.0,
@@ -601,7 +603,7 @@ class TestCase extends PHPUnitTestCase
         return hash_hmac('sha256', $body, $salesforceSecretKey);
     }
 
-    public static function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF, ?MetaCampaignSlug $slug = null, ?\DateTimeImmutable $startDate = null): MetaCampaign
+    public static function someMetaCampaign(bool $isRegularGiving, bool $isEmergencyIMF, ?MetaCampaignSlug $slug = null, ?\DateTimeImmutable $startDate = null, bool $inviteOnly = false): MetaCampaign
     {
         return new MetaCampaign(
             slug: $slug ?? MetaCampaignSlug::of('not-relevant-' . TestCase::randomHex()),
@@ -618,6 +620,7 @@ class TestCase extends PHPUnitTestCase
             isEmergencyIMF: $isEmergencyIMF,
             totalAdjustment: Money::zero(),
             campaignFamily: CampaignFamily::artsforImpact,
+            inviteOnly: $inviteOnly,
         );
     }
 }

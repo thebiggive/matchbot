@@ -138,10 +138,12 @@ class MetaCampaignRepository
             WHERE mc.hidden = false
             AND mc.startDate > :indexOldFrom -- old campaigns have innacurate data
             AND mc.startDate < :indexNewFrom -- new campaigns that don't open soon may not yet have complete copy or anything of interest on their pages
+            AND (mc.inviteOnly = false OR mc.startDate <= :now) -- exclude invite-only campaigns that haven't started yet
         DQL);
 
         $query->setParameter('indexOldFrom', new \DateTimeImmutable(MetaCampaign::INDEX_FROM));
         $query->setParameter('indexNewFrom', $at->add(new \DateInterval(MetaCampaign::INDEX_NEW_INTERVAL)));
+        $query->setParameter('now', $at);
 
         /** @var list<MetaCampaign> */
         $result = $query->getResult();

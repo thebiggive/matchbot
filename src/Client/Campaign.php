@@ -86,6 +86,7 @@ use MatchBot\Domain\MetaCampaignSlug;
  *     additionalImages: list<array{altText: string, rank: int, uri: string}>,
  *     isMetaCampaign: ?bool,
  *     isEmergencyIMF: bool,
+ *     inviteOnly?: bool,
  *     slug: ?string,
  *     campaignFamily: string,
  *     imfCampaignTargetOverride?: float,
