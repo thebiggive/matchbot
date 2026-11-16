@@ -948,6 +948,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $lq->select('ukLocationContainment.ancestorRegionCode as regionCode', 'COUNT(DISTINCT campaign.id) as numCampaigns')
                 ->from(CampaignLocation::class, 'campaignLocation')
                 ->join('campaignLocation.campaign', 'campaign')
+                ->leftJoin('campaign.campaignFundings', 'campaignFunding')
+                ->leftJoin('campaignFunding.fund', 'fund')
                 ->join(UKLocationContainment::class, 'ukLocationContainment', Join::WITH, 'ukLocationContainment.regionCode = campaignLocation.regionCode')
                 ->join('campaign.charity', 'charity')
                 ->join('campaign.campaignStatistics', 'campaignStatistics')
