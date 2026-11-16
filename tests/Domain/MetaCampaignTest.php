@@ -21,6 +21,39 @@ class MetaCampaignTest extends TestCase
         $this->assertSame($expectedResult, $shouldBeIndexed);
     }
 
+    public function testInviteOnlyMetaCampaignWithFutureStartDateIsNotIndexed(): void
+    {
+        $now = new \DateTimeImmutable('2025-01-01T12:00:00z');
+        $startDate = new \DateTimeImmutable('2025-01-22T12:00:00z');
+        $metaCampaign = self::someMetaCampaign(false, false, null, startDate: $startDate, inviteOnly: true);
+
+        $shouldBeIndexed = $metaCampaign->shouldBeIndexed($now);
+
+        $this->assertFalse($shouldBeIndexed, 'Invite-only meta-campaign with future start date should not be indexed');
+    }
+
+    public function testInviteOnlyMetaCampaignThatHasStartedIsIndexed(): void
+    {
+        $now = new \DateTimeImmutable('2025-02-01T12:00:00z');
+        $startDate = new \DateTimeImmutable('2025-01-22T12:00:00z');
+        $metaCampaign = self::someMetaCampaign(false, false, null, startDate: $startDate, inviteOnly: true);
+
+        $shouldBeIndexed = $metaCampaign->shouldBeIndexed($now);
+
+        $this->assertTrue($shouldBeIndexed, 'Invite-only meta-campaign that has started should be indexed');
+    }
+
+    public function testNonInviteOnlyMetaCampaignWithFutureStartDateIsIndexed(): void
+    {
+        $now = new \DateTimeImmutable('2025-01-01T12:00:00z');
+        $startDate = new \DateTimeImmutable('2025-01-22T12:00:00z');
+        $metaCampaign = self::someMetaCampaign(false, false, null, startDate: $startDate, inviteOnly: false);
+
+        $shouldBeIndexed = $metaCampaign->shouldBeIndexed($now);
+
+        $this->assertTrue($shouldBeIndexed, 'Non-invite-only meta-campaign with future start date should be indexed');
+    }
+
     /**
      * @return array<string, array{0: string, 1: string, 2: bool}>
      */
