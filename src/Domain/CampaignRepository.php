@@ -1202,6 +1202,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
             }
 
             foreach (array_keys($campaignThemes) as $theme) {
+                if (\strtolower(trim($theme)) === 'other') {
+                    continue;
+                }
+
                 $themeCounts[$theme] = ($themeCounts[$theme] ?? 0) + 1;
             }
         }
