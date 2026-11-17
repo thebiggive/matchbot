@@ -429,13 +429,27 @@ readonly class UKLocation implements \JsonSerializable
     ) {
     }
 
-    public static function findByCode(string $ONSCode): self
+
+    public static function findByCodeOrThrow(string $ONSCode): self
     {
-        /** @var array{0: string, 1: string, 2: string, 3: string, ...} $locationArray @phpstan-ignore varTag.type */
+        return self::findByCode($ONSCode) ?? throw new \Exception('Location not found for code ' . $ONSCode);
+    }
+
+    /**
+     * @return UKLocation|null the UK location with the given ONS code, or null if it isn't in our the list of locations we
+     * have chosen to use.
+     */
+    public static function findByCode(string $ONSCode): null|self
+    {
+        /** @var null|array{0: string, 1: string, 2: string, 3: string, ...} $locationArray @phpstan-ignore varTag.type */
         $locationArray = \array_find(
             self::LOCATIONS,
             fn(array $l) => $l[0] === $ONSCode
         );
+
+        if ($locationArray === null) {
+            return null;
+        }
 
         /** @var list<string> $siblingCodes @phpstan-ignore varTag.type */
         $siblingCodes = \array_filter(
@@ -479,7 +493,7 @@ readonly class UKLocation implements \JsonSerializable
         $descendants = [];
 
         foreach ($location->childCodes as $childCode) {
-            $child = self::findByCode($childCode);
+            $child = self::findByCodeOrThrow($childCode);
             $descendants = [...$descendants, $child, ...self::allDescendantsOf($child)];
         }
 
@@ -490,7 +504,7 @@ readonly class UKLocation implements \JsonSerializable
     public static function allLocations(): array
     {
         return \array_map(
-            fn(array $a) => self::findByCode($a[0]),
+            fn(array $a) => self::findByCodeOrThrow($a[0]),
             self::LOCATIONS,
         );
     }
