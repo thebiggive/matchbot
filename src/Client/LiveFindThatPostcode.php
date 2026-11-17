@@ -138,8 +138,11 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
         foreach ($included as $include) {
             $code = $include['attributes']['code'] ?? null; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
             $name = $include['attributes']['name'] ?? null; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
+            $isActive = $include['attributes']['active'] ?? false; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
 
-            if ($code === null || $name === null) {
+            // TODO Think about how we want to phase out inactive areas from the next boundary change / ONS update.
+            // We may need a list of temporarily included for search but inactive areas.
+            if ($code === null || $name === null || !$isActive) {
                 continue;
             }
 
