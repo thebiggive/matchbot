@@ -16,6 +16,7 @@ CREATE TABLE `FundingWithdrawal` (
   PRIMARY KEY (`id`),
   KEY `IDX_5C8EAC124DC1279C` (`donation_id`),
   KEY `IDX_5C8EAC12CB9EBA34` (`campaignFunding_id`),
+  KEY `donation_released_amount` (`donation_id`,`releasedAt`,`amount`),
   CONSTRAINT `FK_5C8EAC124DC1279C` FOREIGN KEY (`donation_id`) REFERENCES `Donation` (`id`),
   CONSTRAINT `FK_5C8EAC12CB9EBA34` FOREIGN KEY (`campaignFunding_id`) REFERENCES `CampaignFunding` (`id`)
 )

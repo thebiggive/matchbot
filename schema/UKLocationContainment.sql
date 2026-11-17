@@ -13,5 +13,6 @@ CREATE TABLE `UKLocationContainment` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`),
   KEY `regionCode` (`regionCode`),
-  KEY `ancestorRegionCode` (`ancestorRegionCode`)
+  KEY `ancestorRegionCode` (`ancestorRegionCode`),
+  KEY `containment_composite` (`regionCode`,`ancestorRegionCode`)
 )
