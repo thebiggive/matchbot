@@ -627,21 +627,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $qb->andWhere($this->statusAndFundingWhereClause);
         }
 
-        // Exclude campaigns belonging to invite-only meta-campaigns that haven't started yet.
-        // This prevents search engines from indexing embargoed campaigns (e.g. emergency appeals) early.
-        if (!$forInternalUpdate) {
-            $qb->andWhere(<<<DQL
-                campaign.metaCampaignSlug IS NULL
-                OR campaign.metaCampaignSlug NOT IN (
-                    SELECT mc.slug FROM MatchBot\Domain\MetaCampaign mc
-                    WHERE mc.inviteOnly = true AND mc.startDate > :now
-                )
-            DQL);
-            $qb->setParameter('now', $this->clock->now());
-        }
-
         if ($metaCampaignSlug === null) {
             $qb->andWhere($qb->expr()->gt('campaign.endDate', ':now'));
+            $qb->setParameter('now', $this->clock->now());
         }
 
         if ($metaCampaignSlug !== null) {
@@ -1202,6 +1190,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
             }
 
             foreach (array_keys($campaignThemes) as $theme) {
+                if (\strtolower(trim($theme)) === 'other') {
+                    continue;
+                }
+
                 $themeCounts[$theme] = ($themeCounts[$theme] ?? 0) + 1;
             }
         }

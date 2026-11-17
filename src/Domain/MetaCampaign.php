@@ -105,15 +105,6 @@ class MetaCampaign extends SalesforceReadProxy
     #[ORM\Column()]
     private bool $isEmergencyIMF;
 
-    /**
-     * When true, the meta-campaign should not be indexed by search engines until its start date.
-     * Used for embargoed campaigns (e.g. emergency appeals) where we want to prevent search engines
-     * from surfacing the page before the official launch.
-     *
-     * @psalm-suppress PossiblyUnusedProperty Used only in DQL queries, never read directly outside the class.
-     */
-    #[ORM\Column(options: ['default' => false])]
-    private bool $inviteOnly;
 
     /**
      * Ientifies the metacampaign as part of a series or type of campaigns, often with one member per year, e.g.
@@ -141,7 +132,6 @@ class MetaCampaign extends SalesforceReadProxy
         bool $isEmergencyIMF,
         Money $totalAdjustment,
         ?CampaignFamily $campaignFamily,
-        bool $inviteOnly = false,
     ) {
         Assertion::same($totalAdjustment->currency, $currency);
 
@@ -161,7 +151,6 @@ class MetaCampaign extends SalesforceReadProxy
         $this->isEmergencyIMF = $isEmergencyIMF;
         $this->totalAdjustment = $totalAdjustment;
         $this->campaignFamily = $campaignFamily;
-        $this->inviteOnly = $inviteOnly;
     }
 
     /**
@@ -237,7 +226,6 @@ class MetaCampaign extends SalesforceReadProxy
         $this->startDate = new \DateTimeImmutable($startDate);
         $this->endDate = new \DateTimeImmutable($endDate);
         $this->isEmergencyIMF = $data['isEmergencyIMF'];
-        $this->inviteOnly = $data['inviteOnly'] ?? false;
         $this->totalAdjustment = Money::fromNumericString($totalAdjustment, $currency);
     }
 
@@ -345,10 +333,6 @@ class MetaCampaign extends SalesforceReadProxy
     public function shouldBeIndexed(\DateTimeImmutable $at): bool
     {
         if ($this->hidden) {
-            return false;
-        }
-
-        if ($this->inviteOnly && $at < $this->startDate) {
             return false;
         }
 
