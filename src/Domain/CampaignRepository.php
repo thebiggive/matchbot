@@ -909,10 +909,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
             if (is_array($regionsToFilterTo) && count($regionsToFilterTo) > 0) {
                 // smallest in $regionsToFilter should be the first one
                 $smallestRegion = $regionsToFilterTo[0];
-                $location = UKLocation::findByCode($smallestRegion);
+                $location = UKLocation::findByCodeOrThrow($smallestRegion);
                 $siblingRegions = $location->siblingCodes;
                 $parentRegionCode = $location->parentCode;
-                $parentRegion = is_string($parentRegionCode) ? UKLocation::findByCode($parentRegionCode) : null;
+                $parentRegion = is_string($parentRegionCode) ? UKLocation::findByCodeOrThrow($parentRegionCode) : null;
             } else {
                 $location = null;
                 $parentRegion = null;
@@ -1044,10 +1044,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         return new CampaignSearchResult(
             campaigns: $result,
-            locationCounts: array_map(fn(array $loc) => [...$loc, 'region' => UKLocation::findByCode($loc['regionCode'])], $locationCounts),
-            ukFilterRegions: $regionsToFilterTo !== null ? array_map(UKLocation::findByCode(...), $regionsToFilterTo) : null,
-            childRegions: array_map(UKLocation::findByCode(...), $childCodes ?? []),
-            siblingRegions: array_map(UKLocation::findByCode(...), $siblingRegions),
+            locationCounts: array_map(fn(array $loc) => [...$loc, 'region' => UKLocation::findByCodeOrThrow($loc['regionCode'])], $locationCounts),
+            ukFilterRegions: $regionsToFilterTo !== null ? array_map(UKLocation::findByCodeOrThrow(...), $regionsToFilterTo) : null,
+            childRegions: array_map(UKLocation::findByCodeOrThrow(...), $childCodes ?? []),
+            siblingRegions: array_map(UKLocation::findByCodeOrThrow(...), $siblingRegions),
             parentRegion: $parentRegion,
             countries: $countries,
             themes: $themes,

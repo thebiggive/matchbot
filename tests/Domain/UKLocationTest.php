@@ -14,7 +14,7 @@ class UKLocationTest extends TestCase
 
     public function testItFindsLondonAsParentOfHaringey(): void
     {
-        $location = UKLocation::findByCode('E09000014'); // Haringey
+        $location = UKLocation::findByCodeOrThrow('E09000014'); // Haringey
         self::assertSame('E09000014', $location->code);
 
         $this->assertSame($location->parentCode, 'E12000007'); // London
@@ -22,10 +22,10 @@ class UKLocationTest extends TestCase
 
     public function testItFindsOtherBoroughsAsSiblingsOfHaringey(): void
     {
-        $location = UKLocation::findByCode('E09000014'); // Haringey
+        $location = UKLocation::findByCodeOrThrow('E09000014'); // Haringey
 
         $siblingNames = \array_map(
-            fn(string $code) => UKLocation::findByCode($code)->name,
+            fn(string $code) => UKLocation::findByCodeOrThrow($code)->name,
             $location->siblingCodes
         );
 
@@ -71,10 +71,10 @@ class UKLocationTest extends TestCase
 
     public function testItFindsChildrenOfLondon(): void
     {
-        $location = UKLocation::findByCode('E12000007'); // London
+        $location = UKLocation::findByCodeOrThrow('E12000007'); // London
 
         $childNames = \array_map(
-            fn(string $code) => UKLocation::findByCode($code)->name,
+            fn(string $code) => UKLocation::findByCodeOrThrow($code)->name,
             $location->childCodes
         );
 
@@ -125,7 +125,7 @@ class UKLocationTest extends TestCase
      */
     public function testItFindsAllDescendantsOfARegion(): void
     {
-        $location = UKLocation::findByCode('E12000006'); // East of England
+        $location = UKLocation::findByCodeOrThrow('E12000006'); // East of England
 
         $allDescendantRegions = UKLocation::allDescendantsOf($location);
 
@@ -188,7 +188,7 @@ class UKLocationTest extends TestCase
 
     public function testItFindsNoParentOfLondon(): void
     {
-        $location = UKLocation::findByCode('E12000007'); // London
+        $location = UKLocation::findByCodeOrThrow('E12000007'); // London
 
         $this->assertSame($location->parentCode, null);
     }
