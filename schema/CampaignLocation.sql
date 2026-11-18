@@ -14,5 +14,7 @@ CREATE TABLE `CampaignLocation` (
   KEY `IDX_6C25EDB1F639F774` (`campaign_id`),
   KEY `regionCode` (`regionCode`),
   KEY `countryName` (`countryName`),
+  KEY `country_and_campaign` (`countryName`,`campaign_id`),
+  KEY `region_and_campaign` (`regionCode`,`campaign_id`),
   CONSTRAINT `FK_6C25EDB1F639F774` FOREIGN KEY (`campaign_id`) REFERENCES `Campaign` (`id`) ON DELETE CASCADE
 )
