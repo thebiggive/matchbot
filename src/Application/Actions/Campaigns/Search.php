@@ -90,7 +90,10 @@ class Search extends Action
             $regions = \array_map(static fn(array $region): string => $region['code'], $regions);
         } elseif ($ukRegion !== null) {
             $region = UKLocation::findByCode($ukRegion);
-            if (is_string($region->parentCode)) {
+            if ($region === null) {
+                $regions = null;
+                $this->logger->warning("Igonring unknown UK region in search, code \'$ukRegion\'");
+            } elseif (is_string($region->parentCode)) {
                 $regions = [$region->code, $region->parentCode];
             } else {
                 $regions = [$region->code];

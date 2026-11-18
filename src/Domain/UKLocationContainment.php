@@ -14,6 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Index(name: 'regionCode', columns: ['regionCode'])]
 #[ORM\Index(name: 'ancestorRegionCode', columns: ['ancestorRegionCode'])]
+#[ORM\Index(name: 'containment_composite', columns: ['regionCode', 'ancestorRegionCode'])]
 #[ORM\Entity]
 class UKLocationContainment extends Model
 {

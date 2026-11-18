@@ -13,6 +13,8 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Index(name: 'regionCode', columns: ['regionCode'])]
 #[ORM\Index(name: 'countryName', columns: ['countryName'])]
+#[ORM\Index(name: 'country_and_campaign', columns: ['countryName', 'campaign_id'])]
+#[ORM\Index(name: 'region_and_campaign', columns: ['regionCode', 'campaign_id'])]
 #[ORM\Entity]
 class CampaignLocation extends Model
 {

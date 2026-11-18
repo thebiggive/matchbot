@@ -8,6 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: FundingWithdrawalRepository::class)]
 #[ORM\HasLifecycleCallbacks]
+#[ORM\Index(name: 'donation_released_amount', columns: ['donation_id', 'releasedAt', 'amount'])]
 class FundingWithdrawal extends Model
 {
     use TimestampsTrait;
