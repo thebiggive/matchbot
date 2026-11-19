@@ -80,7 +80,7 @@ class RefundTest extends TestCase
         $donationServiceProphecy->refund(Argument::any())->shouldNotBeCalled();
 
         $this->expectException(\AssertionError::class);
-        $this->expectExceptionMessage('assert(in_array($refundScope, [\'tip\', \'full\'], true))');
+        $this->expectExceptionMessage('Refund scope must be tip or full');
 
         $this->buildAndInvokeAction($donationServiceProphecy, 'aboutHalf');
     }

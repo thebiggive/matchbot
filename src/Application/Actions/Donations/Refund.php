@@ -49,6 +49,7 @@ class Refund extends Action
         $donationUUID = $this->argToUuid($args, 'donationId');
 
         try {
+            /** @var array<string, mixed> $requestBody */
             $requestBody = json_decode(
                 $request->getBody()->getContents(),
                 true,
@@ -58,10 +59,10 @@ class Refund extends Action
         } catch (\JsonException) {
             throw new HttpBadRequestException($request, 'Cannot parse request body as JSON');
         }
-        \assert(is_array($requestBody));
 
+        /** @var 'tip'|'full'|null $refundScope */
         $refundScope = $requestBody['scope'] ?? null;
-        \assert(in_array($refundScope, ['tip', 'full'], true));
+        \assert(in_array($refundScope, ['tip', 'full'], true), 'Refund scope must be tip or full');
 
         $donation = $this->donationRepository->findOneByUUID($donationUUID);
         if (!$donation) {

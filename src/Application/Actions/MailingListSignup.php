@@ -134,7 +134,7 @@ class MailingListSignup extends Action
 
             /** @var mixed $rawJobTitle */
             $rawJobTitle = $data['jobTitle'];
-            if (!is_string($rawJobTitle) || empty($rawJobTitle)) {
+            if (!is_string($rawJobTitle) || '' === $rawJobTitle) {
                 return new JsonResponse([
                     'success' => false,
                     'message' => 'Job title must be a non-empty string for charity mailing list',

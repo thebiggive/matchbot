@@ -62,7 +62,7 @@ class DonorAccountRepository extends EntityRepository
 
         $donorIdFromDonation = $donation->getDonorId();
 
-        if ($donorIdFromDonation == null) {
+        if ($donorIdFromDonation === null) {
             // all donations made since April 2025 have non-null donorID.
             return $donorAccountForEmail !== null;
         }

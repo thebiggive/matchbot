@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\ClientException;
@@ -19,7 +21,7 @@ class GenericSalesforceGet extends Common
      */
     public function get(string $path): StreamInterface
     {
-        $uri = $this->getUri(uri: "{$this->sfApiBaseUrlCached}/$path", withCache: true);
+        $uri = $this->getUri(uri: "{$this->sfApiBaseUrlCached}/{$path}", withCache: true);
 
         try {
             $response = $this->getHttpClient()->get($uri);

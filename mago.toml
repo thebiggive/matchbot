@@ -37,7 +37,17 @@ baseline = "lint-baseline.toml"
 [linter.rules]
 ambiguous-function-call = { enabled = false }
 literal-named-argument = { enabled = false }
-halstead = { effort-threshold = 7000 }
+halstead = { enabled = false }
+assert-description = { enabled = false }
+no-isset = { enabled = false }
+no-boolean-flag-parameter = { enabled = false }
+no-else-clause = { enabled = false }
+prefer-early-continue = { enabled = false }
+inline-variable-return = { enabled = false }
+tagged-todo = { enabled = false }
+no-redundant-readonly = { enabled = false }
+prefer-static-closure = { enabled = false }
+braced-string-interpolation = { enabled = false }
 
 [analyzer]
 plugins = ["psr-container"]

@@ -130,19 +130,15 @@ return function (ContainerBuilder $containerBuilder) {
         Settings::class => fn() => Settings::fromEnvVars(getenv()),
 
         Auth\DonationPublicAuthMiddleware::class =>
-            function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {
-                return new Auth\DonationPublicAuthMiddleware($c->get(LoggerInterface::class));
-            },
+            fn (ContainerInterface $c): Auth\DonationPublicAuthMiddleware => new Auth\DonationPublicAuthMiddleware($c->get(LoggerInterface::class)),
 
-        RedisCacheAdapter::class => function (ContainerInterface $c): RedisCacheAdapter {
-            return new RedisCacheAdapter(
-                $c->get(Redis::class),
-                // Distinguish e.g. rate limit data from matching if we ever need to debug
+        RedisCacheAdapter::class => fn (ContainerInterface $c): RedisCacheAdapter => new RedisCacheAdapter(
+            $c->get(Redis::class),
+            // Distinguish e.g. rate limit data from matching if we ever need to debug
                 // or clear Redis contents.
                 'matchbot-cache',
-                3600, // Allow Auto-clearing cache/rate limit data after an hour.
-            );
-        },
+            3600, // Allow Auto-clearing cache/rate limit data after an hour.
+        ),
 
         // Used by Doctrine; both ORM (various caches) and DBAL (result cache) configs.
         CacheAdapterInterface::class => function (ContainerInterface $c): CacheAdapterInterface {
@@ -177,18 +173,12 @@ return function (ContainerBuilder $containerBuilder) {
             }
         },
 
-        SymfonyCacheInterface::class => function (ContainerInterface $c): SymfonyCacheInterface {
-            return $c->get(RedisCacheAdapter::class);
-        },
+        SymfonyCacheInterface::class => fn (ContainerInterface $c): SymfonyCacheInterface => $c->get(RedisCacheAdapter::class),
 
         // For `kevinrob/guzzle-cache-middleware`. See `MatchBot\Client\Common::getHttpClient()`.
-        Psr6CacheStorage::class => function (ContainerInterface $c): Psr6CacheStorage {
-            return new Psr6CacheStorage($c->get(RedisCacheAdapter::class));
-        },
+        Psr6CacheStorage::class => fn (ContainerInterface $c): Psr6CacheStorage => new Psr6CacheStorage($c->get(RedisCacheAdapter::class)),
 
-        PSR16CacheInterface::class => function (ContainerInterface $c): PSR16CacheInterface {
-            return new Psr16Cache($c->get(RedisCacheAdapter::class));
-        },
+        PSR16CacheInterface::class => fn (ContainerInterface $c): PSR16CacheInterface => new Psr16Cache($c->get(RedisCacheAdapter::class)),
 
         ChatterInterface::class => static function (ContainerInterface $c): ChatterInterface {
             $settings = $c->get(Settings::class);
@@ -249,43 +239,25 @@ return function (ContainerBuilder $containerBuilder) {
             return $c->get(SlackChannelChatterFactory::class)->makeChatter($stripeChannel);
         },
 
-        SlackChannelChatterFactory::class => static function (ContainerInterface $c): SlackChannelChatterFactory {
-            return new SlackChannelChatterFactory(
-                $c->get(Settings::class)->notifier['slack']['api_token']
-            );
-        },
+        SlackChannelChatterFactory::class => static fn (ContainerInterface $c): SlackChannelChatterFactory => new SlackChannelChatterFactory(
+            $c->get(Settings::class)->notifier['slack']['api_token']
+        ),
 
-        Transports::TRANSPORT_CLAIMBOT => static function (): TransportInterface {
-            return Transports::buildTransport(Transports::TRANSPORT_CLAIMBOT);
-        },
+        Transports::TRANSPORT_CLAIMBOT => static fn (): TransportInterface => Transports::buildTransport(Transports::TRANSPORT_CLAIMBOT),
 
-        Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
-            return new Client\Campaign($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class));
-        },
+        Client\Campaign::class => fn (ContainerInterface $c): Client\Campaign => new Client\Campaign($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class)),
 
-        Client\Donation::class => function (ContainerInterface $c): Client\Donation {
-            return new Client\Donation($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class));
-        },
+        Client\Donation::class => fn (ContainerInterface $c): Client\Donation => new Client\Donation($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class)),
 
-        Client\FindThatPostcode::class => function (ContainerInterface $c): Client\FindThatPostcode {
-            return $c->get(Client\LiveFindThatPostcode::class);
-        },
+        Client\FindThatPostcode::class => fn (ContainerInterface $c): Client\FindThatPostcode => $c->get(Client\LiveFindThatPostcode::class),
 
-        Client\Mandate::class => function (ContainerInterface $c): Client\Mandate {
-            return new Client\Mandate($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class));
-        },
+        Client\Mandate::class => fn (ContainerInterface $c): Client\Mandate => new Client\Mandate($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class)),
 
-        Client\Fund::class => function (ContainerInterface $c): Client\Fund {
-            return new Client\Fund($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class));
-        },
+        Client\Fund::class => fn (ContainerInterface $c): Client\Fund => new Client\Fund($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class)),
 
-        Client\Mailer::class => function (ContainerInterface $c): Client\Mailer {
-            return new Client\Mailer($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class));
-        },
+        Client\Mailer::class => fn (ContainerInterface $c): Client\Mailer => new Client\Mailer($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class)),
 
-        Client\MailingList::class => function (ContainerInterface $c): Client\MailingList {
-            return new Client\MailingList($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class));
-        },
+        Client\MailingList::class => fn (ContainerInterface $c): Client\MailingList => new Client\MailingList($c->get(Psr6CacheStorage::class), $c->get(Settings::class), $c->get(LoggerInterface::class)),
 
         Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {
             $isLoadTest = getenv('APP_ENV') !== 'production' && isset($_SERVER['HTTP_X_IS_LOAD_TEST']) && $_SERVER['HTTP_X_IS_LOAD_TEST'] === '1';
@@ -296,24 +268,18 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\LiveStripeClient($c->get(StripeClient::class));
         },
 
-        CloudWatchClient::class => static function (): CloudWatchClient {
-            return new CloudWatchClient([
+        CloudWatchClient::class => static fn (): CloudWatchClient => new CloudWatchClient([
                 'version' => 'latest',
                 'region' => getenv('AWS_REGION'),
                 'credentials' => [
                     'key' => getenv('AWS_CLOUDWATCH_ACCESS_KEY_ID'),
                     'secret' => getenv('AWS_CLOUDWATCH_SECRET_ACCESS_KEY'),
                 ],
-            ]);
-        },
+            ]),
 
-        DonationFundsNotifier::class => function (ContainerInterface $c): DonationFundsNotifier {
-            return new DonationFundsNotifier($c->get(MessageBusInterface::class));
-        },
+        DonationFundsNotifier::class => fn (ContainerInterface $c): DonationFundsNotifier => new DonationFundsNotifier($c->get(MessageBusInterface::class)),
 
-        EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
-            return $c->get(ORM\EntityManager::class);
-        },
+        EntityManagerInterface::class => fn (ContainerInterface $c): EntityManagerInterface => $c->get(ORM\EntityManager::class),
 
         IdentityTokenService::class => function (ContainerInterface $c): IdentityTokenService {
             // the first secret in the list is the one that will be used (in the Idenity service) to issue tokens.
@@ -389,14 +355,10 @@ return function (ContainerBuilder $containerBuilder) {
 
         LoggerInterface::class => fn (ContainerInterface $c): LoggerInterface => $c->get(Logger::class),
 
-        Environment::class => function (ContainerInterface $_c): Environment {
-            /** @psalm-suppress PossiblyFalseArgument - we expect APP_ENV to be set everywhere */
-            return Environment::fromAppEnv(getenv('APP_ENV'));
-        },
+        Environment::class => fn (ContainerInterface $_c): Environment => Environment::fromAppEnv((string) getenv('APP_ENV')),
 
-        DONATION_CREATION_RATE_LIMITER_FACTORY_KEY => function (ContainerInterface $c): RateLimiterFactory {
-            return new RateLimiterFactory(
-                config: [
+        DONATION_CREATION_RATE_LIMITER_FACTORY_KEY => fn (ContainerInterface $c): RateLimiterFactory => new RateLimiterFactory(
+            config: [
                     'id' => 'create-donation',
                     'policy' => 'token_bucket',
 
@@ -408,26 +370,21 @@ return function (ContainerBuilder $containerBuilder) {
                     // how often they can create new donations once the initial allowance is used up.
                     'rate' => ['interval' => '30 seconds'],
                 ],
-                storage: $c->get(RateLimiterStorage::class)
-            );
-        },
+            storage: $c->get(RateLimiterStorage::class)
+        ),
 
-        NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY => function (ContainerInterface $c): RateLimiterFactory {
-            return new RateLimiterFactory(
-                config: [
+        NEW_CARD_CONFIRM_RATE_LIMITER_FACTORY_KEY => fn (ContainerInterface $c): RateLimiterFactory => new RateLimiterFactory(
+            config: [
                     'id' => 'confirm-donation',
                     'policy' => 'token_bucket',
                     // how many distinct card confirm attempts are allowed in the time window
                     'limit' => 5,
                     'rate' => ['interval' => '30 minutes'],
                 ],
-                storage: $c->get(RateLimiterStorage::class)
-            );
-        },
+            storage: $c->get(RateLimiterStorage::class)
+        ),
 
-        RealTimeMatchingStorage::class => static function (ContainerInterface $c): RealTimeMatchingStorage {
-            return new RedisMatchingStorage($c->get(Redis::class));
-        },
+        RealTimeMatchingStorage::class => static fn (ContainerInterface $c): RealTimeMatchingStorage => new RedisMatchingStorage($c->get(Redis::class)),
 
         CommandRequestHandler::class => static function (ContainerInterface $c): CommandRequestHandler {
             $consoleApplication = $c->get(\Symfony\Component\Console\Application::class);
@@ -442,13 +399,11 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Matching\Adapter::class =>
-            static function (ContainerInterface $c): Matching\Adapter {
-                return new Matching\Adapter(
-                    storage: $c->get(RealTimeMatchingStorage::class),
-                    logger: $c->get(LoggerInterface::class),
-                    clock: $c->get(\Psr\Clock\ClockInterface::class),
-                );
-            },
+            static fn (ContainerInterface $c): Matching\Adapter => new Matching\Adapter(
+                storage: $c->get(RealTimeMatchingStorage::class),
+                logger: $c->get(LoggerInterface::class),
+                clock: $c->get(\Psr\Clock\ClockInterface::class),
+            ),
 
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
             $logger = $c->get(LoggerInterface::class);
@@ -511,9 +466,7 @@ return function (ContainerBuilder $containerBuilder) {
 
         'commit-id' => static fn(ContainerInterface $_c): string => require __DIR__ . "/../.build-commit-id.php", // @mago-expect analysis:mixed-return-statement
 
-        RateLimiterStorage::class => function (ContainerInterface $c): RateLimiterStorage {
-            return new CacheStorage(new RedisCacheAdapter($c->get(Redis::class)));
-        },
+        RateLimiterStorage::class => fn (ContainerInterface $c): RateLimiterStorage => new CacheStorage(new RedisCacheAdapter($c->get(Redis::class))),
 
         ORM\Configuration::class => static function (ContainerInterface $c): ORM\Configuration {
             $settings = $c->get(Settings::class);
@@ -561,17 +514,13 @@ return function (ContainerBuilder $containerBuilder) {
             return $config;
         },
 
-        ProblemDetailsResponseFactory::class => static function (): ProblemDetailsResponseFactory {
-            return new ProblemDetailsResponseFactory(new ResponseFactory());
-        },
+        ProblemDetailsResponseFactory::class => static fn (): ProblemDetailsResponseFactory => new ProblemDetailsResponseFactory(new ResponseFactory()),
 
-        RateLimitMiddleware::class => static function (ContainerInterface $c): RateLimitMiddleware {
-            return new RateLimitMiddleware(
-                $c->get(PSR16CacheInterface::class),
-                $c->get(ProblemDetailsResponseFactory::class),
-                new RateLimitOptions($c->get(Settings::class)->los_rate_limit),
-            );
-        },
+        RateLimitMiddleware::class => static fn (ContainerInterface $c): RateLimitMiddleware => new RateLimitMiddleware(
+            $c->get(PSR16CacheInterface::class),
+            $c->get(ProblemDetailsResponseFactory::class),
+            new RateLimitOptions($c->get(Settings::class)->los_rate_limit),
+        ),
 
         /**
          * Do NOT pass this instance to Doctrine, which will set it to PHP serialisation, breaking incr/decr maths
@@ -668,9 +617,7 @@ return function (ContainerBuilder $containerBuilder) {
             return new RoutableMessageBus($busContainer, $bus);
         },
 
-        Transports::TRANSPORT_LOW_PRIORITY => static function (): TransportInterface {
-            return Transports::buildTransport(Transports::TRANSPORT_LOW_PRIORITY);
-        },
+        Transports::TRANSPORT_LOW_PRIORITY => static fn (): TransportInterface => Transports::buildTransport(Transports::TRANSPORT_LOW_PRIORITY),
 
         SerializerInterface::class => static function (): SerializerInterface {
             $encoders = [new JsonEncoder()];
@@ -709,13 +656,9 @@ return function (ContainerBuilder $containerBuilder) {
             );
         },
 
-        Transports::TRANSPORT_HIGH_PRIORITY => static function (): TransportInterface {
-            return Transports::buildTransport(Transports::TRANSPORT_HIGH_PRIORITY);
-        },
+        Transports::TRANSPORT_HIGH_PRIORITY => static fn (): TransportInterface => Transports::buildTransport(Transports::TRANSPORT_HIGH_PRIORITY),
 
-        Connection::class => static function (ContainerInterface $c): Connection {
-            return $c->get(EntityManagerInterface::class)->getConnection();
-        },
+        Connection::class => static fn (ContainerInterface $c): Connection => $c->get(EntityManagerInterface::class)->getConnection(),
 
         ClockInterface::class => fn() => new NativeClock(),
         Psr\Clock\ClockInterface::class  => fn() => new NativeClock(),
@@ -723,13 +666,11 @@ return function (ContainerBuilder $containerBuilder) {
         EventDispatcherInterface::class => fn() => new EventDispatcher(),
 
         Auth\SalesforceAuthMiddleware::class =>
-            function (ContainerInterface $c) {
-                return new Auth\SalesforceAuthMiddleware(
-                    sfApiKey: $c->get(Settings::class)->salesforce['apiKey'],
-                    logger: $c->get(LoggerInterface::class),
-                    clock: $c->get(ClockInterface::class),
-                );
-            },
+            fn (ContainerInterface $c) => new Auth\SalesforceAuthMiddleware(
+                sfApiKey: $c->get(Settings::class)->salesforce['apiKey'],
+                logger: $c->get(LoggerInterface::class),
+                clock: $c->get(ClockInterface::class),
+            ),
 
         DonationNotifier::class =>
             static function (ContainerInterface $c): DonationNotifier {

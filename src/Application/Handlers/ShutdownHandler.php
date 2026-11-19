@@ -78,10 +78,8 @@ class ShutdownHandler
             // connection failures cause these. These are already logged and if error-like output is emitted
             // alongside `/ping`'s more helpful output, its response body is left malformatted.
             if (
-                (
                 $errorType === E_WARNING &&
                 str_contains($message, 'getaddrinfo failed: Name or service not known')
-                )
             ) {
                 return;
             }

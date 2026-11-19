@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MatchBot\Client;
 
 use BcMath\Number;

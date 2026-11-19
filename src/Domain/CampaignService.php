@@ -434,7 +434,7 @@ class CampaignService
         }
 
         $campaignId = $campaign->getId();
-        \assert($campaignId !== null);
+        \assert($campaignId !== null, 'Campaign must have an ID');
         $matchFundsUsed = $this->campaignRepository->totalMatchFundsUsed($campaignId);
         $donationSum = $this->campaignRepository->totalCoreDonations($campaign);
 

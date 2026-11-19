@@ -451,7 +451,6 @@ readonly class UKLocation implements \JsonSerializable
             return null;
         }
 
-        /** @var list<string> $siblingCodes @phpstan-ignore varTag.type */
         $siblingCodes = \array_filter(
             self::LOCATIONS,
             fn(array $l): bool => $l[3] === $locationArray[3] && $l[0] !== $ONSCode
@@ -463,9 +462,6 @@ readonly class UKLocation implements \JsonSerializable
         ))
         |> \array_values(...);
 
-        /**
-         * @var list<string> $childCodes @phpstan-ignore varTag.type
-         */
         $childCodes = \array_filter(
             self::LOCATIONS,
             fn(array $l): bool => $l[3] === $ONSCode

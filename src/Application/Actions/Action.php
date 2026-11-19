@@ -58,11 +58,11 @@ abstract class Action
         return new ChatMessage(
             subject: $heading,
             options: (new SlackOptions())
-                ->block((new SlackHeaderBlock(sprintf(
+                ->block(new SlackHeaderBlock(sprintf(
                     '[%s] %s',
                     (string)getenv('APP_ENV'),
                     $heading,
-                ))))
+                )))
                 ->block((new SlackSectionBlock())->text($body))
                 ->iconEmoji(':o')
         );

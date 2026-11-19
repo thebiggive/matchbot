@@ -26,7 +26,7 @@ class CorsMiddleware implements MiddlewareInterface
             'https://donate-production.thebiggive.org.uk', // ECS + S3 production via CloudFront
             'https://donate.biggive.org', // ECS + S3 production via CloudFront, Feb-2023-onwards primary domain
         ];
-        if (!empty($givenOrigin) && in_array($givenOrigin, $corsAllowedOrigins, true)) {
+        if ('' !== $givenOrigin && in_array($givenOrigin, $corsAllowedOrigins, true)) {
             $corsAllowedOrigin = $givenOrigin;
         }
 

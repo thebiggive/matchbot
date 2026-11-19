@@ -388,7 +388,7 @@ class Charity extends SalesforceReadProxy
 
     public function getRegulatorName(): ?string
     {
-        if ($this->regulator == null) {
+        if ($this->regulator === null) {
             return null;
         }
 

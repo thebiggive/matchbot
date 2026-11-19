@@ -79,10 +79,8 @@ class HttpErrorHandler extends SlimErrorHandler
             $error->setDescription($exception->getMessage());
 
             $trace = array_map(
-                /** @psalm-suppress PossiblyUndefinedArrayOffset
-                 * Offsets defined at https://www.php.net/manual/en/exception.gettrace.php
-                 */
-                function (array $frame) {
+                /** @psalm-suppress PossiblyUndefinedArrayOffset */
+                function (array $frame): string {
                     $class = $frame['class'] ?? '';
                     $function = $frame['function'] ?? '';
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MatchBot\Application\Messenger\Handler;
 
 use MatchBot\Application\Messenger\EmailRequest;

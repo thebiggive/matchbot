@@ -88,7 +88,7 @@ class SetupTestMandate extends LockingCommand
     #[\Override]
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        if ($this->environment == Environment::Production) {
+        if ($this->environment === Environment::Production) {
             throw new \Exception("Not for use in production");
         }
 

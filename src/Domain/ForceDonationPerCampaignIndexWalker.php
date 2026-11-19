@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\Query\AST\SelectStatement;
@@ -25,7 +27,7 @@ class ForceDonationPerCampaignIndexWalker extends SqlWalker
         );
 
         // should always be a string unless we introduce a regex syntax error, when it would be null.
-        \assert(\is_string($return));
+        \assert(\is_string($return), 'Regex replacement must return a string');
 
         return $return;
     }

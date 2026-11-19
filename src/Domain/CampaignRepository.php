@@ -160,9 +160,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             filterByRegions: false, // Don't skip non-isPublished ones etc.
         )->campaigns;
 
-        $campaignIds = array_map(function (Campaign $campaign) {
-            return Salesforce18Id::ofCampaign($campaign->getSalesforceId());
-        }, $campaignList);
+        $campaignIds = array_map(fn (Campaign $campaign) => Salesforce18Id::ofCampaign($campaign->getSalesforceId()), $campaignList);
 
         $newFetchCount = 0;
         $updatedCount = 0;
@@ -901,7 +899,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
 
         if ($country === 'United Kingdom' || $regions !== null) {
-            if (is_array($regionsToFilterTo) && count($regionsToFilterTo) > 0) {
+            if (is_array($regionsToFilterTo)) {
                 // smallest in $regionsToFilter should be the first one
                 $smallestRegion = $regionsToFilterTo[0];
                 $location = UKLocation::findByCodeOrThrow($smallestRegion);
@@ -1128,7 +1126,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * and real counts relative to it, when `ENABLE_REDUCED_FILTER_COUNTS_MODE` is off. All themes (for the meta-campaign
      * if applicable) and no counts when it's on.
      *
-     * @psalm-suppress MixedAssignment
      */
     private function getThemeCountsForSearch(
         ?string $metaCampaignSlug,
@@ -1191,8 +1188,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
             $campaignThemes = [];
             foreach (['beneficiaries', 'categories'] as $key) {
+                /** @var mixed $values */
                 $values = $sfData[$key] ?? null;
                 if (is_array($values)) {
+                    /** @var mixed $theme */
                     foreach ($values as $theme) {
                         if (is_string($theme) && trim($theme) !== '') {
                             $campaignThemes[trim($theme)] = true;
@@ -1249,7 +1248,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             /** @var array{country: string, numCampaigns: int|null}|array{theme: string, numCampaigns: int|null} $a */
             /** @var array{country: string, numCampaigns: int|null}|array{theme: string, numCampaigns: int|null} $b */
             if ($b['numCampaigns'] !== $a['numCampaigns']) {
-                return $b['numCampaigns'] <=> $a['numCampaigns'];
+                return ($b['numCampaigns'] ?? 0) <=> ($a['numCampaigns'] ?? 0);
             }
             return strcasecmp(
                 $a['country'] ?? $a['theme'] ?? throw new \UnexpectedValueException('Filter name missing'),

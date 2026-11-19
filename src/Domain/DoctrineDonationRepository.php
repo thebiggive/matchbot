@@ -160,7 +160,7 @@ DQL);
     #[\Override]
     public function findNotFullyMatchedToCampaignsWhichClosedSince(\DateTimeImmutable $closedSinceDate): array
     {
-        $now = (new DateTime('now'));
+        $now = new DateTime('now');
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')

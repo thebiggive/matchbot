@@ -47,7 +47,7 @@ class ClaimGiftAid extends LockingCommand
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $toClaim = $this->donationRepository->findReadyToClaimGiftAid(
-            !empty($input->getOption('with-resends')),
+            $input->getOption('with-resends') === true,
         );
 
         if (count($toClaim) > 0) {

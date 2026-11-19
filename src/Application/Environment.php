@@ -44,10 +44,7 @@ enum Environment
         return match ($this) {
             // listing all cases in case we ever have multiple defined production envs.
             self::Production => true,
-            self::Regression => false,
-            self::Staging => false,
-            self::Local => false,
-            self::Test => false,
+            self::Regression, self::Local, self::Staging, self::Test => false,
         };
     }
 

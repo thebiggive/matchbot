@@ -54,10 +54,12 @@ abstract class Command extends SymfonyCommand
      * something that scans the directory.
      *
      * @return list<\Symfony\Component\Console\Command\Command>
+     * @psalm-suppress MixedReturnTypeCoercion
      */
     public static function allCommands(ContainerInterface $c): array
     {
-        $commands = array_map($c->get(...), [
+        // @mago-expect analysis:less-specific-nested-return-statement -- Psalm knows the type is right, Mago doesn't.
+        return array_map($c->get(...), [
             // Alphabetical list:
             CallFrequentTasks::class,
             CancelStaleDonationFundTips::class,
@@ -86,7 +88,5 @@ abstract class Command extends SymfonyCommand
             UpdateCampaigns::class,
             WriteSchemaFile::class,
         ]);
-
-        return $commands; // @mago-expect analysis:less-specific-nested-return-statement -- psalm knows the type is right, apparently Mago doesn't.
     }
 }
