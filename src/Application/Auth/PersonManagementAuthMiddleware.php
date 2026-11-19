@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Auth;
 
-use JetBrains\PhpStorm\Pure;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -51,7 +50,7 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
         $personId = $route->getArgument('personId');
         $this->jws = $request->getHeaderLine('x-tbg-auth');
 
-        if (empty($this->jws)) {
+        if ('' === $this->jws) {
             $this->logger->info('Security: No JWT provided');
             $this->unauthorised($this->logger, true, $request);
         }

@@ -242,7 +242,7 @@ class Settings
     {
         $value = $env[$varName] ?? null;
 
-        if ((! is_string($value))) {
+        if (!is_string($value)) {
             if ($throwIfMissing) {
                 throw new \Exception("Required environment variable $varName is missing.");
             }

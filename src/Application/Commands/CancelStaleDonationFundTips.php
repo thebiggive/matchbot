@@ -45,7 +45,7 @@ class CancelStaleDonationFundTips extends LockingCommand
         $twoWeeks = new \DateInterval('P14D');
         $tenMinutes = new \DateInterval('PT10M');
 
-        $cancelationDelay = $this->environment == Environment::Production ? $twoWeeks : $tenMinutes;
+        $cancelationDelay = $this->environment === Environment::Production ? $twoWeeks : $tenMinutes;
 
         $staleDonationTipsUUIDS = $this->donationRepository->findStaleDonationFundsTips($this->clock->now(), $cancelationDelay);
 

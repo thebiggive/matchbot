@@ -48,7 +48,6 @@ use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Lock\Exception\LockConflictedException;
-use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
@@ -406,7 +405,7 @@ class DonationService
                 break;
             case RefundScope::full:
                 $totalPaid = $donation->getTotalPaidByDonor();
-                \assert($totalPaid !== null);
+                \assert($totalPaid !== null, 'Total paid must be set for full refund');
                 $amountToRefund = Money::fromNumericString($totalPaid, $donation->currency());
                 break;
             default:
@@ -417,7 +416,7 @@ class DonationService
             $paymentIntentId = $donation->getTransactionId();
             \assert(isset($paymentIntentId));
             $paymentMethodType = $donation->getPaymentMethodType();
-            \assert($paymentMethodType !== null);
+            \assert($paymentMethodType !== null, 'Payment method type must be set for refund');
             // Psalm is insisting on return value use in CI and disallowing suppressing the same thing on local.
             $_refund = $this->stripe->createRefund(
                 paymentIntentId: $paymentIntentId,
@@ -507,7 +506,7 @@ class DonationService
         }
 
         $mandate = $donation->getMandate();
-        \assert($mandate !== null);
+        \assert($mandate !== null, 'Mandate must be set for regular giving donation');
         $currentMandateStatus = $mandate->getStatus();
         if ($currentMandateStatus !== MandateStatus::Active) {
             throw new MandateNotActive(
@@ -679,7 +678,7 @@ class DonationService
         } else {
             // if we had a ctoken at all we're not using Donation Funds so must be using Pay By Bank, which
             // has no card / default fees.
-            \assert($paymentMethodPreview->pay_by_bank !== null);
+            \assert($paymentMethodPreview->pay_by_bank !== null, 'Pay by bank must be set when no card is present');
             $card = null;
         }
         $donation->setPaymentCard($card);
@@ -1281,7 +1280,7 @@ class DonationService
         $this->createAndAssociatePaymentIntent($donation);
 
         $paymentIntentId = $donation->getTransactionId();
-        \assert($paymentIntentId !== null);
+        \assert($paymentIntentId !== null, 'Payment intent ID must be set for donation');
 
         $this->logger->info(sprintf(
             'Donation UUID %s: New payment intent ID %s associated',

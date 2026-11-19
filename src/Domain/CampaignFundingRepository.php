@@ -94,7 +94,7 @@ class CampaignFundingRepository extends EntityRepository
         /** @var list<array{id: int}> $ids */
         $ids = $idQuery->getResult();
 
-        if (empty($ids)) {
+        if ($ids === []) {
             return self::metaCampaignZeroes(Currency::GBP);
         }
 

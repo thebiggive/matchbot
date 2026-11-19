@@ -57,7 +57,7 @@ class ExtendFundsReservationTime extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        if (empty($args['donationId']) || ! is_string($args['donationId'])) {
+        if (!isset($args['donationId']) || ! is_string($args['donationId'])) {
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
@@ -100,7 +100,7 @@ class ExtendFundsReservationTime extends Action
         }
 
         /** @psalm-suppress UnevaluatedCode - psalm seems to wrongly treat wrapInTransaction as returning never here.*/
-        \assert($donation instanceof Donation);
+        \assert($donation instanceof Donation, 'Donation should be set after successful transaction');
 
         /** @psalm-suppress UnevaluatedCode - psalm seems to wrongly treat wrapInTransaction as returning never here.*/
         return $this->respondWithData($response, $donation->toFrontEndApiModel($this->enableNoReservationsMode));

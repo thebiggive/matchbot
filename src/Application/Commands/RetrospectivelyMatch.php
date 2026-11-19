@@ -57,7 +57,7 @@ class RetrospectivelyMatch extends LockingCommand
     {
         $recentlyClosedMode = !is_numeric($input->getArgument('days-back'));
         // Default is 1 hour before exec started.
-        $sinceDate = (new \DateTimeImmutable('now')->sub(new \DateInterval('PT1H')));
+        $sinceDate = new \DateTimeImmutable('now')->sub(new \DateInterval('PT1H'));
 
         if ($recentlyClosedMode) {
             // Default mode is now to auto match for campaigns that *just* closed.
@@ -68,7 +68,7 @@ class RetrospectivelyMatch extends LockingCommand
             // Allow + round non-whole day count.
             $daysBack = round((float) $input->getArgument('days-back')); // @phpstan-ignore cast.double
             $output->writeln("Looking at past $daysBack days' donations");
-            $sinceDate = (new \DateTimeImmutable('now')->sub(new \DateInterval("P{$daysBack}D")));
+            $sinceDate = new \DateTimeImmutable('now')->sub(new \DateInterval("P{$daysBack}D"));
             $toCheckForMatching = $this->donationRepository
                 ->findRecentNotFullyMatchedToMatchCampaigns($sinceDate);
         }

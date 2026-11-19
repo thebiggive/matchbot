@@ -66,11 +66,11 @@ class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
             $env = getenv('APP_ENV');
             \assert(is_string($env));
             $options = (new SlackOptions())
-                ->block((new SlackHeaderBlock(sprintf(
+                ->block(new SlackHeaderBlock(sprintf(
                     '[%s] %s',
                     $env,
                     $message,
-                ))))
+                )))
                 ->block((new SlackSectionBlock())->text($bufferedOutput->fetch()));
             $chatMessage->options($options);
 

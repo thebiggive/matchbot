@@ -598,8 +598,7 @@ class Donation extends SalesforceWriteProxy
     {
         return match ($paymentMethodType) {
             PaymentMethodType::CustomerBalance => self::MAXIMUM_CUSTOMER_BALANCE_DONATION,
-            PaymentMethodType::Card => self::MAXIMUM_CARD_DONATION,
-            PaymentMethodType::PayByBank => self::MAXIMUM_CARD_DONATION,
+            PaymentMethodType::Card, PaymentMethodType::PayByBank => self::MAXIMUM_CARD_DONATION,
         };
     }
 
@@ -724,7 +723,7 @@ class Donation extends SalesforceWriteProxy
             'giftAid' => $this->hasGiftAid(),
             'homeAddress' => $this->getDonorHomeAddressLine1(),
             'homePostcode' => $this->getDonorHomePostcode(),
-            'isOrganisationDonor' => empty($this->donorFirstName) && $this->getDonorLastName(true),
+            'isOrganisationDonor' => ($this->donorFirstName === null || $this->donorFirstName === '') && $this->getDonorLastName(true),
             'lastName' => $this->getDonorLastName(true),
             'matchedAmount' => $this->matchedAmount()->toMajorUnitFloat(),
             'matchReservedAmount' => 0,
@@ -1004,16 +1003,18 @@ class Donation extends SalesforceWriteProxy
                 [FundType::ChampionFund, true, true] => throw new \LogicException("impossible status"),
                 [FundType::ChampionFund, true, false] => 'amountMatchedByChampionFunds',
                 [FundType::ChampionFund, false, true] => 'amountPreauthorizedFromChampionFunds',
-                [FundType::ChampionFund, false, false] => 'amountMatchedOther',
 
                 [FundType::Pledge, true, true] => throw new \LogicException("impossible status"),
-                [FundType::Pledge, true, false] => 'amountMatchedByPledges',
                 [FundType::Pledge, false, true] => throw new \RuntimeException("unexpected pre-authed donation using pledge fund"),
-                [FundType::Pledge, false, false] => 'amountMatchedOther',
 
                 [FundType::TopupPledge, true, true] => throw new \LogicException("impossible status"),
-                [FundType::TopupPledge, true, false] => 'amountMatchedByPledges',
                 [FundType::TopupPledge, false, true] => throw new \RuntimeException("unexpected pre-authed donation using top-up pledge fund"),
+
+                [FundType::Pledge, true, false],
+                [FundType::TopupPledge, true, false] => 'amountMatchedByPledges',
+
+                [FundType::ChampionFund, false, false],
+                [FundType::Pledge, false, false],
                 [FundType::TopupPledge, false, false] => 'amountMatchedOther',
             };
 
@@ -1651,7 +1652,7 @@ class Donation extends SalesforceWriteProxy
 
         $this->chargeId = $chargeId;
         $this->donationStatus = DonationStatus::Collected;
-        $this->collectedAt = (new \DateTimeImmutable("@$chargeCreationTimestamp"));
+        $this->collectedAt = new \DateTimeImmutable("@$chargeCreationTimestamp");
         if ($originalFeeFractional !== null) {
             $this->setOriginalPspFeeFractional($originalFeeFractional);
         }

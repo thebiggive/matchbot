@@ -100,7 +100,7 @@ class Create extends Action
                 $response,
                 "$message: $exceptionType - {$exception->getMessage()}",
                 $message,
-                empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
+                '' === $body, // Suspected bot / junk traffic sometimes sends blank payload.
             );
         }
 

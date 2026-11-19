@@ -49,8 +49,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * @psalm-import-type SFCampaignApiResponse from CampaignClient
  *
  *
- * @mago-expect lint:cyclomatic-complexity
- * @mago-expect lint:no-else-clause
  */
 #[AsCommand(
     name: 'matchbot:create-fictional-data',

@@ -43,7 +43,9 @@ class Search extends Action
         /** @var ?string $country */
         $country = $params['country'] ?? null;
 
+        /** @var mixed $latitude */
         $latitude = $params['latitude'] ?? null;
+        /** @var mixed $longitude */
         $longitude = $params['longitude'] ?? null;
 
         /**
@@ -59,7 +61,9 @@ class Search extends Action
         Assertion::nullOrBetweenLength($ukRegion, 4, 64, 'UK region code should be between 4 and 64 bytes');
         Assertion::nullOrAlnum($ukRegion, 'UK Region code should be alphanumeric');
 
-        $filterByLatLong = (bool) ($params['filterByLatLong'] ?? false);
+        /** @var string|int|bool $filterByLatLongRaw */
+        $filterByLatLongRaw = $params['filterByLatLong'] ?? '0';
+        $filterByLatLong = (bool) $filterByLatLongRaw;
 
         if ($filterByLatLong && (! \is_numeric($latitude) || ! \is_numeric($longitude))) {
             $this->logger->warning("Location filter requested with no latitude or no longitude given, defaulting to distanceToTarget");
@@ -78,9 +82,8 @@ class Search extends Action
             Assertion::string($latitude);
 
             try {
-                /**
-                 * @mago-expect analysis:no-value,no-value,mixed-return-statement - mago seems to wrongly think the intersection of numeric and string is never.
-                 */
+                /** @mago-expect analysis:no-value - Mago wrongly thinks the intersection of numeric and string is never after Assertion::numeric() and Assertion::string() */
+                /** @mago-expect analysis:no-value - Mago wrongly thinks the intersection of numeric and string is never after Assertion::numeric() and Assertion::string() */
                 $regions = $this->findThatPostcode->getDataOnPoint(new Number($latitude), new Number($longitude));
             } catch (PointOutsideUK $exception) {
                 throw new HttpBadRequestException($request, $exception->getMessage());
@@ -128,6 +131,7 @@ class Search extends Action
         }
 
         $jsonMatchInListConditions = [];
+        /** @var array<string, mixed> $params */
         foreach ($params as $key => $value) {
             switch ($key) {
                 case 'beneficiary':
@@ -152,7 +156,12 @@ class Search extends Action
         Assertion::nullOrString($fundSlug);
 
         // Use limit 100 if a higher value requested.
-        $limit = min(100, (int) ( $params['limit'] ?? 20 ));
+        /** @var int|float|string $limitRaw */
+        $limitRaw = $params['limit'] ?? 20;
+        $limit = min(100, (int) $limitRaw);
+
+        /** @var int|float|string $offsetRaw */
+        $offsetRaw = $params['offset'] ?? 0;
 
         /**
          * @psalm-suppress InvalidArgument (see below mago comment)
@@ -161,7 +170,7 @@ class Search extends Action
             $searchResult = $this->campaignRepository->search(
                 sortField: $sortField,
                 sortDirection: $sortDirection,
-                offset: (int) ( $params['offset'] ?? 0 ),
+                offset: (int) $offsetRaw,
                 limit: $limit,
                 metaCampaignSlug: $parentSlug,
                 fundSlug: $fundSlug,

@@ -44,8 +44,7 @@ class Get extends Action
         $mandateId = $args["mandateId"];
         Assertion::string($mandateId);
 
-        /** @psalm-suppress RiskyTruthyFalsyComparison -- suppressing issue in old code instead of editing */
-        if (empty($args['mandateId'])) {
+        if (!isset($args['mandateId'])) {
             throw new DomainRecordNotFoundException('Missing mandate ID ' . $mandateId);
         }
 

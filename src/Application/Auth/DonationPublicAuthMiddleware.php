@@ -34,7 +34,7 @@ class DonationPublicAuthMiddleware implements MiddlewareInterface
         $donationId = $route->getArgument('donationId');
         $jws = $request->getHeaderLine('x-tbg-auth');
 
-        if (empty($jws)) {
+        if ('' === $jws) {
             $this->logger->info('Security: No JWT provided');
             $this->unauthorised($this->logger, true, $request);
         }

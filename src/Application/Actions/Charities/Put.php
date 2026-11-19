@@ -80,7 +80,7 @@ class Put extends Action
         $regulatorNumber = self::nullOrStringValue($charityData, 'regulatorNumber');
         $psp = PaymentServiceProvider::from($charityData['psp'] ?? PaymentServiceProvider::Stripe->value);
         $ryftAccountId = $charityData['ryftAccountId'];
-        if ($ryftAccountId != null) {
+        if ($ryftAccountId !== null) {
             $ryftAccountId = RyftAccountId::of($ryftAccountId);
         }
 

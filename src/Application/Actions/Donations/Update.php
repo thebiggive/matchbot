@@ -78,7 +78,7 @@ class Update extends Action
     #[\Override]
     protected function action(Request $request, Response $response, array $args): Response
     {
-        if (empty($args['donationId']) || ! is_string($args['donationId'])) {
+        if (!isset($args['donationId']) || ! is_string($args['donationId'])) {
             // When MatchBot made a donation, this is now a UUID
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
@@ -109,7 +109,7 @@ class Update extends Action
                 response: $response,
                 logMessage: "$message: $exceptionType - {$exception->getMessage()}",
                 publicMessage: $message,
-                reduceSeverity: empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
+                reduceSeverity: '' === $body, // Suspected bot / junk traffic sometimes sends blank payload.
             );
         }
 

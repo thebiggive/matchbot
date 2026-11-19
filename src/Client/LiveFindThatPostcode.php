@@ -40,7 +40,6 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
 
     /**
      * @inheritDoc
-     * @mago-expect analysis:mixed-assignment
      */
     #[Override]
     public function getDataOnPostcode(PostCode $postcode): array
@@ -60,8 +59,6 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
 
     /**
      * @inheritDoc
-     *
-     * @psalm-suppress MixedArrayAccess, MixedAssignment
      */
     #[Override]
     public function getDataOnPoint(Number $latitude, Number $longitude): array
@@ -81,13 +78,16 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
                 throw $requestException;
             }
 
+            /** @var array<string, mixed> $responseData */
             $responseData = \json_decode($content, associative: true, flags: \JSON_THROW_ON_ERROR);
 
-            $error = $responseData['message']['errors'][0] ?? []; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
-            $errorCode = $error['code'] ?? null; // @phpstan-ignore offsetAccess.nonOffsetAccessible
+            /** @var array<string, mixed> $error */
+            $error = $responseData['message']['errors'][0] ?? []; // @phpstan-ignore offsetAccess.nonOffsetAccessible, offsetAccess.nonOffsetAccessible
+            /** @var string|null $errorCode */
+            $errorCode = $error['code'] ?? null;
 
             if ($errorCode === 'point_outside_uk') {
-                throw new PointOutsideUK((string)($error['title'] ?? '')); // @phpstan-ignore offsetAccess.nonOffsetAccessible, cast.string
+                throw new PointOutsideUK((string)($error['title'] ?? '')); // @phpstan-ignore cast.string
             }
 
             throw $requestException;
@@ -106,9 +106,7 @@ class LiveFindThatPostcode extends Common implements FindThatPostcode
      * Takes the data as decoded from the Find That Postcode response, and returns a much simpler data structure
      * suitable for use within Matchbot.
      *
-     * @mago-expect analysis:less-specific-nested-return-statement
      * @mago-expect analysis:mixed-assignment
-     * @mago-expect analysis:mixed-array-access
      * @mago-expect analysis:invalid-return-statement
      * @mago-expect analysis:mixed-argument
      * @mago-expect analysis:possibly-false-operand

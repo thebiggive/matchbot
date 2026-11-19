@@ -206,16 +206,12 @@ class RyftClient
          *     currency: string,
          *     status: string,
          *     paymentMethod: array{
-         *       tokenizedDetails: array{id: string},
+         *       tokenizedDetails: null|array{id: string},
          *     },
          * } $responseData */
         $responseData = $decodedResponse;
 
-        if (isset($responseData['paymentMethod']['tokenizedDetails'])) {
-            $responseData['paymentMethodId'] = $responseData['paymentMethod']['tokenizedDetails']['id'];
-        } else {
-            $responseData['paymentMethodId'] = null;
-        }
+        $responseData['paymentMethodId'] = $responseData['paymentMethod']['tokenizedDetails']['id'] ?? null;
 
         $this->log->info(sprintf(
             'Captured Ryft payment of %.2f for payment session %s, used payment method id %s',
@@ -282,14 +278,9 @@ class RyftClient
         }
 
         $responseContents = $response->getBody()->getContents();
+        /** @var array<string, mixed> $decodedResponse */
         $decodedResponse = json_decode($responseContents, associative: true, flags: \JSON_THROW_ON_ERROR);
-        Assertion::isArray($decodedResponse);
-
-        /** @var array{
-         *     id: string,
-         *     refundedAmount: int,
-         *     status: 'Pending'|'Failed'|'Succeeded'
-         * } $responseData */
+        /** @var array{id: string, refundedAmount: int, status: 'Pending'|'Failed'|'Succeeded'} $responseData */
         $responseData = $decodedResponse;
 
         $this->log->info('Full Ryft refund response JSON: ' . $responseContents);
