@@ -9,12 +9,12 @@ namespace MatchBot\Domain;
 readonly class CampaignSearchResult
 {
     /**
-     * @var list<array{country: string, numCampaigns: int}>
+     * @var list<array{country: string, numCampaigns: int|null}>
      */
     public array $countries;
 
     /**
-     * @var list<array{theme: string, numCampaigns: int}>
+     * @var list<array{theme: string, numCampaigns: int|null}>
      */
     public array $themes;
 
@@ -40,10 +40,10 @@ readonly class CampaignSearchResult
      * London as parent of Haringey. Should generally match the entry in position 1 of $ukFilterRegions. Null if the
      * regions only have the UK as a whole as a parent.
      *
-     * @param list<array{country: string, numCampaigns: int}>|null $countries Count of how many campaigns represent each
+     * @param list<array{country: string, numCampaigns: int|null}>|null $countries Count of how many campaigns represent each
      * country/location in the search results.
      *
-     * @param list<array{theme: string, numCampaigns: int}>|null $themes Count of how many campaigns represent each
+     * @param list<array{theme: string, numCampaigns: int|null}>|null $themes Count of how many campaigns represent each
      * theme (beneficiaries + categories) in the search results.
      */
     public function __construct(

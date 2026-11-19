@@ -5,6 +5,7 @@ namespace MatchBot\IntegrationTests;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Settings;
 use MatchBot\Domain\ApplicationStatus;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignLocation;
@@ -205,6 +206,39 @@ class CampaignRepositoryTest extends IntegrationTest
             ],
             $result->themes,
         );
+    }
+
+    public function testReducedFilterCountsIgnoreSearchConstraints(): void
+    {
+        $sut = $this->getService(CampaignRepository::class);
+        $settings = clone $this->getService(Settings::class);
+        $settings->enableReducedFilterCountsMode = true; // @phpstan-ignore property.readOnlyByPhpDocAssignOutOfClass
+        $sut->setSettings($settings);
+        $this->insertCampaignsForSearchToFind();
+
+        $result = $sut->search(
+            sortField: 'distanceToTarget',
+            sortDirection: 'desc',
+            offset: 0,
+            limit: 1,
+            metaCampaignSlug: 'the-family',
+            fundSlug: null,
+            jsonMatchInListConditions: ['categories' => 'No such category'],
+            term: null,
+            country: 'No such country',
+            regions: null,
+            forInternalUpdate: false,
+            filterByRegions: false,
+        );
+
+        $this->assertSame([], $result->campaigns);
+        $this->assertSame([['country' => 'United Kingdom', 'numCampaigns' => null]], $result->countries);
+        $this->assertSame([
+            ['theme' => 'Dads', 'numCampaigns' => null],
+            ['theme' => 'Drink', 'numCampaigns' => null],
+            ['theme' => 'Food', 'numCampaigns' => null],
+            ['theme' => 'Lads', 'numCampaigns' => null],
+        ], $result->themes);
     }
 
     public function testSearchWithInvalidJsonMatchFieldThrowsException(): void

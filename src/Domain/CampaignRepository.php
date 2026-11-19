@@ -13,6 +13,7 @@ use GuzzleHttp\Exception\TransferException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Environment;
+use MatchBot\Application\Settings;
 use MatchBot\Client;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
@@ -36,7 +37,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /** @var array<string, float> Start times as microtime floats for queries. */
     private $timers = [];
     public const string REGION_CODE_ENGLAND = 'E92000001';
-    private ClockInterface $clock;  // @phpstan-ignore property.uninitialized
+    private ClockInterface $clock; // @phpstan-ignore property.uninitialized
+    private Settings $settings; // @phpstan-ignore property.uninitialized
     private string $statusAndFundingWhereClause = <<<DQL
         (
             (campaign.metaCampaignSlug IS NULL AND (campaign.isMatched = 0 OR campaignStatistics.matchFundsTotal.amountInPence > 0))
@@ -442,6 +444,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function setClock(ClockInterface $clock): void
     {
         $this->clock = $clock;
+    }
+
+    public function setSettings(Settings $settings): void
+    {
+        $this->settings = $settings;
     }
 
     /**
@@ -1045,7 +1052,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /**
      * @param array<string, string> $jsonMatchInListConditions
      * @param list<int>|null $knownTermMatchIds
-     * @return list<array{country: string, numCampaigns: int}>
+     * @return list<array{country: string, numCampaigns: int|null}>
      */
     private function getCountryCountsForSearch(
         ?string $metaCampaignSlug,
@@ -1057,7 +1064,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?array $knownTermMatchIds,
     ): array {
         $countryQb = $this->getEntityManager()->createQueryBuilder();
-        $countryQb->select('campaignLocation.countryName as country', 'COUNT(DISTINCT campaign.id) as numCampaigns')
+        $countryQb->select('campaignLocation.countryName as country')
             ->from(CampaignLocation::class, 'campaignLocation')
             ->join('campaignLocation.campaign', 'campaign')
             ->join('campaign.charity', 'charity')
@@ -1067,24 +1074,29 @@ class CampaignRepository extends SalesforceReadProxyRepository
             ->where($countryQb->expr()->isNotNull('campaignLocation.countryName'))
             ->groupBy('campaignLocation.countryName');
 
-        $this->filterForSearch(
-            qb: $countryQb,
-            metaCampaignSlug: $metaCampaignSlug,
-            fundSlug: $fundSlug,
-            jsonMatchInListConditions: $jsonMatchInListConditions,
-            filterOutTargetMet: $filterOutTargetMet,
-            term: $term,
-            country: null,
-            forInternalUpdate: $forInternalUpdate,
-            regions: null,
-            knownTermMatchIds: $knownTermMatchIds,
-        );
+        if ($this->settings->enableReducedFilterCountsMode) {
+            $this->filterForReducedCounts($countryQb, $metaCampaignSlug);
+        } else {
+            $countryQb->addSelect('COUNT(DISTINCT campaign.id) as numCampaigns');
+            $this->filterForSearch(
+                qb: $countryQb,
+                metaCampaignSlug: $metaCampaignSlug,
+                fundSlug: $fundSlug,
+                jsonMatchInListConditions: $jsonMatchInListConditions,
+                filterOutTargetMet: $filterOutTargetMet,
+                term: $term,
+                country: null,
+                forInternalUpdate: $forInternalUpdate,
+                regions: null,
+                knownTermMatchIds: $knownTermMatchIds,
+            );
+        }
 
         $countryQuery = $countryQb->getQuery();
         if (!$forInternalUpdate) {
             $countryQuery->enableResultCache(lifetime: self::COUNTS_CACHE_SECONDS);
         }
-        /** @var list<array{country: string, numCampaigns: int|string}> $countryResults */
+        /** @var list<array{country: string, numCampaigns?: int|string}> $countryResults */
         $countryResults = $countryQuery->getResult();
 
         $countryCounts = [];
@@ -1093,32 +1105,26 @@ class CampaignRepository extends SalesforceReadProxyRepository
             if ($countryName === '') {
                 continue;
             }
-            $countryCounts[$countryName] = ($countryCounts[$countryName] ?? 0) + (int) $row['numCampaigns'];
-        }
-
-        $countries = [];
-        foreach ($countryCounts as $country => $numCampaigns) {
-            $countries[] = [
-                'country' => $country,
-                'numCampaigns' => $numCampaigns,
-            ];
-        }
-
-        usort($countries, static function (array $a, array $b): int {
-            if ($b['numCampaigns'] !== $a['numCampaigns']) {
-                return $b['numCampaigns'] <=> $a['numCampaigns'];
+            if ($this->settings->enableReducedFilterCountsMode) {
+                $countryCounts[$countryName] = null;
+            } else {
+                if (!isset($row['numCampaigns'])) {
+                    throw new \UnexpectedValueException('Country count missing from query result');
+                }
+                $countryCounts[$countryName] = ($countryCounts[$countryName] ?? 0) + (int) $row['numCampaigns'];
             }
-            return strcasecmp((string) $a['country'], (string) $b['country']);
-        });
+        }
 
-        return $countries;
+        return $this->formatFilterCounts($countryCounts, 'country');
     }
 
     /**
      * @param array<string, string> $jsonMatchInListConditions
      * @param non-empty-list<string>|null $regions
      * @param list<int>|null $knownTermMatchIds
-     * @return list<array{theme: string, numCampaigns: int}>
+     * @return list<array{theme: string, numCampaigns: int|null}> List with only themes specific to the search context
+     * and real counts relative to it, when `ENABLE_REDUCED_FILTER_COUNTS_MODE` is off. All items and no counts when
+     * it's on.
      *
      * @psalm-suppress MixedAssignment
      */
@@ -1148,18 +1154,22 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $themeConditions = $jsonMatchInListConditions;
         unset($themeConditions['beneficiaries'], $themeConditions['categories']);
 
-        $this->filterForSearch(
-            qb: $themeQb,
-            metaCampaignSlug: $metaCampaignSlug,
-            fundSlug: $fundSlug,
-            jsonMatchInListConditions: $themeConditions,
-            filterOutTargetMet: $filterOutTargetMet,
-            term: $term,
-            country: $country,
-            forInternalUpdate: $forInternalUpdate,
-            regions: $regions,
-            knownTermMatchIds: $knownTermMatchIds,
-        );
+        if ($this->settings->enableReducedFilterCountsMode) {
+            $this->filterForReducedCounts($themeQb, $metaCampaignSlug);
+        } else {
+            $this->filterForSearch(
+                qb: $themeQb,
+                metaCampaignSlug: $metaCampaignSlug,
+                fundSlug: $fundSlug,
+                jsonMatchInListConditions: $themeConditions,
+                filterOutTargetMet: $filterOutTargetMet,
+                term: $term,
+                country: $country,
+                forInternalUpdate: $forInternalUpdate,
+                regions: $regions,
+                knownTermMatchIds: $knownTermMatchIds,
+            );
+        }
 
         $themeQuery = $themeQb->getQuery();
         if (!$forInternalUpdate) {
@@ -1194,26 +1204,58 @@ class CampaignRepository extends SalesforceReadProxyRepository
                     continue;
                 }
 
-                $themeCounts[$theme] = ($themeCounts[$theme] ?? 0) + 1;
+                if ($this->settings->enableReducedFilterCountsMode) {
+                    $themeCounts[$theme] = null;
+                } else {
+                    $themeCounts[$theme] = ($themeCounts[$theme] ?? 0) + 1;
+                }
             }
         }
 
-        $themes = [];
-        foreach ($themeCounts as $theme => $numCampaigns) {
-            $themes[] = [
-                'theme' => $theme,
-                'numCampaigns' => $numCampaigns,
-            ];
+        return $this->formatFilterCounts($themeCounts, 'theme');
+    }
+
+    private function filterForReducedCounts(QueryBuilder $qb, ?string $metaCampaignSlug): void
+    {
+        $this->filterForSearch(
+            qb: $qb,
+            metaCampaignSlug: $metaCampaignSlug,
+            fundSlug: null,
+            jsonMatchInListConditions: [],
+            filterOutTargetMet: false,
+            term: null,
+            country: null,
+            forInternalUpdate: false,
+        );
+    }
+
+    /**
+     * @param array<array-key, int|null> $counts
+     * @param 'country'|'theme' $key
+     * @return ($key is 'country' ? list<array{country: string, numCampaigns: int|null}> : list<array{theme: string, numCampaigns: int|null}>)
+     */
+    private function formatFilterCounts(array $counts, string $key): array
+    {
+        $results = [];
+        foreach ($counts as $value => $numCampaigns) {
+            $results[] = $key === 'country'
+                ? ['country' => (string) $value, 'numCampaigns' => $numCampaigns]
+                : ['theme' => (string) $value, 'numCampaigns' => $numCampaigns];
         }
 
-        usort($themes, static function (array $a, array $b): int {
+        usort($results, static function (array $a, array $b): int {
+            /** @var array{country: string, numCampaigns: int|null}|array{theme: string, numCampaigns: int|null} $a */
+            /** @var array{country: string, numCampaigns: int|null}|array{theme: string, numCampaigns: int|null} $b */
             if ($b['numCampaigns'] !== $a['numCampaigns']) {
                 return $b['numCampaigns'] <=> $a['numCampaigns'];
             }
-            return strcasecmp((string) $a['theme'], (string) $b['theme']);
+            return strcasecmp(
+                $a['country'] ?? $a['theme'] ?? throw new \UnexpectedValueException('Filter name missing'),
+                $b['country'] ?? $b['theme'] ?? throw new \UnexpectedValueException('Filter name missing'),
+            );
         });
 
-        return $themes;
+        return $results;
     }
 
     public static function getRegulatorHMRCIdentifier(string $regulatorName): ?string
