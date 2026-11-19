@@ -1052,7 +1052,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /**
      * @param array<string, string> $jsonMatchInListConditions
      * @param list<int>|null $knownTermMatchIds
-     * @return list<array{country: string, numCampaigns: int|null}>
+     * @return list<array{country: string, numCampaigns: int|null}> List with only countries specific to the search context
+     * and real counts relative to it, when `ENABLE_REDUCED_FILTER_COUNTS_MODE` is off. All countries (for the meta-campaign
+     * if applicable) and no counts when it's on.
      */
     private function getCountryCountsForSearch(
         ?string $metaCampaignSlug,
@@ -1123,8 +1125,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @param non-empty-list<string>|null $regions
      * @param list<int>|null $knownTermMatchIds
      * @return list<array{theme: string, numCampaigns: int|null}> List with only themes specific to the search context
-     * and real counts relative to it, when `ENABLE_REDUCED_FILTER_COUNTS_MODE` is off. All items and no counts when
-     * it's on.
+     * and real counts relative to it, when `ENABLE_REDUCED_FILTER_COUNTS_MODE` is off. All themes (for the meta-campaign
+     * if applicable) and no counts when it's on.
      *
      * @psalm-suppress MixedAssignment
      */
