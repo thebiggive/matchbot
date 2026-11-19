@@ -62,6 +62,11 @@ class Settings
     public array $friendlyCaptchaSettings;
 
     /**
+     * Whether to only give general lists of available countries & themes without counts, which might reduce database load.
+     */
+    public bool $enableReducedFilterCountsMode;
+
+    /**
      * Whether to skip the usual match-fund reservation process and instead run donation matching on a best-effort
      * basis only.
      */
@@ -105,6 +110,10 @@ class Settings
 
         $this->enableNoReservationsMode = \strtoupper(
             $this->getStringEnv($env, 'ENABLE_NO_RESERVATIONS_MODE', throwIfMissing: false)
+        ) === 'TRUE';
+
+        $this->enableReducedFilterCountsMode = \strtoupper(
+            $this->getStringEnv($env, 'ENABLE_REDUCED_FILTER_COUNTS_MODE', throwIfMissing: false)
         ) === 'TRUE';
 
         $this->doctrine = [
