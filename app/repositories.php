@@ -5,6 +5,7 @@ declare(strict_types=1);
 use DI\ContainerBuilder;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Settings;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
@@ -43,6 +44,7 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo->setClient($c->get(Client\Campaign::class));
             $repo->setLogger($c->get(LoggerInterface::class));
             $repo->setClock($c->get(ClockInterface::class));
+            $repo->setSettings($c->get(Settings::class));
 
             return $repo;
         },
