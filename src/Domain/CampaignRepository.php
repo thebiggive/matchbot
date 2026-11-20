@@ -713,7 +713,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                     SELECT id
                     FROM ranked
                     WHERE score >= max_score * 0.25
-                    ORDER BY score DESC
+                    ORDER BY score DESC, id ASC
                     SQL,
                     params: [
                         'term_normalised' => $termWithoutApostrophes,
