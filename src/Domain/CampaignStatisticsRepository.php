@@ -45,7 +45,7 @@ class CampaignStatisticsRepository
                 FROM MatchBot\Domain\CampaignStatistics cs
                 JOIN cs.campaign c
                 WHERE c.isPublished = true
-                AND c.startDate < CURRENT_TIMESTAMP()
+                AND c.startDate > CURRENT_TIMESTAMP()
                 AND cs.approxStatus = '$expired->value'
             DQL
         );
