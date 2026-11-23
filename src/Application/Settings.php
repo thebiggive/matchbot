@@ -114,7 +114,7 @@ class Settings
 
         $this->enableReducedFilterCountsMode = \strtoupper(
             $this->getStringEnv($env, 'ENABLE_REDUCED_FILTER_COUNTS_MODE', throwIfMissing: false)
-        ) === 'TRUE';
+        ) === 'TRUE' || Environment::current() === Environment::Staging;
 
         $this->doctrine = [
             // if true, metadata caching is forcefully disabled
