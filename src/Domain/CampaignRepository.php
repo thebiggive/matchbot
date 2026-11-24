@@ -789,6 +789,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
             $qb->addSelect("({$locationMatchCountSelect}) AS HIDDEN locationMatchCount");
             $qb->addOrderBy('locationMatchCount', 'DESC');
+            $qb->addOrderBy('campaignStatistics.matchFundsRemaining.amountInPence', 'DESC');
         } else {
             $qb->addOrderBy($safeSortField, ($sortDirection === 'asc') ? 'asc' : 'desc');
         }
