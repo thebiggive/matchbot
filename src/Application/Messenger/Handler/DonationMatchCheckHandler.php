@@ -168,6 +168,8 @@ class DonationMatchCheckHandler
             closedBeforeDate: new \DateTimeImmutable('now'),
             closedSinceDate: $message->includesCampaignsClosedSince,
         );
+        /** @var Fund[] $fundsQueuedToPush */
+        $fundsQueuedToPush = [];
         foreach ($funds as $fund) {
             // For now, skip pledges to reduce load, until we are doing something with the info.
             if ($fund->getFundType()->isPledge()) {
@@ -175,10 +177,11 @@ class DonationMatchCheckHandler
             }
 
             $this->bus->dispatch(new Envelope(FundTotalUpdated::fromFund($fund)));
+            $fundsQueuedToPush[] = $fund;
         }
 
-        $fundSFIds = implode(', ', array_map(static fn(Fund $f) => $f->getSalesforceId(), $funds));
-        $this->logger->info('Pushed fund totals to Salesforce for ' . count($funds) . ' funds: ' . $fundSFIds);
+        $fundSFIds = implode(', ', array_map(static fn(Fund $f) => $f->getSalesforceId(), $fundsQueuedToPush));
+        $this->logger->info('Pushed fund totals to Salesforce for ' . count($fundsQueuedToPush) . ' funds: ' . $fundSFIds);
     }
 
     private function keyForStat(string $string, DonationMatchingShouldBeChecked $message): string
