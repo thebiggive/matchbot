@@ -160,7 +160,11 @@ class DonationMatchCheckHandler
             closedSinceDate: $message->includesCampaignsClosedSince,
         );
         foreach ($funds as $fund) {
-            // TODO maybe: could skip pledges to reduce load, until we are doing something with the info.
+            // For now, skip pledges to reduce load, until we are doing something with the info.
+            if ($fund->getFundType()->isPledge()) {
+                continue;
+            }
+
             $this->bus->dispatch(new Envelope(FundTotalUpdated::fromFund($fund)));
         }
 
