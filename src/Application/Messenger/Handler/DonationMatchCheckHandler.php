@@ -51,7 +51,10 @@ class DonationMatchCheckHandler
 
     public function __invoke(DonationMatchingShouldBeChecked $message): void
     {
-        $this->logger->debug('DonationMatchCheckHandler invoke; job ' . $message->retroMatchJobUuid . ', donations hash ' . $message->getMessageDeduplicationId());
+        $this->logger->debug(
+            'DonationMatchCheckHandler invoke; job ' . $message->retroMatchJobUuid . ', donations hash '
+                . $message->getMessageDeduplicationId(),
+        );
 
         // Instantiate stats for this specific message of e.g. 10 donations. This invocation's
         // figures will be combined with those from other messages in Redis.
@@ -96,9 +99,11 @@ class DonationMatchCheckHandler
         DonationMatchingShouldBeChecked $message,
         array $campaignIdsWithAllocations,
         int $numberAllocated,
-        int $penceAllocated
+        int $penceAllocated,
     ): void {
-        $this->redis->incrBy($this->keyForStat('numChecked', $message), count($message->donationUuids));
+        foreach ($message->donationUuids as $donationUuid) {
+            $this->redis->sAdd($this->keyForStat('checkedDonationUuids', $message), $donationUuid);
+        }
         // Below are sometimes no-ops, but should be fast and it's more complicated to expire() usefully if they're conditional.
         // incrBy() and sAdd() also initialise to 0 and empty set as necessary.
         $this->redis->incrBy($this->keyForStat('numAllocated', $message), $numberAllocated);
@@ -112,9 +117,9 @@ class DonationMatchCheckHandler
 
     private function reportStats(DonationMatchingShouldBeChecked $message): void
     {
+        $numChecked = $this->redis->scard($this->keyForStat('checkedDonationUuids', $message));
+        \assert(is_int($numChecked));
         // Redis returns even what should internally be ints from get() as numeric strings.
-        $numChecked = $this->redis->get($this->keyForStat('numChecked', $message));
-        \assert(is_numeric($numChecked));
         $numWithMatchingAllocated = $this->redis->get($this->keyForStat('numAllocated', $message));
         \assert(is_numeric($numWithMatchingAllocated));
         $totalNewMatchingPence = $this->redis->get($this->keyForStat('penceAllocated', $message));
@@ -125,16 +130,20 @@ class DonationMatchCheckHandler
 
         // @todo-multi-currency This message assumes GBP for now but the actual reallocation would use
         // Campaign/Donation currency if we were live with others.
-        $summary = "Retrospectively matched $numWithMatchingAllocated of $numChecked donations. " .
-            "£$totalNewMatching total new matching, across $numDistinctCampaigns campaigns.";
+        $summary =
+            "Retrospectively matched $numWithMatchingAllocated of $numChecked donations. "
+            . "£$totalNewMatching total new matching, across $numDistinctCampaigns campaigns.";
         $this->logger->info($summary);
 
         // If we did any new matching allocation, whether because of campaigns just closed or because
         // the command was run manually, send the results to Slack.
         if ($numDistinctCampaigns > 0 && $this->environment !== Environment::Test) {
             $chatMessage = new ChatMessage('Retrospective matching');
-            $options = (new SlackOptions())
-                ->block(new SlackHeaderBlock(sprintf('[%s] %s', $this->environment->name, 'Retrospective matching completed')))
+            $options = new SlackOptions()->block(new SlackHeaderBlock(sprintf(
+                '[%s] %s',
+                $this->environment->name,
+                'Retrospective matching completed',
+            )))
                 ->block(new SlackSectionBlock()->text($summary));
             $chatMessage->options($options);
 
@@ -159,13 +168,20 @@ class DonationMatchCheckHandler
             closedBeforeDate: new \DateTimeImmutable('now'),
             closedSinceDate: $message->includesCampaignsClosedSince,
         );
+        /** @var Fund[] $fundsQueuedToPush */
+        $fundsQueuedToPush = [];
         foreach ($funds as $fund) {
-            // TODO maybe: could skip pledges to reduce load, until we are doing something with the info.
+            // For now, skip pledges to reduce load, until we are doing something with the info.
+            if ($fund->getFundType()->isPledge()) {
+                continue;
+            }
+
             $this->bus->dispatch(new Envelope(FundTotalUpdated::fromFund($fund)));
+            $fundsQueuedToPush[] = $fund;
         }
 
-        $fundSFIds = implode(', ', array_map(static fn(Fund $f) => $f->getSalesforceId(), $funds));
-        $this->logger->info('Pushed fund totals to Salesforce for ' . count($funds) . ' funds: ' . $fundSFIds);
+        $fundSFIds = implode(', ', array_map(static fn(Fund $f) => $f->getSalesforceId(), $fundsQueuedToPush));
+        $this->logger->info('Pushed fund totals to Salesforce for ' . count($fundsQueuedToPush) . ' funds: ' . $fundSFIds);
     }
 
     private function keyForStat(string $string, DonationMatchingShouldBeChecked $message): string
@@ -178,7 +194,7 @@ class DonationMatchCheckHandler
      */
     private function expireStatsEventually(DonationMatchingShouldBeChecked $message): void
     {
-        foreach (['numChecked', 'numAllocated', 'penceAllocated', 'campaignIdsWithChanges'] as $type) {
+        foreach (['checkedDonationUuids', 'numAllocated', 'penceAllocated', 'campaignIdsWithChanges'] as $type) {
             $this->redis->expire($this->keyForStat($type, $message), self::MAX_STAT_SECONDS);
         }
     }
