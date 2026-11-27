@@ -110,7 +110,7 @@ class Fund extends SalesforceReadProxy
                 'Unexpected change from non-topupPledge to Pledge'
             );
             $now = new \DateTimeImmutable('now');
-            $cutoff = $now->add(new DateInterval('P7D'));
+            $cutoff = $now->add(new DateInterval('P1D'));
             foreach ($this->getCampaignFundings() as $funding) {
                 foreach ($funding->getCampaigns() as $campaign) {
                     if ($campaign->getStartDate() < $cutoff) {
